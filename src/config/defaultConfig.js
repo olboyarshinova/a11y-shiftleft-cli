@@ -1,0 +1,20 @@
+export const defaultConfig = {
+  framework: "auto",
+  wcagLevel: "AA",
+  failOn: "critical",
+  outputDir: "reports",
+  static: {
+    enabled: true,
+    include: ["src/**/*.{js,jsx,ts,tsx,vue,html}"]
+  },
+  dynamic: {
+    enabled: false,
+    urls: ["http://localhost:3000"],
+    browser: "chromium"
+  },
+  metrics: {
+    enabled: true,
+    csv: true,
+    json: true
+  }
+};
