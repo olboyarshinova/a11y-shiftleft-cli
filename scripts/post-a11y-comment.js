@@ -35,8 +35,13 @@ export async function buildCommentBody(reportDir = "reports") {
     if (error.code !== "ENOENT") throw error;
   }
 
-  const report = JSON.parse(await fs.readFile(jsonPath, "utf8"));
-  return toMarkdown(report);
+  try {
+    const report = JSON.parse(await fs.readFile(jsonPath, "utf8"));
+    return toMarkdown(report);
+  } catch (error) {
+    if (error.code === "ENOENT") return null;
+    throw error;
+  }
 }
 
 export async function postA11yComment({
@@ -52,6 +57,12 @@ export async function postA11yComment({
   }
 
   const body = await buildCommentBody(reportDir);
+
+  if (!body) {
+    console.log("No accessibility report found. Skipping comment.");
+    return { skipped: true };
+  }
+
   const client = octokit || new Octokit({ auth: context.token });
 
   await client.issues.createComment({

@@ -69,6 +69,33 @@ test("buildCommentBody falls back to JSON report", async () => {
   assert.match(body, /button-name/);
 });
 
+test("buildCommentBody returns null when no report exists", async () => {
+  const reportDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-comment-empty-"));
+
+  assert.equal(await buildCommentBody(reportDir), null);
+});
+
+test("postA11yComment skips when no report exists", async () => {
+  const reportDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-comment-no-report-"));
+  const result = await postA11yComment({
+    reportDir,
+    env: {
+      GITHUB_TOKEN: "token",
+      GITHUB_REPOSITORY: "owner/repo",
+      PR_NUMBER: "3"
+    },
+    octokit: {
+      issues: {
+        createComment: async () => {
+          throw new Error("Should not be called");
+        }
+      }
+    }
+  });
+
+  assert.deepEqual(result, { skipped: true });
+});
+
 test("postA11yComment can be tested with an injected client", async () => {
   const reportDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-comment-post-"));
   await fs.writeFile(path.join(reportDir, "a11y-comment.md"), "body");

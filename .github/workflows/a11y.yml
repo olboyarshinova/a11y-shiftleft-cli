@@ -41,6 +41,7 @@ jobs:
         run: node bin/cli.js check --dynamic --url http://127.0.0.1:3000 --out reports --fail-on none
 
       - name: Upload accessibility report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: a11y-report

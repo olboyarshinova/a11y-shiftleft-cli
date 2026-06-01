@@ -82,6 +82,7 @@ jobs:
         run: npx a11y-shiftleft check --dynamic --url ${url} --out reports --fail-on ${failOn}
 
       - name: Upload accessibility report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: a11y-report
