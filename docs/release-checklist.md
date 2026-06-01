@@ -12,6 +12,16 @@ npm run build:demo
 npm_config_cache=.npm-cache npm pack --dry-run
 ```
 
+Check package metadata:
+
+```bash
+npm view a11y-shiftleft-cli version
+```
+
+If the package does not exist yet, npm should return a 404-style error.
+As of the v0.1.0 release preparation, the registry endpoint returned `404` for
+`a11y-shiftleft-cli`, so the package name appears available.
+
 ## GitHub Actions
 
 The repository includes two workflows:
@@ -77,6 +87,8 @@ The npm package should include only runtime files:
 bin/
 src/
 scripts/
+docs/
+CHANGELOG.md
 README.md
 LICENSE
 package.json
@@ -142,3 +154,6 @@ npm publish --access public
 ```
 
 Only publish after verifying the package in a separate test project.
+
+Use [docs/release-notes-v0.1.0.md](release-notes-v0.1.0.md) as the initial
+GitHub Release body.

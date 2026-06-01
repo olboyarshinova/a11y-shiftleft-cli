@@ -4,6 +4,14 @@
   "description": "Framework-agnostic accessibility validation orchestrator for shift-left workflows.",
   "type": "module",
   "license": "MIT",
+  "homepage": "https://github.com/olboyarshinova/a11y-shiftleft-cli#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/olboyarshinova/a11y-shiftleft-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/olboyarshinova/a11y-shiftleft-cli/issues"
+  },
   "keywords": [
     "accessibility",
     "a11y",
@@ -21,6 +29,8 @@
     "bin/",
     "src/",
     "scripts/",
+    "docs/",
+    "CHANGELOG.md",
     "LICENSE",
     "README.md",
     "package.json"
@@ -32,6 +42,7 @@
     "demo": "vite --host 127.0.0.1",
     "build:demo": "vite build",
     "test": "node --test",
+    "prepack": "npm test",
     "check": "node bin/cli.js check",
     "init": "node bin/cli.js init",
     "ci": "node bin/cli.js ci",
