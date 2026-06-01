@@ -1,0 +1,141 @@
+# a11y-shiftleft-cli
+
+Framework-agnostic CLI orchestrator for shift-left accessibility validation.
+
+The CLI is designed to run inside any web project. It combines dynamic axe scans,
+static accessibility checks where supported, finding normalization,
+deduplication, severity triage, and CI-friendly reporting.
+
+## Architecture
+
+```txt
+Target Project
+  package.json
+  .a11y-shiftleft.json
+  running app URL
+
+CLI
+  init
+  check
+  ci
+
+Adapters
+  eslintAdapter
+  axePlaywrightAdapter
+
+Core Engine
+  normalize
+  wcagMap
+  severity
+  dedupe
+
+Reporters
+  a11y-report.json
+  a11y-metrics.csv
+  a11y-comment.md
+```
+
+## Use In Any Project
+
+Install the CLI in the project you want to scan:
+
+```bash
+npm install --save-dev a11y-shiftleft-cli
+npx playwright install chromium
+npx a11y-shiftleft init
+```
+
+Before the package is published to npm, install it locally from this repo:
+
+```bash
+npm install --save-dev /path/to/a11y-shiftleft-cli
+```
+
+Start your app in another terminal:
+
+```bash
+npm run dev
+```
+
+Run a dynamic scan against the app URL:
+
+```bash
+npx a11y-shiftleft check --dynamic --url http://127.0.0.1:3000 --out reports
+```
+
+Run static checks where supported:
+
+```bash
+npx a11y-shiftleft check --static --framework react --out reports
+```
+
+Run both static and dynamic checks:
+
+```bash
+npx a11y-shiftleft check --url http://127.0.0.1:3000 --out reports
+```
+
+## Scan A Different Directory
+
+Useful for monorepos or local testing:
+
+```bash
+npx a11y-shiftleft check \
+  --cwd ./apps/web \
+  --dynamic \
+  --url http://127.0.0.1:3000 \
+  --out reports
+```
+
+## Generate CI
+
+```bash
+npx a11y-shiftleft ci \
+  --url http://127.0.0.1:3000 \
+  --start-command "npm run dev -- --host 127.0.0.1 --port 3000"
+```
+
+This creates:
+
+```txt
+.github/workflows/a11y.yml
+```
+
+## Outputs
+
+```txt
+reports/a11y-report.json
+reports/a11y-metrics.csv
+reports/a11y-comment.md
+```
+
+## Current Adapter Support
+
+| Adapter | Status |
+|---|---|
+| Dynamic axe scan | Working for any reachable web URL |
+| React static scan | Working fallback via `eslint-plugin-jsx-a11y` |
+| Vue static scan | Planned adapter |
+| Angular static scan | Planned adapter |
+
+Dynamic scanning is the portable baseline: any React, Vue, Angular, Svelte,
+Next.js, Nuxt, Astro, Rails, Django, or static HTML app can be scanned if it is
+running at a URL.
+
+## Local Demo
+
+This repository also includes a React/Vite demo with intentional accessibility
+defects.
+
+```bash
+nvm use
+npm install
+npm run demo -- --port 3000
+```
+
+In another terminal:
+
+```bash
+nvm use
+node bin/cli.js check --dynamic --url http://127.0.0.1:3000 --out reports
+```

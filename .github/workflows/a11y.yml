@@ -1,0 +1,55 @@
+name: Accessibility Shift-Left
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  a11y:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Start application
+        run: npm run dev -- --host 127.0.0.1 --port 3000 &
+
+      - name: Wait for application
+        run: |
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:3000 && exit 0
+            sleep 2
+          done
+          exit 1
+
+      - name: Run accessibility checks
+        run: npx a11y-shiftleft check --dynamic --url http://127.0.0.1:3000 --out reports
+
+      - name: Upload accessibility report
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-report
+          path: reports/
+
+      - name: Comment on PR
+        if: always()
+        run: npm run post-a11y-comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
