@@ -6,6 +6,17 @@ The CLI is designed to run inside any web project. It combines dynamic axe scans
 static accessibility checks where supported, finding normalization,
 deduplication, severity triage, and CI-friendly reporting.
 
+## Why This Exists
+
+Accessibility teams already have strong tools such as axe-core, Lighthouse,
+WAVE, Pa11y, and eslint-plugin-jsx-a11y. This project is not trying to replace
+them.
+
+`a11y-shiftleft-cli` is an orchestration layer for development workflows. It
+coordinates static and dynamic checks, normalizes findings into one schema,
+deduplicates overlapping warnings, applies a consistent severity policy, and
+exports reproducible metrics for CI, PR review, and empirical evaluation.
+
 ## Architecture
 
 ```txt
@@ -107,6 +118,34 @@ This creates:
 reports/a11y-report.json
 reports/a11y-metrics.csv
 reports/a11y-comment.md
+```
+
+## Competitive Positioning
+
+| Tool | Best For | Gap This Project Targets |
+|---|---|---|
+| axe-core | Accessibility rules engine used by many integrations | Engine-level API, not a full PR metrics and orchestration workflow |
+| @axe-core/playwright | Dynamic checks inside Playwright tests | Requires test code and does not merge static findings by default |
+| Lighthouse | Quick page quality audits across performance, SEO, best practices, and accessibility | Score-oriented page audit, not static/dynamic correlation or PR dataset generation |
+| WAVE | Visual review and manual inspection support | Browser/manual workflow, not npm-first CI orchestration |
+| Pa11y | CLI accessibility scans for URLs | Strong page scanner, but not focused on static+dynamic dedupe and longitudinal metrics |
+| eslint-plugin-jsx-a11y | React JSX static accessibility linting | Static React-only layer; cannot inspect rendered DOM states |
+| wick-a11y | Cypress accessibility plugin with rich Cypress reports | Cypress-specific workflow rather than framework-agnostic CLI orchestration |
+
+## Non-Goals
+
+This project does not claim to prove full WCAG conformance. Automated tools only
+catch part of accessibility defects and should be combined with manual review and
+assistive technology testing.
+
+Current MVP non-goals:
+
+```txt
+custom AST parsers
+machine-learning triage
+browser extension
+SaaS dashboard
+legal compliance certification
 ```
 
 ## Current Adapter Support
