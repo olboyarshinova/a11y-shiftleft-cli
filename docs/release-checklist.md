@@ -12,6 +12,20 @@ npm run build:demo
 npm_config_cache=.npm-cache npm pack --dry-run
 ```
 
+## GitHub Actions
+
+The repository includes two workflows:
+
+```txt
+.github/workflows/quality.yml
+.github/workflows/a11y.yml
+```
+
+`quality.yml` should pass on pull requests and pushes to `main`.
+
+`a11y.yml` scans the intentionally broken demo app with `--fail-on none`, so it
+uploads accessibility artifacts without failing the workflow.
+
 ## Demo Verification
 
 Terminal 1:

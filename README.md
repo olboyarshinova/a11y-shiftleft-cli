@@ -123,7 +123,8 @@ npx a11y-shiftleft check \
 ```bash
 npx a11y-shiftleft ci \
   --url http://127.0.0.1:3000 \
-  --start-command "npm run dev -- --host 127.0.0.1 --port 3000"
+  --start-command "npm run dev -- --host 127.0.0.1 --port 3000" \
+  --fail-on critical
 ```
 
 This creates:

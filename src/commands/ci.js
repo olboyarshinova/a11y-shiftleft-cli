@@ -8,6 +8,7 @@ export function registerCiCommand(program) {
     .option("--cwd <dir>", "Target project directory", process.cwd())
     .option("--url <url>", "URL to scan in CI", "http://127.0.0.1:3000")
     .option("--start-command <command>", "Command that starts the app in CI", "npm run dev -- --host 127.0.0.1 --port 3000")
+    .option("--fail-on <severity>", "critical, warning, info, or none", "critical")
     .option("--force", "Overwrite existing workflow")
     .action(async (options) => {
       const cwd = path.resolve(options.cwd);
@@ -21,7 +22,8 @@ export function registerCiCommand(program) {
       await fs.mkdir(path.dirname(target), { recursive: true });
       await fs.writeFile(target, workflowTemplate({
         url: options.url,
-        startCommand: options.startCommand
+        startCommand: options.startCommand,
+        failOn: options.failOn
       }));
       console.log(`Created ${target}`);
     });
@@ -36,7 +38,7 @@ async function exists(filePath) {
   }
 }
 
-function workflowTemplate({ url, startCommand }) {
+function workflowTemplate({ url, startCommand, failOn }) {
   return `name: Accessibility Shift-Left
 
 on:
@@ -77,7 +79,7 @@ jobs:
           exit 1
 
       - name: Run accessibility checks
-        run: npx a11y-shiftleft check --dynamic --url ${url} --out reports
+        run: npx a11y-shiftleft check --dynamic --url ${url} --out reports --fail-on ${failOn}
 
       - name: Upload accessibility report
         uses: actions/upload-artifact@v4
