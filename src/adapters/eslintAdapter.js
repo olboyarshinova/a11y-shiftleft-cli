@@ -1,6 +1,7 @@
 import { ESLint } from "eslint";
 import path from "node:path";
 import jsxA11y from "eslint-plugin-jsx-a11y";
+import vue from "eslint-plugin-vue";
 
 export async function runEslintAdapter(config) {
   const patterns = config.static.include;
@@ -14,26 +15,38 @@ export async function runEslintAdapter(config) {
     const projectResults = await eslint.lintFiles(patterns);
     const projectIssues = toIssues(projectResults, config);
 
-    if (projectIssues.length > 0 || config.framework !== "react") {
+    if (projectIssues.length > 0) {
       return projectIssues;
     }
 
-    return await runReactFallbackRules(config, patterns);
+    return await runFallbackRules(config, patterns);
   } catch (error) {
     return await recoverWithFallback(config, patterns, error);
   }
 }
 
 async function recoverWithFallback(config, patterns, originalError) {
-  if (config.framework === "react" || config.framework === "auto") {
+  if (["react", "vue", "auto"].includes(config.framework)) {
     try {
-      return await runReactFallbackRules({ ...config, framework: "react" }, patterns);
+      return await runFallbackRules(config, patterns);
     } catch {
       return [adapterError(config, originalError)];
     }
   }
 
   return [adapterError(config, originalError)];
+}
+
+async function runFallbackRules(config, patterns) {
+  if (config.framework === "vue") {
+    return await runVueFallbackRules(config, patterns);
+  }
+
+  if (config.framework === "react" || config.framework === "auto") {
+    return await runReactFallbackRules({ ...config, framework: "react" }, patterns);
+  }
+
+  return [];
 }
 
 async function runReactFallbackRules(config, patterns) {
@@ -57,6 +70,30 @@ async function runReactFallbackRules(config, patterns) {
           }
         },
         rules: jsxA11y.flatConfigs.recommended.rules
+      }
+    ]
+  });
+
+  const results = await eslint.lintFiles(patterns);
+  return toIssues(results, config);
+}
+
+async function runVueFallbackRules(config, patterns) {
+  const eslint = new ESLint({
+    cwd: config.cwd,
+    overrideConfigFile: true,
+    errorOnUnmatchedPattern: false,
+    overrideConfig: [
+      ...vue.configs["flat/base"],
+      {
+        files: ["**/*.vue"],
+        plugins: {
+          vue
+        },
+        rules: {
+          "vue/html-button-has-type": "warn",
+          "vue/no-v-html": "warn"
+        }
       }
     ]
   });

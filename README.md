@@ -93,6 +93,12 @@ Run static checks where supported:
 npx a11y-shiftleft check --static --framework react --out reports
 ```
 
+Vue projects can use the basic fallback scanner too:
+
+```bash
+npx a11y-shiftleft check --static --framework vue --include "src/**/*.vue" --out reports
+```
+
 Limit static checks to specific files:
 
 ```bash
@@ -204,8 +210,8 @@ legal compliance certification
 |---|---|
 | Dynamic axe scan | Working for any reachable web URL |
 | React static scan | Working fallback via `eslint-plugin-jsx-a11y` |
-| Vue static scan | Planned adapter |
-| Angular static scan | Planned adapter |
+| Vue static scan | Basic fallback via `eslint-plugin-vue` template rules |
+| Angular static scan | Uses the target project's ESLint setup; dedicated template fallback planned |
 
 Dynamic scanning is the portable baseline: any React, Vue, Angular, Svelte,
 Next.js, Nuxt, Astro, Rails, Django, or static HTML app can be scanned if it is
