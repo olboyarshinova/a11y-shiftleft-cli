@@ -36,6 +36,10 @@ The repository includes two workflows:
 `a11y.yml` scans the intentionally broken demo app with `--fail-on none`, so it
 uploads accessibility artifacts without failing the workflow.
 
+PR comments are posted by `scripts/post-a11y-comment.js`. The script skips
+commenting when GitHub PR environment variables are missing, and it can build
+the comment from either `a11y-comment.md` or `a11y-report.json`.
+
 ## Demo Verification
 
 Terminal 1:

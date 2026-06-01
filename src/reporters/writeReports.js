@@ -63,7 +63,7 @@ function toCsv(summary) {
   ].join("\n");
 }
 
-function toMarkdown(report) {
+export function toMarkdown(report) {
   const topIssues = report.issues
     .slice(0, 10)
     .map((issue) => `- **${issue.severity}** \`${issue.ruleId}\` ${issue.file || issue.selector || ""}: ${issue.message}`)
