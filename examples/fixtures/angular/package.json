@@ -1,0 +1,8 @@
+{
+  "name": "a11y-fixture-angular",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@angular/core": "^19.0.0"
+  }
+}

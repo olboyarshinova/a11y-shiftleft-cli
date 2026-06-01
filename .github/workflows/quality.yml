@@ -26,6 +26,9 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Run fixture smoke tests
+        run: npm run test:fixtures
+
       - name: Build demo
         run: npm run build:demo
 

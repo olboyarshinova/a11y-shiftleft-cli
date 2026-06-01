@@ -159,6 +159,23 @@ reports/a11y-metrics.csv
 reports/a11y-comment.md
 ```
 
+## Reproducible Fixtures
+
+The repository includes small intentionally flawed projects under
+`examples/fixtures` for repeatable scanner validation:
+
+```txt
+examples/fixtures/react
+examples/fixtures/vue
+examples/fixtures/angular
+```
+
+Run the fixture smoke test:
+
+```bash
+npm run test:fixtures
+```
+
 ## Metrics
 
 Each run exports machine-readable metrics for CI and empirical analysis:

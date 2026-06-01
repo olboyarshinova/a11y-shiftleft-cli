@@ -1,0 +1,8 @@
+{
+  "name": "a11y-fixture-vue",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "vue": "^3.5.0"
+  }
+}
