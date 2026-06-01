@@ -5,22 +5,24 @@ export async function detectFramework(cwd) {
   try {
     const raw = await fs.readFile(path.join(cwd, "package.json"), "utf8");
     const packageJson = JSON.parse(raw);
-    const dependencies = {
-      ...packageJson.dependencies,
-      ...packageJson.devDependencies
-    };
+    const dependencies = packageJson.dependencies || {};
+    const devDependencies = packageJson.devDependencies || {};
 
-    if (dependencies["@angular/core"] || dependencies["@angular-eslint/eslint-plugin"]) {
+    if (dependencies["@angular/core"] || devDependencies["@angular/core"]) {
       return "angular";
     }
 
-    if (dependencies.vue || dependencies["eslint-plugin-vue"]) {
+    if (dependencies.vue || devDependencies.vue) {
       return "vue";
     }
 
-    if (dependencies.react || dependencies["eslint-plugin-jsx-a11y"]) {
+    if (dependencies.react || devDependencies.react) {
       return "react";
     }
+
+    if (devDependencies["@angular-eslint/eslint-plugin"]) return "angular";
+    if (devDependencies["eslint-plugin-vue"]) return "vue";
+    if (devDependencies["eslint-plugin-jsx-a11y"]) return "react";
   } catch {
     return "unknown";
   }

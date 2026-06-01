@@ -74,10 +74,30 @@ Run a dynamic scan against the app URL:
 npx a11y-shiftleft check --dynamic --url http://127.0.0.1:3000 --out reports
 ```
 
+Write specific report formats:
+
+```bash
+npx a11y-shiftleft check \
+  --dynamic \
+  --url http://127.0.0.1:3000 \
+  --format json csv \
+  --out reports
+```
+
 Run static checks where supported:
 
 ```bash
 npx a11y-shiftleft check --static --framework react --out reports
+```
+
+Limit static checks to specific files:
+
+```bash
+npx a11y-shiftleft check \
+  --static \
+  --framework react \
+  --include "src/**/*.{js,jsx,ts,tsx}" \
+  --out reports
 ```
 
 Run both static and dynamic checks:
@@ -119,6 +139,23 @@ reports/a11y-report.json
 reports/a11y-metrics.csv
 reports/a11y-comment.md
 ```
+
+## Metrics
+
+Each run exports machine-readable metrics for CI and empirical analysis:
+
+| Metric | Meaning |
+|---|---|
+| `rawCount` | Findings before deduplication |
+| `uniqueCount` | Findings after deduplication |
+| `duplicateCount` | Removed duplicate findings |
+| `duplicateRate` | `duplicateCount / rawCount` |
+| `critical`, `warning`, `info` | Severity counts |
+| `scanDurationMs` | Runtime duration for the scan |
+| `bySource` | Finding counts by adapter, such as `axe` or `eslint` |
+| `bySeverity` | Finding counts by severity |
+| `framework` | Detected or configured framework |
+| `urls` | Dynamic scan target URLs |
 
 ## Competitive Positioning
 
@@ -178,3 +215,16 @@ In another terminal:
 nvm use
 node bin/cli.js check --dynamic --url http://127.0.0.1:3000 --out reports
 ```
+
+## Release Readiness
+
+Before publishing a public MVP, run:
+
+```bash
+npm test
+npm run build:demo
+npm_config_cache=.npm-cache npm pack --dry-run
+```
+
+See [docs/release-checklist.md](docs/release-checklist.md) for the full release
+checklist.

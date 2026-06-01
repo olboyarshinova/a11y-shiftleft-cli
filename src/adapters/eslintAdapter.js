@@ -1,4 +1,5 @@
 import { ESLint } from "eslint";
+import path from "node:path";
 import jsxA11y from "eslint-plugin-jsx-a11y";
 
 export async function runEslintAdapter(config) {
@@ -69,7 +70,7 @@ function toIssues(results, config) {
     source: "eslint",
     framework: config.framework,
     ruleId: message.ruleId || "eslint/unknown",
-    file: result.filePath,
+    file: path.relative(config.cwd, result.filePath),
     line: message.line,
     column: message.column,
     message: message.message

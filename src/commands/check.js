@@ -17,9 +17,12 @@ export function registerCheckCommand(program) {
     .option("--static", "Run static checks only")
     .option("--dynamic", "Run dynamic checks only")
     .option("--url <url>", "Target URL for dynamic scan")
+    .option("--include <patterns...>", "Static file globs to scan")
+    .option("--format <formats...>", "Report formats: json, csv, markdown, or all")
     .option("--out <dir>", "Output directory")
-    .option("--fail-on <severity>", "critical, warning, or info")
+    .option("--fail-on <severity>", "critical, warning, info, or none")
     .action(async (options) => {
+      const startedAt = Date.now();
       const config = await loadConfig({
         cwd: options.cwd,
         config: options.config
@@ -27,6 +30,9 @@ export function registerCheckCommand(program) {
         framework: options.framework,
         outputDir: options.out,
         failOn: options.failOn,
+        static: {
+          include: options.include
+        },
         dynamic: {
           enabled: options.dynamic || Boolean(options.url) ? true : undefined,
           urls: options.url ? [options.url] : undefined
@@ -58,9 +64,14 @@ export function registerCheckCommand(program) {
       const uniqueIssues = dedupeIssues(triaged);
       const report = await writeReports(effectiveConfig.outputDir, uniqueIssues, {
         framework,
+        cwd: effectiveConfig.cwd,
+        urls: runDynamic ? effectiveConfig.dynamic.urls : [],
+        scanDurationMs: Date.now() - startedAt,
         rawCount: rawIssues.length,
         uniqueCount: uniqueIssues.length,
         duplicateCount: rawIssues.length - uniqueIssues.length
+      }, {
+        formats: parseFormats(options.format)
       });
 
       console.log(JSON.stringify(report.summary, null, 2));
@@ -71,7 +82,32 @@ export function registerCheckCommand(program) {
     });
 }
 
-function shouldFail(summary, failOn = "critical") {
+export function parseFormats(formats) {
+  if (!formats || formats.length === 0) {
+    return ["json", "csv", "markdown"];
+  }
+
+  const normalized = formats
+    .flatMap((format) => format.split(","))
+    .map((format) => format.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (normalized.includes("all")) {
+    return ["json", "csv", "markdown"];
+  }
+
+  const supportedFormats = new Set(["json", "csv", "markdown"]);
+  const unsupportedFormats = normalized.filter((format) => !supportedFormats.has(format));
+
+  if (unsupportedFormats.length > 0) {
+    throw new Error(`Unsupported report format: ${unsupportedFormats.join(", ")}`);
+  }
+
+  return normalized;
+}
+
+export function shouldFail(summary, failOn = "critical") {
+  if (failOn === "none") return false;
   if (failOn === "info") return summary.info > 0 || summary.warning > 0 || summary.critical > 0;
   if (failOn === "warning") return summary.warning > 0 || summary.critical > 0;
   return summary.critical > 0;

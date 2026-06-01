@@ -3,6 +3,17 @@
   "version": "0.1.0",
   "description": "Framework-agnostic accessibility validation orchestrator for shift-left workflows.",
   "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "accessibility",
+    "a11y",
+    "wcag",
+    "axe",
+    "playwright",
+    "eslint",
+    "ci",
+    "developer-tools"
+  ],
   "bin": {
     "a11y-shiftleft": "./bin/cli.js"
   },
@@ -10,6 +21,7 @@
     "bin/",
     "src/",
     "scripts/",
+    "LICENSE",
     "README.md",
     "package.json"
   ],
