@@ -1,5 +1,8 @@
 # a11y-shiftleft-cli
 
+[![Quality](https://github.com/olboyarshinova/a11y-shiftleft-cli/actions/workflows/quality.yml/badge.svg)](https://github.com/olboyarshinova/a11y-shiftleft-cli/actions/workflows/quality.yml)
+[![Accessibility Shift-Left](https://github.com/olboyarshinova/a11y-shiftleft-cli/actions/workflows/a11y.yml/badge.svg)](https://github.com/olboyarshinova/a11y-shiftleft-cli/actions/workflows/a11y.yml)
+
 Framework-agnostic CLI orchestrator for shift-left accessibility validation.
 
 The CLI is designed to run inside any web project. It combines dynamic axe scans,
@@ -132,6 +135,15 @@ This creates:
 ```txt
 .github/workflows/a11y.yml
 ```
+
+## IDE Feedback
+
+The MVP does not include a custom IDE extension. For editor highlighting, use
+your IDE's ESLint integration with accessibility lint rules enabled. The CLI is
+the repository-level orchestration layer for CI reports, dynamic scans,
+deduplication, and metrics.
+
+See [docs/ide-integration.md](docs/ide-integration.md) for a React setup.
 
 ## Outputs
 
