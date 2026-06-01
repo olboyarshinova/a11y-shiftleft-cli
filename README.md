@@ -151,6 +151,12 @@ deduplication, and metrics.
 
 See [docs/ide-integration.md](docs/ide-integration.md) for a React setup.
 
+## Research Protocol
+
+See [docs/empirical-validation.md](docs/empirical-validation.md) for the
+baseline vs intervention study design, metrics, statistical tests, and data
+collection template.
+
 ## Outputs
 
 ```txt

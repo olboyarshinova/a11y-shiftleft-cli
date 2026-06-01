@@ -8,6 +8,7 @@ Use this checklist before publishing a public MVP release.
 nvm use
 npm install
 npm test
+npm run test:fixtures
 npm run build:demo
 npm_config_cache=.npm-cache npm pack --dry-run
 ```
@@ -90,7 +91,9 @@ The npm package should include only runtime files:
 ```txt
 bin/
 src/
-scripts/
+scripts/post-a11y-comment.js
+scripts/verify-fixtures.js
+examples/fixtures/
 docs/
 CHANGELOG.md
 README.md
@@ -106,6 +109,22 @@ reports/
 dist/
 node_modules/
 .npm-cache/
+```
+
+## Public Repository Files
+
+Before publishing, confirm these files exist:
+
+```txt
+README.md
+CHANGELOG.md
+LICENSE
+CONTRIBUTING.md
+SECURITY.md
+docs/empirical-validation.md
+docs/release-notes-v0.1.0.md
+docs/release-checklist.md
+docs/ide-integration.md
 ```
 
 ## Consumer Install Smoke Test
