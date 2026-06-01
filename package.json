@@ -23,7 +23,7 @@
     "developer-tools"
   ],
   "bin": {
-    "a11y-shiftleft": "./bin/cli.js"
+    "a11y-shiftleft": "bin/cli.js"
   },
   "files": [
     "bin/",
