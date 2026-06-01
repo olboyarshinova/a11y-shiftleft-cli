@@ -78,6 +78,45 @@ node_modules/
 .npm-cache/
 ```
 
+## Consumer Install Smoke Test
+
+Pack the CLI and install it into a clean throwaway project:
+
+```bash
+npm_config_cache=.npm-cache npm pack --pack-destination /tmp
+mkdir -p /tmp/a11y-consumer-pack-smoke
+cd /tmp/a11y-consumer-pack-smoke
+npm init -y
+npm install --save-dev /tmp/a11y-shiftleft-cli-0.1.0.tgz
+npx a11y-shiftleft init
+```
+
+Create a minimal React file with an intentional issue:
+
+```jsx
+export function App() {
+  return <img src="chart.svg" />;
+}
+```
+
+Run a static scan:
+
+```bash
+npx a11y-shiftleft check \
+  --static \
+  --framework react \
+  --include "src/**/*.{js,jsx,ts,tsx}" \
+  --out reports \
+  --fail-on none
+```
+
+Expected result:
+
+```txt
+1 warning from jsx-a11y/alt-text
+report path uses src/App.jsx, not an absolute local path
+```
+
 ## Versioning
 
 For the first public MVP:
