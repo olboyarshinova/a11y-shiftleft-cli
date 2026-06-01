@@ -19,6 +19,7 @@
   "scripts": {
     "demo": "vite --host 127.0.0.1",
     "build:demo": "vite build",
+    "test": "node --test",
     "check": "node bin/cli.js check",
     "init": "node bin/cli.js init",
     "ci": "node bin/cli.js ci",
