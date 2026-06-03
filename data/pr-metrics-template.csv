@@ -1,0 +1,1 @@
+pr_id,repo,framework,phase,opened_at,merged_at,violations_raw,violations_unique,critical,warning,info,duplicates_removed,duplicate_rate,time_to_fix_hours,false_positive_count,confirmed_issue_count,dx_score

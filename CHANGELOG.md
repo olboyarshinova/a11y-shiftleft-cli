@@ -6,6 +6,8 @@
 
 - Angular template static fallback with `@angular-eslint/eslint-plugin-template`.
 - Angular fixture smoke-test coverage.
+- PR metrics CSV template and synthetic sample dataset.
+- Metrics analysis script for baseline vs intervention summaries.
 
 ## 0.1.0 - 2026-06-03
 

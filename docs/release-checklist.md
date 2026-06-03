@@ -91,7 +91,9 @@ bin/
 src/
 scripts/post-a11y-comment.js
 scripts/verify-fixtures.js
+scripts/analyze-metrics.js
 examples/fixtures/
+data/
 docs/
 CHANGELOG.md
 README.md

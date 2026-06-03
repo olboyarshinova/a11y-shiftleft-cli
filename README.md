@@ -153,6 +153,12 @@ See [docs/empirical-validation.md](docs/empirical-validation.md) for the
 baseline vs intervention study design, metrics, statistical tests, and data
 collection template.
 
+Run the sample analysis:
+
+```bash
+npm run analyze:metrics -- data/sample-pr-metrics.csv
+```
+
 ## Outputs
 
 ```txt

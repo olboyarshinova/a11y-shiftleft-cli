@@ -31,6 +31,13 @@ Create one row per pull request:
 pr_id,repo,framework,phase,opened_at,merged_at,violations_raw,violations_unique,critical,warning,info,duplicates_removed,duplicate_rate,time_to_fix_hours,false_positive_count,confirmed_issue_count,dx_score
 ```
 
+The repository includes a blank template and a small synthetic example:
+
+```txt
+data/pr-metrics-template.csv
+data/sample-pr-metrics.csv
+```
+
 Where:
 
 | Field | Definition |
@@ -141,6 +148,22 @@ Report:
 n, mean, median, standard deviation, p-value, effect size, confidence interval
 ```
 
+The MVP analysis script reports descriptive statistics, percent change, and
+Cohen's d. P-values should be added once the study has enough real PR data for
+the selected statistical test.
+
+Run analysis against the synthetic sample:
+
+```bash
+npm run analyze:metrics -- data/sample-pr-metrics.csv
+```
+
+Run analysis against the study dataset:
+
+```bash
+npm run analyze:metrics -- data/pr-metrics-template.csv
+```
+
 ## DX Survey
 
 Ask developers to rate each statement from 1 to 5:
@@ -184,6 +207,5 @@ Run:
 npm run test:fixtures
 ```
 
-The current fixture smoke test validates React and Vue static fallback behavior.
-The Angular fixture documents the target shape for a future dedicated Angular
-template fallback.
+The current fixture smoke test validates React, Vue, and Angular static
+fallback behavior.
