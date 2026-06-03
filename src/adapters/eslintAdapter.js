@@ -1,5 +1,7 @@
 import { ESLint } from "eslint";
 import path from "node:path";
+import angularTemplate from "@angular-eslint/eslint-plugin-template";
+import templateParser from "@angular-eslint/template-parser";
 import jsxA11y from "eslint-plugin-jsx-a11y";
 import vue from "eslint-plugin-vue";
 
@@ -26,7 +28,7 @@ export async function runEslintAdapter(config) {
 }
 
 async function recoverWithFallback(config, patterns, originalError) {
-  if (["react", "vue", "auto"].includes(config.framework)) {
+  if (["react", "vue", "angular", "auto"].includes(config.framework)) {
     try {
       return await runFallbackRules(config, patterns);
     } catch {
@@ -40,6 +42,10 @@ async function recoverWithFallback(config, patterns, originalError) {
 async function runFallbackRules(config, patterns) {
   if (config.framework === "vue") {
     return await runVueFallbackRules(config, patterns);
+  }
+
+  if (config.framework === "angular") {
+    return await runAngularFallbackRules(config, patterns);
   }
 
   if (config.framework === "react" || config.framework === "auto") {
@@ -93,6 +99,32 @@ async function runVueFallbackRules(config, patterns) {
         rules: {
           "vue/html-button-has-type": "warn",
           "vue/no-v-html": "warn"
+        }
+      }
+    ]
+  });
+
+  const results = await eslint.lintFiles(patterns);
+  return toIssues(results, config);
+}
+
+async function runAngularFallbackRules(config, patterns) {
+  const eslint = new ESLint({
+    cwd: config.cwd,
+    overrideConfigFile: true,
+    errorOnUnmatchedPattern: false,
+    overrideConfig: [
+      {
+        files: ["**/*.html"],
+        languageOptions: {
+          parser: templateParser
+        },
+        plugins: {
+          "@angular-eslint/template": angularTemplate
+        },
+        rules: {
+          ...angularTemplate.configs.accessibility.rules,
+          "@angular-eslint/template/button-has-type": "warn"
         }
       }
     ]

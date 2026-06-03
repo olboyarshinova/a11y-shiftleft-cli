@@ -230,7 +230,7 @@ legal compliance certification
 | Dynamic axe scan | Working for any reachable web URL |
 | React static scan | Working fallback via `eslint-plugin-jsx-a11y` |
 | Vue static scan | Basic fallback via `eslint-plugin-vue` template rules |
-| Angular static scan | Uses the target project's ESLint setup; dedicated template fallback planned |
+| Angular static scan | Working fallback via `@angular-eslint/eslint-plugin-template` accessibility rules |
 
 Dynamic scanning is the portable baseline: any React, Vue, Angular, Svelte,
 Next.js, Nuxt, Astro, Rails, Django, or static HTML app can be scanned if it is

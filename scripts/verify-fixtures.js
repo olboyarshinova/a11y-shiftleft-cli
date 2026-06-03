@@ -21,6 +21,15 @@ const fixtures = [
     framework: "vue",
     include: "src/**/*.vue",
     expectedRules: ["vue/html-button-has-type", "vue/no-v-html"]
+  },
+  {
+    name: "angular",
+    framework: "angular",
+    include: "src/**/*.html",
+    expectedRules: [
+      "@angular-eslint/template/alt-text",
+      "@angular-eslint/template/button-has-type"
+    ]
   }
 ];
 

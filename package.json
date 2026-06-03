@@ -52,6 +52,8 @@
     "post-a11y-comment": "node scripts/post-a11y-comment.js"
   },
   "dependencies": {
+    "@angular-eslint/eslint-plugin-template": "^21.4.0",
+    "@angular-eslint/template-parser": "^21.4.0",
     "@axe-core/playwright": "^4.10.2",
     "@octokit/rest": "^21.1.1",
     "commander": "^12.1.0",
@@ -62,8 +64,8 @@
     "playwright": "^1.49.1"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.4",
     "@angular-eslint/eslint-plugin": "^19.0.2",
+    "@vitejs/plugin-react": "^4.3.4",
     "husky": "^9.1.7",
     "lint-staged": "^15.2.11",
     "react": "^19.0.0",

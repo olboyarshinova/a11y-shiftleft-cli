@@ -56,3 +56,33 @@ function save() {}
   );
   assert.equal(issues[0].file, path.join("src", "App.vue"));
 });
+
+test("runEslintAdapter reports Angular fallback template findings", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-angular-static-"));
+  await fs.mkdir(path.join(cwd, "src", "app"), { recursive: true });
+  await fs.writeFile(
+    path.join(cwd, "src", "app", "app.component.html"),
+    `<main>
+  <button (click)="save()">Save</button>
+  <img src="/avatar.png">
+</main>
+`
+  );
+
+  const issues = await runEslintAdapter({
+    cwd,
+    framework: "angular",
+    static: {
+      include: ["src/**/*.html"]
+    }
+  });
+
+  assert.deepEqual(
+    issues.map((issue) => issue.ruleId).sort(),
+    [
+      "@angular-eslint/template/alt-text",
+      "@angular-eslint/template/button-has-type"
+    ]
+  );
+  assert.equal(issues[0].file, path.join("src", "app", "app.component.html"));
+});

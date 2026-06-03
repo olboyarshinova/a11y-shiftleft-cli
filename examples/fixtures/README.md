@@ -8,7 +8,7 @@ outside its own source tree.
 |---|---|---|
 | `react` | React static fallback validation | Reports `jsx-a11y/alt-text` |
 | `vue` | Vue static fallback validation | Reports `vue/html-button-has-type` and `vue/no-v-html` |
-| `angular` | Future Angular template validation fixture | Documents expected fixture shape for the dedicated Angular fallback |
+| `angular` | Angular template fallback validation | Reports `@angular-eslint/template/alt-text` and `@angular-eslint/template/button-has-type` |
 
 Run the automated fixture smoke test from the repository root:
 

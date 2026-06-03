@@ -1,8 +1,15 @@
 # Changelog
 
-## 0.1.0 - Unreleased
+## Unreleased
 
-Initial public MVP candidate.
+### Added
+
+- Angular template static fallback with `@angular-eslint/eslint-plugin-template`.
+- Angular fixture smoke-test coverage.
+
+## 0.1.0 - 2026-06-03
+
+Initial public MVP release.
 
 ### Added
 
@@ -21,8 +28,9 @@ Initial public MVP candidate.
 
 ### Known Limitations
 
-- Vue and Angular static adapters are planned but not implemented yet.
+- Vue static checks are intentionally limited to basic template fallback rules.
+- Angular static checks rely on the target project's ESLint setup in v0.1.0.
 - Dynamic scans require the target app to already be running at a reachable URL.
 - The CLI does not certify WCAG conformance; automated checks cover only part of
   accessibility review.
-- PR comment behavior still needs end-to-end validation in GitHub Actions.
+- PR comment behavior should be validated in real pull request workflows.

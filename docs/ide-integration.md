@@ -72,9 +72,14 @@ The CLI includes a basic Vue fallback for repository-level scans:
 npx a11y-shiftleft check --static --framework vue --include "src/**/*.vue"
 ```
 
-Angular IDE feedback should come from the project's Angular ESLint setup until
-the CLI has a dedicated Angular template fallback. The current portable baseline
-for every framework is dynamic scanning with:
+Angular IDE feedback should come from the project's Angular ESLint setup. The
+CLI also includes an Angular template fallback for repository-level scans:
+
+```bash
+npx a11y-shiftleft check --static --framework angular --include "src/**/*.html"
+```
+
+The current portable baseline for every framework is dynamic scanning with:
 
 ```bash
 npx a11y-shiftleft check --dynamic --url http://127.0.0.1:3000
