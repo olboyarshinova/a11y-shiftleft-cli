@@ -2,6 +2,7 @@
 
 [![Quality](https://github.com/olboyarshinova/a11y-shiftleft-cli/actions/workflows/quality.yml/badge.svg)](https://github.com/olboyarshinova/a11y-shiftleft-cli/actions/workflows/quality.yml)
 [![Accessibility Shift-Left](https://github.com/olboyarshinova/a11y-shiftleft-cli/actions/workflows/a11y.yml/badge.svg)](https://github.com/olboyarshinova/a11y-shiftleft-cli/actions/workflows/a11y.yml)
+[![npm version](https://img.shields.io/npm/v/a11y-shiftleft-cli.svg)](https://www.npmjs.com/package/a11y-shiftleft-cli)
 
 Framework-agnostic CLI orchestrator for shift-left accessibility validation.
 
@@ -51,18 +52,13 @@ Reporters
 
 ## Use In Any Project
 
-Install the CLI in the project you want to scan:
+Install the CLI from [npm](https://www.npmjs.com/package/a11y-shiftleft-cli)
+in the project you want to scan:
 
 ```bash
 npm install --save-dev a11y-shiftleft-cli
 npx playwright install chromium
 npx a11y-shiftleft init
-```
-
-Before the package is published to npm, install it locally from this repo:
-
-```bash
-npm install --save-dev /path/to/a11y-shiftleft-cli
 ```
 
 Start your app in another terminal:

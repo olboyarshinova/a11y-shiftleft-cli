@@ -19,9 +19,7 @@ Check package metadata:
 npm view a11y-shiftleft-cli version
 ```
 
-If the package does not exist yet, npm should return a 404-style error.
-As of the v0.1.0 release preparation, the registry endpoint returned `404` for
-`a11y-shiftleft-cli`, so the package name appears available.
+For v0.1.0 and later, this should return the latest published version.
 
 ## GitHub Actions
 
@@ -129,14 +127,14 @@ docs/ide-integration.md
 
 ## Consumer Install Smoke Test
 
-Pack the CLI and install it into a clean throwaway project:
+Install the published CLI into a clean throwaway project:
 
 ```bash
-npm_config_cache=.npm-cache npm pack --pack-destination /tmp
-mkdir -p /tmp/a11y-consumer-pack-smoke
-cd /tmp/a11y-consumer-pack-smoke
+mkdir -p /tmp/a11y-consumer-smoke
+cd /tmp/a11y-consumer-smoke
 npm init -y
-npm install --save-dev /tmp/a11y-shiftleft-cli-0.1.0.tgz
+npm install --save-dev a11y-shiftleft-cli
+npx a11y-shiftleft --help
 npx a11y-shiftleft init
 ```
 
@@ -168,7 +166,7 @@ report path uses src/App.jsx, not an absolute local path
 
 ## Versioning
 
-For the first public MVP:
+For a new public release:
 
 ```bash
 npm version patch
@@ -176,7 +174,8 @@ git push origin main --tags
 npm publish --access public
 ```
 
-Only publish after verifying the package in a separate test project.
+Only publish after verifying the package locally. After publishing, repeat the
+consumer install smoke test from npm.
 
 Use [docs/release-notes-v0.1.0.md](release-notes-v0.1.0.md) as the initial
 GitHub Release body.
