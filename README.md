@@ -151,12 +151,15 @@ See [docs/ide-integration.md](docs/ide-integration.md) for a React setup.
 
 See [docs/empirical-validation.md](docs/empirical-validation.md) for the
 baseline vs intervention study design, metrics, statistical tests, and data
-collection template.
+collection template. See
+[docs/research-paper-outline.md](docs/research-paper-outline.md) for the IMRaD
+paper/capstone outline.
 
 Run the sample analysis:
 
 ```bash
 npm run analyze:metrics -- data/sample-pr-metrics.csv
+npm run analyze:metrics -- data/sample-pr-metrics.csv --out analysis/summary.json
 ```
 
 ## Outputs

@@ -158,6 +158,12 @@ Run analysis against the synthetic sample:
 npm run analyze:metrics -- data/sample-pr-metrics.csv
 ```
 
+Write the analysis summary to a JSON file:
+
+```bash
+npm run analyze:metrics -- data/sample-pr-metrics.csv --out analysis/summary.json
+```
+
 Run analysis against the study dataset:
 
 ```bash

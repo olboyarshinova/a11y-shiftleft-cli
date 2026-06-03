@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { analyzeRows } from "../../scripts/analyze-metrics.js";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { analyzeRows, writeAnalysis } from "../../scripts/analyze-metrics.js";
 
 test("analyzeRows compares baseline and intervention metrics", () => {
   const analysis = analyzeRows([
@@ -56,4 +59,21 @@ test("analyzeRows compares baseline and intervention metrics", () => {
   assert.equal(analysis.comparisons.violations_unique.intervention.mean, 3);
   assert.equal(analysis.comparisons.violations_unique.percentChange, -0.5714);
   assert.equal(analysis.comparisons.dx_score.percentChange, 0.8);
+});
+
+test("writeAnalysis writes JSON output", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-analysis-"));
+  const outputPath = path.join(outputDir, "summary.json");
+
+  await writeAnalysis(outputPath, {
+    rowCount: 1,
+    phases: {
+      baseline: 1,
+      intervention: 0
+    }
+  });
+
+  const content = JSON.parse(await fs.readFile(outputPath, "utf8"));
+  assert.equal(content.rowCount, 1);
+  assert.equal(content.phases.baseline, 1);
 });

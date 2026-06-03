@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import path from "node:path";
 import { parse } from "csv-parse/sync";
 import { pathToFileURL } from "node:url";
 
@@ -19,6 +20,11 @@ export async function analyzeMetricsFile(filePath, options = {}) {
   }).map(normalizeRow);
 
   return analyzeRows(rows, options);
+}
+
+export async function writeAnalysis(outputPath, analysis) {
+  await fs.mkdir(path.dirname(outputPath), { recursive: true });
+  await fs.writeFile(outputPath, `${JSON.stringify(analysis, null, 2)}\n`);
 }
 
 export function analyzeRows(rows, options = {}) {
@@ -167,9 +173,46 @@ function round(value) {
 }
 
 async function main() {
-  const filePath = process.argv[2] || "data/pr-metrics-template.csv";
+  const args = parseArgs(process.argv.slice(2));
+  const filePath = args.filePath || "data/pr-metrics-template.csv";
   const analysis = await analyzeMetricsFile(filePath);
-  console.log(JSON.stringify(analysis, null, 2));
+  const output = JSON.stringify(analysis, null, 2);
+
+  if (args.out) {
+    await writeAnalysis(args.out, analysis);
+    console.log(`Wrote ${args.out}`);
+    return;
+  }
+
+  console.log(output);
+}
+
+function parseArgs(args) {
+  const parsed = {
+    filePath: undefined,
+    out: undefined
+  };
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+
+    if (arg === "--out") {
+      parsed.out = args[index + 1];
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--out=")) {
+      parsed.out = arg.slice("--out=".length);
+      continue;
+    }
+
+    if (!parsed.filePath) {
+      parsed.filePath = arg;
+    }
+  }
+
+  return parsed;
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {

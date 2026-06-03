@@ -122,6 +122,7 @@ LICENSE
 CONTRIBUTING.md
 SECURITY.md
 docs/empirical-validation.md
+docs/research-paper-outline.md
 docs/release-notes-v0.1.0.md
 docs/release-checklist.md
 docs/ide-integration.md

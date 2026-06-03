@@ -8,6 +8,8 @@
 - Angular fixture smoke-test coverage.
 - PR metrics CSV template and synthetic sample dataset.
 - Metrics analysis script for baseline vs intervention summaries.
+- JSON export support for metrics analysis output.
+- IMRaD research paper outline.
 
 ## 0.1.0 - 2026-06-03
 
