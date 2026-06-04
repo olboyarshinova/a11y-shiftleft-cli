@@ -7,7 +7,7 @@ import {
   collectAdoptionMetrics,
   parseArgs,
   writeAdoptionMetrics
-} from "../../scripts/collect-adoption-metrics.js";
+} from "../../dist/scripts/collect-adoption-metrics.js";
 
 test("parseArgs supports package, repo, period, and output options", () => {
   const options = parseArgs([

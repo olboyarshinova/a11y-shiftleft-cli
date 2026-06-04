@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { analyzeRows, writeAnalysis } from "../../scripts/analyze-metrics.js";
+import { analyzeRows, writeAnalysis } from "../../dist/scripts/analyze-metrics.js";
 
 test("analyzeRows compares baseline and intervention metrics", () => {
   const analysis = analyzeRows([
