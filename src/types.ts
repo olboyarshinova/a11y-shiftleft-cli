@@ -104,6 +104,23 @@ export interface ReportMetrics {
   duplicateCount?: number;
 }
 
+export interface ManualCheckItem {
+  id: string;
+  title: string;
+  principle: PourPrinciple;
+  wcag: string[];
+  whyManual: string;
+  steps: string[];
+  evidence: string[];
+}
+
+export interface ManualChecklist {
+  generatedAt: string;
+  framework: Framework | string;
+  urls: string[];
+  items: ManualCheckItem[];
+}
+
 export interface ReportSummary {
   total: number;
   critical: number;

@@ -22,6 +22,7 @@ interface CheckOptions {
   out?: string;
   failOn?: Severity | "none";
   wcagFilter?: string;
+  semiAuto?: boolean;
 }
 
 export function registerCheckCommand(program: Command): void {
@@ -39,6 +40,7 @@ export function registerCheckCommand(program: Command): void {
     .option("--out <dir>", "Output directory")
     .option("--fail-on <severity>", "critical, warning, info, or none")
     .option("--wcag-filter <level>", "Only report findings mapped to WCAG level A, AA, or AAA")
+    .option("--semi-auto", "Generate a Markdown manual review checklist alongside automated reports")
     .action(async (options: CheckOptions) => {
       const startedAt = Date.now();
       const config = await loadConfig({
@@ -90,7 +92,8 @@ export function registerCheckCommand(program: Command): void {
         uniqueCount: uniqueIssues.length,
         duplicateCount: filtered.length - uniqueIssues.length
       }, {
-        formats: parseFormats(options.format)
+        formats: parseFormats(options.format),
+        semiAuto: Boolean(options.semiAuto)
       });
 
       console.log(JSON.stringify(report.summary, null, 2));

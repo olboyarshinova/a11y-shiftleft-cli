@@ -18,6 +18,7 @@
   Lighthouse, and stronger Vue/Angular support.
 - Adoption metrics collector for npm downloads and optional GitHub traffic
   evidence snapshots.
+- Semi-automated manual accessibility review checklist via `check --semi-auto`.
 
 ## 0.1.0 - 2026-06-03
 

@@ -123,6 +123,12 @@ Filter findings to criteria included in WCAG Level AA conformance:
 npx a11y-shiftleft check --url http://localhost:3000 --wcag-filter AA --out reports
 ```
 
+Generate a semi-automated manual review checklist alongside automated reports:
+
+```bash
+npx a11y-shiftleft check --url http://localhost:3000 --semi-auto --out reports
+```
+
 ## Scan A Different Directory
 
 Useful for monorepos or local testing:
@@ -193,7 +199,13 @@ GITHUB_TOKEN=<github-token> npm run collect:adoption -- --out analysis/adoption.
 reports/a11y-report.json
 reports/a11y-metrics.csv
 reports/a11y-comment.md
+reports/a11y-manual-checklist.md
 ```
+
+`a11y-manual-checklist.md` is only created when `--semi-auto` is used. It
+covers review areas that automated tools cannot fully validate, such as content
+clarity, logical navigation, form label quality, complex widget focus behavior,
+and screen reader smoke testing.
 
 Each normalized finding includes WCAG references where the adapter or rule map
 can identify them:

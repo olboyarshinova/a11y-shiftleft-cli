@@ -1,9 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { createManualChecklist, toManualChecklistMarkdown } from "../core/manualChecklist.js";
 import type { A11yReport, DedupedIssue, ReportFormat, ReportMetrics, ReportSummary } from "../types.js";
 
 interface WriteReportOptions {
   formats?: ReportFormat[];
+  semiAuto?: boolean;
 }
 
 type SummaryValue = string | number | string[] | Record<string, number>;
@@ -41,6 +43,19 @@ export async function writeReports(
     await fs.writeFile(
       path.join(outputDir, "a11y-comment.md"),
       toMarkdown(report)
+    );
+  }
+
+  if (options.semiAuto) {
+    const checklist = createManualChecklist({
+      framework: report.summary.framework,
+      urls: report.summary.urls,
+      issues
+    });
+
+    await fs.writeFile(
+      path.join(outputDir, "a11y-manual-checklist.md"),
+      toManualChecklistMarkdown(checklist)
     );
   }
 

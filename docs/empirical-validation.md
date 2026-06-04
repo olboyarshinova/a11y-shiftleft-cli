@@ -88,7 +88,21 @@ Collect these artifacts from every PR run:
 reports/a11y-report.json
 reports/a11y-metrics.csv
 reports/a11y-comment.md
+reports/a11y-manual-checklist.md
 ```
+
+Generate the manual review checklist during intervention PRs:
+
+```bash
+npx a11y-shiftleft check \
+  --url http://localhost:3000 \
+  --semi-auto \
+  --out reports \
+  --fail-on none
+```
+
+Use `a11y-manual-checklist.md` to record human-review evidence for issues that
+automated tools cannot reliably detect.
 
 ## Metrics
 
@@ -192,6 +206,7 @@ dx_score = average(question_1, question_2, question_3, question_4)
 - Record CLI version and commit SHA.
 - Store raw `a11y-report.json` files for every PR.
 - Store `a11y-metrics.csv` exports.
+- Store `a11y-manual-checklist.md` notes for semi-automated review PRs.
 - Store periodic `analysis/adoption.json` snapshots for npm downloads and
   GitHub traffic when available.
 - Store manual reviewer labels for false positives.

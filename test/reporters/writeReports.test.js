@@ -98,6 +98,35 @@ test("writeReports can limit output formats", async () => {
   assert.equal(await exists(path.join(outputDir, "a11y-comment.md")), false);
 });
 
+test("writeReports can generate a semi-automated manual checklist", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-semi-auto-"));
+
+  await writeReports(
+    outputDir,
+    [],
+    {
+      framework: "react",
+      urls: ["http://localhost:3000"],
+      rawCount: 0,
+      uniqueCount: 0,
+      duplicateCount: 0
+    },
+    {
+      formats: ["json"],
+      semiAuto: true
+    }
+  );
+
+  const checklist = await fs.readFile(
+    path.join(outputDir, "a11y-manual-checklist.md"),
+    "utf8"
+  );
+
+  assert.match(checklist, /Semi-Automated Accessibility Review Checklist/);
+  assert.match(checklist, /Framework: react/);
+  assert.match(checklist, /Screen reader smoke test/);
+});
+
 async function exists(filePath) {
   try {
     await fs.access(filePath);
