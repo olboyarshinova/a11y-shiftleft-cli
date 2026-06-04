@@ -142,10 +142,20 @@ export interface ReportSummary {
   byPour: Record<string, number>;
   byWcagLevel: Record<string, number>;
   byWcagVersion: Record<string, number>;
+  byPage: PageSummary[];
 }
 
 export interface A11yReport {
   generatedAt: string;
   summary: ReportSummary;
   issues: DedupedIssue[];
+}
+
+export interface PageSummary {
+  url: string;
+  total: number;
+  critical: number;
+  warning: number;
+  info: number;
+  severityScore: number;
 }

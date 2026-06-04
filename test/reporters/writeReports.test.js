@@ -25,6 +25,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
           url: "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
         }],
         selector: ".icon-button",
+        url: "http://localhost:3000/settings",
         message: "Buttons must have discernible text"
       },
       {
@@ -41,6 +42,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
           url: "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
         }],
         file: "src/App.jsx",
+        url: "http://localhost:3000/",
         message: "Image elements must have alternate text"
       }
     ],
@@ -67,6 +69,24 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.deepEqual(report.summary.byWcagVersion, {
     "2.0": 2
   });
+  assert.deepEqual(report.summary.byPage, [
+    {
+      url: "http://localhost:3000/settings",
+      total: 1,
+      critical: 1,
+      warning: 0,
+      info: 0,
+      severityScore: 5
+    },
+    {
+      url: "http://localhost:3000/",
+      total: 1,
+      critical: 0,
+      warning: 1,
+      info: 0,
+      severityScore: 2
+    }
+  ]);
 
   const json = JSON.parse(
     await fs.readFile(path.join(outputDir, "a11y-report.json"), "utf8")
@@ -79,7 +99,11 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(csv, /bySource\.axe,1/);
   assert.match(csv, /byPour\.robust,1/);
   assert.match(csv, /byWcagVersion\.2\.0,2/);
+  assert.match(csv, /byPage\.0\.url,http:\/\/localhost:3000\/settings/);
+  assert.match(csv, /byPage\.0\.severityScore,5/);
   assert.match(markdown, /Scan duration \| 123ms/);
+  assert.match(markdown, /Page Risk Ranking/);
+  assert.match(markdown, /http:\/\/localhost:3000\/settings \| 1 \| 1 \| 0 \| 0 \| 5/);
   assert.match(markdown, /WCAG versions \| 2\.0: 2/);
   assert.match(markdown, /WCAG 4\.1\.2 Name, Role, Value, Level A/);
 });

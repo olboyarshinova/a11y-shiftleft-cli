@@ -10,8 +10,7 @@ for reproducible empirical validation.
   dynamic adapters.
 - Improve Vue and Angular static coverage while continuing to rely on
   established ESLint plugins rather than custom parsers.
-- Add page-level ranking in reports so teams can identify the highest-risk
-  routes first.
+- Add remediation hints for common accessibility findings.
 
 ## Mid Term
 

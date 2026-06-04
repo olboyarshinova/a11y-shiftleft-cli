@@ -289,8 +289,13 @@ Each run exports machine-readable metrics for CI and empirical analysis:
 | `byPour` | Finding counts grouped by WCAG POUR principle |
 | `byWcagLevel` | Finding counts grouped by WCAG conformance level |
 | `byWcagVersion` | Finding counts grouped by WCAG version introduced |
+| `byPage` | Page-level ranking by total findings and severity score |
 | `framework` | Detected or configured framework |
 | `urls` | Dynamic scan target URLs, including discovered crawl URLs |
+
+When dynamic scans include URLs, reports also include a page risk ranking. The
+score weights `critical` as 5, `warning` as 2, and `info` as 1 so teams can
+prioritize the highest-risk pages first.
 
 ## Adoption Metrics
 
@@ -312,8 +317,8 @@ GitHub unique views/clones and referrers as stronger human-adoption signals.
 ## Roadmap
 
 See [docs/roadmap.md](docs/roadmap.md) for planned improvements such as
-WCAG version filtering, bounded crawling, Lighthouse score collection, and
-stronger Vue/Angular static coverage.
+Lighthouse score collection, remediation hints, and stronger Vue/Angular static
+coverage.
 
 ## Competitive Positioning
 

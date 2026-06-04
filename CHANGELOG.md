@@ -8,6 +8,7 @@
   flag `--wcag-version`.
 - Bounded same-origin crawling for dynamic scans via `--crawl`,
   `--crawl-depth`, and `--crawl-limit`.
+- Page-level risk ranking in JSON, CSV, and Markdown reports.
 
 ## 0.2.1 - 2026-06-04
 

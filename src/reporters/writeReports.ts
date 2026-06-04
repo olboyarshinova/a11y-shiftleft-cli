@@ -1,14 +1,14 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createManualChecklist, toManualChecklistMarkdown } from "../core/manualChecklist.js";
-import type { A11yReport, DedupedIssue, ReportFormat, ReportMetrics, ReportSummary } from "../types.js";
+import type { A11yReport, DedupedIssue, PageSummary, ReportFormat, ReportMetrics, ReportSummary, Severity } from "../types.js";
 
 interface WriteReportOptions {
   formats?: ReportFormat[];
   semiAuto?: boolean;
 }
 
-type SummaryValue = string | number | string[] | Record<string, number>;
+type SummaryValue = string | number | string[] | PageSummary[] | Record<string, number>;
 
 export async function writeReports(
   outputDir: string,
@@ -82,7 +82,8 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     bySeverity: countBy(issues, "severity"),
     byPour: countByPour(issues),
     byWcagLevel: countByWcagLevel(issues),
-    byWcagVersion: countByWcagVersion(issues)
+    byWcagVersion: countByWcagVersion(issues),
+    byPage: summarizePages(issues)
   };
 }
 
@@ -118,6 +119,8 @@ export function toMarkdown(report: A11yReport): string {
 | POUR | ${formatCountMap(report.summary.byPour)} |
 | WCAG levels | ${formatCountMap(report.summary.byWcagLevel)} |
 | WCAG versions | ${formatCountMap(report.summary.byWcagVersion)} |
+
+${formatPageSummary(report.summary.byPage || [])}
 
 ${topIssues || "No accessibility findings detected."}
 `;
@@ -158,6 +161,34 @@ function countByWcagVersion(items: DedupedIssue[]): Record<string, number> {
   }, {});
 }
 
+function summarizePages(items: DedupedIssue[]): PageSummary[] {
+  const pages = new Map<string, PageSummary>();
+
+  for (const item of items) {
+    if (!item.url) continue;
+
+    const page = pages.get(item.url) || {
+      url: item.url,
+      total: 0,
+      critical: 0,
+      warning: 0,
+      info: 0,
+      severityScore: 0
+    };
+
+    page.total += 1;
+    page[item.severity] += 1;
+    page.severityScore += severityWeight(item.severity);
+    pages.set(item.url, page);
+  }
+
+  return [...pages.values()].sort((a, b) => {
+    if (b.severityScore !== a.severityScore) return b.severityScore - a.severityScore;
+    if (b.total !== a.total) return b.total - a.total;
+    return a.url.localeCompare(b.url);
+  });
+}
+
 function formatCriteria(issue: DedupedIssue): string {
   if (!issue.wcagCriteria || issue.wcagCriteria.length === 0) return "";
 
@@ -173,11 +204,38 @@ function formatCountMap(counts: Record<string, number> | undefined): string {
   return entries.map(([key, value]) => `${key}: ${value}`).join(", ");
 }
 
+function formatPageSummary(pages: PageSummary[]): string {
+  if (pages.length === 0) return "No page-level findings.";
+
+  const rows = pages
+    .slice(0, 10)
+    .map((page) => `| ${page.url} | ${page.total} | ${page.critical} | ${page.warning} | ${page.info} | ${page.severityScore} |`)
+    .join("\n");
+
+  return `### Page Risk Ranking
+
+| URL | Total | Critical | Warning | Info | Score |
+|---|---:|---:|---:|---:|---:|
+${rows}`;
+}
+
 function flattenSummary(summary: ReportSummary): [string, SummaryValue][] {
   const rows: [string, SummaryValue][] = [];
 
   for (const [key, value] of Object.entries(summary)) {
     if (Array.isArray(value)) {
+      if (key === "byPage") {
+        for (const [index, page] of value.entries()) {
+          rows.push([`${key}.${index}.url`, page.url]);
+          rows.push([`${key}.${index}.total`, page.total]);
+          rows.push([`${key}.${index}.critical`, page.critical]);
+          rows.push([`${key}.${index}.warning`, page.warning]);
+          rows.push([`${key}.${index}.info`, page.info]);
+          rows.push([`${key}.${index}.severityScore`, page.severityScore]);
+        }
+        continue;
+      }
+
       rows.push([key, value.join("|")]);
       continue;
     }
@@ -207,4 +265,10 @@ function formatCsvValue(value: SummaryValue): string {
 
 function round(value: number): number {
   return Math.round(value * 10000) / 10000;
+}
+
+function severityWeight(severity: Severity): number {
+  if (severity === "critical") return 5;
+  if (severity === "warning") return 2;
+  return 1;
 }
