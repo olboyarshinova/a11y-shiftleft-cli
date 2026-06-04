@@ -79,6 +79,18 @@ Run a dynamic scan against the app URL:
 npx a11y-shiftleft check --dynamic --url http://localhost:3000 --out reports
 ```
 
+Discover and scan same-origin pages from a starting URL:
+
+```bash
+npx a11y-shiftleft check \
+  --dynamic \
+  --url http://localhost:3000 \
+  --crawl \
+  --crawl-depth 1 \
+  --crawl-limit 10 \
+  --out reports
+```
+
 Write specific report formats:
 
 ```bash
@@ -278,7 +290,7 @@ Each run exports machine-readable metrics for CI and empirical analysis:
 | `byWcagLevel` | Finding counts grouped by WCAG conformance level |
 | `byWcagVersion` | Finding counts grouped by WCAG version introduced |
 | `framework` | Detected or configured framework |
-| `urls` | Dynamic scan target URLs |
+| `urls` | Dynamic scan target URLs, including discovered crawl URLs |
 
 ## Adoption Metrics
 

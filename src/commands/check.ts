@@ -17,6 +17,9 @@ interface CheckOptions {
   static?: boolean;
   dynamic?: boolean;
   url?: string;
+  crawl?: boolean;
+  crawlDepth?: string;
+  crawlLimit?: string;
   include?: string[];
   format?: string[];
   out?: string;
@@ -36,6 +39,9 @@ export function registerCheckCommand(program: Command): void {
     .option("--static", "Run static checks only")
     .option("--dynamic", "Run dynamic checks only")
     .option("--url <url>", "Target URL for dynamic scan")
+    .option("--crawl", "Discover and scan same-origin links from dynamic URLs")
+    .option("--crawl-depth <depth>", "Maximum same-origin crawl depth", "1")
+    .option("--crawl-limit <limit>", "Maximum discovered URLs to scan", "10")
     .option("--include <patterns...>", "Static file globs to scan")
     .option("--format <formats...>", "Report formats: json, csv, markdown, or all")
     .option("--out <dir>", "Output directory")
@@ -57,13 +63,16 @@ export function registerCheckCommand(program: Command): void {
           include: options.include
         },
         dynamic: {
-          enabled: options.dynamic || Boolean(options.url) ? true : undefined,
-          urls: options.url ? [options.url] : undefined
+          enabled: options.dynamic || Boolean(options.url) || options.crawl ? true : undefined,
+          urls: options.url ? [options.url] : undefined,
+          crawl: options.crawl ? true : undefined,
+          crawlDepth: toPositiveInteger(options.crawlDepth),
+          crawlLimit: toPositiveInteger(options.crawlLimit)
         }
       });
 
       const runStatic = options.static || !options.dynamic;
-      const runDynamic = options.dynamic || Boolean(options.url);
+      const runDynamic = options.dynamic || Boolean(options.url) || Boolean(options.crawl);
       const framework = config.framework === "auto"
         ? await detectFramework(config.cwd)
         : config.framework;
@@ -203,4 +212,11 @@ function toWcagLevel(level: string | undefined): WcagLevel | undefined {
 function toWcagVersion(version: string | undefined): WcagVersion | undefined {
   if (version === "2.0" || version === "2.1" || version === "2.2") return version;
   return undefined;
+}
+
+function toPositiveInteger(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) return undefined;
+  return parsed;
 }

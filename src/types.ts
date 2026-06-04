@@ -30,6 +30,9 @@ export interface DynamicConfig {
   enabled: boolean;
   urls: string[];
   browser: "chromium";
+  crawl: boolean;
+  crawlDepth: number;
+  crawlLimit: number;
 }
 
 export interface MetricsConfig {

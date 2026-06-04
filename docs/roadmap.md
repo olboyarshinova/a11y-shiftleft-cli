@@ -10,14 +10,11 @@ for reproducible empirical validation.
   dynamic adapters.
 - Improve Vue and Angular static coverage while continuing to rely on
   established ESLint plugins rather than custom parsers.
-- Add same-origin crawling controls for multi-page dynamic scans.
+- Add page-level ranking in reports so teams can identify the highest-risk
+  routes first.
 
 ## Mid Term
 
-- Add `--crawl` for bounded same-origin URL discovery with maximum depth and
-  page limits.
-- Rank scanned pages by finding count and severity so teams can identify the
-  highest-risk routes first.
 - Add framework-specific remediation examples for common React and Vue issues.
 
 ## Later

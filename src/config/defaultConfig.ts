@@ -13,7 +13,10 @@ export const defaultConfig = {
   dynamic: {
     enabled: false,
     urls: ["http://localhost:3000"],
-    browser: "chromium"
+    browser: "chromium",
+    crawl: false,
+    crawlDepth: 1,
+    crawlLimit: 10
   },
   metrics: {
     enabled: true,
