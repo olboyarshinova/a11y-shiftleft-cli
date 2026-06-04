@@ -357,5 +357,7 @@ npm_config_cache=.npm-cache npm pack --dry-run
 See [docs/release-checklist.md](docs/release-checklist.md) for the full release
 checklist.
 
-Draft release notes are available in
-[docs/release-notes-v0.1.0.md](docs/release-notes-v0.1.0.md).
+Release notes:
+
+- [v0.2.0](docs/release-notes-v0.2.0.md)
+- [v0.1.0](docs/release-notes-v0.1.0.md)

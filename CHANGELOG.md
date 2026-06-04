@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+No unreleased changes yet.
+
+## 0.2.0 - 2026-06-04
+
 ### Added
 
 - Angular template static fallback with `@angular-eslint/eslint-plugin-template`.
@@ -19,6 +23,8 @@
 - Adoption metrics collector for npm downloads and optional GitHub traffic
   evidence snapshots.
 - Semi-automated manual accessibility review checklist via `check --semi-auto`.
+- TypeScript implementations for metrics, adoption telemetry, and PR comment
+  scripts while keeping stable JavaScript entrypoints for npm users.
 
 ## 0.1.0 - 2026-06-03
 
