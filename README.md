@@ -344,12 +344,13 @@ nvm use
 node bin/cli.js check --dynamic --url http://localhost:3000 --out reports
 ```
 
-## Release Readiness
+## Release Verification
 
-Before publishing a public MVP, run:
+For release checks, run:
 
 ```bash
 npm test
+npm run test:fixtures
 npm run build:demo
 npm_config_cache=.npm-cache npm pack --dry-run
 ```
@@ -357,7 +358,8 @@ npm_config_cache=.npm-cache npm pack --dry-run
 See [docs/release-checklist.md](docs/release-checklist.md) for the full release
 checklist.
 
-Release notes:
+Latest release:
 
 - [v0.2.0](docs/release-notes-v0.2.0.md)
-- [v0.1.0](docs/release-notes-v0.1.0.md)
+
+Earlier release notes are kept in `docs/`.
