@@ -158,9 +158,9 @@ This creates:
 
 ## IDE Feedback
 
-The MVP does not include a custom IDE extension. For editor highlighting, use
-your IDE's ESLint integration with accessibility lint rules enabled. The CLI is
-the repository-level orchestration layer for CI reports, dynamic scans,
+The package does not include a custom IDE extension. For editor highlighting,
+use your IDE's ESLint integration with accessibility lint rules enabled. The CLI
+is the repository-level orchestration layer for CI reports, dynamic scans,
 deduplication, and metrics.
 
 See [docs/ide-integration.md](docs/ide-integration.md) for a React setup.
@@ -282,8 +282,8 @@ GitHub unique views/clones and referrers as stronger human-adoption signals.
 ## Roadmap
 
 See [docs/roadmap.md](docs/roadmap.md) for planned improvements such as
-semi-automated review checklists, WCAG version filtering, bounded crawling,
-Lighthouse score collection, and stronger Vue/Angular static coverage.
+WCAG version filtering, bounded crawling, Lighthouse score collection, and
+stronger Vue/Angular static coverage.
 
 ## Competitive Positioning
 
@@ -303,7 +303,7 @@ This project does not claim to prove full WCAG conformance. Automated tools only
 catch part of accessibility defects and should be combined with manual review and
 assistive technology testing.
 
-Current MVP non-goals:
+Current non-goals:
 
 ```txt
 custom AST parsers
@@ -361,5 +361,3 @@ checklist.
 Latest release:
 
 - [v0.2.0](docs/release-notes-v0.2.0.md)
-
-Earlier release notes are kept in `docs/`.
