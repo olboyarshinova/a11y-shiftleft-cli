@@ -1,5 +1,7 @@
-export function dedupeIssues(issues) {
-  const seen = new Map();
+import type { DedupedIssue, TriagedIssue } from "../types.js";
+
+export function dedupeIssues(issues: TriagedIssue[]): DedupedIssue[] {
+  const seen = new Map<string, DedupedIssue>();
 
   for (const issue of issues) {
     const fingerprint = createFingerprint(issue);
@@ -14,6 +16,8 @@ export function dedupeIssues(issues) {
     }
 
     const existing = seen.get(fingerprint);
+    if (!existing) continue;
+
     existing.duplicateCount += 1;
     existing.sources = unique([existing.source, issue.source, ...(existing.sources || [])]);
   }
@@ -21,7 +25,7 @@ export function dedupeIssues(issues) {
   return [...seen.values()];
 }
 
-function createFingerprint(issue) {
+function createFingerprint(issue: TriagedIssue): string {
   return [
     issue.ruleId,
     issue.selector || issue.file || issue.url || "unknown-target",
@@ -29,6 +33,6 @@ function createFingerprint(issue) {
   ].join("::");
 }
 
-function unique(values) {
+function unique(values: string[]): string[] {
   return [...new Set(values.filter(Boolean))];
 }

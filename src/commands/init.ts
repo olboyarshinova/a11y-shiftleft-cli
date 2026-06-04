@@ -1,14 +1,20 @@
+import type { Command } from "commander";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { defaultConfig } from "../config/defaultConfig.js";
 
-export function registerInitCommand(program) {
+interface InitOptions {
+  cwd: string;
+  force?: boolean;
+}
+
+export function registerInitCommand(program: Command): void {
   program
     .command("init")
     .description("Create a default a11y-shiftleft config.")
     .option("--cwd <dir>", "Target project directory", process.cwd())
     .option("--force", "Overwrite existing config")
-    .action(async (options) => {
+    .action(async (options: InitOptions) => {
       const cwd = path.resolve(options.cwd);
       const target = path.join(cwd, ".a11y-shiftleft.json");
 
@@ -23,7 +29,7 @@ export function registerInitCommand(program) {
     });
 }
 
-async function exists(filePath) {
+async function exists(filePath: string): Promise<boolean> {
   try {
     await fs.access(filePath);
     return true;

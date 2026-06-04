@@ -37,7 +37,7 @@ for (const fixture of fixtures) {
   const fixtureDir = path.join(repoRoot, "examples", "fixtures", fixture.name);
   const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), `a11y-${fixture.name}-`));
 
-  await run("node", [
+  await run(process.execPath, [
     path.join(repoRoot, "bin", "cli.js"),
     "check",
     "--cwd",

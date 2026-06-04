@@ -1,5 +1,8 @@
+import type { A11yConfig } from "../types.js";
+
 export const defaultConfig = {
   framework: "auto",
+  wcagVersion: "2.2",
   wcagLevel: "AA",
   failOn: "critical",
   outputDir: "reports",
@@ -17,4 +20,4 @@ export const defaultConfig = {
     csv: true,
     json: true
   }
-};
+} satisfies Omit<A11yConfig, "cwd" | "configPath">;

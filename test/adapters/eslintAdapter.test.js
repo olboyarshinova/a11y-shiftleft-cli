@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { runEslintAdapter } from "../../src/adapters/eslintAdapter.js";
+import { runEslintAdapter } from "../../dist/adapters/eslintAdapter.js";
 
 test("runEslintAdapter reports React jsx-a11y findings with relative file paths", async () => {
   const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-react-static-"));

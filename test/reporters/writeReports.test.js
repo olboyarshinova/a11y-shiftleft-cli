@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { writeReports } from "../../src/reporters/writeReports.js";
+import { writeReports } from "../../dist/reporters/writeReports.js";
 
 test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-"));
@@ -15,6 +15,14 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
         source: "axe",
         severity: "critical",
         ruleId: "button-name",
+        wcag: ["4.1.2"],
+        wcagCriteria: [{
+          id: "4.1.2",
+          title: "Name, Role, Value",
+          level: "A",
+          principle: "robust",
+          url: "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
+        }],
         selector: ".icon-button",
         message: "Buttons must have discernible text"
       },
@@ -22,6 +30,14 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
         source: "eslint",
         severity: "warning",
         ruleId: "jsx-a11y/alt-text",
+        wcag: ["1.1.1"],
+        wcagCriteria: [{
+          id: "1.1.1",
+          title: "Non-text Content",
+          level: "A",
+          principle: "perceivable",
+          url: "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
+        }],
         file: "src/App.jsx",
         message: "Image elements must have alternate text"
       }
@@ -32,7 +48,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
       uniqueCount: 2,
       duplicateCount: 2,
       scanDurationMs: 123,
-      urls: ["http://127.0.0.1:3000"]
+      urls: ["http://localhost:3000"]
     }
   );
 
@@ -41,6 +57,10 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.deepEqual(report.summary.bySource, {
     axe: 1,
     eslint: 1
+  });
+  assert.deepEqual(report.summary.byPour, {
+    robust: 1,
+    perceivable: 1
   });
 
   const json = JSON.parse(
@@ -52,7 +72,9 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.equal(json.summary.framework, "react");
   assert.match(csv, /duplicateRate,0\.5/);
   assert.match(csv, /bySource\.axe,1/);
+  assert.match(csv, /byPour\.robust,1/);
   assert.match(markdown, /Scan duration \| 123ms/);
+  assert.match(markdown, /WCAG 4\.1\.2 Name, Role, Value, Level A/);
 });
 
 test("writeReports can limit output formats", async () => {

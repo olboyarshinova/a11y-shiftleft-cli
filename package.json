@@ -27,10 +27,13 @@
   },
   "files": [
     "bin/",
+    "dist/",
     "src/",
     "scripts/post-a11y-comment.js",
     "scripts/verify-fixtures.js",
     "scripts/analyze-metrics.js",
+    "scripts/collect-adoption-metrics.js",
+    "scripts/clean-dist.js",
     "examples/",
     "data/",
     "docs/",
@@ -43,11 +46,14 @@
     "node": ">=18"
   },
   "scripts": {
-    "demo": "vite --host 127.0.0.1",
+    "demo": "vite --host localhost",
     "build:demo": "vite build",
-    "test": "node --test",
+    "clean:dist": "node scripts/clean-dist.js",
+    "build": "npm run clean:dist && tsc",
+    "test": "npm run build && node --test",
     "test:fixtures": "node scripts/verify-fixtures.js",
     "analyze:metrics": "node scripts/analyze-metrics.js",
+    "collect:adoption": "node scripts/collect-adoption-metrics.js",
     "prepack": "npm test",
     "check": "node bin/cli.js check",
     "init": "node bin/cli.js init",
@@ -69,11 +75,13 @@
   },
   "devDependencies": {
     "@angular-eslint/eslint-plugin": "^19.0.2",
+    "@types/node": "^22.19.19",
     "@vitejs/plugin-react": "^4.3.4",
     "husky": "^9.1.7",
     "lint-staged": "^15.2.11",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "typescript": "^5.9.3",
     "vite": "^6.0.5"
   },
   "lint-staged": {

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { detectFramework } from "../../src/core/detectFramework.js";
+import { detectFramework } from "../../dist/core/detectFramework.js";
 
 test("detectFramework detects React projects", async () => {
   const cwd = await createProject({

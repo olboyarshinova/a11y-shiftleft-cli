@@ -68,7 +68,7 @@ Dynamic scan:
 ```bash
 npx a11y-shiftleft check \
   --dynamic \
-  --url http://127.0.0.1:3000 \
+  --url http://localhost:3000 \
   --out reports \
   --fail-on none
 ```
@@ -77,7 +77,7 @@ Combined scan:
 
 ```bash
 npx a11y-shiftleft check \
-  --url http://127.0.0.1:3000 \
+  --url http://localhost:3000 \
   --out reports \
   --fail-on none
 ```
@@ -192,10 +192,35 @@ dx_score = average(question_1, question_2, question_3, question_4)
 - Record CLI version and commit SHA.
 - Store raw `a11y-report.json` files for every PR.
 - Store `a11y-metrics.csv` exports.
+- Store periodic `analysis/adoption.json` snapshots for npm downloads and
+  GitHub traffic when available.
 - Store manual reviewer labels for false positives.
 - Store survey responses without personal identifiers.
 - Keep analysis scripts and generated figures in the repository.
 - Document excluded PRs and exclusion reasons.
+
+## Adoption Metrics
+
+Collect npm and GitHub adoption telemetry:
+
+```bash
+npm run collect:adoption -- --out analysis/adoption.json
+```
+
+With a GitHub token, the script also collects traffic data for repository views,
+clones, and referrers:
+
+```bash
+GITHUB_TOKEN=<github-token> npm run collect:adoption -- --out analysis/adoption.json
+```
+
+Interpretation limits:
+
+- npm download counts are not human-user counts.
+- npm public download metrics do not provide country-level geography.
+- GitHub traffic data is short-lived, so store snapshots regularly.
+- Geographic evidence should come from privacy-preserving docs or landing-page
+  analytics, not from npm download totals.
 
 ## Current Fixtures
 

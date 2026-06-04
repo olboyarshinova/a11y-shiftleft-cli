@@ -82,5 +82,5 @@ npx a11y-shiftleft check --static --framework angular --include "src/**/*.html"
 The current portable baseline for every framework is dynamic scanning with:
 
 ```bash
-npx a11y-shiftleft check --dynamic --url http://127.0.0.1:3000
+npx a11y-shiftleft check --dynamic --url http://localhost:3000
 ```

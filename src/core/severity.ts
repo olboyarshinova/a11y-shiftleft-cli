@@ -1,9 +1,11 @@
+import type { AxeImpact, NormalizedIssue, Severity, TriagedIssue } from "../types.js";
+
 const AXE_IMPACT_TO_SEVERITY = {
   critical: "critical",
   serious: "critical",
   moderate: "warning",
   minor: "info"
-};
+} satisfies Record<AxeImpact, Severity>;
 
 const CRITICAL_RULE_HINTS = [
   "color-contrast",
@@ -21,15 +23,15 @@ const WARNING_RULE_HINTS = [
   "tabindex"
 ];
 
-export function triageIssues(issues) {
+export function triageIssues(issues: NormalizedIssue[]): TriagedIssue[] {
   return issues.map((issue) => ({
     ...issue,
     severity: issue.severity || inferSeverity(issue)
   }));
 }
 
-function inferSeverity(issue) {
-  if (issue.impact && AXE_IMPACT_TO_SEVERITY[issue.impact]) {
+function inferSeverity(issue: NormalizedIssue): Severity {
+  if (isAxeImpact(issue.impact)) {
     return AXE_IMPACT_TO_SEVERITY[issue.impact];
   }
 
@@ -39,4 +41,8 @@ function inferSeverity(issue) {
   if (WARNING_RULE_HINTS.some((hint) => ruleId.includes(hint))) return "warning";
 
   return "info";
+}
+
+function isAxeImpact(impact: string | undefined): impact is AxeImpact {
+  return impact === "critical" || impact === "serious" || impact === "moderate" || impact === "minor";
 }

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { loadConfig } from "../../src/config/loadConfig.js";
+import { loadConfig } from "../../dist/config/loadConfig.js";
 
 test("loadConfig uses defaults when no config file exists", async () => {
   const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-config-default-"));
@@ -24,7 +24,7 @@ test("loadConfig deep merges file config and command overrides", async () => {
       framework: "react",
       dynamic: {
         enabled: true,
-        urls: ["http://127.0.0.1:3000"]
+        urls: ["http://localhost:3000"]
       }
     })
   );

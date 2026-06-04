@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { Octokit } from "@octokit/rest";
-import { toMarkdown } from "../src/reporters/writeReports.js";
+import { toMarkdown } from "../dist/reporters/writeReports.js";
 
 export function getPullRequestContext(env = process.env) {
   const { GITHUB_TOKEN, GITHUB_REPOSITORY, PR_NUMBER } = env;

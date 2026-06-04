@@ -10,6 +10,14 @@
 - Metrics analysis script for baseline vs intervention summaries.
 - JSON export support for metrics analysis output.
 - IMRaD research paper outline.
+- TypeScript source migration with compiled `dist/` runtime and declaration
+  files.
+- WCAG criterion metadata in reports, POUR/level summary counts, and
+  `--wcag-filter`.
+- Roadmap document for semi-automated review, WCAG version filtering, crawling,
+  Lighthouse, and stronger Vue/Angular support.
+- Adoption metrics collector for npm downloads and optional GitHub traffic
+  evidence snapshots.
 
 ## 0.1.0 - 2026-06-03
 

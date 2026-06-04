@@ -1,11 +1,15 @@
 import { ESLint } from "eslint";
+import type { Linter } from "eslint";
 import path from "node:path";
 import angularTemplate from "@angular-eslint/eslint-plugin-template";
 import templateParser from "@angular-eslint/template-parser";
 import jsxA11y from "eslint-plugin-jsx-a11y";
 import vue from "eslint-plugin-vue";
+import type { A11yConfig, Issue } from "../types.js";
 
-export async function runEslintAdapter(config) {
+const angularTemplatePlugin = angularTemplate as unknown as ESLint.Plugin;
+
+export async function runEslintAdapter(config: A11yConfig): Promise<Issue[]> {
   const patterns = config.static.include;
 
   try {
@@ -27,7 +31,7 @@ export async function runEslintAdapter(config) {
   }
 }
 
-async function recoverWithFallback(config, patterns, originalError) {
+async function recoverWithFallback(config: A11yConfig, patterns: string[], originalError: unknown): Promise<Issue[]> {
   if (["react", "vue", "angular", "auto"].includes(config.framework)) {
     try {
       return await runFallbackRules(config, patterns);
@@ -39,7 +43,7 @@ async function recoverWithFallback(config, patterns, originalError) {
   return [adapterError(config, originalError)];
 }
 
-async function runFallbackRules(config, patterns) {
+async function runFallbackRules(config: A11yConfig, patterns: string[]): Promise<Issue[]> {
   if (config.framework === "vue") {
     return await runVueFallbackRules(config, patterns);
   }
@@ -55,7 +59,7 @@ async function runFallbackRules(config, patterns) {
   return [];
 }
 
-async function runReactFallbackRules(config, patterns) {
+async function runReactFallbackRules(config: A11yConfig, patterns: string[]): Promise<Issue[]> {
   const eslint = new ESLint({
     cwd: config.cwd,
     overrideConfigFile: true,
@@ -75,7 +79,7 @@ async function runReactFallbackRules(config, patterns) {
             }
           }
         },
-        rules: jsxA11y.flatConfigs.recommended.rules
+        rules: jsxA11y.flatConfigs.recommended.rules as Linter.RulesRecord
       }
     ]
   });
@@ -84,7 +88,7 @@ async function runReactFallbackRules(config, patterns) {
   return toIssues(results, config);
 }
 
-async function runVueFallbackRules(config, patterns) {
+async function runVueFallbackRules(config: A11yConfig, patterns: string[]): Promise<Issue[]> {
   const eslint = new ESLint({
     cwd: config.cwd,
     overrideConfigFile: true,
@@ -108,7 +112,7 @@ async function runVueFallbackRules(config, patterns) {
   return toIssues(results, config);
 }
 
-async function runAngularFallbackRules(config, patterns) {
+async function runAngularFallbackRules(config: A11yConfig, patterns: string[]): Promise<Issue[]> {
   const eslint = new ESLint({
     cwd: config.cwd,
     overrideConfigFile: true,
@@ -120,12 +124,12 @@ async function runAngularFallbackRules(config, patterns) {
           parser: templateParser
         },
         plugins: {
-          "@angular-eslint/template": angularTemplate
+          "@angular-eslint/template": angularTemplatePlugin
         },
         rules: {
           ...angularTemplate.configs.accessibility.rules,
           "@angular-eslint/template/button-has-type": "warn"
-        }
+        } as Linter.RulesRecord
       }
     ]
   });
@@ -134,7 +138,7 @@ async function runAngularFallbackRules(config, patterns) {
   return toIssues(results, config);
 }
 
-function toIssues(results, config) {
+function toIssues(results: ESLint.LintResult[], config: A11yConfig): Issue[] {
   return results.flatMap((result) => result.messages.map((message) => ({
     source: "eslint",
     framework: config.framework,
@@ -146,11 +150,13 @@ function toIssues(results, config) {
   })));
 }
 
-function adapterError(config, error) {
+function adapterError(config: A11yConfig, error: unknown): Issue {
+  const message = error instanceof Error ? error.message : String(error);
+
   return {
     source: "eslint",
     framework: config.framework,
     ruleId: "adapter/eslint-error",
-    message: error.message
+    message
   };
 }

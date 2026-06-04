@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { registerInitCommand } from "../src/commands/init.js";
-import { registerCheckCommand } from "../src/commands/check.js";
-import { registerCiCommand } from "../src/commands/ci.js";
+import { registerInitCommand } from "../dist/commands/init.js";
+import { registerCheckCommand } from "../dist/commands/check.js";
+import { registerCiCommand } from "../dist/commands/ci.js";
 
 const program = new Command();
 

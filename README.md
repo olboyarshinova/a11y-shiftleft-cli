@@ -50,6 +50,12 @@ Reporters
   a11y-comment.md
 ```
 
+## Source And Runtime
+
+The project source is written in TypeScript under `src/`. The npm CLI runs the
+compiled JavaScript and declaration files from `dist/`, while `bin/cli.js`
+remains a small executable entrypoint for package consumers.
+
 ## Use In Any Project
 
 Install the CLI from [npm](https://www.npmjs.com/package/a11y-shiftleft-cli)
@@ -70,7 +76,7 @@ npm run dev
 Run a dynamic scan against the app URL:
 
 ```bash
-npx a11y-shiftleft check --dynamic --url http://127.0.0.1:3000 --out reports
+npx a11y-shiftleft check --dynamic --url http://localhost:3000 --out reports
 ```
 
 Write specific report formats:
@@ -78,7 +84,7 @@ Write specific report formats:
 ```bash
 npx a11y-shiftleft check \
   --dynamic \
-  --url http://127.0.0.1:3000 \
+  --url http://localhost:3000 \
   --format json csv \
   --out reports
 ```
@@ -108,7 +114,13 @@ npx a11y-shiftleft check \
 Run both static and dynamic checks:
 
 ```bash
-npx a11y-shiftleft check --url http://127.0.0.1:3000 --out reports
+npx a11y-shiftleft check --url http://localhost:3000 --out reports
+```
+
+Filter findings to criteria included in WCAG Level AA conformance:
+
+```bash
+npx a11y-shiftleft check --url http://localhost:3000 --wcag-filter AA --out reports
 ```
 
 ## Scan A Different Directory
@@ -119,7 +131,7 @@ Useful for monorepos or local testing:
 npx a11y-shiftleft check \
   --cwd ./apps/web \
   --dynamic \
-  --url http://127.0.0.1:3000 \
+  --url http://localhost:3000 \
   --out reports
 ```
 
@@ -127,8 +139,8 @@ npx a11y-shiftleft check \
 
 ```bash
 npx a11y-shiftleft ci \
-  --url http://127.0.0.1:3000 \
-  --start-command "npm run dev -- --host 127.0.0.1 --port 3000" \
+  --url http://localhost:3000 \
+  --start-command "npm run dev -- --host localhost --port 3000" \
   --fail-on critical
 ```
 
@@ -162,12 +174,44 @@ npm run analyze:metrics -- data/sample-pr-metrics.csv
 npm run analyze:metrics -- data/sample-pr-metrics.csv --out analysis/summary.json
 ```
 
+Collect public adoption telemetry for evidence snapshots:
+
+```bash
+npm run collect:adoption -- --out analysis/adoption.json
+```
+
+Set `GITHUB_TOKEN` to include GitHub traffic data such as views, clones, and
+referrers:
+
+```bash
+GITHUB_TOKEN=<github-token> npm run collect:adoption -- --out analysis/adoption.json
+```
+
 ## Outputs
 
 ```txt
 reports/a11y-report.json
 reports/a11y-metrics.csv
 reports/a11y-comment.md
+```
+
+Each normalized finding includes WCAG references where the adapter or rule map
+can identify them:
+
+```json
+{
+  "ruleId": "color-contrast",
+  "wcag": ["1.4.3"],
+  "wcagCriteria": [
+    {
+      "id": "1.4.3",
+      "title": "Contrast (Minimum)",
+      "level": "AA",
+      "principle": "perceivable",
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html"
+    }
+  ]
+}
 ```
 
 ## Reproducible Fixtures
@@ -201,8 +245,33 @@ Each run exports machine-readable metrics for CI and empirical analysis:
 | `scanDurationMs` | Runtime duration for the scan |
 | `bySource` | Finding counts by adapter, such as `axe` or `eslint` |
 | `bySeverity` | Finding counts by severity |
+| `byPour` | Finding counts grouped by WCAG POUR principle |
+| `byWcagLevel` | Finding counts grouped by WCAG conformance level |
 | `framework` | Detected or configured framework |
 | `urls` | Dynamic scan target URLs |
+
+## Adoption Metrics
+
+The project can collect adoption evidence snapshots for npm and GitHub:
+
+```bash
+npm run collect:adoption -- \
+  --package a11y-shiftleft-cli \
+  --repo olboyarshinova/a11y-shiftleft-cli \
+  --period last-month \
+  --out analysis/adoption.json
+```
+
+The npm downloads API reports download counts, but it does not expose country
+or person-level data. Treat npm downloads as ecosystem activity because they can
+include humans, CI systems, package mirrors, security scanners, and bots. Use
+GitHub unique views/clones and referrers as stronger human-adoption signals.
+
+## Roadmap
+
+See [docs/roadmap.md](docs/roadmap.md) for planned improvements such as
+semi-automated review checklists, WCAG version filtering, bounded crawling,
+Lighthouse score collection, and stronger Vue/Angular static coverage.
 
 ## Competitive Positioning
 
@@ -260,7 +329,7 @@ In another terminal:
 
 ```bash
 nvm use
-node bin/cli.js check --dynamic --url http://127.0.0.1:3000 --out reports
+node bin/cli.js check --dynamic --url http://localhost:3000 --out reports
 ```
 
 ## Release Readiness

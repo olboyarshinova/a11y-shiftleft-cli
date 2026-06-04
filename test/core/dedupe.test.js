@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { dedupeIssues } from "../../src/core/dedupe.js";
+import { dedupeIssues } from "../../dist/core/dedupe.js";
 
 test("dedupeIssues collapses matching rule, target, and severity", () => {
   const issues = dedupeIssues([

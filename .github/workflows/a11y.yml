@@ -32,13 +32,13 @@ jobs:
       - name: Wait for application
         run: |
           for i in {1..30}; do
-            curl -fsS http://127.0.0.1:3000 && exit 0
+            curl -fsS http://localhost:3000 && exit 0
             sleep 2
           done
           exit 1
 
       - name: Run accessibility checks
-        run: node bin/cli.js check --dynamic --url http://127.0.0.1:3000 --out reports --fail-on none
+        run: node bin/cli.js check --dynamic --url http://localhost:3000 --out reports --fail-on none
 
       - name: Upload accessibility report
         if: always()

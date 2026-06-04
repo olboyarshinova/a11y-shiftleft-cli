@@ -21,7 +21,7 @@ framework-agnostic accessibility orchestration CLI.
 npx a11y-shiftleft init
 npx a11y-shiftleft check \
   --dynamic \
-  --url http://127.0.0.1:3000 \
+  --url http://localhost:3000 \
   --out reports
 ```
 

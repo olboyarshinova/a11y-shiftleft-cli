@@ -1,9 +1,10 @@
 import { chromium } from "playwright";
-import AxeBuilder from "@axe-core/playwright";
+import { AxeBuilder } from "@axe-core/playwright";
+import type { A11yConfig, Issue } from "../types.js";
 
-export async function runAxePlaywrightAdapter(config) {
+export async function runAxePlaywrightAdapter(config: A11yConfig): Promise<Issue[]> {
   const browser = await chromium.launch();
-  const issues = [];
+  const issues: Issue[] = [];
 
   try {
     const context = await browser.newContext();
@@ -19,8 +20,8 @@ export async function runAxePlaywrightAdapter(config) {
             source: "axe",
             framework: config.framework,
             ruleId: violation.id,
-            impact: violation.impact,
-            wcag: violation.tags.filter((tag) => tag.startsWith("wcag")),
+            impact: violation.impact || undefined,
+            wcag: violation.tags.filter((tag: string) => tag.startsWith("wcag")),
             selector: node.target.join(" "),
             message: violation.help,
             url

@@ -1,3 +1,4 @@
+import type { Command } from "commander";
 import { loadConfig } from "../config/loadConfig.js";
 import { runEslintAdapter } from "../adapters/eslintAdapter.js";
 import { runAxePlaywrightAdapter } from "../adapters/axePlaywrightAdapter.js";
@@ -6,8 +7,24 @@ import { dedupeIssues } from "../core/dedupe.js";
 import { triageIssues } from "../core/severity.js";
 import { writeReports } from "../reporters/writeReports.js";
 import { detectFramework } from "../core/detectFramework.js";
+import { matchesWcagLevel } from "../core/wcagMap.js";
+import type { Framework, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel } from "../types.js";
 
-export function registerCheckCommand(program) {
+interface CheckOptions {
+  cwd: string;
+  config?: string;
+  framework?: string;
+  static?: boolean;
+  dynamic?: boolean;
+  url?: string;
+  include?: string[];
+  format?: string[];
+  out?: string;
+  failOn?: Severity | "none";
+  wcagFilter?: string;
+}
+
+export function registerCheckCommand(program: Command): void {
   program
     .command("check")
     .description("Run static and/or dynamic accessibility checks.")
@@ -21,13 +38,14 @@ export function registerCheckCommand(program) {
     .option("--format <formats...>", "Report formats: json, csv, markdown, or all")
     .option("--out <dir>", "Output directory")
     .option("--fail-on <severity>", "critical, warning, info, or none")
-    .action(async (options) => {
+    .option("--wcag-filter <level>", "Only report findings mapped to WCAG level A, AA, or AAA")
+    .action(async (options: CheckOptions) => {
       const startedAt = Date.now();
       const config = await loadConfig({
         cwd: options.cwd,
         config: options.config
       }, {
-        framework: options.framework,
+        framework: toFramework(options.framework),
         outputDir: options.out,
         failOn: options.failOn,
         static: {
@@ -61,7 +79,8 @@ export function registerCheckCommand(program) {
 
       const normalized = rawIssues.map(normalizeIssue);
       const triaged = triageIssues(normalized);
-      const uniqueIssues = dedupeIssues(triaged);
+      const filtered = filterByWcagLevel(triaged, toWcagLevel(options.wcagFilter));
+      const uniqueIssues = dedupeIssues(filtered);
       const report = await writeReports(effectiveConfig.outputDir, uniqueIssues, {
         framework,
         cwd: effectiveConfig.cwd,
@@ -69,7 +88,7 @@ export function registerCheckCommand(program) {
         scanDurationMs: Date.now() - startedAt,
         rawCount: rawIssues.length,
         uniqueCount: uniqueIssues.length,
-        duplicateCount: rawIssues.length - uniqueIssues.length
+        duplicateCount: filtered.length - uniqueIssues.length
       }, {
         formats: parseFormats(options.format)
       });
@@ -82,7 +101,13 @@ export function registerCheckCommand(program) {
     });
 }
 
-export function parseFormats(formats) {
+export function filterByWcagLevel(issues: TriagedIssue[], level?: WcagLevel): TriagedIssue[] {
+  if (!level) return issues;
+
+  return issues.filter((issue) => matchesWcagLevel(issue.wcagCriteria, level));
+}
+
+export function parseFormats(formats?: string[]): ReportFormat[] {
   if (!formats || formats.length === 0) {
     return ["json", "csv", "markdown"];
   }
@@ -103,12 +128,32 @@ export function parseFormats(formats) {
     throw new Error(`Unsupported report format: ${unsupportedFormats.join(", ")}`);
   }
 
-  return normalized;
+  return normalized as ReportFormat[];
 }
 
-export function shouldFail(summary, failOn = "critical") {
+export function shouldFail(summary: Pick<ReportSummary, "critical" | "warning" | "info">, failOn: Severity | "none" = "critical"): boolean {
   if (failOn === "none") return false;
   if (failOn === "info") return summary.info > 0 || summary.warning > 0 || summary.critical > 0;
   if (failOn === "warning") return summary.warning > 0 || summary.critical > 0;
   return summary.critical > 0;
+}
+
+function toFramework(framework: string | undefined): Framework | undefined {
+  if (
+    framework === "react" ||
+    framework === "vue" ||
+    framework === "angular" ||
+    framework === "auto" ||
+    framework === "unknown"
+  ) {
+    return framework;
+  }
+
+  return undefined;
+}
+
+function toWcagLevel(level: string | undefined): WcagLevel | undefined {
+  const normalized = level?.toUpperCase();
+  if (normalized === "A" || normalized === "AA" || normalized === "AAA") return normalized;
+  return undefined;
 }

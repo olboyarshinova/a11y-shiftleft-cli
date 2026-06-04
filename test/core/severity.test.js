@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { triageIssues } from "../../src/core/severity.js";
+import { triageIssues } from "../../dist/core/severity.js";
 
 test("triageIssues maps axe impact to severity", () => {
   const issues = triageIssues([

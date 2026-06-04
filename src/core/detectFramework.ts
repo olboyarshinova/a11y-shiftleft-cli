@@ -1,10 +1,16 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import type { Framework } from "../types.js";
 
-export async function detectFramework(cwd) {
+interface PackageJson {
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+}
+
+export async function detectFramework(cwd: string): Promise<Framework> {
   try {
     const raw = await fs.readFile(path.join(cwd, "package.json"), "utf8");
-    const packageJson = JSON.parse(raw);
+    const packageJson = JSON.parse(raw) as PackageJson;
     const dependencies = packageJson.dependencies || {};
     const devDependencies = packageJson.devDependencies || {};
 

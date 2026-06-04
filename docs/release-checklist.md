@@ -52,7 +52,7 @@ Terminal 2:
 ```bash
 node bin/cli.js check \
   --dynamic \
-  --url http://127.0.0.1:3000 \
+  --url http://localhost:3000 \
   --out reports
 ```
 
@@ -88,10 +88,13 @@ The npm package should include only runtime files:
 
 ```txt
 bin/
+dist/
 src/
 scripts/post-a11y-comment.js
 scripts/verify-fixtures.js
 scripts/analyze-metrics.js
+scripts/collect-adoption-metrics.js
+scripts/clean-dist.js
 examples/fixtures/
 data/
 docs/
@@ -106,7 +109,6 @@ The package should not include:
 ```txt
 demo/
 reports/
-dist/
 node_modules/
 .npm-cache/
 ```
@@ -123,6 +125,7 @@ CONTRIBUTING.md
 SECURITY.md
 docs/empirical-validation.md
 docs/research-paper-outline.md
+docs/roadmap.md
 docs/release-notes-v0.1.0.md
 docs/release-checklist.md
 docs/ide-integration.md

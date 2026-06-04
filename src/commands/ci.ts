@@ -1,16 +1,25 @@
+import type { Command } from "commander";
 import fs from "node:fs/promises";
 import path from "node:path";
 
-export function registerCiCommand(program) {
+interface CiOptions {
+  cwd: string;
+  url: string;
+  startCommand: string;
+  failOn: string;
+  force?: boolean;
+}
+
+export function registerCiCommand(program: Command): void {
   program
     .command("ci")
     .description("Generate GitHub Actions workflow for accessibility checks.")
     .option("--cwd <dir>", "Target project directory", process.cwd())
-    .option("--url <url>", "URL to scan in CI", "http://127.0.0.1:3000")
-    .option("--start-command <command>", "Command that starts the app in CI", "npm run dev -- --host 127.0.0.1 --port 3000")
+    .option("--url <url>", "URL to scan in CI", "http://localhost:3000")
+    .option("--start-command <command>", "Command that starts the app in CI", "npm run dev -- --host localhost --port 3000")
     .option("--fail-on <severity>", "critical, warning, info, or none", "critical")
     .option("--force", "Overwrite existing workflow")
-    .action(async (options) => {
+    .action(async (options: CiOptions) => {
       const cwd = path.resolve(options.cwd);
       const target = path.join(cwd, ".github/workflows/a11y.yml");
 
@@ -29,7 +38,7 @@ export function registerCiCommand(program) {
     });
 }
 
-async function exists(filePath) {
+async function exists(filePath: string): Promise<boolean> {
   try {
     await fs.access(filePath);
     return true;
@@ -38,7 +47,7 @@ async function exists(filePath) {
   }
 }
 
-function workflowTemplate({ url, startCommand, failOn }) {
+function workflowTemplate({ url, startCommand, failOn }: Pick<CiOptions, "url" | "startCommand" | "failOn">): string {
   return `name: Accessibility Shift-Left
 
 on:

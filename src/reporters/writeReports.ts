@@ -1,7 +1,19 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import type { A11yReport, DedupedIssue, ReportFormat, ReportMetrics, ReportSummary } from "../types.js";
 
-export async function writeReports(outputDir, issues, metrics = {}, options = {}) {
+interface WriteReportOptions {
+  formats?: ReportFormat[];
+}
+
+type SummaryValue = string | number | string[] | Record<string, number>;
+
+export async function writeReports(
+  outputDir: string,
+  issues: DedupedIssue[],
+  metrics: ReportMetrics = {},
+  options: WriteReportOptions = {}
+): Promise<A11yReport> {
   await fs.mkdir(outputDir, { recursive: true });
   const formats = new Set(options.formats || ["json", "csv", "markdown"]);
 
@@ -35,7 +47,7 @@ export async function writeReports(outputDir, issues, metrics = {}, options = {}
   return report;
 }
 
-function summarize(issues, metrics) {
+function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummary {
   const rawCount = metrics.rawCount || issues.length;
   const duplicateCount = metrics.duplicateCount || 0;
 
@@ -52,21 +64,26 @@ function summarize(issues, metrics) {
     framework: metrics.framework || "unknown",
     urls: metrics.urls || [],
     bySource: countBy(issues, "source"),
-    bySeverity: countBy(issues, "severity")
+    bySeverity: countBy(issues, "severity"),
+    byPour: countByPour(issues),
+    byWcagLevel: countByWcagLevel(issues)
   };
 }
 
-function toCsv(summary) {
+function toCsv(summary: ReportSummary): string {
   return [
     "metric,value",
     ...flattenSummary(summary).map(([key, value]) => `${key},${formatCsvValue(value)}`)
   ].join("\n");
 }
 
-export function toMarkdown(report) {
+export function toMarkdown(report: A11yReport): string {
   const topIssues = report.issues
     .slice(0, 10)
-    .map((issue) => `- **${issue.severity}** \`${issue.ruleId}\` ${issue.file || issue.selector || ""}: ${issue.message}`)
+    .map((issue) => {
+      const criteria = formatCriteria(issue);
+      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}: ${issue.message}`;
+    })
     .join("\n");
 
   return `## Accessibility Shift-Left Report
@@ -82,21 +99,56 @@ export function toMarkdown(report) {
 | Duplicate rate | ${report.summary.duplicateRate} |
 | Scan duration | ${report.summary.scanDurationMs}ms |
 | Framework | ${report.summary.framework} |
+| POUR | ${formatCountMap(report.summary.byPour)} |
+| WCAG levels | ${formatCountMap(report.summary.byWcagLevel)} |
 
 ${topIssues || "No accessibility findings detected."}
 `;
 }
 
-function countBy(items, field) {
-  return items.reduce((acc, item) => {
+function countBy(items: DedupedIssue[], field: "source" | "severity"): Record<string, number> {
+  return items.reduce<Record<string, number>>((acc, item) => {
     const key = item[field] || "unknown";
     acc[key] = (acc[key] || 0) + 1;
     return acc;
   }, {});
 }
 
-function flattenSummary(summary) {
-  const rows = [];
+function countByPour(items: DedupedIssue[]): Record<string, number> {
+  return items.reduce<Record<string, number>>((acc, item) => {
+    for (const criterion of item.wcagCriteria) {
+      acc[criterion.principle] = (acc[criterion.principle] || 0) + 1;
+    }
+    return acc;
+  }, {});
+}
+
+function countByWcagLevel(items: DedupedIssue[]): Record<string, number> {
+  return items.reduce<Record<string, number>>((acc, item) => {
+    for (const criterion of item.wcagCriteria) {
+      acc[criterion.level] = (acc[criterion.level] || 0) + 1;
+    }
+    return acc;
+  }, {});
+}
+
+function formatCriteria(issue: DedupedIssue): string {
+  if (!issue.wcagCriteria || issue.wcagCriteria.length === 0) return "";
+
+  return ` [${issue.wcagCriteria.map((criterion) => `WCAG ${criterion.id} ${criterion.title}, Level ${criterion.level}`).join("; ")}]`;
+}
+
+function formatCountMap(counts: Record<string, number> | undefined): string {
+  if (!counts) return "none";
+
+  const entries = Object.entries(counts);
+  if (entries.length === 0) return "none";
+
+  return entries.map(([key, value]) => `${key}: ${value}`).join(", ");
+}
+
+function flattenSummary(summary: ReportSummary): [string, SummaryValue][] {
+  const rows: [string, SummaryValue][] = [];
 
   for (const [key, value] of Object.entries(summary)) {
     if (Array.isArray(value)) {
@@ -106,7 +158,7 @@ function flattenSummary(summary) {
 
     if (value && typeof value === "object") {
       for (const [nestedKey, nestedValue] of Object.entries(value)) {
-        rows.push([`${key}.${nestedKey}`, nestedValue]);
+        rows.push([`${key}.${nestedKey}`, nestedValue as SummaryValue]);
       }
       continue;
     }
@@ -117,7 +169,7 @@ function flattenSummary(summary) {
   return rows;
 }
 
-function formatCsvValue(value) {
+function formatCsvValue(value: SummaryValue): string {
   const stringValue = String(value);
 
   if (!/[",\n]/.test(stringValue)) {
@@ -127,6 +179,6 @@ function formatCsvValue(value) {
   return `"${stringValue.replaceAll("\"", "\"\"")}"`;
 }
 
-function round(value) {
+function round(value: number): number {
   return Math.round(value * 10000) / 10000;
 }
