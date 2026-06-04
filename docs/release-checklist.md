@@ -108,6 +108,7 @@ The package should not include:
 
 ```txt
 demo/
+demo-dist/
 reports/
 node_modules/
 .npm-cache/
