@@ -8,13 +8,14 @@ for reproducible empirical validation.
 
 - Expand WCAG metadata for every rule currently emitted by the static and
   dynamic adapters.
+- Expand remediation hint coverage for additional axe and ESLint rules.
 - Improve Vue and Angular static coverage while continuing to rely on
   established ESLint plugins rather than custom parsers.
-- Add remediation hints for common accessibility findings.
 
 ## Mid Term
 
-- Add framework-specific remediation examples for common React and Vue issues.
+- Add deeper framework-specific remediation examples for common React, Vue, and
+  Angular issues.
 
 ## Later
 

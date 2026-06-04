@@ -21,6 +21,13 @@ export interface WcagCriterion {
   url: string;
 }
 
+export interface RemediationHint {
+  summary: string;
+  howToFix: string[];
+  docs: string[];
+  frameworkExamples?: Partial<Record<Exclude<Framework, "auto" | "unknown">, string>>;
+}
+
 export interface StaticConfig {
   enabled: boolean;
   include: string[];
@@ -74,11 +81,13 @@ export interface Issue {
   column?: number;
   url?: string;
   message?: string;
+  remediation?: RemediationHint;
 }
 
 export interface NormalizedIssue extends Required<Pick<Issue, "source" | "framework" | "ruleId" | "message">> {
   wcag: string[];
   wcagCriteria: WcagCriterion[];
+  remediation?: RemediationHint;
   severity?: Severity;
   impact?: string;
   selector?: string;

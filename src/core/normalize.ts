@@ -1,16 +1,20 @@
 import { getWcagCriteria, mapRuleToWcag, normalizeWcagReferences } from "./wcagMap.js";
+import { getRemediationHint } from "./remediation.js";
 import type { Issue, NormalizedIssue } from "../types.js";
 
 export function normalizeIssue(issue: Issue): NormalizedIssue {
   const wcag = normalizeWcagReferences(issue.wcag?.length ? issue.wcag : mapRuleToWcag(issue.ruleId));
   const wcagCriteria = issue.wcagCriteria?.length ? issue.wcagCriteria : getWcagCriteria(wcag);
+  const ruleId = issue.ruleId || "unknown-rule";
+  const framework = issue.framework || "unknown";
 
   return {
     source: issue.source || "unknown",
-    framework: issue.framework || "unknown",
-    ruleId: issue.ruleId || "unknown-rule",
+    framework,
+    ruleId,
     wcag,
     wcagCriteria,
+    remediation: issue.remediation || getRemediationHint(ruleId, wcagCriteria, framework),
     severity: issue.severity,
     impact: issue.impact,
     selector: issue.selector,

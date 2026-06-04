@@ -26,7 +26,15 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
         }],
         selector: ".icon-button",
         url: "http://localhost:3000/settings",
-        message: "Buttons must have discernible text"
+        message: "Buttons must have discernible text",
+        remediation: {
+          summary: "Give every button an accessible name.",
+          howToFix: ["Use visible button text when possible."],
+          docs: ["https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"],
+          frameworkExamples: {
+            react: "<button type=\"button\" aria-label=\"Open menu\"><MenuIcon /></button>"
+          }
+        }
       },
       {
         source: "eslint",
@@ -95,6 +103,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
 
   assert.equal(json.summary.framework, "react");
+  assert.equal(json.issues[0].remediation.summary, "Give every button an accessible name.");
   assert.match(csv, /duplicateRate,0\.5/);
   assert.match(csv, /bySource\.axe,1/);
   assert.match(csv, /byPour\.robust,1/);
@@ -106,6 +115,9 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /http:\/\/localhost:3000\/settings \| 1 \| 1 \| 0 \| 0 \| 5/);
   assert.match(markdown, /WCAG versions \| 2\.0: 2/);
   assert.match(markdown, /WCAG 4\.1\.2 Name, Role, Value, Level A/);
+  assert.match(markdown, /Fix: Give every button an accessible name/);
+  assert.match(markdown, /name-role-value/);
+  assert.match(markdown, /react example: `<button type="button" aria-label="Open menu">/);
 });
 
 test("writeReports can limit output formats", async () => {

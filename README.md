@@ -293,6 +293,11 @@ Each run exports machine-readable metrics for CI and empirical analysis:
 | `framework` | Detected or configured framework |
 | `urls` | Dynamic scan target URLs, including discovered crawl URLs |
 
+Each finding can include remediation metadata with a short fix summary,
+documentation links, and framework-specific examples for common React, Vue, and
+Angular rules. These hints are included in JSON output and surfaced in the
+Markdown PR comment for the top findings.
+
 When dynamic scans include URLs, reports also include a page risk ranking. The
 score weights `critical` as 5, `warning` as 2, and `info` as 1 so teams can
 prioritize the highest-risk pages first.
@@ -317,8 +322,8 @@ GitHub unique views/clones and referrers as stronger human-adoption signals.
 ## Roadmap
 
 See [docs/roadmap.md](docs/roadmap.md) for planned improvements such as
-Lighthouse score collection, remediation hints, and stronger Vue/Angular static
-coverage.
+Lighthouse score collection, broader remediation coverage, and stronger
+Vue/Angular static coverage.
 
 ## Competitive Positioning
 

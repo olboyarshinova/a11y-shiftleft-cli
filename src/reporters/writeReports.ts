@@ -99,7 +99,8 @@ export function toMarkdown(report: A11yReport): string {
     .slice(0, 10)
     .map((issue) => {
       const criteria = formatCriteria(issue);
-      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}: ${issue.message}`;
+      const remediation = formatRemediation(issue);
+      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}: ${issue.message}${remediation}`;
     })
     .join("\n");
 
@@ -193,6 +194,32 @@ function formatCriteria(issue: DedupedIssue): string {
   if (!issue.wcagCriteria || issue.wcagCriteria.length === 0) return "";
 
   return ` [${issue.wcagCriteria.map((criterion) => `WCAG ${criterion.id} ${criterion.title}, Level ${criterion.level}`).join("; ")}]`;
+}
+
+function formatRemediation(issue: DedupedIssue): string {
+  if (!issue.remediation) return "";
+
+  const docs = issue.remediation.docs
+    .slice(0, 2)
+    .map((url) => `<${url}>`)
+    .join(", ");
+  const example = formatFrameworkExample(issue);
+
+  return [
+    `\n  - Fix: ${issue.remediation.summary}`,
+    docs ? `\n  - Docs: ${docs}` : "",
+    example
+  ].join("");
+}
+
+function formatFrameworkExample(issue: DedupedIssue): string {
+  if (!issue.remediation?.frameworkExamples) return "";
+
+  const entries = Object.entries(issue.remediation.frameworkExamples);
+  if (entries.length === 0) return "";
+
+  const [framework, example] = entries[0];
+  return `\n  - ${framework} example: \`${example}\``;
 }
 
 function formatCountMap(counts: Record<string, number> | undefined): string {
