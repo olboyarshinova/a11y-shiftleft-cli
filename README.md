@@ -360,4 +360,4 @@ checklist.
 
 Latest release:
 
-- [v0.2.0](docs/release-notes-v0.2.0.md)
+- [v0.2.1](docs/release-notes-v0.2.1.md)

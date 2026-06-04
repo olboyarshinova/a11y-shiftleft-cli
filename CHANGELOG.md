@@ -4,6 +4,13 @@
 
 No unreleased changes yet.
 
+## 0.2.1 - 2026-06-04
+
+### Changed
+
+- Polished README release instructions and latest-release copy after publishing
+  v0.2.0.
+
 ## 0.2.0 - 2026-06-04
 
 ### Added
