@@ -7,7 +7,7 @@ import {
   buildCommentBody,
   getPullRequestContext,
   postA11yComment
-} from "../../scripts/post-a11y-comment.js";
+} from "../../dist/scripts/post-a11y-comment.js";
 
 test("getPullRequestContext returns null when GitHub env is missing", () => {
   assert.equal(getPullRequestContext({}), null);
