@@ -21,6 +21,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
           title: "Name, Role, Value",
           level: "A",
           principle: "robust",
+          introducedIn: "2.0",
           url: "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
         }],
         selector: ".icon-button",
@@ -36,6 +37,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
           title: "Non-text Content",
           level: "A",
           principle: "perceivable",
+          introducedIn: "2.0",
           url: "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
         }],
         file: "src/App.jsx",
@@ -62,6 +64,9 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
     robust: 1,
     perceivable: 1
   });
+  assert.deepEqual(report.summary.byWcagVersion, {
+    "2.0": 2
+  });
 
   const json = JSON.parse(
     await fs.readFile(path.join(outputDir, "a11y-report.json"), "utf8")
@@ -73,7 +78,9 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(csv, /duplicateRate,0\.5/);
   assert.match(csv, /bySource\.axe,1/);
   assert.match(csv, /byPour\.robust,1/);
+  assert.match(csv, /byWcagVersion\.2\.0,2/);
   assert.match(markdown, /Scan duration \| 123ms/);
+  assert.match(markdown, /WCAG versions \| 2\.0: 2/);
   assert.match(markdown, /WCAG 4\.1\.2 Name, Role, Value, Level A/);
 });
 

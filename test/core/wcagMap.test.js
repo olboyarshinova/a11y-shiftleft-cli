@@ -4,6 +4,7 @@ import {
   getWcagCriteria,
   mapRuleToWcag,
   matchesWcagLevel,
+  matchesWcagVersion,
   normalizeWcagReferences
 } from "../../dist/core/wcagMap.js";
 
@@ -29,7 +30,17 @@ test("getWcagCriteria returns title, level, principle, and documentation URL", (
   assert.equal(criterion.title, "Contrast (Minimum)");
   assert.equal(criterion.level, "AA");
   assert.equal(criterion.principle, "perceivable");
+  assert.equal(criterion.introducedIn, "2.0");
   assert.match(criterion.url, /WCAG22\/Understanding\/contrast-minimum/);
+});
+
+test("getWcagCriteria includes WCAG 2.2-only criteria", () => {
+  const [criterion] = getWcagCriteria(["2.5.8"]);
+
+  assert.equal(criterion.id, "2.5.8");
+  assert.equal(criterion.title, "Target Size (Minimum)");
+  assert.equal(criterion.level, "AA");
+  assert.equal(criterion.introducedIn, "2.2");
 });
 
 test("normalizeWcagReferences converts axe wcag tags to success criteria", () => {
@@ -45,4 +56,13 @@ test("matchesWcagLevel includes lower conformance levels", () => {
   assert.equal(matchesWcagLevel(criteria, "A"), true);
   assert.equal(matchesWcagLevel(criteria, "AA"), true);
   assert.equal(matchesWcagLevel(getWcagCriteria(["1.4.3"]), "A"), false);
+});
+
+test("matchesWcagVersion excludes criteria introduced after the selected version", () => {
+  const [wcag20Criterion] = getWcagCriteria(["1.4.3"]);
+  const [wcag22Criterion] = getWcagCriteria(["2.5.8"]);
+
+  assert.equal(matchesWcagVersion(wcag20Criterion, "2.0"), true);
+  assert.equal(matchesWcagVersion(wcag22Criterion, "2.0"), false);
+  assert.equal(matchesWcagVersion(wcag22Criterion, "2.2"), true);
 });

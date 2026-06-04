@@ -8,12 +8,9 @@ for reproducible empirical validation.
 
 - Expand WCAG metadata for every rule currently emitted by the static and
   dynamic adapters.
-- Add semi-automated review output with a Markdown manual QA checklist for
-  items automated tools cannot reliably validate.
-- Add `wcagVersion` support for `2.0`, `2.1`, and `2.2` in filtering and
-  reporting.
 - Improve Vue and Angular static coverage while continuing to rely on
   established ESLint plugins rather than custom parsers.
+- Add same-origin crawling controls for multi-page dynamic scans.
 
 ## Mid Term
 
@@ -33,5 +30,5 @@ for reproducible empirical validation.
 
 - No WCAG conformance certification claim.
 - No custom AST compiler.
-- No ML-based triage in the MVP.
+- No ML-based triage.
 - No SaaS authorization or hosted dashboard.

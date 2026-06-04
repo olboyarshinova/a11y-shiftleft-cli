@@ -81,7 +81,8 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     bySource: countBy(issues, "source"),
     bySeverity: countBy(issues, "severity"),
     byPour: countByPour(issues),
-    byWcagLevel: countByWcagLevel(issues)
+    byWcagLevel: countByWcagLevel(issues),
+    byWcagVersion: countByWcagVersion(issues)
   };
 }
 
@@ -116,6 +117,7 @@ export function toMarkdown(report: A11yReport): string {
 | Framework | ${report.summary.framework} |
 | POUR | ${formatCountMap(report.summary.byPour)} |
 | WCAG levels | ${formatCountMap(report.summary.byWcagLevel)} |
+| WCAG versions | ${formatCountMap(report.summary.byWcagVersion)} |
 
 ${topIssues || "No accessibility findings detected."}
 `;
@@ -142,6 +144,15 @@ function countByWcagLevel(items: DedupedIssue[]): Record<string, number> {
   return items.reduce<Record<string, number>>((acc, item) => {
     for (const criterion of item.wcagCriteria) {
       acc[criterion.level] = (acc[criterion.level] || 0) + 1;
+    }
+    return acc;
+  }, {});
+}
+
+function countByWcagVersion(items: DedupedIssue[]): Record<string, number> {
+  return items.reduce<Record<string, number>>((acc, item) => {
+    for (const criterion of item.wcagCriteria) {
+      acc[criterion.introducedIn] = (acc[criterion.introducedIn] || 0) + 1;
     }
     return acc;
   }, {});

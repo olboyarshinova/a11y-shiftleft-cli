@@ -7,8 +7,8 @@ import { dedupeIssues } from "../core/dedupe.js";
 import { triageIssues } from "../core/severity.js";
 import { writeReports } from "../reporters/writeReports.js";
 import { detectFramework } from "../core/detectFramework.js";
-import { matchesWcagLevel } from "../core/wcagMap.js";
-import type { Framework, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel } from "../types.js";
+import { matchesWcagLevel, matchesWcagVersion } from "../core/wcagMap.js";
+import type { Framework, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel, WcagVersion } from "../types.js";
 
 interface CheckOptions {
   cwd: string;
@@ -22,6 +22,7 @@ interface CheckOptions {
   out?: string;
   failOn?: Severity | "none";
   wcagFilter?: string;
+  wcagVersion?: string;
   semiAuto?: boolean;
 }
 
@@ -40,6 +41,7 @@ export function registerCheckCommand(program: Command): void {
     .option("--out <dir>", "Output directory")
     .option("--fail-on <severity>", "critical, warning, info, or none")
     .option("--wcag-filter <level>", "Only report findings mapped to WCAG level A, AA, or AAA")
+    .option("--wcag-version <version>", "Limit mapped findings to WCAG version 2.0, 2.1, or 2.2")
     .option("--semi-auto", "Generate a Markdown manual review checklist alongside automated reports")
     .action(async (options: CheckOptions) => {
       const startedAt = Date.now();
@@ -49,6 +51,7 @@ export function registerCheckCommand(program: Command): void {
       }, {
         framework: toFramework(options.framework),
         outputDir: options.out,
+        wcagVersion: toWcagVersion(options.wcagVersion),
         failOn: options.failOn,
         static: {
           include: options.include
@@ -81,7 +84,10 @@ export function registerCheckCommand(program: Command): void {
 
       const normalized = rawIssues.map(normalizeIssue);
       const triaged = triageIssues(normalized);
-      const filtered = filterByWcagLevel(triaged, toWcagLevel(options.wcagFilter));
+      const filtered = filterByWcagConformance(triaged, {
+        level: toWcagLevel(options.wcagFilter),
+        version: effectiveConfig.wcagVersion
+      });
       const uniqueIssues = dedupeIssues(filtered);
       const report = await writeReports(effectiveConfig.outputDir, uniqueIssues, {
         framework,
@@ -105,9 +111,42 @@ export function registerCheckCommand(program: Command): void {
 }
 
 export function filterByWcagLevel(issues: TriagedIssue[], level?: WcagLevel): TriagedIssue[] {
-  if (!level) return issues;
+  return filterByWcagConformance(issues, { level });
+}
 
-  return issues.filter((issue) => matchesWcagLevel(issue.wcagCriteria, level));
+export function filterByWcagConformance(
+  issues: TriagedIssue[],
+  options: {
+    level?: WcagLevel;
+    version?: WcagVersion;
+  } = {}
+): TriagedIssue[] {
+  if (!options.level && !options.version) return issues;
+
+  return issues.flatMap((issue) => {
+    if (issue.wcagCriteria.length === 0) {
+      return options.level ? [] : [issue];
+    }
+
+    const criteria = issue.wcagCriteria.filter((criterion) => {
+      const matchesLevel = options.level
+        ? matchesWcagLevel([criterion], options.level)
+        : true;
+      const matchesVersion = options.version
+        ? matchesWcagVersion(criterion, options.version)
+        : true;
+
+      return matchesLevel && matchesVersion;
+    });
+
+    if (criteria.length === 0) return [];
+
+    return [{
+      ...issue,
+      wcag: criteria.map((criterion) => criterion.id),
+      wcagCriteria: criteria
+    }];
+  });
 }
 
 export function parseFormats(formats?: string[]): ReportFormat[] {
@@ -158,5 +197,10 @@ function toFramework(framework: string | undefined): Framework | undefined {
 function toWcagLevel(level: string | undefined): WcagLevel | undefined {
   const normalized = level?.toUpperCase();
   if (normalized === "A" || normalized === "AA" || normalized === "AAA") return normalized;
+  return undefined;
+}
+
+function toWcagVersion(version: string | undefined): WcagVersion | undefined {
+  if (version === "2.0" || version === "2.1" || version === "2.2") return version;
   return undefined;
 }

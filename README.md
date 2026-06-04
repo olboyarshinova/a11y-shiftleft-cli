@@ -123,6 +123,12 @@ Filter findings to criteria included in WCAG Level AA conformance:
 npx a11y-shiftleft check --url http://localhost:3000 --wcag-filter AA --out reports
 ```
 
+Limit mapped findings to a specific WCAG version:
+
+```bash
+npx a11y-shiftleft check --url http://localhost:3000 --wcag-version 2.0 --out reports
+```
+
 Generate a semi-automated manual review checklist alongside automated reports:
 
 ```bash
@@ -220,9 +226,20 @@ can identify them:
       "title": "Contrast (Minimum)",
       "level": "AA",
       "principle": "perceivable",
+      "introducedIn": "2.0",
       "url": "https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html"
     }
   ]
+}
+```
+
+Set `wcagVersion` in `.a11y-shiftleft.json` to keep mapped findings aligned
+with the standard version your team targets:
+
+```json
+{
+  "wcagVersion": "2.2",
+  "wcagLevel": "AA"
 }
 ```
 
@@ -259,6 +276,7 @@ Each run exports machine-readable metrics for CI and empirical analysis:
 | `bySeverity` | Finding counts by severity |
 | `byPour` | Finding counts grouped by WCAG POUR principle |
 | `byWcagLevel` | Finding counts grouped by WCAG conformance level |
+| `byWcagVersion` | Finding counts grouped by WCAG version introduced |
 | `framework` | Detected or configured framework |
 | `urls` | Dynamic scan target URLs |
 

@@ -17,6 +17,7 @@ export interface WcagCriterion {
   title: string;
   level: WcagLevel;
   principle: PourPrinciple;
+  introducedIn: WcagVersion;
   url: string;
 }
 
@@ -137,6 +138,7 @@ export interface ReportSummary {
   bySeverity: Record<string, number>;
   byPour: Record<string, number>;
   byWcagLevel: Record<string, number>;
+  byWcagVersion: Record<string, number>;
 }
 
 export interface A11yReport {

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { filterByWcagLevel, parseFormats, shouldFail } from "../../dist/commands/check.js";
+import { filterByWcagConformance, filterByWcagLevel, parseFormats, shouldFail } from "../../dist/commands/check.js";
 
 const summary = {
   critical: 1,
@@ -45,6 +45,7 @@ test("filterByWcagLevel keeps findings up to the selected conformance level", ()
         title: "Non-text Content",
         level: "A",
         principle: "perceivable",
+        introducedIn: "2.0",
         url: "https://example.com"
       }],
       severity: "warning",
@@ -60,6 +61,7 @@ test("filterByWcagLevel keeps findings up to the selected conformance level", ()
         title: "Contrast (Minimum)",
         level: "AA",
         principle: "perceivable",
+        introducedIn: "2.0",
         url: "https://example.com"
       }],
       severity: "critical",
@@ -68,4 +70,45 @@ test("filterByWcagLevel keeps findings up to the selected conformance level", ()
   ], "A");
 
   assert.deepEqual(issues.map((issue) => issue.ruleId), ["image-alt"]);
+});
+
+test("filterByWcagConformance filters criteria by selected WCAG version", () => {
+  const issues = filterByWcagConformance([
+    {
+      source: "axe",
+      framework: "react",
+      ruleId: "color-contrast",
+      wcag: ["1.4.3"],
+      wcagCriteria: [{
+        id: "1.4.3",
+        title: "Contrast (Minimum)",
+        level: "AA",
+        principle: "perceivable",
+        introducedIn: "2.0",
+        url: "https://example.com"
+      }],
+      severity: "critical",
+      message: "Text needs more contrast"
+    },
+    {
+      source: "axe",
+      framework: "react",
+      ruleId: "target-size",
+      wcag: ["2.5.8"],
+      wcagCriteria: [{
+        id: "2.5.8",
+        title: "Target Size (Minimum)",
+        level: "AA",
+        principle: "operable",
+        introducedIn: "2.2",
+        url: "https://example.com"
+      }],
+      severity: "warning",
+      message: "Target is too small"
+    }
+  ], {
+    version: "2.0"
+  });
+
+  assert.deepEqual(issues.map((issue) => issue.ruleId), ["color-contrast"]);
 });
