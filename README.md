@@ -79,6 +79,45 @@ Run a dynamic scan against the app URL:
 npx a11y-shiftleft check --dynamic --url http://localhost:3000 --out reports
 ```
 
+Scan several known routes in one run:
+
+```bash
+npx a11y-shiftleft check \
+  --dynamic \
+  --url http://localhost:3000 http://localhost:3000/favorites http://localhost:3000/settings \
+  --out reports
+```
+
+You can also separate URLs with commas:
+
+```bash
+npx a11y-shiftleft check \
+  --dynamic \
+  --url http://localhost:3000,http://localhost:3000/favorites,http://localhost:3000/settings \
+  --out reports
+```
+
+For repeated project scans, store routes in `.a11y-shiftleft.json`:
+
+```json
+{
+  "dynamic": {
+    "enabled": true,
+    "urls": [
+      "http://localhost:3000",
+      "http://localhost:3000/favorites",
+      "http://localhost:3000/settings"
+    ]
+  }
+}
+```
+
+Then run:
+
+```bash
+npx a11y-shiftleft check --dynamic --out reports
+```
+
 Discover and scan same-origin pages from a starting URL:
 
 ```bash

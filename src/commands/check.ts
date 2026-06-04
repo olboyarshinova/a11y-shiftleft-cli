@@ -16,7 +16,7 @@ interface CheckOptions {
   framework?: string;
   static?: boolean;
   dynamic?: boolean;
-  url?: string;
+  url?: string[];
   crawl?: boolean;
   crawlDepth?: string;
   crawlLimit?: string;
@@ -38,7 +38,7 @@ export function registerCheckCommand(program: Command): void {
     .option("--framework <name>", "react, vue, angular, or auto")
     .option("--static", "Run static checks only")
     .option("--dynamic", "Run dynamic checks only")
-    .option("--url <url>", "Target URL for dynamic scan")
+    .option("--url <urls...>", "Target URL(s) for dynamic scan")
     .option("--crawl", "Discover and scan same-origin links from dynamic URLs")
     .option("--crawl-depth <depth>", "Maximum same-origin crawl depth", "1")
     .option("--crawl-limit <limit>", "Maximum discovered URLs to scan", "10")
@@ -51,6 +51,7 @@ export function registerCheckCommand(program: Command): void {
     .option("--semi-auto", "Generate a Markdown manual review checklist alongside automated reports")
     .action(async (options: CheckOptions) => {
       const startedAt = Date.now();
+      const urls = parseUrls(options.url);
       const config = await loadConfig({
         cwd: options.cwd,
         config: options.config
@@ -63,8 +64,8 @@ export function registerCheckCommand(program: Command): void {
           include: options.include
         },
         dynamic: {
-          enabled: options.dynamic || Boolean(options.url) || options.crawl ? true : undefined,
-          urls: options.url ? [options.url] : undefined,
+          enabled: options.dynamic || urls.length > 0 || options.crawl ? true : undefined,
+          urls: urls.length > 0 ? urls : undefined,
           crawl: options.crawl ? true : undefined,
           crawlDepth: toPositiveInteger(options.crawlDepth),
           crawlLimit: toPositiveInteger(options.crawlLimit)
@@ -72,7 +73,7 @@ export function registerCheckCommand(program: Command): void {
       });
 
       const runStatic = options.static || !options.dynamic;
-      const runDynamic = options.dynamic || Boolean(options.url) || Boolean(options.crawl);
+      const runDynamic = options.dynamic || urls.length > 0 || Boolean(options.crawl) || config.dynamic.enabled;
       const framework = config.framework === "auto"
         ? await detectFramework(config.cwd)
         : config.framework;
@@ -180,6 +181,15 @@ export function parseFormats(formats?: string[]): ReportFormat[] {
   }
 
   return normalized as ReportFormat[];
+}
+
+export function parseUrls(urls?: string[]): string[] {
+  if (!urls || urls.length === 0) return [];
+
+  return [...new Set(urls
+    .flatMap((url) => url.split(","))
+    .map((url) => url.trim())
+    .filter(Boolean))];
 }
 
 export function shouldFail(summary: Pick<ReportSummary, "critical" | "warning" | "info">, failOn: Severity | "none" = "critical"): boolean {

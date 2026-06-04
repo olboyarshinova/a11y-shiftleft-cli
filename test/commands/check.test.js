@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { filterByWcagConformance, filterByWcagLevel, parseFormats, shouldFail } from "../../dist/commands/check.js";
+import { filterByWcagConformance, filterByWcagLevel, parseFormats, parseUrls, shouldFail } from "../../dist/commands/check.js";
 
 const summary = {
   critical: 1,
@@ -31,6 +31,22 @@ test("parseFormats supports space and comma separated formats", () => {
 
 test("parseFormats rejects unsupported formats", () => {
   assert.throws(() => parseFormats(["xml"]), /Unsupported report format: xml/);
+});
+
+test("parseUrls supports repeated and comma separated URLs", () => {
+  assert.deepEqual(parseUrls(), []);
+  assert.deepEqual(
+    parseUrls([
+      "http://localhost:4200",
+      "http://localhost:4200/favorites,http://localhost:4200/settings",
+      "http://localhost:4200"
+    ]),
+    [
+      "http://localhost:4200",
+      "http://localhost:4200/favorites",
+      "http://localhost:4200/settings"
+    ]
+  );
 });
 
 test("filterByWcagLevel keeps findings up to the selected conformance level", () => {

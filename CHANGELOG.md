@@ -13,6 +13,8 @@
   frequently emitted accessibility rules.
 - Axe tags and unmapped-rule summaries for best-practice checks that do not map
   directly to WCAG criteria.
+- Multi-URL dynamic scans via repeated, space-separated, or comma-separated
+  `--url` values.
 
 ## 0.2.1 - 2026-06-04
 
