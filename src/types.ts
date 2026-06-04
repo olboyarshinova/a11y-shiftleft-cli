@@ -73,6 +73,7 @@ export interface Issue {
   ruleId?: string;
   wcag?: string[];
   wcagCriteria?: WcagCriterion[];
+  tags?: string[];
   severity?: Severity;
   impact?: AxeImpact | string;
   selector?: string;
@@ -87,6 +88,7 @@ export interface Issue {
 export interface NormalizedIssue extends Required<Pick<Issue, "source" | "framework" | "ruleId" | "message">> {
   wcag: string[];
   wcagCriteria: WcagCriterion[];
+  tags: string[];
   remediation?: RemediationHint;
   severity?: Severity;
   impact?: string;
@@ -151,6 +153,7 @@ export interface ReportSummary {
   byPour: Record<string, number>;
   byWcagLevel: Record<string, number>;
   byWcagVersion: Record<string, number>;
+  byUnmappedRule: Record<string, number>;
   byPage: PageSummary[];
 }
 

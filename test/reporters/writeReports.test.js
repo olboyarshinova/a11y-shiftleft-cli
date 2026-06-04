@@ -77,6 +77,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.deepEqual(report.summary.byWcagVersion, {
     "2.0": 2
   });
+  assert.deepEqual(report.summary.byUnmappedRule, {});
   assert.deepEqual(report.summary.byPage, [
     {
       url: "http://localhost:3000/settings",
@@ -118,6 +119,51 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /Fix: Give every button an accessible name/);
   assert.match(markdown, /name-role-value/);
   assert.match(markdown, /react example: `<button type="button" aria-label="Open menu">/);
+});
+
+test("writeReports summarizes rules without WCAG mappings", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-unmapped-"));
+
+  const report = await writeReports(
+    outputDir,
+    [
+      {
+        source: "axe",
+        severity: "warning",
+        ruleId: "page-has-heading-one",
+        wcag: [],
+        wcagCriteria: [],
+        tags: ["best-practice"],
+        selector: "html",
+        message: "Page should contain a level-one heading"
+      },
+      {
+        source: "eslint",
+        severity: "info",
+        ruleId: "@angular-eslint/template/button-has-type",
+        wcag: [],
+        wcagCriteria: [],
+        tags: [],
+        file: "src/app/list/list.component.html",
+        message: "Type for <button> is missing"
+      }
+    ],
+    {
+      framework: "angular",
+      rawCount: 2,
+      uniqueCount: 2,
+      duplicateCount: 0
+    }
+  );
+
+  const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+
+  assert.deepEqual(report.summary.byUnmappedRule, {
+    "page-has-heading-one": 1,
+    "@angular-eslint/template/button-has-type": 1
+  });
+  assert.match(markdown, /Rules without WCAG mapping \| page-has-heading-one: 1/);
+  assert.match(markdown, /@angular-eslint\/template\/button-has-type: 1/);
 });
 
 test("writeReports can limit output formats", async () => {

@@ -289,6 +289,7 @@ Each run exports machine-readable metrics for CI and empirical analysis:
 | `byPour` | Finding counts grouped by WCAG POUR principle |
 | `byWcagLevel` | Finding counts grouped by WCAG conformance level |
 | `byWcagVersion` | Finding counts grouped by WCAG version introduced |
+| `byUnmappedRule` | Finding counts for useful rules that do not map directly to WCAG criteria |
 | `byPage` | Page-level ranking by total findings and severity score |
 | `framework` | Detected or configured framework |
 | `urls` | Dynamic scan target URLs, including discovered crawl URLs |
@@ -297,6 +298,11 @@ Each finding can include remediation metadata with a short fix summary,
 documentation links, and framework-specific examples for common React, Vue, and
 Angular rules. These hints are included in JSON output and surfaced in the
 Markdown PR comment for the top findings.
+
+Some axe and ESLint rules are best-practice checks rather than direct WCAG
+success-criterion mappings, such as page heading and landmark checks. The report
+keeps those findings visible under `byUnmappedRule` instead of forcing a false
+WCAG mapping.
 
 When dynamic scans include URLs, reports also include a page risk ranking. The
 score weights `critical` as 5, `warning` as 2, and `info` as 1 so teams can

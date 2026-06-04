@@ -33,9 +33,26 @@ test("normalizeIssue attaches remediation hints", () => {
     source: "axe",
     framework: "react",
     ruleId: "button-name",
+    tags: ["wcag412", "cat.name-role-value"],
     message: "Buttons must have discernible text"
   });
 
+  assert.deepEqual(issue.tags, ["wcag412", "cat.name-role-value"]);
   assert.equal(issue.remediation?.summary.includes("accessible name"), true);
   assert.equal(issue.remediation?.frameworkExamples?.react?.includes("aria-label"), true);
+});
+
+test("getRemediationHint explains page heading best-practice rules", () => {
+  const hint = getRemediationHint("page-has-heading-one", [], "angular");
+
+  assert.equal(hint?.summary.includes("h1"), true);
+  assert.equal(hint?.frameworkExamples?.angular?.includes("<h1>"), true);
+  assert.equal(hint?.docs.some((url) => url.includes("headings")), true);
+});
+
+test("getRemediationHint explains Angular button type findings", () => {
+  const hint = getRemediationHint("@angular-eslint/template/button-has-type", [], "angular");
+
+  assert.equal(hint?.summary.includes("type"), true);
+  assert.equal(hint?.frameworkExamples?.angular?.includes("type=\"button\""), true);
 });

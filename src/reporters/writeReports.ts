@@ -83,6 +83,7 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     byPour: countByPour(issues),
     byWcagLevel: countByWcagLevel(issues),
     byWcagVersion: countByWcagVersion(issues),
+    byUnmappedRule: countByUnmappedRule(issues),
     byPage: summarizePages(issues)
   };
 }
@@ -120,6 +121,7 @@ export function toMarkdown(report: A11yReport): string {
 | POUR | ${formatCountMap(report.summary.byPour)} |
 | WCAG levels | ${formatCountMap(report.summary.byWcagLevel)} |
 | WCAG versions | ${formatCountMap(report.summary.byWcagVersion)} |
+| Rules without WCAG mapping | ${formatCountMap(report.summary.byUnmappedRule)} |
 
 ${formatPageSummary(report.summary.byPage || [])}
 
@@ -158,6 +160,15 @@ function countByWcagVersion(items: DedupedIssue[]): Record<string, number> {
     for (const criterion of item.wcagCriteria) {
       acc[criterion.introducedIn] = (acc[criterion.introducedIn] || 0) + 1;
     }
+    return acc;
+  }, {});
+}
+
+function countByUnmappedRule(items: DedupedIssue[]): Record<string, number> {
+  return items.reduce<Record<string, number>>((acc, item) => {
+    if (item.wcagCriteria.length > 0) return acc;
+
+    acc[item.ruleId] = (acc[item.ruleId] || 0) + 1;
     return acc;
   }, {});
 }

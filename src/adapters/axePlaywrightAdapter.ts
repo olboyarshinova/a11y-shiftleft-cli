@@ -35,6 +35,7 @@ export async function runAxePlaywrightAdapter(config: A11yConfig): Promise<Issue
             ruleId: violation.id,
             impact: violation.impact || undefined,
             wcag: violation.tags.filter((tag: string) => tag.startsWith("wcag")),
+            tags: violation.tags,
             selector: node.target.join(" "),
             message: violation.help,
             url

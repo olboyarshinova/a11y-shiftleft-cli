@@ -14,6 +14,7 @@ export function normalizeIssue(issue: Issue): NormalizedIssue {
     ruleId,
     wcag,
     wcagCriteria,
+    tags: issue.tags || [],
     remediation: issue.remediation || getRemediationHint(ruleId, wcagCriteria, framework),
     severity: issue.severity,
     impact: issue.impact,

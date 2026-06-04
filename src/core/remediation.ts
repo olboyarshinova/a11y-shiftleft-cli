@@ -187,6 +187,67 @@ const RULE_HINTS: Record<string, RemediationHint> = {
     docs: [
       "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
     ]
+  },
+  "landmark-one-main": {
+    summary: "Add exactly one main landmark so users can jump to the primary page content.",
+    howToFix: [
+      "Wrap the page's primary content in one main element.",
+      "Do not create multiple main landmarks on the same page."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/ARIA/apg/practices/landmark-regions/",
+      "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/main"
+    ],
+    frameworkExamples: {
+      react: "<main><h1>Favorite items</h1>{children}</main>",
+      vue: "<main><h1>Favorite items</h1><slot /></main>",
+      angular: "<main><h1>Favorite items</h1><app-list /></main>"
+    }
+  },
+  "page-has-heading-one": {
+    summary: "Add a clear h1 that names the current page or route.",
+    howToFix: [
+      "Use one h1 near the start of the main content.",
+      "If the visual design cannot show it, keep an h1 available to screen readers with a visually-hidden utility class."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/tutorials/page-structure/headings/",
+      "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/Heading_Elements"
+    ],
+    frameworkExamples: {
+      react: "<main><h1>Favorite items</h1></main>",
+      vue: "<main><h1>Favorite items</h1></main>",
+      angular: "<main><h1>Favorite items</h1></main>"
+    }
+  },
+  "region": {
+    summary: "Place visible page content inside semantic landmarks.",
+    howToFix: [
+      "Wrap primary content in main and repeated navigation in nav.",
+      "Use header, footer, aside, or section with an accessible name where they match the content purpose."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/ARIA/apg/practices/landmark-regions/",
+      "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/landmark_role"
+    ],
+    frameworkExamples: {
+      react: "<main><h1>Favorite items</h1><ItemList /></main>",
+      vue: "<main><h1>Favorite items</h1><ItemList /></main>",
+      angular: "<main><h1>Favorite items</h1><app-list /></main>"
+    }
+  },
+  "@angular-eslint/template/button-has-type": {
+    summary: "Add an explicit type to every button in Angular templates.",
+    howToFix: [
+      "Use type=\"button\" for normal UI actions.",
+      "Use type=\"submit\" only for buttons that intentionally submit a form."
+    ],
+    docs: [
+      "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/button#type"
+    ],
+    frameworkExamples: {
+      angular: "<button type=\"button\" (click)=\"toggleFavorite(item)\">Favorite</button>"
+    }
   }
 };
 
