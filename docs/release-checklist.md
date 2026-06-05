@@ -176,7 +176,7 @@ report path uses src/App.jsx, not an absolute local path
 For a new public release:
 
 ```bash
-npm version patch
+npm version patch # or: npm version minor
 git push origin main --tags
 npm publish --access public
 ```
@@ -184,5 +184,4 @@ npm publish --access public
 Only publish after verifying the package locally. After publishing, repeat the
 consumer install smoke test from npm.
 
-Use [docs/release-notes-v0.1.0.md](release-notes-v0.1.0.md) as the initial
-GitHub Release body.
+Use the matching `docs/release-notes-v*.md` file as the GitHub Release body.

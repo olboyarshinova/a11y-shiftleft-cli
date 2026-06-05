@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+No unreleased changes.
+
+## 0.3.0 - 2026-06-05
+
 ### Added
 
 - WCAG version filtering for mapped findings via config `wcagVersion` and CLI
