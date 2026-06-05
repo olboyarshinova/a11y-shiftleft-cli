@@ -18,6 +18,8 @@
 - WCAG-based compliance support presets via `--standard wcag22-aa`,
   `--standard ada-title-ii`, and `--standard section508`, with report metadata
   and legal-safe disclaimers.
+- GitHub Actions workflow generation now supports multiple URLs and
+  `--standard` presets.
 
 ## 0.2.1 - 2026-06-04
 

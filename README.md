@@ -220,7 +220,18 @@ npx a11y-shiftleft check \
 npx a11y-shiftleft ci \
   --url http://localhost:3000 \
   --start-command "npm run dev -- --host localhost --port 3000" \
-  --fail-on critical
+  --fail-on critical \
+  --standard wcag22-aa
+```
+
+Generate CI for a known route set and a compliance-support preset:
+
+```bash
+npx a11y-shiftleft ci \
+  --url http://localhost:4200 http://localhost:4200/favorites http://localhost:4200/settings \
+  --start-command "npm run dev -- --host localhost --port 4200" \
+  --fail-on warning \
+  --standard section508
 ```
 
 This creates:

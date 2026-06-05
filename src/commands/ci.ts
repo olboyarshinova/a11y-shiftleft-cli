@@ -4,9 +4,10 @@ import path from "node:path";
 
 interface CiOptions {
   cwd: string;
-  url: string;
+  url: string[];
   startCommand: string;
   failOn: string;
+  standard: string;
   force?: boolean;
 }
 
@@ -15,9 +16,10 @@ export function registerCiCommand(program: Command): void {
     .command("ci")
     .description("Generate GitHub Actions workflow for accessibility checks.")
     .option("--cwd <dir>", "Target project directory", process.cwd())
-    .option("--url <url>", "URL to scan in CI", "http://localhost:3000")
+    .option("--url <urls...>", "URL(s) to scan in CI", ["http://localhost:3000"])
     .option("--start-command <command>", "Command that starts the app in CI", "npm run dev -- --host localhost --port 3000")
     .option("--fail-on <severity>", "critical, warning, info, or none", "critical")
+    .option("--standard <standard>", "Compliance support preset: wcag22-aa, ada-title-ii, or section508", "wcag22-aa")
     .option("--force", "Overwrite existing workflow")
     .action(async (options: CiOptions) => {
       const cwd = path.resolve(options.cwd);
@@ -30,9 +32,10 @@ export function registerCiCommand(program: Command): void {
 
       await fs.mkdir(path.dirname(target), { recursive: true });
       await fs.writeFile(target, workflowTemplate({
-        url: options.url,
+        urls: parseUrls(options.url),
         startCommand: options.startCommand,
-        failOn: options.failOn
+        failOn: options.failOn,
+        standard: options.standard
       }));
       console.log(`Created ${target}`);
     });
@@ -47,7 +50,18 @@ async function exists(filePath: string): Promise<boolean> {
   }
 }
 
-function workflowTemplate({ url, startCommand, failOn }: Pick<CiOptions, "url" | "startCommand" | "failOn">): string {
+interface WorkflowTemplateOptions {
+  urls: string[];
+  startCommand: string;
+  failOn: string;
+  standard: string;
+}
+
+export function workflowTemplate({ urls, startCommand, failOn, standard }: WorkflowTemplateOptions): string {
+  const scanUrls = urls.length > 0 ? urls : ["http://localhost:3000"];
+  const firstUrl = scanUrls[0];
+  const urlArgs = scanUrls.join(" ");
+
   return `name: Accessibility Shift-Left
 
 on:
@@ -82,13 +96,13 @@ jobs:
       - name: Wait for application
         run: |
           for i in {1..30}; do
-            curl -fsS ${url} && exit 0
+            curl -fsS ${firstUrl} && exit 0
             sleep 2
           done
           exit 1
 
       - name: Run accessibility checks
-        run: npx a11y-shiftleft check --dynamic --url ${url} --out reports --fail-on ${failOn}
+        run: npx a11y-shiftleft check --dynamic --url ${urlArgs} --out reports --fail-on ${failOn} --standard ${standard}
 
       - name: Upload accessibility report
         if: always()
@@ -105,4 +119,13 @@ jobs:
           GITHUB_REPOSITORY: \${{ github.repository }}
           PR_NUMBER: \${{ github.event.pull_request.number }}
 `;
+}
+
+function parseUrls(urls?: string[]): string[] {
+  if (!urls || urls.length === 0) return [];
+
+  return [...new Set(urls
+    .flatMap((url) => url.split(","))
+    .map((url) => url.trim())
+    .filter(Boolean))];
 }
