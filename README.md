@@ -367,8 +367,9 @@ GitHub unique views/clones and referrers as stronger human-adoption signals.
 ## Roadmap
 
 See [docs/roadmap.md](docs/roadmap.md) for planned improvements such as
-Lighthouse score collection, broader remediation coverage, and stronger
-Vue/Angular static coverage.
+Lighthouse score collection, broader remediation coverage, stronger Vue/Angular
+static coverage, and WCAG-based compliance-support presets for ADA Title II and
+Section 508 workflows.
 
 ## Competitive Positioning
 
@@ -384,9 +385,15 @@ Vue/Angular static coverage.
 
 ## Non-Goals
 
-This project does not claim to prove full WCAG conformance. Automated tools only
-catch part of accessibility defects and should be combined with manual review and
-assistive technology testing.
+This project does not claim to prove full WCAG, ADA, or Section 508 conformance.
+Automated tools only catch part of accessibility defects and should be combined
+with manual review, keyboard testing, screen reader testing, and organizational
+compliance review.
+
+Future compliance-support presets will align scans and report metadata with
+WCAG-based legal workflows, such as ADA Title II using WCAG 2.1 A/AA and Section
+508 using WCAG 2.0 A/AA. They will support evidence collection and remediation
+tracking, not legal certification.
 
 Current non-goals:
 
