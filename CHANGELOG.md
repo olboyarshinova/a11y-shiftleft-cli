@@ -11,6 +11,9 @@
   GitHub Actions workflows, future Marketplace Action support, documentation
   website priorities, outreach targets, and channels that should wait for
   stronger adoption evidence.
+- Adoption roadmap items for demo repositories, before/after case studies,
+  copy-paste recipes, trust badges, issue templates, a future `doctor` command,
+  community surfaces, engineering posts, and selected external pull requests.
 
 ## 0.3.0 - 2026-06-05
 

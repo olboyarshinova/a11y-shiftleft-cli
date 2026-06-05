@@ -70,7 +70,82 @@ cases:
 - Reading JSON/CSV/Markdown reports
 - Troubleshooting Node, Playwright, and npm auth issues
 
+### Demo Repository
+
+Create at least one public demo repository that shows the tool working in a
+real pull request flow:
+
+- an intentionally imperfect Angular, React, or Vue app
+- a pull request where `a11y-shiftleft-cli` reports accessibility findings
+- a follow-up pull request where the same findings are fixed
+- generated JSON, CSV, and Markdown reports committed as sample artifacts
+- GitHub Actions run showing the CI result
+
+The demo repository should make the value visible without requiring users to
+clone the main CLI project.
+
+### Before/After Case Study
+
+Publish a short case study from the demo app or a consenting real project:
+
+| Before | After |
+|---|---|
+| Hundreds of findings across pages | Small number of remaining issues |
+| No page-level accessibility risk ranking | Top affected pages identified |
+| No CI accessibility gate | Pull request feedback generated automatically |
+| Automated-only scan | Manual-review checklist generated for follow-up |
+
+This should be written as engineering evidence, not marketing copy.
+
+### Copy-Paste Recipes
+
+Add short recipes for common adoption scenarios:
+
+- `docs/recipes/angular.md`
+- `docs/recipes/react-vite.md`
+- `docs/recipes/vue-vite.md`
+- `docs/recipes/nextjs.md`
+- `docs/recipes/github-actions.md`
+- `docs/recipes/section-508.md`
+
+Each recipe should include three commands or fewer, one minimal config, and one
+example report excerpt.
+
+### README Trust Signals
+
+Keep first-screen trust signals current:
+
+- npm version badge
+- npm downloads badge
+- CI status badge
+- license badge
+- TypeScript badge
+- WCAG 2.2 AA support note
+
+Badges should support quick trust-building, not replace clear documentation.
+
 ## Medium-Term Adoption Channels
+
+### Doctor Command
+
+Add a troubleshooting command:
+
+```bash
+npx a11y-shiftleft doctor
+```
+
+It should check:
+
+- Node version
+- package version
+- Playwright package availability
+- Chromium browser installation
+- whether the target URL is reachable
+- config file presence
+- likely CI environment
+
+This reduces first-run friction for new users and gives maintainers better bug
+reports.
 
 ### GitHub Marketplace Action
 
@@ -118,6 +193,61 @@ For Next.js, prefer package scripts or GitHub Actions examples instead of a
 ```
 
 In CI, build and start the app before running the CLI.
+
+### Community Surfaces
+
+Add GitHub issue templates and discussions after the first external users
+appear:
+
+- bug report
+- framework support request
+- accessibility rule mapping request
+- adoption story
+- show and tell discussion category
+- research validation discussion category
+
+An `adoption story` template is especially useful because public user reports
+can become credible evidence for future grant, academic, or immigration
+materials.
+
+### Engineering Blog Topics
+
+Publish short technical posts based on real findings:
+
+- Adding accessibility checks to CI in one npm script
+- Reducing hundreds of accessibility findings to a small actionable set
+- Static vs dynamic accessibility checks in frontend projects
+- Why automated accessibility requires a manual-review checklist
+- Mapping automated findings to WCAG 2.2 AA, ADA Title II, and Section 508
+
+Each post should include commands, screenshots or report excerpts, and a link to
+a reproducible repository.
+
+### External Pull Requests
+
+Open small pull requests against selected open-source frontend projects:
+
+- add `a11y-shiftleft-cli` to an existing CI workflow
+- include one or two real accessibility fixes
+- avoid broad claims or pressure for endorsement
+- ask maintainers whether the workflow/report format is useful
+
+External pull requests can create stronger evidence than raw npm downloads
+because they show real-world use, maintainer review, and reproducible outcomes.
+
+### Resource Index
+
+Maintain an accessibility shift-left resource index in the documentation:
+
+- related tools
+- migration notes from existing tools
+- WCAG resources
+- Section 508 resources
+- ADA Title II digital accessibility resources
+- empirical accessibility testing papers
+
+This can improve search visibility while also helping users understand where
+the CLI fits.
 
 ## Long-Term Ecosystem Bets
 

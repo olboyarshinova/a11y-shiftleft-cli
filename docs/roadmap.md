@@ -14,9 +14,15 @@ for reproducible empirical validation.
   established ESLint plugins rather than custom parsers.
 - Keep the adoption plan in [adoption-strategy.md](adoption-strategy.md)
   aligned with current CLI capabilities and public documentation.
+- Add copy-paste recipe docs for Angular, React/Vite, Vue/Vite, Next.js, GitHub
+  Actions, and Section 508 workflows.
+- Create issue templates for bugs, framework support requests, rule mapping
+  requests, and adoption stories.
 
 ## Mid Term
 
+- Add a `doctor` command that validates Node, Playwright, Chromium, target URL,
+  config, and CI environment readiness.
 - Add deeper framework-specific remediation examples for common React, Vue, and
   Angular issues.
 - Create a documentation website with quick start guides, framework-specific
@@ -24,12 +30,16 @@ for reproducible empirical validation.
   reports so teams can adopt the CLI without reading the full README first.
 - Package a dedicated GitHub Action wrapper after the generated workflow path is
   stable enough to support public Marketplace usage.
+- Publish a public demo repository and before/after case study showing a full
+  pull request workflow with findings, fixes, and generated reports.
 
 ## Later
 
 - Add a Lighthouse adapter for accessibility score collection and comparison
   with axe findings.
 - Compare axe and Lighthouse disagreements in a separate report section.
+- Open selected external open-source pull requests after the docs, generated CI
+  workflow, and sample reports are stable enough for maintainers to review.
 - Explore VPAT/evidence-binder export templates for organizations that need
   Section 508 procurement documentation, while keeping legal review outside the
   CLI scope.
