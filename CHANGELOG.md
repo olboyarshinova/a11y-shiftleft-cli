@@ -7,6 +7,10 @@
 - Compliance evidence summary in JSON, CSV, and Markdown reports, including
   WCAG-mapped findings, unmapped findings, affected pages, top affected pages,
   and manual-review status.
+- Adoption strategy document covering low-friction npm scripts, generated
+  GitHub Actions workflows, future Marketplace Action support, documentation
+  website priorities, outreach targets, and channels that should wait for
+  stronger adoption evidence.
 
 ## 0.3.0 - 2026-06-05
 

@@ -12,6 +12,8 @@ for reproducible empirical validation.
 - Expand compliance evidence summaries with manual-review follow-up details.
 - Improve Vue and Angular static coverage while continuing to rely on
   established ESLint plugins rather than custom parsers.
+- Keep the adoption plan in [adoption-strategy.md](adoption-strategy.md)
+  aligned with current CLI capabilities and public documentation.
 
 ## Mid Term
 
@@ -20,6 +22,8 @@ for reproducible empirical validation.
 - Create a documentation website with quick start guides, framework-specific
   setup pages, CI/compliance-support examples, troubleshooting, and sample
   reports so teams can adopt the CLI without reading the full README first.
+- Package a dedicated GitHub Action wrapper after the generated workflow path is
+  stable enough to support public Marketplace usage.
 
 ## Later
 

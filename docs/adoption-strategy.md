@@ -1,0 +1,182 @@
+# Adoption Strategy
+
+This document captures practical adoption and distribution ideas for
+`a11y-shiftleft-cli`. The goal is to reduce setup friction, meet developers in
+their existing workflows, and build credible public evidence without relying on
+channels that are unlikely to accept external contributions today.
+
+## Positioning
+
+`a11y-shiftleft-cli` should be positioned as an orchestration layer rather than
+a replacement for existing tools.
+
+- If a project already uses ESLint accessibility rules, the CLI adds dynamic
+  rendered-DOM checks, deduplication, WCAG metadata, page risk ranking, and
+  reports.
+- If a project already uses Playwright, the CLI offers a package-level
+  accessibility scan without requiring teams to write custom test code first.
+- If a project already uses GitHub Actions, the CLI can generate or provide a
+  reusable accessibility workflow.
+
+## Near-Term Adoption Channels
+
+### One-Line npm Scripts
+
+The lowest-friction path is a package script that teams can paste into an
+existing project:
+
+```json
+{
+  "scripts": {
+    "test:a11y": "a11y-shiftleft check --url http://localhost:3000 --fail-on warning",
+    "ci": "npm test && npm run test:a11y"
+  }
+}
+```
+
+Recommended documentation angle:
+
+```txt
+Add accessibility checks to CI in one npm script.
+```
+
+### GitHub Actions Generator
+
+The built-in generator should remain the primary adoption path:
+
+```bash
+npx a11y-shiftleft ci \
+  --url http://localhost:4200 http://localhost:4200/favorites \
+  --start-command "npm run dev -- --host localhost --port 4200" \
+  --fail-on warning \
+  --standard section508
+```
+
+This is more reliable than asking users to hand-write workflow YAML.
+
+### Documentation Website
+
+Create a small documentation website with copy-paste paths for common use
+cases:
+
+- 30 seconds to start
+- React/Vite setup
+- Angular setup
+- Vue setup
+- Next.js setup
+- GitHub Actions setup
+- ADA Title II support mode
+- Section 508 support mode
+- Reading JSON/CSV/Markdown reports
+- Troubleshooting Node, Playwright, and npm auth issues
+
+## Medium-Term Adoption Channels
+
+### GitHub Marketplace Action
+
+Create a dedicated GitHub Action wrapper after the CLI workflow stabilizes:
+
+```yaml
+- uses: olboyarshinova/a11y-shiftleft-action@v1
+  with:
+    url: http://localhost:4200
+    standard: section508
+    fail-on: warning
+```
+
+This can make PR comments visible to the whole team and give the project a
+more viral discovery path.
+
+### Reusable Workflow
+
+Offer a reusable workflow for organizations that prefer centralized CI logic:
+
+```yaml
+jobs:
+  a11y:
+    uses: olboyarshinova/a11y-shiftleft-cli/.github/workflows/a11y-reusable.yml@v1
+    with:
+      url: http://localhost:4200
+      standard: section508
+```
+
+### Framework Guides
+
+Do not frame Create React App as a primary growth channel because it is
+deprecated. Keep a legacy CRA guide only for existing applications.
+
+For Next.js, prefer package scripts or GitHub Actions examples instead of a
+`next.config.js` build hook. A reliable pattern is:
+
+```json
+{
+  "scripts": {
+    "start:a11y": "next start -p 3000",
+    "test:a11y": "a11y-shiftleft check --url http://localhost:3000"
+  }
+}
+```
+
+In CI, build and start the app before running the CLI.
+
+## Long-Term Ecosystem Bets
+
+### Official GitHub Starter Workflows
+
+Adding an accessibility workflow to `actions/starter-workflows` would be
+valuable, but it should not be treated as a near-term plan because the official
+repository currently states that it is not accepting contributions.
+
+Revisit this only after there is adoption evidence:
+
+- npm downloads
+- GitHub stars
+- real-world usage examples
+- public case study
+- reusable action or workflow
+- clear docs site
+
+### Anchor Users
+
+Target maintainers and organizations already associated with frontend
+accessibility:
+
+- Storybook accessibility addon ecosystem
+- MUI
+- Fluent UI
+- Netlify ecosystem
+- Vercel/Next.js community examples
+
+Outreach should offer a small, ready-to-review integration rather than asking
+for broad endorsement.
+
+Example:
+
+```txt
+Hi! I maintain a11y-shiftleft-cli, a framework-agnostic accessibility CI
+orchestrator that combines static checks, axe/Playwright dynamic scans,
+deduplication, WCAG metadata, and PR-ready reports.
+
+I noticed your project already invests in accessibility. I prepared a small
+CI example showing how to add automated accessibility evidence to pull
+requests with minimal maintenance burden. Would you be open to reviewing it?
+```
+
+## What Not To Promise
+
+- Do not claim ADA, Section 508, or WCAG certification.
+- Do not claim automated tooling finds every accessibility defect.
+- Do not pitch official GitHub starter workflow inclusion as likely before
+  adoption evidence exists.
+- Do not suggest unsupported framework hooks such as `next.config.js`
+  `afterBuild`.
+
+## Success Metrics
+
+- npm downloads and version adoption
+- GitHub stars and forks
+- number of projects using generated workflows
+- PR comments generated by the tool
+- issues opened by external users
+- independent blog posts, tutorials, or mentions
+- external recommendation letters or testimonials

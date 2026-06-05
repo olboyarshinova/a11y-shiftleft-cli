@@ -400,6 +400,10 @@ Lighthouse score collection, broader remediation coverage, stronger Vue/Angular
 static coverage, and WCAG-based compliance-support presets for ADA Title II and
 Section 508 workflows.
 
+See [docs/adoption-strategy.md](docs/adoption-strategy.md) for the adoption
+plan covering npm scripts, generated GitHub Actions workflows, future
+Marketplace Action support, documentation-site priorities, and outreach targets.
+
 ## Competitive Positioning
 
 | Tool | Best For | Gap This Project Targets |
