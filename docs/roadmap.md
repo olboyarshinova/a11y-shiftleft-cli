@@ -18,6 +18,9 @@ for reproducible empirical validation.
   Angular issues.
 - Expand compliance-support reports with clearer evidence summaries for
   selected standards, affected pages, and manual-review follow-up.
+- Create a documentation website with quick start guides, framework-specific
+  setup pages, CI/compliance-support examples, troubleshooting, and sample
+  reports so teams can adopt the CLI without reading the full README first.
 
 ## Later
 
