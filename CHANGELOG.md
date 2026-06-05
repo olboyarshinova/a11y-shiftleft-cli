@@ -2,7 +2,11 @@
 
 ## Unreleased
 
-No unreleased changes.
+### Added
+
+- Compliance evidence summary in JSON, CSV, and Markdown reports, including
+  WCAG-mapped findings, unmapped findings, affected pages, top affected pages,
+  and manual-review status.
 
 ## 0.3.0 - 2026-06-05
 

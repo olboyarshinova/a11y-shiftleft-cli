@@ -1,14 +1,14 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createManualChecklist, toManualChecklistMarkdown } from "../core/manualChecklist.js";
-import type { A11yReport, ComplianceStandardMetadata, DedupedIssue, PageSummary, ReportFormat, ReportMetrics, ReportSummary, Severity } from "../types.js";
+import type { A11yReport, ComplianceEvidenceSummary, ComplianceStandardMetadata, DedupedIssue, PageSummary, ReportFormat, ReportMetrics, ReportSummary, Severity } from "../types.js";
 
 interface WriteReportOptions {
   formats?: ReportFormat[];
   semiAuto?: boolean;
 }
 
-type SummaryValue = string | number | boolean | string[] | PageSummary[] | ComplianceStandardMetadata | Record<string, number>;
+type SummaryValue = string | number | boolean | string[] | PageSummary[] | ComplianceEvidenceSummary | ComplianceStandardMetadata | Record<string, number>;
 
 export async function writeReports(
   outputDir: string,
@@ -65,6 +65,7 @@ export async function writeReports(
 function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummary {
   const rawCount = metrics.rawCount || issues.length;
   const duplicateCount = metrics.duplicateCount || 0;
+  const byPage = summarizePages(issues);
 
   return {
     total: issues.length,
@@ -79,13 +80,14 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     framework: metrics.framework || "unknown",
     urls: metrics.urls || [],
     standard: metrics.standard,
+    complianceEvidence: summarizeComplianceEvidence(issues, byPage, metrics.standard),
     bySource: countBy(issues, "source"),
     bySeverity: countBy(issues, "severity"),
     byPour: countByPour(issues),
     byWcagLevel: countByWcagLevel(issues),
     byWcagVersion: countByWcagVersion(issues),
     byUnmappedRule: countByUnmappedRule(issues),
-    byPage: summarizePages(issues)
+    byPage
   };
 }
 
@@ -97,6 +99,11 @@ function toCsv(summary: ReportSummary): string {
 }
 
 export function toMarkdown(report: A11yReport): string {
+  const complianceEvidence = report.summary.complianceEvidence || summarizeComplianceEvidence(
+    report.issues,
+    report.summary.byPage || [],
+    report.summary.standard
+  );
   const topIssues = report.issues
     .slice(0, 10)
     .map((issue) => {
@@ -122,12 +129,17 @@ export function toMarkdown(report: A11yReport): string {
 | Standard | ${formatStandard(report.summary.standard)} |
 | Automated coverage | ${report.summary.standard?.automatedCoverage || "partial"} |
 | Manual review required | ${report.summary.standard?.requiresManualReview ? "yes" : "yes"} |
+| WCAG-mapped findings | ${complianceEvidence.wcagMappedFindings} |
+| Unmapped findings | ${complianceEvidence.unmappedFindings} |
+| Affected pages | ${complianceEvidence.affectedPages} |
 | POUR | ${formatCountMap(report.summary.byPour)} |
 | WCAG levels | ${formatCountMap(report.summary.byWcagLevel)} |
 | WCAG versions | ${formatCountMap(report.summary.byWcagVersion)} |
 | Rules without WCAG mapping | ${formatCountMap(report.summary.byUnmappedRule)} |
 
 ${formatPageSummary(report.summary.byPage || [])}
+
+${formatComplianceEvidence(complianceEvidence)}
 
 ${topIssues || "No accessibility findings detected."}
 
@@ -207,6 +219,27 @@ function summarizePages(items: DedupedIssue[]): PageSummary[] {
   });
 }
 
+function summarizeComplianceEvidence(
+  issues: DedupedIssue[],
+  pages: PageSummary[],
+  standard: ComplianceStandardMetadata | undefined
+): ComplianceEvidenceSummary {
+  const wcagMappedFindings = issues.filter((issue) => (issue.wcagCriteria || []).length > 0).length;
+
+  return {
+    standardId: standard?.id,
+    wcagVersion: standard?.wcagVersion,
+    wcagLevel: standard?.wcagLevel,
+    automatedCoverage: "partial",
+    requiresManualReview: true,
+    totalFindings: issues.length,
+    wcagMappedFindings,
+    unmappedFindings: issues.length - wcagMappedFindings,
+    affectedPages: pages.length,
+    topAffectedPages: pages.slice(0, 3)
+  };
+}
+
 function formatCriteria(issue: DedupedIssue): string {
   if (!issue.wcagCriteria || issue.wcagCriteria.length === 0) return "";
 
@@ -259,6 +292,29 @@ function formatDisclaimer(standard: ComplianceStandardMetadata | undefined): str
   return `### Compliance Note
 
 ${disclaimer}`;
+}
+
+function formatComplianceEvidence(evidence: ComplianceEvidenceSummary): string {
+  const topPages = evidence.topAffectedPages.length > 0
+    ? evidence.topAffectedPages
+      .map((page) => `- ${page.url}: ${page.total} findings, score ${page.severityScore}`)
+      .join("\n")
+    : "No page-level evidence available.";
+
+  return `### Compliance Evidence Summary
+
+| Evidence | Value |
+|---|---:|
+| Total findings | ${evidence.totalFindings} |
+| WCAG-mapped findings | ${evidence.wcagMappedFindings} |
+| Unmapped findings | ${evidence.unmappedFindings} |
+| Affected pages | ${evidence.affectedPages} |
+| Automated coverage | ${evidence.automatedCoverage} |
+| Manual review required | ${evidence.requiresManualReview ? "yes" : "yes"} |
+
+Top affected pages:
+
+${topPages}`;
 }
 
 function formatPageSummary(pages: PageSummary[]): string {

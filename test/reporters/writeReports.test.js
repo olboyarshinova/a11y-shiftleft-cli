@@ -86,6 +86,35 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.deepEqual(report.summary.byWcagVersion, {
     "2.0": 2
   });
+  assert.deepEqual(report.summary.complianceEvidence, {
+    standardId: "ada-title-ii",
+    wcagVersion: "2.1",
+    wcagLevel: "AA",
+    automatedCoverage: "partial",
+    requiresManualReview: true,
+    totalFindings: 2,
+    wcagMappedFindings: 2,
+    unmappedFindings: 0,
+    affectedPages: 2,
+    topAffectedPages: [
+      {
+        url: "http://localhost:3000/settings",
+        total: 1,
+        critical: 1,
+        warning: 0,
+        info: 0,
+        severityScore: 5
+      },
+      {
+        url: "http://localhost:3000/",
+        total: 1,
+        critical: 0,
+        warning: 1,
+        info: 0,
+        severityScore: 2
+      }
+    ]
+  });
   assert.deepEqual(report.summary.byUnmappedRule, {});
   assert.deepEqual(report.summary.byPage, [
     {
@@ -118,6 +147,8 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(csv, /duplicateRate,0\.5/);
   assert.match(csv, /standard\.id,ada-title-ii/);
   assert.match(csv, /standard\.requiresManualReview,true/);
+  assert.match(csv, /complianceEvidence\.wcagMappedFindings,2/);
+  assert.match(csv, /complianceEvidence\.affectedPages,2/);
   assert.match(csv, /bySource\.axe,1/);
   assert.match(csv, /byPour\.robust,1/);
   assert.match(csv, /byWcagVersion\.2\.0,2/);
@@ -126,6 +157,9 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /Scan duration \| 123ms/);
   assert.match(markdown, /ADA Title II web accessibility support mode \(2\.1 AA\)/);
   assert.match(markdown, /Compliance Note/);
+  assert.match(markdown, /Compliance Evidence Summary/);
+  assert.match(markdown, /WCAG-mapped findings \| 2/);
+  assert.match(markdown, /Affected pages \| 2/);
   assert.match(markdown, /does not certify legal compliance/);
   assert.match(markdown, /Page Risk Ranking/);
   assert.match(markdown, /http:\/\/localhost:3000\/settings \| 1 \| 1 \| 0 \| 0 \| 5/);
@@ -177,7 +211,10 @@ test("writeReports summarizes rules without WCAG mappings", async () => {
     "page-has-heading-one": 1,
     "@angular-eslint/template/button-has-type": 1
   });
+  assert.equal(report.summary.complianceEvidence.wcagMappedFindings, 0);
+  assert.equal(report.summary.complianceEvidence.unmappedFindings, 2);
   assert.match(markdown, /Rules without WCAG mapping \| page-has-heading-one: 1/);
+  assert.match(markdown, /Unmapped findings \| 2/);
   assert.match(markdown, /@angular-eslint\/template\/button-has-type: 1/);
 });
 

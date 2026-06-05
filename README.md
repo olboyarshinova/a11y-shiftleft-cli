@@ -351,6 +351,7 @@ Each run exports machine-readable metrics for CI and empirical analysis:
 | `critical`, `warning`, `info` | Severity counts |
 | `scanDurationMs` | Runtime duration for the scan |
 | `standard` | Selected WCAG-based support preset and compliance note metadata |
+| `complianceEvidence` | Evidence summary for WCAG-mapped findings, unmapped findings, affected pages, and manual-review status |
 | `bySource` | Finding counts by adapter, such as `axe` or `eslint` |
 | `bySeverity` | Finding counts by severity |
 | `byPour` | Finding counts grouped by WCAG POUR principle |

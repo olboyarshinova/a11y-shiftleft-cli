@@ -24,6 +24,19 @@ export interface ComplianceStandardMetadata {
   disclaimer: string;
 }
 
+export interface ComplianceEvidenceSummary {
+  standardId?: ComplianceStandard;
+  wcagVersion?: WcagVersion;
+  wcagLevel?: "AA";
+  automatedCoverage: "partial";
+  requiresManualReview: boolean;
+  totalFindings: number;
+  wcagMappedFindings: number;
+  unmappedFindings: number;
+  affectedPages: number;
+  topAffectedPages: PageSummary[];
+}
+
 export interface WcagCriterion {
   id: string;
   title: string;
@@ -163,6 +176,7 @@ export interface ReportSummary {
   framework: Framework | string;
   urls: string[];
   standard?: ComplianceStandardMetadata;
+  complianceEvidence: ComplianceEvidenceSummary;
   bySource: Record<string, number>;
   bySeverity: Record<string, number>;
   byPour: Record<string, number>;

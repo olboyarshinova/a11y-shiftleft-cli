@@ -9,6 +9,7 @@ for reproducible empirical validation.
 - Expand WCAG metadata for every rule currently emitted by the static and
   dynamic adapters.
 - Expand remediation hint coverage for additional axe and ESLint rules.
+- Expand compliance evidence summaries with manual-review follow-up details.
 - Improve Vue and Angular static coverage while continuing to rely on
   established ESLint plugins rather than custom parsers.
 
@@ -16,8 +17,6 @@ for reproducible empirical validation.
 
 - Add deeper framework-specific remediation examples for common React, Vue, and
   Angular issues.
-- Expand compliance-support reports with clearer evidence summaries for
-  selected standards, affected pages, and manual-review follow-up.
 - Create a documentation website with quick start guides, framework-specific
   setup pages, CI/compliance-support examples, troubleshooting, and sample
   reports so teams can adopt the CLI without reading the full README first.
