@@ -14,6 +14,11 @@
 - Adoption roadmap items for demo repositories, before/after case studies,
   copy-paste recipes, trust badges, issue templates, a future `doctor` command,
   community surfaces, engineering posts, and selected external pull requests.
+- `doctor` command for pre-flight setup checks covering Node.js, project
+  directory access, config presence, Playwright resolution, Chromium
+  installation, CI detection, and target URL reachability.
+- CLI version output now reads from `package.json` instead of a hard-coded
+  value.
 
 ## 0.3.0 - 2026-06-05
 

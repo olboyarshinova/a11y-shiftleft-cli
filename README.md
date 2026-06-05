@@ -67,10 +67,22 @@ npx playwright install chromium
 npx a11y-shiftleft init
 ```
 
+Check that the local setup is ready:
+
+```bash
+npx a11y-shiftleft doctor
+```
+
 Start your app in another terminal:
 
 ```bash
 npm run dev
+```
+
+Then verify that the app URL is reachable:
+
+```bash
+npx a11y-shiftleft doctor --url http://localhost:3000
 ```
 
 Run a dynamic scan against the app URL:
@@ -116,6 +128,13 @@ Then run:
 
 ```bash
 npx a11y-shiftleft check --dynamic --out reports
+```
+
+If a scan fails because of Node, Playwright, Chromium, config, or app startup
+issues, run:
+
+```bash
+npx a11y-shiftleft doctor --url http://localhost:3000
 ```
 
 Discover and scan same-origin pages from a starting URL:
