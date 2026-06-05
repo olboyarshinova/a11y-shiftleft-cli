@@ -16,13 +16,8 @@ for reproducible empirical validation.
 
 - Add deeper framework-specific remediation examples for common React, Vue, and
   Angular issues.
-- Add compliance-support presets for WCAG-based legal workflows:
-  `--standard ada-title-ii`, `--standard section508`, and `--standard wcag22-aa`.
-- Add report metadata that records the selected standard, WCAG version, WCAG
-  level, automated coverage limits, and manual-review requirement.
-- Add a legal-safe report disclaimer explaining that the CLI supports
-  accessibility risk detection and remediation tracking but does not certify
-  ADA, Section 508, or WCAG conformance.
+- Expand compliance-support reports with clearer evidence summaries for
+  selected standards, affected pages, and manual-review follow-up.
 
 ## Later
 

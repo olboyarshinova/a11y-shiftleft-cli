@@ -1,14 +1,14 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createManualChecklist, toManualChecklistMarkdown } from "../core/manualChecklist.js";
-import type { A11yReport, DedupedIssue, PageSummary, ReportFormat, ReportMetrics, ReportSummary, Severity } from "../types.js";
+import type { A11yReport, ComplianceStandardMetadata, DedupedIssue, PageSummary, ReportFormat, ReportMetrics, ReportSummary, Severity } from "../types.js";
 
 interface WriteReportOptions {
   formats?: ReportFormat[];
   semiAuto?: boolean;
 }
 
-type SummaryValue = string | number | string[] | PageSummary[] | Record<string, number>;
+type SummaryValue = string | number | boolean | string[] | PageSummary[] | ComplianceStandardMetadata | Record<string, number>;
 
 export async function writeReports(
   outputDir: string,
@@ -78,6 +78,7 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     scanDurationMs: metrics.scanDurationMs || 0,
     framework: metrics.framework || "unknown",
     urls: metrics.urls || [],
+    standard: metrics.standard,
     bySource: countBy(issues, "source"),
     bySeverity: countBy(issues, "severity"),
     byPour: countByPour(issues),
@@ -118,6 +119,9 @@ export function toMarkdown(report: A11yReport): string {
 | Duplicate rate | ${report.summary.duplicateRate} |
 | Scan duration | ${report.summary.scanDurationMs}ms |
 | Framework | ${report.summary.framework} |
+| Standard | ${formatStandard(report.summary.standard)} |
+| Automated coverage | ${report.summary.standard?.automatedCoverage || "partial"} |
+| Manual review required | ${report.summary.standard?.requiresManualReview ? "yes" : "yes"} |
 | POUR | ${formatCountMap(report.summary.byPour)} |
 | WCAG levels | ${formatCountMap(report.summary.byWcagLevel)} |
 | WCAG versions | ${formatCountMap(report.summary.byWcagVersion)} |
@@ -126,6 +130,8 @@ export function toMarkdown(report: A11yReport): string {
 ${formatPageSummary(report.summary.byPage || [])}
 
 ${topIssues || "No accessibility findings detected."}
+
+${formatDisclaimer(report.summary.standard)}
 `;
 }
 
@@ -240,6 +246,19 @@ function formatCountMap(counts: Record<string, number> | undefined): string {
   if (entries.length === 0) return "none";
 
   return entries.map(([key, value]) => `${key}: ${value}`).join(", ");
+}
+
+function formatStandard(standard: ComplianceStandardMetadata | undefined): string {
+  if (!standard) return "WCAG 2.2 Level AA support mode";
+  return `${standard.label} (${standard.wcagVersion} ${standard.wcagLevel})`;
+}
+
+function formatDisclaimer(standard: ComplianceStandardMetadata | undefined): string {
+  const disclaimer = standard?.disclaimer || "This report supports accessibility risk detection and remediation tracking. It does not certify legal compliance with ADA, Section 508, or WCAG. Manual review is required.";
+
+  return `### Compliance Note
+
+${disclaimer}`;
 }
 
 function formatPageSummary(pages: PageSummary[]): string {

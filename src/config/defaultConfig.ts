@@ -2,6 +2,7 @@ import type { A11yConfig } from "../types.js";
 
 export const defaultConfig = {
   framework: "auto",
+  standard: "wcag22-aa",
   wcagVersion: "2.2",
   wcagLevel: "AA",
   failOn: "critical",

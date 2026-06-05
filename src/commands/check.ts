@@ -8,7 +8,8 @@ import { triageIssues } from "../core/severity.js";
 import { writeReports } from "../reporters/writeReports.js";
 import { detectFramework } from "../core/detectFramework.js";
 import { matchesWcagLevel, matchesWcagVersion } from "../core/wcagMap.js";
-import type { Framework, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel, WcagVersion } from "../types.js";
+import { resolveStandard } from "../core/standards.js";
+import type { ComplianceStandard, Framework, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel, WcagVersion } from "../types.js";
 
 interface CheckOptions {
   cwd: string;
@@ -24,6 +25,7 @@ interface CheckOptions {
   format?: string[];
   out?: string;
   failOn?: Severity | "none";
+  standard?: string;
   wcagFilter?: string;
   wcagVersion?: string;
   semiAuto?: boolean;
@@ -46,6 +48,7 @@ export function registerCheckCommand(program: Command): void {
     .option("--format <formats...>", "Report formats: json, csv, markdown, or all")
     .option("--out <dir>", "Output directory")
     .option("--fail-on <severity>", "critical, warning, info, or none")
+    .option("--standard <standard>", "Compliance support preset: wcag22-aa, ada-title-ii, or section508")
     .option("--wcag-filter <level>", "Only report findings mapped to WCAG level A, AA, or AAA")
     .option("--wcag-version <version>", "Limit mapped findings to WCAG version 2.0, 2.1, or 2.2")
     .option("--semi-auto", "Generate a Markdown manual review checklist alongside automated reports")
@@ -58,6 +61,7 @@ export function registerCheckCommand(program: Command): void {
       }, {
         framework: toFramework(options.framework),
         outputDir: options.out,
+        standard: toComplianceStandard(options.standard),
         wcagVersion: toWcagVersion(options.wcagVersion),
         failOn: options.failOn,
         static: {
@@ -74,12 +78,15 @@ export function registerCheckCommand(program: Command): void {
 
       const runStatic = options.static || !options.dynamic;
       const runDynamic = options.dynamic || urls.length > 0 || Boolean(options.crawl) || config.dynamic.enabled;
+      const standard = resolveStandard(config.standard);
       const framework = config.framework === "auto"
         ? await detectFramework(config.cwd)
         : config.framework;
       const effectiveConfig = {
         ...config,
-        framework
+        framework,
+        wcagVersion: options.wcagVersion ? config.wcagVersion : standard.wcagVersion,
+        wcagLevel: standard.wcagLevel
       };
 
       const rawIssues = [];
@@ -103,6 +110,11 @@ export function registerCheckCommand(program: Command): void {
         framework,
         cwd: effectiveConfig.cwd,
         urls: runDynamic ? effectiveConfig.dynamic.urls : [],
+        standard: {
+          ...standard,
+          wcagVersion: effectiveConfig.wcagVersion,
+          wcagLevel: effectiveConfig.wcagLevel
+        },
         scanDurationMs: Date.now() - startedAt,
         rawCount: rawIssues.length,
         uniqueCount: uniqueIssues.length,
@@ -221,6 +233,11 @@ function toWcagLevel(level: string | undefined): WcagLevel | undefined {
 
 function toWcagVersion(version: string | undefined): WcagVersion | undefined {
   if (version === "2.0" || version === "2.1" || version === "2.2") return version;
+  return undefined;
+}
+
+function toComplianceStandard(standard: string | undefined): ComplianceStandard | undefined {
+  if (standard === "wcag22-aa" || standard === "ada-title-ii" || standard === "section508") return standard;
   return undefined;
 }
 

@@ -12,6 +12,18 @@ export type WcagLevel = "A" | "AA" | "AAA";
 
 export type PourPrinciple = "perceivable" | "operable" | "understandable" | "robust";
 
+export type ComplianceStandard = "wcag22-aa" | "ada-title-ii" | "section508";
+
+export interface ComplianceStandardMetadata {
+  id: ComplianceStandard;
+  label: string;
+  wcagVersion: WcagVersion;
+  wcagLevel: "AA";
+  automatedCoverage: "partial";
+  requiresManualReview: boolean;
+  disclaimer: string;
+}
+
 export interface WcagCriterion {
   id: string;
   title: string;
@@ -52,6 +64,7 @@ export interface A11yConfig {
   cwd: string;
   configPath?: string;
   framework: Framework;
+  standard: ComplianceStandard;
   wcagVersion: WcagVersion;
   wcagLevel: "AA";
   failOn: Severity | "none";
@@ -113,6 +126,7 @@ export interface ReportMetrics {
   framework?: Framework | string;
   cwd?: string;
   urls?: string[];
+  standard?: ComplianceStandardMetadata;
   scanDurationMs?: number;
   rawCount?: number;
   uniqueCount?: number;
@@ -148,6 +162,7 @@ export interface ReportSummary {
   scanDurationMs: number;
   framework: Framework | string;
   urls: string[];
+  standard?: ComplianceStandardMetadata;
   bySource: Record<string, number>;
   bySeverity: Record<string, number>;
   byPour: Record<string, number>;

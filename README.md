@@ -180,6 +180,22 @@ Limit mapped findings to a specific WCAG version:
 npx a11y-shiftleft check --url http://localhost:3000 --wcag-version 2.0 --out reports
 ```
 
+Use a WCAG-based compliance support preset:
+
+```bash
+npx a11y-shiftleft check --url http://localhost:3000 --standard section508 --out reports
+npx a11y-shiftleft check --url http://localhost:3000 --standard ada-title-ii --out reports
+npx a11y-shiftleft check --url http://localhost:3000 --standard wcag22-aa --out reports
+```
+
+The presets configure report metadata and WCAG filtering defaults:
+
+| Preset | Report meaning | WCAG target |
+|---|---|---|
+| `section508` | Section 508 web accessibility support mode | WCAG 2.0 AA |
+| `ada-title-ii` | ADA Title II web accessibility support mode | WCAG 2.1 AA |
+| `wcag22-aa` | WCAG 2.2 Level AA support mode | WCAG 2.2 AA |
+
 Generate a semi-automated manual review checklist alongside automated reports:
 
 ```bash
@@ -323,6 +339,7 @@ Each run exports machine-readable metrics for CI and empirical analysis:
 | `duplicateRate` | `duplicateCount / rawCount` |
 | `critical`, `warning`, `info` | Severity counts |
 | `scanDurationMs` | Runtime duration for the scan |
+| `standard` | Selected WCAG-based support preset and compliance note metadata |
 | `bySource` | Finding counts by adapter, such as `axe` or `eslint` |
 | `bySeverity` | Finding counts by severity |
 | `byPour` | Finding counts grouped by WCAG POUR principle |

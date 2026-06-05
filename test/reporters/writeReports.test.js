@@ -60,7 +60,16 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
       uniqueCount: 2,
       duplicateCount: 2,
       scanDurationMs: 123,
-      urls: ["http://localhost:3000"]
+      urls: ["http://localhost:3000"],
+      standard: {
+        id: "ada-title-ii",
+        label: "ADA Title II web accessibility support mode",
+        wcagVersion: "2.1",
+        wcagLevel: "AA",
+        automatedCoverage: "partial",
+        requiresManualReview: true,
+        disclaimer: "This report supports accessibility risk detection and remediation tracking. It does not certify legal compliance with ADA, Section 508, or WCAG. Manual review is required."
+      }
     }
   );
 
@@ -104,14 +113,20 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
 
   assert.equal(json.summary.framework, "react");
+  assert.equal(json.summary.standard.id, "ada-title-ii");
   assert.equal(json.issues[0].remediation.summary, "Give every button an accessible name.");
   assert.match(csv, /duplicateRate,0\.5/);
+  assert.match(csv, /standard\.id,ada-title-ii/);
+  assert.match(csv, /standard\.requiresManualReview,true/);
   assert.match(csv, /bySource\.axe,1/);
   assert.match(csv, /byPour\.robust,1/);
   assert.match(csv, /byWcagVersion\.2\.0,2/);
   assert.match(csv, /byPage\.0\.url,http:\/\/localhost:3000\/settings/);
   assert.match(csv, /byPage\.0\.severityScore,5/);
   assert.match(markdown, /Scan duration \| 123ms/);
+  assert.match(markdown, /ADA Title II web accessibility support mode \(2\.1 AA\)/);
+  assert.match(markdown, /Compliance Note/);
+  assert.match(markdown, /does not certify legal compliance/);
   assert.match(markdown, /Page Risk Ranking/);
   assert.match(markdown, /http:\/\/localhost:3000\/settings \| 1 \| 1 \| 0 \| 0 \| 5/);
   assert.match(markdown, /WCAG versions \| 2\.0: 2/);
