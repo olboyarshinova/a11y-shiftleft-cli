@@ -11,15 +11,28 @@ npm test
 npm run test:fixtures
 npm run build:demo
 npm_config_cache=.npm-cache npm pack --dry-run
+npm_config_cache=.npm-cache npm pack --workspace @a11y-shiftleft/react --dry-run --ignore-scripts
+npm_config_cache=.npm-cache npm pack --workspace @a11y-shiftleft/vue --dry-run --ignore-scripts
+npm_config_cache=.npm-cache npm pack --workspace @a11y-shiftleft/angular --dry-run --ignore-scripts
 ```
 
 Check package metadata:
 
 ```bash
 npm view a11y-shiftleft-cli version
+npm view @a11y-shiftleft/react version
+npm view @a11y-shiftleft/vue version
+npm view @a11y-shiftleft/angular version
 ```
 
-For v0.1.0 and later, this should return the latest published version.
+For the main CLI, this should return the latest published version. For new
+adapter packages, `E404 Not Found` means the package name has not been
+published yet.
+
+Before publishing scoped adapter packages, confirm the npm account owns the
+`@a11y-shiftleft` scope or create the `a11y-shiftleft` npm organization. An
+unpublished package name is not enough; npm must also allow publishing under
+that scope.
 
 ## GitHub Actions
 
@@ -134,6 +147,42 @@ docs/ide-integration.md
 packages/react/package.json
 packages/vue/package.json
 packages/angular/package.json
+```
+
+## Publish Order
+
+Log in first:
+
+```bash
+npm login
+npm whoami
+```
+
+Publish the main CLI first:
+
+```bash
+npm publish --access public
+```
+
+Then publish adapter packages:
+
+```bash
+npm publish --workspace @a11y-shiftleft/react --access public
+npm publish --workspace @a11y-shiftleft/vue --access public
+npm publish --workspace @a11y-shiftleft/angular --access public
+```
+
+If npm two-factor authentication is enabled, enter the current authenticator
+app code when prompted. Do not store OTP values in shell history, scripts, or
+repository files.
+
+After publishing, verify:
+
+```bash
+npm view a11y-shiftleft-cli version
+npm view @a11y-shiftleft/react version
+npm view @a11y-shiftleft/vue version
+npm view @a11y-shiftleft/angular version
 ```
 
 ## Consumer Install Smoke Test
