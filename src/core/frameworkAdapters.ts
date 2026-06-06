@@ -19,7 +19,7 @@ const ADAPTER_RECOMMENDATIONS: Record<FrameworkAdapterRecommendation["framework"
   vue: {
     framework: "vue",
     packages: ["eslint-plugin-vue"],
-    installPackages: ["eslint-plugin-vue"],
+    installPackages: ["@a11y-shiftleft/vue"],
     note: "Vue static checks use eslint-plugin-vue template rules."
   },
   angular: {
@@ -28,10 +28,7 @@ const ADAPTER_RECOMMENDATIONS: Record<FrameworkAdapterRecommendation["framework"
       "@angular-eslint/eslint-plugin-template",
       "@angular-eslint/template-parser"
     ],
-    installPackages: [
-      "@angular-eslint/eslint-plugin-template",
-      "@angular-eslint/template-parser"
-    ],
+    installPackages: ["@a11y-shiftleft/angular"],
     note: "Angular static checks use angular-eslint template rules."
   }
 };

@@ -16,8 +16,8 @@ for reproducible empirical validation.
   aligned with current CLI capabilities and public documentation.
 - Expand recipe docs with screenshots, generated report excerpts, and rollout
   guidance for early teams.
-- Publish companion adapter packages for Vue and Angular after the React
-  adapter package path is validated.
+- Validate companion adapter package publishing and installation for React,
+  Vue, and Angular.
 - Add GitHub Discussions categories after the first external users appear.
 
 ## Mid Term

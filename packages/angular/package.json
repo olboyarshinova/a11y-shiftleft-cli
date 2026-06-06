@@ -1,0 +1,41 @@
+{
+  "name": "@a11y-shiftleft/angular",
+  "version": "0.1.0",
+  "description": "Angular template accessibility adapter dependency bundle for a11y-shiftleft-cli.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://github.com/olboyarshinova/a11y-shiftleft-cli#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/olboyarshinova/a11y-shiftleft-cli.git",
+    "directory": "packages/angular"
+  },
+  "bugs": {
+    "url": "https://github.com/olboyarshinova/a11y-shiftleft-cli/issues"
+  },
+  "keywords": [
+    "accessibility",
+    "a11y",
+    "angular",
+    "eslint",
+    "wcag"
+  ],
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "README.md",
+    "package.json"
+  ],
+  "peerDependencies": {
+    "a11y-shiftleft-cli": ">=0.3.0"
+  },
+  "peerDependenciesMeta": {
+    "a11y-shiftleft-cli": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@angular-eslint/eslint-plugin-template": "^21.4.0",
+    "@angular-eslint/template-parser": "^21.4.0"
+  }
+}

@@ -20,11 +20,8 @@ test("adapterPackagesForFramework returns static adapter packages", () => {
 
 test("adapterInstallPackagesForFramework returns user-facing packages", () => {
   assert.deepEqual(adapterInstallPackagesForFramework("react"), ["@a11y-shiftleft/react"]);
-  assert.deepEqual(adapterInstallPackagesForFramework("vue"), ["eslint-plugin-vue"]);
-  assert.deepEqual(adapterInstallPackagesForFramework("angular"), [
-    "@angular-eslint/eslint-plugin-template",
-    "@angular-eslint/template-parser"
-  ]);
+  assert.deepEqual(adapterInstallPackagesForFramework("vue"), ["@a11y-shiftleft/vue"]);
+  assert.deepEqual(adapterInstallPackagesForFramework("angular"), ["@a11y-shiftleft/angular"]);
 });
 
 test("getAdapterRecommendation returns framework notes", () => {

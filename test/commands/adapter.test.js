@@ -6,8 +6,8 @@ test("formatAdapterList renders supported adapters", () => {
   const output = formatAdapterList();
 
   assert.match(output, /react: @a11y-shiftleft\/react/);
-  assert.match(output, /vue: eslint-plugin-vue/);
-  assert.match(output, /angular:/);
+  assert.match(output, /vue: @a11y-shiftleft\/vue/);
+  assert.match(output, /angular: @a11y-shiftleft\/angular/);
 });
 
 test("formatAdapterInstall renders copy-paste commands", () => {
