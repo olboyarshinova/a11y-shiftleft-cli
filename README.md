@@ -528,6 +528,9 @@ npm test
 npm run test:fixtures
 npm run build:demo
 npm_config_cache=.npm-cache npm pack --dry-run
+npm_config_cache=.npm-cache npm pack --workspace @a11y-shiftleft/react --dry-run --ignore-scripts
+npm_config_cache=.npm-cache npm pack --workspace @a11y-shiftleft/vue --dry-run --ignore-scripts
+npm_config_cache=.npm-cache npm pack --workspace @a11y-shiftleft/angular --dry-run --ignore-scripts
 ```
 
 See [docs/release-checklist.md](docs/release-checklist.md) for the full release
@@ -535,4 +538,4 @@ checklist.
 
 Latest release:
 
-- [v0.2.1](docs/release-notes-v0.2.1.md)
+- [v0.4.0](docs/release-notes-v0.4.0.md)

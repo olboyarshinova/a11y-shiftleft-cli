@@ -128,8 +128,12 @@ docs/empirical-validation.md
 docs/research-paper-outline.md
 docs/roadmap.md
 docs/release-notes-v0.1.0.md
+docs/release-notes-v0.4.0.md
 docs/release-checklist.md
 docs/ide-integration.md
+packages/react/package.json
+packages/vue/package.json
+packages/angular/package.json
 ```
 
 ## Consumer Install Smoke Test
@@ -141,8 +145,10 @@ mkdir -p /tmp/a11y-consumer-smoke
 cd /tmp/a11y-consumer-smoke
 npm init -y
 npm install --save-dev a11y-shiftleft-cli
+npx a11y-shiftleft adapter add react
+npm install --save-dev @a11y-shiftleft/react
 npx a11y-shiftleft --help
-npx a11y-shiftleft init
+npx a11y-shiftleft init --framework react
 ```
 
 Create a minimal React file with an intentional issue:

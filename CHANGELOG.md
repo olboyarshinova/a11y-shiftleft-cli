@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.4.0 - 2026-06-06
+
 ### Added
 
 - Compliance evidence summary in JSON, CSV, and Markdown reports, including

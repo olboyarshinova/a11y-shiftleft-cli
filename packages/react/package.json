@@ -28,7 +28,7 @@
     "package.json"
   ],
   "peerDependencies": {
-    "a11y-shiftleft-cli": ">=0.3.0"
+    "a11y-shiftleft-cli": ">=0.4.0"
   },
   "peerDependenciesMeta": {
     "a11y-shiftleft-cli": {
