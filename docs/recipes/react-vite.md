@@ -6,6 +6,7 @@ Use this recipe to add `a11y-shiftleft-cli` to a React app powered by Vite.
 
 ```bash
 npm install --save-dev a11y-shiftleft-cli
+npm install --save-dev eslint-plugin-jsx-a11y
 npx playwright install chromium
 npx a11y-shiftleft init --framework react
 ```

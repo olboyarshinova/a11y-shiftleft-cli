@@ -26,6 +26,8 @@
 - Framework-aware setup via `init --framework react|vue|angular|auto|unknown`.
 - `doctor` now checks framework-specific adapter package availability based on
   the selected framework.
+- Framework static plugins are lazy-loaded and moved from required dependencies
+  to optional peer dependencies, preparing the future adapter package split.
 
 ## 0.3.0 - 2026-06-05
 

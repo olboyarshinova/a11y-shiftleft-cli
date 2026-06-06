@@ -1,13 +1,29 @@
 import { ESLint } from "eslint";
 import type { Linter } from "eslint";
 import path from "node:path";
-import angularTemplate from "@angular-eslint/eslint-plugin-template";
-import templateParser from "@angular-eslint/template-parser";
-import jsxA11y from "eslint-plugin-jsx-a11y";
-import vue from "eslint-plugin-vue";
 import type { A11yConfig, Issue } from "../types.js";
 
-const angularTemplatePlugin = angularTemplate as unknown as ESLint.Plugin;
+type JsxA11yPlugin = ESLint.Plugin & {
+  flatConfigs: {
+    recommended: {
+      rules: Linter.RulesRecord;
+    };
+  };
+};
+
+type VuePlugin = ESLint.Plugin & {
+  configs: {
+    "flat/base": Linter.Config[];
+  };
+};
+
+type AngularTemplatePlugin = ESLint.Plugin & {
+  configs: {
+    accessibility: {
+      rules: Linter.RulesRecord;
+    };
+  };
+};
 
 export async function runEslintAdapter(config: A11yConfig): Promise<Issue[]> {
   const patterns = config.static.include;
@@ -60,6 +76,11 @@ async function runFallbackRules(config: A11yConfig, patterns: string[]): Promise
 }
 
 async function runReactFallbackRules(config: A11yConfig, patterns: string[]): Promise<Issue[]> {
+  const jsxA11y = await loadAdapterModule<JsxA11yPlugin>(
+    "eslint-plugin-jsx-a11y",
+    config
+  );
+
   const eslint = new ESLint({
     cwd: config.cwd,
     overrideConfigFile: true,
@@ -89,6 +110,11 @@ async function runReactFallbackRules(config: A11yConfig, patterns: string[]): Pr
 }
 
 async function runVueFallbackRules(config: A11yConfig, patterns: string[]): Promise<Issue[]> {
+  const vue = await loadAdapterModule<VuePlugin>(
+    "eslint-plugin-vue",
+    config
+  );
+
   const eslint = new ESLint({
     cwd: config.cwd,
     overrideConfigFile: true,
@@ -113,6 +139,16 @@ async function runVueFallbackRules(config: A11yConfig, patterns: string[]): Prom
 }
 
 async function runAngularFallbackRules(config: A11yConfig, patterns: string[]): Promise<Issue[]> {
+  const angularTemplate = await loadAdapterModule<AngularTemplatePlugin>(
+    "@angular-eslint/eslint-plugin-template",
+    config
+  );
+  const templateParser = await loadAdapterModule<Linter.Parser>(
+    "@angular-eslint/template-parser",
+    config
+  );
+  const angularTemplatePlugin = angularTemplate as unknown as ESLint.Plugin;
+
   const eslint = new ESLint({
     cwd: config.cwd,
     overrideConfigFile: true,
@@ -138,6 +174,22 @@ async function runAngularFallbackRules(config: A11yConfig, patterns: string[]): 
   return toIssues(results, config);
 }
 
+async function loadAdapterModule<T>(packageName: string, config: A11yConfig): Promise<T> {
+  try {
+    const imported = await import(packageName);
+    return (imported.default || imported) as T;
+  } catch (error) {
+    if (isModuleResolutionError(error)) {
+      throw new Error(
+        `${packageName} is required for ${config.framework} static checks. ` +
+        `Install the matching adapter package or run npx a11y-shiftleft doctor --framework ${config.framework}.`
+      );
+    }
+
+    throw error;
+  }
+}
+
 function toIssues(results: ESLint.LintResult[], config: A11yConfig): Issue[] {
   return results.flatMap((result) => result.messages.map((message) => ({
     source: "eslint",
@@ -159,4 +211,10 @@ function adapterError(config: A11yConfig, error: unknown): Issue {
     ruleId: "adapter/eslint-error",
     message
   };
+}
+
+function isModuleResolutionError(error: unknown): error is NodeJS.ErrnoException {
+  if (!(error instanceof Error)) return false;
+  const code = "code" in error ? String(error.code) : "";
+  return code === "ERR_MODULE_NOT_FOUND" || code === "MODULE_NOT_FOUND";
 }

@@ -70,6 +70,15 @@ npx a11y-shiftleft init --framework react
 Use `--framework angular`, `--framework vue`, or `--framework auto` for other
 projects. The selected framework is stored in `.a11y-shiftleft.json`.
 
+Framework-specific static checks are lazy-loaded. Install only the adapter
+dependencies your project needs:
+
+```bash
+npm install --save-dev eslint-plugin-jsx-a11y     # React
+npm install --save-dev eslint-plugin-vue          # Vue
+npm install --save-dev @angular-eslint/eslint-plugin-template @angular-eslint/template-parser
+```
+
 Check that the local setup is ready:
 
 ```bash
@@ -477,6 +486,11 @@ legal compliance certification
 | React static scan | Working fallback via `eslint-plugin-jsx-a11y` |
 | Vue static scan | Basic fallback via `eslint-plugin-vue` template rules |
 | Angular static scan | Working fallback via `@angular-eslint/eslint-plugin-template` accessibility rules |
+
+Framework static adapters are lazy-loaded and represented as optional peer
+dependencies. This keeps the CLI path framework-aware today and prepares the
+future package split into `@a11y-shiftleft/react`, `@a11y-shiftleft/vue`, and
+`@a11y-shiftleft/angular`.
 
 Dynamic scanning is the portable baseline: any React, Vue, Angular, Svelte,
 Next.js, Nuxt, Astro, Rails, Django, or static HTML app can be scanned if it is
