@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { createRequire } from "node:module";
 import type { Command } from "commander";
+import type { Framework } from "../types.js";
 
 export type DoctorStatus = "pass" | "warn" | "fail";
 
@@ -14,6 +15,7 @@ export interface DoctorCheck {
 interface DoctorOptions {
   cwd: string;
   config?: string;
+  framework?: string;
   url?: string;
   json?: boolean;
   fail?: boolean;
@@ -35,6 +37,7 @@ export function registerDoctorCommand(program: Command): void {
     .description("Check local setup before running accessibility scans.")
     .option("--cwd <dir>", "Target project directory", process.cwd())
     .option("--config <file>", "Config path relative to cwd")
+    .option("--framework <name>", "Target framework: auto, react, vue, angular, or unknown")
     .option("--url <url>", "Target URL to verify before dynamic scans")
     .option("--json", "Print machine-readable doctor output")
     .option("--no-fail", "Do not exit with a non-zero status when checks fail")
@@ -54,7 +57,7 @@ export function registerDoctorCommand(program: Command): void {
 }
 
 export async function runDoctorChecks(
-  options: Pick<DoctorOptions, "cwd" | "config" | "url">,
+  options: Pick<DoctorOptions, "cwd" | "config" | "framework" | "url">,
   runtime: DoctorRuntime = {
     nodeVersion: process.versions.node,
     env: process.env,
@@ -64,12 +67,14 @@ export async function runDoctorChecks(
 ): Promise<DoctorCheck[]> {
   const cwd = path.resolve(options.cwd || process.cwd());
   const configPath = path.resolve(cwd, options.config || DEFAULT_CONFIG_FILE);
+  const framework = toFramework(options.framework) || await readConfiguredFramework(configPath);
   const checks: DoctorCheck[] = [];
 
   checks.push(checkNodeVersion(runtime.nodeVersion));
   checks.push(await checkProjectDirectory(cwd));
   checks.push(await checkConfigFile(configPath));
   checks.push(checkPackageResolution(cwd, "playwright"));
+  checks.push(...checkFrameworkAdapterPackages(cwd, framework));
   checks.push(await runtime.checkChromium());
   checks.push(checkCiEnvironment(runtime.env));
 
@@ -84,6 +89,33 @@ export async function runDoctorChecks(
   }
 
   return checks;
+}
+
+export function checkFrameworkAdapterPackages(cwd: string, framework: Framework): DoctorCheck[] {
+  const requiredPackages = adapterPackagesForFramework(framework);
+
+  if (requiredPackages.length === 0) {
+    return [{
+      name: "Framework adapters",
+      status: "warn",
+      message: "Framework is auto/unknown. Configure --framework or .a11y-shiftleft.json for more specific adapter checks."
+    }];
+  }
+
+  return requiredPackages.map((packageName) => checkPackageResolution(cwd, packageName));
+}
+
+export function adapterPackagesForFramework(framework: Framework): string[] {
+  if (framework === "react") return ["eslint-plugin-jsx-a11y"];
+  if (framework === "vue") return ["eslint-plugin-vue"];
+  if (framework === "angular") {
+    return [
+      "@angular-eslint/eslint-plugin-template",
+      "@angular-eslint/template-parser"
+    ];
+  }
+
+  return [];
 }
 
 export function summarizeDoctorChecks(checks: DoctorCheck[]): Record<DoctorStatus, number> {
@@ -184,6 +216,30 @@ function checkPackageResolution(cwd: string, packageName: string): DoctorCheck {
       message: `${packageName} is not resolvable from the target project. Install the CLI locally or run npm install.`
     };
   }
+}
+
+async function readConfiguredFramework(configPath: string): Promise<Framework> {
+  try {
+    const raw = await fs.readFile(configPath, "utf8");
+    const config = JSON.parse(raw) as { framework?: unknown };
+    return toFramework(config.framework) || "auto";
+  } catch {
+    return "auto";
+  }
+}
+
+function toFramework(framework: unknown): Framework | undefined {
+  if (
+    framework === "react" ||
+    framework === "vue" ||
+    framework === "angular" ||
+    framework === "auto" ||
+    framework === "unknown"
+  ) {
+    return framework;
+  }
+
+  return undefined;
 }
 
 async function checkChromiumBrowser(): Promise<DoctorCheck> {

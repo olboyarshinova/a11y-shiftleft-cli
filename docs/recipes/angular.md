@@ -7,7 +7,7 @@ Use this recipe to add `a11y-shiftleft-cli` to an Angular project.
 ```bash
 npm install --save-dev a11y-shiftleft-cli
 npx playwright install chromium
-npx a11y-shiftleft init
+npx a11y-shiftleft init --framework angular
 ```
 
 ## Add Scripts

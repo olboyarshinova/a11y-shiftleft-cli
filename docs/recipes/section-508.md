@@ -9,7 +9,7 @@ legal compliance.
 ```bash
 npm install --save-dev a11y-shiftleft-cli
 npx playwright install chromium
-npx a11y-shiftleft init
+npx a11y-shiftleft init --framework auto
 ```
 
 ## Run

@@ -64,8 +64,11 @@ in the project you want to scan:
 ```bash
 npm install --save-dev a11y-shiftleft-cli
 npx playwright install chromium
-npx a11y-shiftleft init
+npx a11y-shiftleft init --framework react
 ```
+
+Use `--framework angular`, `--framework vue`, or `--framework auto` for other
+projects. The selected framework is stored in `.a11y-shiftleft.json`.
 
 Check that the local setup is ready:
 

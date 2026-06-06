@@ -23,6 +23,9 @@
   Actions, and Section 508 workflows.
 - GitHub issue templates for bug reports, framework support requests, rule
   mapping requests, and adoption stories.
+- Framework-aware setup via `init --framework react|vue|angular|auto|unknown`.
+- `doctor` now checks framework-specific adapter package availability based on
+  the selected framework.
 
 ## 0.3.0 - 2026-06-05
 

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { formatDoctorChecks, runDoctorChecks, summarizeDoctorChecks } from "../../dist/commands/doctor.js";
+import { adapterPackagesForFramework, checkFrameworkAdapterPackages, formatDoctorChecks, runDoctorChecks, summarizeDoctorChecks } from "../../dist/commands/doctor.js";
 
 test("runDoctorChecks reports local setup and reachable target URL", async () => {
   const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-doctor-"));
@@ -26,6 +26,24 @@ test("runDoctorChecks reports local setup and reachable target URL", async () =>
   assert.equal(checks.find((check) => check.name === "Node.js")?.status, "pass");
   assert.equal(checks.find((check) => check.name === "Config file")?.status, "pass");
   assert.equal(checks.find((check) => check.name === "Target URL")?.status, "pass");
+});
+
+test("adapterPackagesForFramework returns framework-specific packages", () => {
+  assert.deepEqual(adapterPackagesForFramework("react"), ["eslint-plugin-jsx-a11y"]);
+  assert.deepEqual(adapterPackagesForFramework("vue"), ["eslint-plugin-vue"]);
+  assert.deepEqual(adapterPackagesForFramework("angular"), [
+    "@angular-eslint/eslint-plugin-template",
+    "@angular-eslint/template-parser"
+  ]);
+  assert.deepEqual(adapterPackagesForFramework("auto"), []);
+});
+
+test("checkFrameworkAdapterPackages warns when framework is auto", () => {
+  const checks = checkFrameworkAdapterPackages(process.cwd(), "auto");
+
+  assert.equal(checks.length, 1);
+  assert.equal(checks[0].status, "warn");
+  assert.match(checks[0].message, /Framework is auto\/unknown/);
 });
 
 test("runDoctorChecks warns when config and URL are missing", async () => {
