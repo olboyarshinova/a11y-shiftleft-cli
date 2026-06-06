@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Changed
+
+- Adapter packages now declare optional framework runtime peer dependencies
+  (`react`, `vue`, and `@angular/core`) so npm metadata signals the intended
+  host framework without installing framework runtimes.
+
 ## 0.4.0 - 2026-06-06
 
 ### Added

@@ -1,6 +1,6 @@
 {
   "name": "@a11y-shiftleft/react",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "React static accessibility adapter dependency bundle for a11y-shiftleft-cli.",
   "type": "module",
   "license": "MIT",
@@ -28,10 +28,14 @@
     "package.json"
   ],
   "peerDependencies": {
-    "a11y-shiftleft-cli": ">=0.4.0"
+    "a11y-shiftleft-cli": ">=0.4.0",
+    "react": ">=17"
   },
   "peerDependenciesMeta": {
     "a11y-shiftleft-cli": {
+      "optional": true
+    },
+    "react": {
       "optional": true
     }
   },
