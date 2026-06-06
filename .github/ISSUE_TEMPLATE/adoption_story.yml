@@ -1,0 +1,46 @@
+name: Adoption story
+description: Share how your project uses a11y-shiftleft-cli.
+title: "[Adoption]: "
+labels:
+  - adoption
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Adoption stories help improve the project and document real-world use cases.
+  - type: input
+    id: project
+    attributes:
+      label: Project or organization
+      description: Public project name, organization, or "private project".
+    validations:
+      required: true
+  - type: dropdown
+    id: framework
+    attributes:
+      label: Framework
+      options:
+        - React
+        - Vue
+        - Angular
+        - Next.js
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: workflow
+    attributes:
+      label: How are you using the CLI?
+      description: Local script, GitHub Actions, PR comments, research metrics, or another workflow.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: Share useful metrics such as findings reduced, pages scanned, or CI adoption.
+  - type: textarea
+    id: links
+    attributes:
+      label: Public links
+      description: Link to repositories, workflows, reports, posts, or pull requests if public.

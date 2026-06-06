@@ -91,6 +91,15 @@ Run a dynamic scan against the app URL:
 npx a11y-shiftleft check --dynamic --url http://localhost:3000 --out reports
 ```
 
+Short setup recipes are available for common workflows:
+
+- [Angular](docs/recipes/angular.md)
+- [React/Vite](docs/recipes/react-vite.md)
+- [Vue/Vite](docs/recipes/vue-vite.md)
+- [Next.js](docs/recipes/nextjs.md)
+- [GitHub Actions](docs/recipes/github-actions.md)
+- [Section 508](docs/recipes/section-508.md)
+
 Scan several known routes in one run:
 
 ```bash

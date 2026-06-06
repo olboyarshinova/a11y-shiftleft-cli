@@ -99,7 +99,7 @@ This should be written as engineering evidence, not marketing copy.
 
 ### Copy-Paste Recipes
 
-Add short recipes for common adoption scenarios:
+Keep short recipes for common adoption scenarios:
 
 - `docs/recipes/angular.md`
 - `docs/recipes/react-vite.md`
@@ -196,7 +196,7 @@ In CI, build and start the app before running the CLI.
 
 ### Community Surfaces
 
-Add GitHub issue templates and discussions after the first external users
+Keep GitHub issue templates and add discussions after the first external users
 appear:
 
 - bug report

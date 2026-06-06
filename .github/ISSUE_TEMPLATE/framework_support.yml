@@ -1,0 +1,32 @@
+name: Framework support request
+description: Request or improve support for a frontend framework or setup.
+title: "[Framework]: "
+labels:
+  - framework-support
+body:
+  - type: input
+    id: framework
+    attributes:
+      label: Framework or setup
+      placeholder: "SvelteKit, Astro, Remix, Angular standalone components"
+    validations:
+      required: true
+  - type: textarea
+    id: current_workflow
+    attributes:
+      label: Current workflow
+      description: Describe how the app is built, started, and tested today.
+    validations:
+      required: true
+  - type: textarea
+    id: desired_result
+    attributes:
+      label: Desired accessibility workflow
+      description: What should the CLI do for this setup?
+    validations:
+      required: true
+  - type: textarea
+    id: links
+    attributes:
+      label: Example repositories or docs
+      description: Link to public examples if available.

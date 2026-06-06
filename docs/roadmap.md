@@ -14,10 +14,9 @@ for reproducible empirical validation.
   established ESLint plugins rather than custom parsers.
 - Keep the adoption plan in [adoption-strategy.md](adoption-strategy.md)
   aligned with current CLI capabilities and public documentation.
-- Add copy-paste recipe docs for Angular, React/Vite, Vue/Vite, Next.js, GitHub
-  Actions, and Section 508 workflows.
-- Create issue templates for bugs, framework support requests, rule mapping
-  requests, and adoption stories.
+- Expand recipe docs with screenshots, generated report excerpts, and rollout
+  guidance for early teams.
+- Add GitHub Discussions categories after the first external users appear.
 
 ## Mid Term
 

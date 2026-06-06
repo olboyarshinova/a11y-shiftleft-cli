@@ -19,6 +19,10 @@
   installation, CI detection, and target URL reachability.
 - CLI version output now reads from `package.json` instead of a hard-coded
   value.
+- Copy-paste recipe docs for Angular, React/Vite, Vue/Vite, Next.js, GitHub
+  Actions, and Section 508 workflows.
+- GitHub issue templates for bug reports, framework support requests, rule
+  mapping requests, and adoption stories.
 
 ## 0.3.0 - 2026-06-05
 
