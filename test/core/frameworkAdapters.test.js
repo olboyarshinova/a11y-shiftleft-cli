@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   adapterInstallCommand,
+  adapterInstallPackagesForFramework,
   adapterPackagesForFramework,
   getAdapterRecommendation,
   listAdapterRecommendations
@@ -15,6 +16,15 @@ test("adapterPackagesForFramework returns static adapter packages", () => {
     "@angular-eslint/template-parser"
   ]);
   assert.deepEqual(adapterPackagesForFramework("auto"), []);
+});
+
+test("adapterInstallPackagesForFramework returns user-facing packages", () => {
+  assert.deepEqual(adapterInstallPackagesForFramework("react"), ["@a11y-shiftleft/react"]);
+  assert.deepEqual(adapterInstallPackagesForFramework("vue"), ["eslint-plugin-vue"]);
+  assert.deepEqual(adapterInstallPackagesForFramework("angular"), [
+    "@angular-eslint/eslint-plugin-template",
+    "@angular-eslint/template-parser"
+  ]);
 });
 
 test("getAdapterRecommendation returns framework notes", () => {

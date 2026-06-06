@@ -45,10 +45,11 @@ export function registerAdapterCommand(program: Command): void {
         throw new Error("Unsupported adapter framework. Use react, vue, or angular.");
       }
 
-      const install = adapterInstallCommand(recommendation.packages, packageManager);
+      const install = adapterInstallCommand(recommendation.installPackages, packageManager);
       const payload = {
         framework: recommendation.framework,
         packages: recommendation.packages,
+        installPackages: recommendation.installPackages,
         packageManager,
         install,
         init: `npx a11y-shiftleft init --framework ${recommendation.framework}`,
@@ -69,7 +70,7 @@ export function formatAdapterList(): string {
     "a11y-shiftleft adapters",
     "",
     ...listAdapterRecommendations().map((adapter) => (
-      `${adapter.framework}: ${adapter.packages.join(" ")}`
+      `${adapter.framework}: ${adapter.installPackages.join(" ")}`
     )),
     "",
     "Example:",
@@ -82,6 +83,7 @@ export function formatAdapterList(): string {
 export function formatAdapterInstall(options: {
   framework: string;
   packages: string[];
+  installPackages: string[];
   packageManager: PackageManager;
   install: string;
   init: string;

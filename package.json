@@ -25,6 +25,9 @@
   "bin": {
     "a11y-shiftleft": "bin/cli.js"
   },
+  "workspaces": [
+    "packages/*"
+  ],
   "files": [
     "bin/",
     "dist/",

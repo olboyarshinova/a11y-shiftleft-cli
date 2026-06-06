@@ -30,6 +30,7 @@
   to optional peer dependencies, preparing the future adapter package split.
 - `adapter list` and `adapter add <framework>` commands for copy-paste static
   adapter dependency guidance.
+- React companion adapter package scaffold at `@a11y-shiftleft/react`.
 
 ## 0.3.0 - 2026-06-05
 

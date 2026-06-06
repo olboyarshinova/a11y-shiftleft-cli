@@ -3,6 +3,7 @@ import type { Framework } from "../types.js";
 export interface FrameworkAdapterRecommendation {
   framework: Exclude<Framework, "auto" | "unknown">;
   packages: string[];
+  installPackages: string[];
   note: string;
 }
 
@@ -12,16 +13,22 @@ const ADAPTER_RECOMMENDATIONS: Record<FrameworkAdapterRecommendation["framework"
   react: {
     framework: "react",
     packages: ["eslint-plugin-jsx-a11y"],
+    installPackages: ["@a11y-shiftleft/react"],
     note: "React static checks use eslint-plugin-jsx-a11y."
   },
   vue: {
     framework: "vue",
     packages: ["eslint-plugin-vue"],
+    installPackages: ["eslint-plugin-vue"],
     note: "Vue static checks use eslint-plugin-vue template rules."
   },
   angular: {
     framework: "angular",
     packages: [
+      "@angular-eslint/eslint-plugin-template",
+      "@angular-eslint/template-parser"
+    ],
+    installPackages: [
       "@angular-eslint/eslint-plugin-template",
       "@angular-eslint/template-parser"
     ],
@@ -31,6 +38,10 @@ const ADAPTER_RECOMMENDATIONS: Record<FrameworkAdapterRecommendation["framework"
 
 export function adapterPackagesForFramework(framework: Framework): string[] {
   return getAdapterRecommendation(framework)?.packages || [];
+}
+
+export function adapterInstallPackagesForFramework(framework: Framework): string[] {
+  return getAdapterRecommendation(framework)?.installPackages || [];
 }
 
 export function getAdapterRecommendation(framework: Framework): FrameworkAdapterRecommendation | undefined {

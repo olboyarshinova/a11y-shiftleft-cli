@@ -75,7 +75,7 @@ dependencies your project needs:
 
 ```bash
 npx a11y-shiftleft adapter add react
-npm install --save-dev eslint-plugin-jsx-a11y     # React
+npm install --save-dev @a11y-shiftleft/react      # React
 npm install --save-dev eslint-plugin-vue          # Vue
 npm install --save-dev @angular-eslint/eslint-plugin-template @angular-eslint/template-parser
 ```
@@ -490,7 +490,7 @@ legal compliance certification
 
 Framework static adapters are lazy-loaded and represented as optional peer
 dependencies. This keeps the CLI path framework-aware today and prepares the
-future package split into `@a11y-shiftleft/react`, `@a11y-shiftleft/vue`, and
+future package split into `@a11y-shiftleft/vue`, and
 `@a11y-shiftleft/angular`.
 
 Use `npx a11y-shiftleft adapter list` or
