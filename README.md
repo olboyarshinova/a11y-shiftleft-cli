@@ -74,6 +74,7 @@ Framework-specific static checks are lazy-loaded. Install only the adapter
 dependencies your project needs:
 
 ```bash
+npx a11y-shiftleft adapter add react
 npm install --save-dev eslint-plugin-jsx-a11y     # React
 npm install --save-dev eslint-plugin-vue          # Vue
 npm install --save-dev @angular-eslint/eslint-plugin-template @angular-eslint/template-parser
@@ -491,6 +492,10 @@ Framework static adapters are lazy-loaded and represented as optional peer
 dependencies. This keeps the CLI path framework-aware today and prepares the
 future package split into `@a11y-shiftleft/react`, `@a11y-shiftleft/vue`, and
 `@a11y-shiftleft/angular`.
+
+Use `npx a11y-shiftleft adapter list` or
+`npx a11y-shiftleft adapter add <framework>` to print the recommended adapter
+dependencies for a project.
 
 Dynamic scanning is the portable baseline: any React, Vue, Angular, Svelte,
 Next.js, Nuxt, Astro, Rails, Django, or static HTML app can be scanned if it is

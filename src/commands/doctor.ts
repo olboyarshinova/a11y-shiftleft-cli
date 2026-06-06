@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { createRequire } from "node:module";
 import type { Command } from "commander";
+import { adapterPackagesForFramework } from "../core/frameworkAdapters.js";
 import type { Framework } from "../types.js";
 
 export type DoctorStatus = "pass" | "warn" | "fail";
@@ -103,19 +104,6 @@ export function checkFrameworkAdapterPackages(cwd: string, framework: Framework)
   }
 
   return requiredPackages.map((packageName) => checkPackageResolution(cwd, packageName));
-}
-
-export function adapterPackagesForFramework(framework: Framework): string[] {
-  if (framework === "react") return ["eslint-plugin-jsx-a11y"];
-  if (framework === "vue") return ["eslint-plugin-vue"];
-  if (framework === "angular") {
-    return [
-      "@angular-eslint/eslint-plugin-template",
-      "@angular-eslint/template-parser"
-    ];
-  }
-
-  return [];
 }
 
 export function summarizeDoctorChecks(checks: DoctorCheck[]): Record<DoctorStatus, number> {

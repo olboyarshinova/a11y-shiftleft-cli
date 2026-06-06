@@ -6,6 +6,7 @@ Use this recipe to add `a11y-shiftleft-cli` to a Vue app powered by Vite.
 
 ```bash
 npm install --save-dev a11y-shiftleft-cli
+npx a11y-shiftleft adapter add vue
 npm install --save-dev eslint-plugin-vue
 npx playwright install chromium
 npx a11y-shiftleft init --framework vue

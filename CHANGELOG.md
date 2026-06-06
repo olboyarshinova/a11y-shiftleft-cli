@@ -28,6 +28,8 @@
   the selected framework.
 - Framework static plugins are lazy-loaded and moved from required dependencies
   to optional peer dependencies, preparing the future adapter package split.
+- `adapter list` and `adapter add <framework>` commands for copy-paste static
+  adapter dependency guidance.
 
 ## 0.3.0 - 2026-06-05
 

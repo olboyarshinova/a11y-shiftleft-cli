@@ -5,6 +5,7 @@ import { registerInitCommand } from "../dist/commands/init.js";
 import { registerCheckCommand } from "../dist/commands/check.js";
 import { registerCiCommand } from "../dist/commands/ci.js";
 import { registerDoctorCommand } from "../dist/commands/doctor.js";
+import { registerAdapterCommand } from "../dist/commands/adapter.js";
 
 const require = createRequire(import.meta.url);
 const { version } = require("../package.json");
@@ -19,5 +20,6 @@ registerInitCommand(program);
 registerCheckCommand(program);
 registerCiCommand(program);
 registerDoctorCommand(program);
+registerAdapterCommand(program);
 
 program.parse();
