@@ -5,6 +5,7 @@
 ### Added
 
 - Post-release v0.4.0 consumer install verification notes.
+- Public v0.4.0 adoption snapshot and promotion draft.
 
 ### Changed
 
