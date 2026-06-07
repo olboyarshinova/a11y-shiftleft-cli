@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Post-release v0.4.0 consumer install verification notes.
+
 ### Changed
 
 - Adapter packages now declare optional framework runtime peer dependencies
