@@ -1,0 +1,65 @@
+# a11y-shiftleft React/Vite Demo
+
+This standalone demo shows how to use `a11y-shiftleft-cli` in a small
+React/Vite project. It intentionally includes a few accessibility issues so the
+CLI can generate real JSON, CSV, and Markdown reports.
+
+Use this directory as a template for a public demo repository or before/after
+pull request flow.
+
+## What It Demonstrates
+
+- installing the CLI plus the React adapter package
+- running `doctor` before a scan
+- scanning a running Vite app with axe/Playwright
+- generating reports in `reports/`
+- running the same scan in GitHub Actions
+
+## Run Locally
+
+```bash
+npm install
+npx playwright install chromium
+npm run start:a11y
+```
+
+In another terminal:
+
+```bash
+npm run doctor:a11y
+npm run test:a11y
+```
+
+Open the generated report:
+
+```bash
+open reports/a11y-comment.md
+```
+
+## Expected Seeded Findings
+
+The demo page intentionally includes examples such as:
+
+- an image without alternative text
+- a form field without a visible label
+- a low-contrast button
+- an icon-only button without an accessible name
+
+These are teaching examples, not production recommendations.
+
+## Before/After PR Flow
+
+1. Create PR 1 that adds this workflow and keeps the seeded issues.
+2. Capture the generated report from CI.
+3. Create PR 2 that fixes the findings.
+4. Compare `reports/a11y-summary.json` before and after.
+
+For the full playbook, see
+[`../../docs/demo-pr-playbook-v0.4.0.md`](../../docs/demo-pr-playbook-v0.4.0.md).
+
+## Guardrails
+
+- Do not claim WCAG, ADA, or Section 508 certification from automated results.
+- Automated checks cover only part of accessibility review.
+- Do not commit npm tokens, OTP codes, private screenshots, or local machine
+  paths.

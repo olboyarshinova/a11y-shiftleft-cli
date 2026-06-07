@@ -9,6 +9,8 @@
 - v0.4.0 demo pull request playbook for before/after adoption evidence.
 - v0.4.0 case study template for turning demo pull requests into publishable
   engineering evidence.
+- Standalone React/Vite demo template for creating a public before/after
+  accessibility CI repository.
 
 ### Changed
 

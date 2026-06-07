@@ -17,7 +17,14 @@ Create a small public repository or branch that demonstrates:
 Recommended first target: React/Vite, because the current adapter package and
 demo assets are already stable.
 
+You can start from the ready template in
+[`../examples/demo-react-vite`](../examples/demo-react-vite), then move it into
+a dedicated public repository when the before/after flow is ready.
+
 ## Repository Shape
+
+If you use the template, the repository shape is already prepared. If you build
+the demo manually, use this structure:
 
 ```txt
 a11y-shiftleft-demo-react/

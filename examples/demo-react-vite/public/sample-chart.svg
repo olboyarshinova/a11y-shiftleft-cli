@@ -1,0 +1,10 @@
+<svg width="320" height="180" viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg" role="img">
+  <rect width="320" height="180" rx="12" fill="#eef4ef"/>
+  <rect x="40" y="118" width="38" height="32" rx="4" fill="#1e6d5b"/>
+  <rect x="96" y="88" width="38" height="62" rx="4" fill="#3f7f95"/>
+  <rect x="152" y="58" width="38" height="92" rx="4" fill="#b66a4b"/>
+  <rect x="208" y="34" width="38" height="116" rx="4" fill="#6b5fa8"/>
+  <path d="M36 150H270" stroke="#66736d" stroke-width="2"/>
+  <path d="M36 30V150" stroke="#66736d" stroke-width="2"/>
+  <text x="40" y="24" fill="#17211d" font-family="Arial, sans-serif" font-size="14">Findings by sprint</text>
+</svg>

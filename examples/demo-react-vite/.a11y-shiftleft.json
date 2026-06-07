@@ -1,0 +1,25 @@
+{
+  "framework": "react",
+  "standard": "wcag22-aa",
+  "wcagVersion": "2.2",
+  "wcagLevel": "AA",
+  "failOn": "none",
+  "outputDir": "reports",
+  "static": {
+    "enabled": true,
+    "include": ["src/**/*.{js,jsx,ts,tsx}"]
+  },
+  "dynamic": {
+    "enabled": true,
+    "urls": ["http://localhost:3000"],
+    "browser": "chromium",
+    "crawl": false,
+    "crawlDepth": 1,
+    "crawlLimit": 10
+  },
+  "metrics": {
+    "enabled": true,
+    "csv": true,
+    "json": true
+  }
+}

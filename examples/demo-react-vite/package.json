@@ -1,0 +1,25 @@
+{
+  "name": "a11y-shiftleft-demo-react-vite",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Standalone React/Vite demo for a11y-shiftleft-cli.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host localhost --port 3000",
+    "start:a11y": "vite --host localhost --port 3000",
+    "doctor:a11y": "a11y-shiftleft doctor --framework react --url http://localhost:3000",
+    "test:a11y": "a11y-shiftleft check --url http://localhost:3000 --framework react --out reports --fail-on none",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.0.5",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "a11y-shiftleft-cli": "^0.4.0",
+    "@a11y-shiftleft/react": "^0.1.1",
+    "eslint-plugin-jsx-a11y": "^6.10.2"
+  }
+}

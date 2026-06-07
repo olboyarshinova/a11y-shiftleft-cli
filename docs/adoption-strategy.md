@@ -84,6 +84,10 @@ real pull request flow:
 The demo repository should make the value visible without requiring users to
 clone the main CLI project.
 
+Start with the ready React/Vite template in
+[`../examples/demo-react-vite`](../examples/demo-react-vite), then move it into
+a dedicated public repository once the before/after flow is ready.
+
 Use [demo-pr-playbook-v0.4.0.md](demo-pr-playbook-v0.4.0.md) as the first
 repeatable script for creating a public before/after pull request flow.
 Use [case-study-template-v0.4.0.md](case-study-template-v0.4.0.md) to turn that
