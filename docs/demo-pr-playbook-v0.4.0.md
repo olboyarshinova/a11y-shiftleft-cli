@@ -161,6 +161,9 @@ screen reader smoke checks are still required.
 - screenshot of the PR report comment if available
 - short notes on manual review that remains
 
+After the two pull requests are complete, summarize the result with
+[case-study-template-v0.4.0.md](case-study-template-v0.4.0.md).
+
 ## Promotion Copy
 
 ```txt

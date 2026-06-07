@@ -86,6 +86,8 @@ clone the main CLI project.
 
 Use [demo-pr-playbook-v0.4.0.md](demo-pr-playbook-v0.4.0.md) as the first
 repeatable script for creating a public before/after pull request flow.
+Use [case-study-template-v0.4.0.md](case-study-template-v0.4.0.md) to turn that
+flow into a publishable engineering case study.
 
 ### Before/After Case Study
 
