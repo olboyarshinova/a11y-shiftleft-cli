@@ -84,6 +84,9 @@ real pull request flow:
 The demo repository should make the value visible without requiring users to
 clone the main CLI project.
 
+Use [demo-pr-playbook-v0.4.0.md](demo-pr-playbook-v0.4.0.md) as the first
+repeatable script for creating a public before/after pull request flow.
+
 ### Before/After Case Study
 
 Publish a short case study from the demo app or a consenting real project:

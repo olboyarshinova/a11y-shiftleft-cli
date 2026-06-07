@@ -45,6 +45,8 @@ npx a11y-shiftleft check --url http://localhost:3000
 ## Follow-Up Actions
 
 - Add a demo pull request showing the CLI report before and after fixes.
+- Use [demo-pr-playbook-v0.4.0.md](demo-pr-playbook-v0.4.0.md) to keep the
+  demo reproducible and legally safe.
 - Link to the relevant recipe docs for React/Vite, Vue/Vite, Angular, and
   Next.js.
 - Re-run adoption snapshots after one week and one month.

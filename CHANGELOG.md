@@ -6,6 +6,7 @@
 
 - Post-release v0.4.0 consumer install verification notes.
 - Public v0.4.0 adoption snapshot and promotion draft.
+- v0.4.0 demo pull request playbook for before/after adoption evidence.
 
 ### Changed
 
