@@ -17,6 +17,10 @@ test("parseArgs supports package, repo, period, and output options", () => {
     "owner/repo",
     "--period",
     "last-week",
+    "--npm-website-downloads",
+    "586",
+    "--npm-website-captured-at",
+    "2026-06-07",
     "--out",
     "analysis/adoption.json"
   ]);
@@ -25,6 +29,8 @@ test("parseArgs supports package, repo, period, and output options", () => {
     packageName: "demo-package",
     repo: "owner/repo",
     period: "last-week",
+    npmWebsiteDownloads: 586,
+    npmWebsiteCapturedAt: "2026-06-07",
     out: "analysis/adoption.json"
   });
 });
@@ -34,6 +40,8 @@ test("collectAdoptionMetrics collects npm downloads and registry metadata", asyn
     packageName: "demo-package",
     repo: "owner/repo",
     period: "last-week",
+    npmWebsiteDownloads: 586,
+    npmWebsiteCapturedAt: "2026-06-07",
     githubToken: ""
   }, {
     now: () => new Date("2026-06-03T00:00:00.000Z"),
@@ -42,6 +50,8 @@ test("collectAdoptionMetrics collects npm downloads and registry metadata", asyn
 
   assert.equal(metrics.generatedAt, "2026-06-03T00:00:00.000Z");
   assert.equal(metrics.npm.downloads.total, 30);
+  assert.equal(metrics.npm.websiteDownloads.total, 586);
+  assert.equal(metrics.npm.websiteDownloads.capturedAt, "2026-06-07");
   assert.equal(metrics.registry.latestVersion, "1.2.3");
   assert.equal(metrics.github.available, false);
   assert.match(metrics.interpretation.geography, /does not expose country-level/);

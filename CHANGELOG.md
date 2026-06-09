@@ -11,6 +11,8 @@
   engineering evidence.
 - Standalone React/Vite demo template for creating a public before/after
   accessibility CI repository.
+- Adoption telemetry collector support for separately recording manual npm
+  website download snapshots alongside npm API periods.
 
 ### Changed
 

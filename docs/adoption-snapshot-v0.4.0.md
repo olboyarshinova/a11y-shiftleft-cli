@@ -1,6 +1,8 @@
 # v0.4.0 Adoption Snapshot
 
 Date: 2026-06-07
+Last npm API refresh: 2026-06-07 09:00 UTC
+Last npm website snapshot: 2026-06-07
 
 This snapshot records public package metadata shortly after the v0.4.0 release.
 It should be treated as early adoption telemetry, not as proof of individual
@@ -17,7 +19,7 @@ human usage.
 
 ## npm Downloads
 
-Public npm downloads for `last-week`:
+Public npm downloads for `last-week`, collected from the npm downloads API:
 
 | Package | Downloads |
 |---|---:|
@@ -28,6 +30,32 @@ Public npm downloads for `last-week`:
 
 The adapter packages were published shortly before this snapshot, so zero
 adapter downloads are expected at this stage.
+
+Public npm website downloads for all versions, recorded manually from package
+pages:
+
+| Package | npm Website Downloads |
+|---|---:|
+| `a11y-shiftleft-cli` | 586 |
+| `@a11y-shiftleft/react` | 259 |
+| `@a11y-shiftleft/vue` | 258 |
+| `@a11y-shiftleft/angular` | 249 |
+
+The npm website can show different numbers than this table because npm download
+counts are rolling, cached, and reported across different time windows. For
+evidence, always record the collection time, period, and source instead of
+presenting downloads as a permanent number.
+
+The adoption collector supports manual website snapshots with:
+
+```bash
+npm run collect:adoption -- \
+  --package a11y-shiftleft-cli \
+  --period last-month \
+  --npm-website-downloads 586 \
+  --npm-website-captured-at 2026-06-07 \
+  --out analysis/adoption-cli.json
+```
 
 ## Interpretation Guardrails
 

@@ -434,6 +434,18 @@ or person-level data. Treat npm downloads as ecosystem activity because they can
 include humans, CI systems, package mirrors, security scanners, and bots. Use
 GitHub unique views/clones and referrers as stronger human-adoption signals.
 
+If you also record the visible download count from the npm package page, store
+it as a separate website snapshot so it is not mixed with API periods:
+
+```bash
+npm run collect:adoption -- \
+  --package a11y-shiftleft-cli \
+  --period last-month \
+  --npm-website-downloads 586 \
+  --npm-website-captured-at 2026-06-07 \
+  --out analysis/adoption-cli.json
+```
+
 ## Roadmap
 
 See [docs/roadmap.md](docs/roadmap.md) for planned improvements such as

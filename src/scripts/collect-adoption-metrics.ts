@@ -23,6 +23,8 @@ export type AdoptionOptions = {
   period?: string;
   out?: string;
   githubToken?: string;
+  npmWebsiteDownloads?: number;
+  npmWebsiteCapturedAt?: string;
 };
 
 export type AdoptionDeps = {
@@ -71,6 +73,12 @@ export type AdoptionMetrics = {
     downloads: {
       total: number;
       days: NpmDownloadDay[];
+    };
+    websiteDownloads?: {
+      total: number;
+      capturedAt?: string;
+      source: string;
+      note: string;
     };
   };
   github: GitHubUnavailable | GitHubAvailable;
@@ -122,6 +130,18 @@ export function parseArgs(argv: string[] = process.argv.slice(2)): AdoptionOptio
       index += 1;
       continue;
     }
+
+    if (arg === "--npm-website-downloads" && next) {
+      options.npmWebsiteDownloads = Number(next);
+      index += 1;
+      continue;
+    }
+
+    if (arg === "--npm-website-captured-at" && next) {
+      options.npmWebsiteCapturedAt = next;
+      index += 1;
+      continue;
+    }
   }
 
   return options;
@@ -150,7 +170,8 @@ export async function collectAdoptionMetrics(
     repository: repo,
     period,
     npm: {
-      downloads
+      downloads,
+      ...websiteDownloadsSnapshot(options)
     },
     github,
     registry,
@@ -161,6 +182,20 @@ export async function collectAdoptionMetrics(
         "The public npm downloads API does not expose country-level download data. Use privacy-preserving website analytics for docs/landing-page geography if geographic evidence is needed.",
       evidenceUse:
         "Use this report as adoption telemetry, not as proof of WCAG conformance or individual human usage."
+    }
+  };
+}
+
+function websiteDownloadsSnapshot(options: AdoptionOptions): Pick<AdoptionMetrics["npm"], "websiteDownloads"> {
+  if (!Number.isFinite(options.npmWebsiteDownloads)) return {};
+
+  return {
+    websiteDownloads: {
+      total: Number(options.npmWebsiteDownloads),
+      capturedAt: options.npmWebsiteCapturedAt,
+      source: "npm package page",
+      note:
+        "Manual website snapshot for all visible versions. npm website counts can differ from the public downloads API because sources use different windows, caching, and aggregation."
     }
   };
 }
