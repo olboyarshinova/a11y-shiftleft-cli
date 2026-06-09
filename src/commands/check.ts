@@ -9,6 +9,7 @@ import { writeReports } from "../reporters/writeReports.js";
 import { detectFramework } from "../core/detectFramework.js";
 import { matchesWcagLevel, matchesWcagVersion } from "../core/wcagMap.js";
 import { resolveStandard } from "../core/standards.js";
+import { applyBaseline } from "../core/baseline.js";
 import type { ComplianceStandard, Framework, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel, WcagVersion } from "../types.js";
 
 interface CheckOptions {
@@ -29,6 +30,9 @@ interface CheckOptions {
   wcagFilter?: string;
   wcagVersion?: string;
   semiAuto?: boolean;
+  baseline?: boolean;
+  baselineFile?: string;
+  updateBaseline?: boolean;
 }
 
 interface CheckModeOptions {
@@ -59,6 +63,9 @@ export function registerCheckCommand(program: Command): void {
     .option("--wcag-filter <level>", "Only report findings mapped to WCAG level A, AA, or AAA")
     .option("--wcag-version <version>", "Limit mapped findings to WCAG version 2.0, 2.1, or 2.2")
     .option("--semi-auto", "Generate a Markdown manual review checklist alongside automated reports")
+    .option("--baseline", "Compare against .a11y-baseline.json and fail only on new findings")
+    .option("--baseline-file <file>", "Baseline file path")
+    .option("--update-baseline", "Overwrite the baseline file with the current findings")
     .action(async (options: CheckOptions) => {
       const startedAt = Date.now();
       const urls = parseUrls(options.url);
@@ -120,7 +127,16 @@ export function registerCheckCommand(program: Command): void {
         includeUnmapped: !explicitWcagFilter
       });
       const uniqueIssues = dedupeIssues(filtered);
-      const report = await writeReports(effectiveConfig.outputDir, uniqueIssues, {
+      const baselineEnabled = Boolean(options.baseline || options.updateBaseline);
+      const baselineResult = baselineEnabled
+        ? await applyBaseline(uniqueIssues, {
+          cwd: effectiveConfig.cwd,
+          baselineFile: options.baselineFile,
+          update: Boolean(options.updateBaseline)
+        })
+        : undefined;
+      const reportIssues = baselineResult?.issues || uniqueIssues;
+      const report = await writeReports(effectiveConfig.outputDir, reportIssues, {
         framework,
         cwd: effectiveConfig.cwd,
         urls: runDynamic ? effectiveConfig.dynamic.urls : [],
@@ -129,6 +145,7 @@ export function registerCheckCommand(program: Command): void {
           wcagVersion: effectiveConfig.wcagVersion,
           wcagLevel: effectiveConfig.wcagLevel
         },
+        baseline: baselineResult?.summary,
         scanDurationMs: Date.now() - startedAt,
         rawCount: rawIssues.length,
         uniqueCount: uniqueIssues.length,
@@ -246,11 +263,22 @@ export function parseUrls(urls?: string[]): string[] {
     .filter(Boolean))];
 }
 
-export function shouldFail(summary: Pick<ReportSummary, "critical" | "warning" | "info">, failOn: Severity | "none" = "critical"): boolean {
+export function shouldFail(
+  summary: Pick<ReportSummary, "critical" | "warning" | "info" | "baseline">,
+  failOn: Severity | "none" = "critical"
+): boolean {
   if (failOn === "none") return false;
-  if (failOn === "info") return summary.info > 0 || summary.warning > 0 || summary.critical > 0;
-  if (failOn === "warning") return summary.warning > 0 || summary.critical > 0;
-  return summary.critical > 0;
+  const counts = summary.baseline?.enabled
+    ? {
+      critical: summary.baseline.newCritical,
+      warning: summary.baseline.newWarning,
+      info: summary.baseline.newInfo
+    }
+    : summary;
+
+  if (failOn === "info") return counts.info > 0 || counts.warning > 0 || counts.critical > 0;
+  if (failOn === "warning") return counts.warning > 0 || counts.critical > 0;
+  return counts.critical > 0;
 }
 
 function toFramework(framework: string | undefined): Framework | undefined {

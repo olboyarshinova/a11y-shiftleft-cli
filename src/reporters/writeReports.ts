@@ -80,6 +80,7 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     framework: metrics.framework || "unknown",
     urls: metrics.urls || [],
     standard: metrics.standard,
+    baseline: metrics.baseline,
     complianceEvidence: summarizeComplianceEvidence(issues, byPage, metrics.standard),
     bySource: countBy(issues, "source"),
     bySeverity: countBy(issues, "severity"),
@@ -111,7 +112,8 @@ export function toMarkdown(report: A11yReport): string {
       const remediation = formatRemediation(issue);
       const state = issue.stateLabel ? ` state: ${issue.stateLabel}` : "";
       const screenshot = issue.screenshot ? ` screenshot: ${issue.screenshot}` : "";
-      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}${state}${screenshot}: ${issue.message}${remediation}`;
+      const baseline = issue.baselineStatus ? ` baseline: ${issue.baselineStatus}` : "";
+      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}${state}${screenshot}${baseline}: ${issue.message}${remediation}`;
     })
     .join("\n");
 
@@ -129,7 +131,7 @@ export function toMarkdown(report: A11yReport): string {
 | Scan duration | ${report.summary.scanDurationMs}ms |
 | Framework | ${report.summary.framework} |
 | Standard | ${formatStandard(report.summary.standard)} |
-| Automated coverage | ${report.summary.standard?.automatedCoverage || "partial"} |
+${formatBaselineRows(report.summary.baseline)}| Automated coverage | ${report.summary.standard?.automatedCoverage || "partial"} |
 | Manual review required | ${complianceEvidence.requiresManualReview ? "yes" : "no"} |
 | WCAG-mapped findings | ${complianceEvidence.wcagMappedFindings} |
 | Unmapped findings | ${complianceEvidence.unmappedFindings} |
@@ -286,6 +288,19 @@ function formatCountMap(counts: Record<string, number> | undefined): string {
 function formatStandard(standard: ComplianceStandardMetadata | undefined): string {
   if (!standard) return "WCAG 2.2 Level AA support mode";
   return `${standard.label} (${standard.wcagVersion} ${standard.wcagLevel})`;
+}
+
+function formatBaselineRows(baseline: ReportSummary["baseline"]): string {
+  if (!baseline?.enabled) return "";
+
+  return `${[
+    `| Baseline file | ${baseline.file} |`,
+    `| Baseline updated | ${baseline.updated ? "yes" : "no"} |`,
+    `| Baseline issues | ${baseline.baselineIssues} |`,
+    `| Existing baseline issues | ${baseline.existingIssues} |`,
+    `| New findings | ${baseline.newIssues} |`,
+    `| Resolved baseline findings | ${baseline.resolvedIssues} |`
+  ].join("\n")}\n`;
 }
 
 function formatDisclaimer(standard: ComplianceStandardMetadata | undefined): string {

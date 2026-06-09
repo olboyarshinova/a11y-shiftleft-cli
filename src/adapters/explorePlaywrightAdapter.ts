@@ -29,7 +29,47 @@ const DEFAULT_MAX_ACTIONS_PER_STATE = 8;
 const DEFAULT_WAIT_MS = 250;
 const DEFAULT_SCREENSHOT_FORMAT = "jpeg";
 const DEFAULT_SCREENSHOT_QUALITY = 70;
+const SCREENSHOT_REDACTION_COLOR = "#111827";
 const DANGEROUS_ACTION_PATTERN = /\b(delete|remove|destroy|logout|log out|sign out|submit|save|create|update|send|pay|payment|purchase|buy|checkout|confirm|удалить|выйти|отправить|сохранить|создать|обновить|купить|оплатить|оформить|подтвердить)\b/i;
+
+export const SENSITIVE_SCREENSHOT_SELECTOR = [
+  "[data-a11y-sensitive]",
+  "[data-a11y-redact]",
+  "[data-private]",
+  "input[type='password']",
+  "input[type='email']",
+  "input[type='tel']",
+  "input[autocomplete*='email' i]",
+  "input[autocomplete*='password' i]",
+  "input[autocomplete*='one-time-code' i]",
+  "input[autocomplete*='cc-' i]",
+  "input[autocomplete*='card' i]",
+  "input[autocomplete*='tel' i]",
+  "input[autocomplete*='address' i]",
+  "input[autocomplete*='postal' i]",
+  "input[name*='email' i]",
+  "input[name*='password' i]",
+  "input[name*='token' i]",
+  "input[name*='secret' i]",
+  "input[name*='card' i]",
+  "input[name*='cvv' i]",
+  "input[name*='cvc' i]",
+  "input[name*='phone' i]",
+  "input[name*='tel' i]",
+  "input[name*='ssn' i]",
+  "input[id*='email' i]",
+  "input[id*='password' i]",
+  "input[id*='token' i]",
+  "input[id*='secret' i]",
+  "input[id*='card' i]",
+  "input[id*='cvv' i]",
+  "input[id*='cvc' i]",
+  "input[id*='phone' i]",
+  "input[id*='tel' i]",
+  "input[id*='ssn' i]",
+  "textarea[name*='address' i]",
+  "textarea[id*='address' i]"
+].join(", ");
 
 export type ScreenshotFormat = "jpeg" | "png";
 
@@ -43,6 +83,7 @@ interface ExplorePlaywrightOptions {
   screenshotFormat?: ScreenshotFormat;
   screenshotQuality?: number;
   screenshotFullPage?: boolean;
+  screenshotRedaction?: boolean;
   waitMs?: number;
   onProgress?: (event: ExploreProgressEvent) => void;
 }
@@ -89,6 +130,7 @@ export async function runExplorePlaywrightAdapter(
   const screenshots = options.screenshots ?? true;
   const screenshotFormat = options.screenshotFormat || DEFAULT_SCREENSHOT_FORMAT;
   const screenshotQuality = normalizeScreenshotQuality(options.screenshotQuality);
+  const screenshotRedaction = options.screenshotRedaction ?? true;
   const waitMs = positiveOrDefault(options.waitMs, DEFAULT_WAIT_MS);
   let actionsTried = 0;
   let screenshotsSaved = 0;
@@ -133,7 +175,8 @@ export async function runExplorePlaywrightAdapter(
           stateId,
           format: screenshotFormat,
           quality: screenshotQuality,
-          fullPage: Boolean(options.screenshotFullPage)
+          fullPage: Boolean(options.screenshotFullPage),
+          redactSensitiveFields: screenshotRedaction
         })
         : undefined;
       if (screenshot) screenshotsSaved += 1;
@@ -511,6 +554,7 @@ async function captureStateScreenshot(
     format: ScreenshotFormat;
     quality: number;
     fullPage: boolean;
+    redactSensitiveFields: boolean;
   }
 ): Promise<string | undefined> {
   const screenshotsDir = path.join(options.outputDir, "screenshots");
@@ -519,12 +563,19 @@ async function captureStateScreenshot(
   const screenshotPath = path.join(screenshotsDir, filename);
 
   await fs.mkdir(screenshotsDir, { recursive: true });
-  await page.screenshot({
+  const screenshotOptions: Parameters<Page["screenshot"]>[0] = {
     path: screenshotPath,
     fullPage: options.fullPage,
     type: options.format,
     ...(options.format === "jpeg" ? { quality: options.quality } : {})
-  });
+  };
+
+  if (options.redactSensitiveFields) {
+    screenshotOptions.mask = [page.locator(SENSITIVE_SCREENSHOT_SELECTOR)];
+    screenshotOptions.maskColor = SCREENSHOT_REDACTION_COLOR;
+  }
+
+  await page.screenshot(screenshotOptions);
 
   return path.posix.join("screenshots", filename);
 }

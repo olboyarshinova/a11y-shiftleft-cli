@@ -19,6 +19,46 @@ test("shouldFail supports disabled failure gate", () => {
   assert.equal(shouldFail(summary, "none"), false);
 });
 
+test("shouldFail uses only new findings when baseline mode is enabled", () => {
+  assert.equal(shouldFail({
+    critical: 5,
+    warning: 5,
+    info: 5,
+    baseline: {
+      enabled: true,
+      file: ".a11y-baseline.json",
+      updated: false,
+      baselineIssues: 15,
+      currentIssues: 15,
+      existingIssues: 15,
+      newIssues: 0,
+      resolvedIssues: 0,
+      newCritical: 0,
+      newWarning: 0,
+      newInfo: 0
+    }
+  }, "critical"), false);
+
+  assert.equal(shouldFail({
+    critical: 0,
+    warning: 0,
+    info: 0,
+    baseline: {
+      enabled: true,
+      file: ".a11y-baseline.json",
+      updated: false,
+      baselineIssues: 1,
+      currentIssues: 2,
+      existingIssues: 1,
+      newIssues: 1,
+      resolvedIssues: 0,
+      newCritical: 0,
+      newWarning: 1,
+      newInfo: 0
+    }
+  }, "warning"), true);
+});
+
 test("parseFormats defaults to all report formats", () => {
   assert.deepEqual(parseFormats(), ["json", "csv", "markdown"]);
   assert.deepEqual(parseFormats(["all"]), ["json", "csv", "markdown"]);

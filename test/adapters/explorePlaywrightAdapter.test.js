@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   isSafeExploreAction,
-  normalizeExploreUrl
+  normalizeExploreUrl,
+  SENSITIVE_SCREENSHOT_SELECTOR
 } from "../../dist/adapters/explorePlaywrightAdapter.js";
 
 test("normalizeExploreUrl keeps same-origin HTTP URLs and removes hash", () => {
@@ -67,4 +68,12 @@ test("isSafeExploreAction blocks dangerous or external actions", () => {
     text: "external docs",
     role: "a"
   }, "http://localhost:3000/"), false);
+});
+
+test("SENSITIVE_SCREENSHOT_SELECTOR covers common private form fields", () => {
+  assert.match(SENSITIVE_SCREENSHOT_SELECTOR, /\[data-a11y-sensitive\]/);
+  assert.match(SENSITIVE_SCREENSHOT_SELECTOR, /input\[type='password'\]/);
+  assert.match(SENSITIVE_SCREENSHOT_SELECTOR, /input\[type='email'\]/);
+  assert.match(SENSITIVE_SCREENSHOT_SELECTOR, /autocomplete\*='cc-'/);
+  assert.match(SENSITIVE_SCREENSHOT_SELECTOR, /name\*='token'/);
 });

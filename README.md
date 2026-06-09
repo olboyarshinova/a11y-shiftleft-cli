@@ -69,11 +69,13 @@ in the project you want to scan:
 ```bash
 npm install --save-dev a11y-shiftleft-cli
 npx playwright install chromium
-npx a11y-shiftleft init --framework react
+npx a11y-shiftleft init --framework react --gitignore
 ```
 
 Use `--framework angular`, `--framework vue`, or `--framework auto` for other
 projects. The selected framework is stored in `.a11y-shiftleft.json`.
+Use `--gitignore` to add generated report directories such as `reports/` and
+`.a11y-reports/` to the target project's `.gitignore`.
 
 Framework-specific static checks are lazy-loaded. Install only the adapter
 dependencies your project needs:
@@ -139,6 +141,11 @@ Report lifecycle:
   should disappear from the new report; do not edit old report files by hand.
 - Use `--no-clean` only when you intentionally want to keep previous generated
   artifacts for manual comparison.
+- Keep generated report directories out of git by running
+  `npx a11y-shiftleft init --gitignore`. Commit anonymized sample reports only
+  when they are intentionally part of docs, demos, or release evidence.
+- Commit `.a11y-baseline.json` when using `--baseline`; it is the accepted
+  known-findings file that lets CI block only new accessibility regressions.
 
 Screenshots are compressed by default as viewport JPEG files at quality `70` to
 keep reports small:
@@ -158,11 +165,25 @@ npx a11y-shiftleft explore \
   --out reports
 ```
 
-For applications that may expose personal data, login screens, or payment
-details, disable screenshots:
+Sensitive form fields are masked in screenshots by default. The redaction covers
+common password, email, phone, token, card, address, and one-time-code inputs, as
+well as elements marked with `data-a11y-sensitive`, `data-a11y-redact`, or
+`data-private`.
+
+For applications that may expose real personal data, login screens, payment
+details, or production customer records, disable screenshots entirely:
 
 ```bash
 npx a11y-shiftleft explore --url http://localhost:3000 --no-screenshots --out reports
+```
+
+If you intentionally need raw local screenshots for debugging, disable masking:
+
+```bash
+npx a11y-shiftleft explore \
+  --url http://localhost:3000 \
+  --no-screenshot-redaction \
+  --out reports
 ```
 
 Safe mode skips submit/reset buttons, form buttons without an explicit safe
@@ -219,6 +240,42 @@ Then run:
 
 ```bash
 npx a11y-shiftleft check --dynamic --out reports
+```
+
+Use baseline mode when adopting the CLI in a project that already has known
+accessibility findings. The first run creates `.a11y-baseline.json` from the
+current unique findings:
+
+```bash
+npx a11y-shiftleft check --dynamic --baseline --out reports
+```
+
+Commit `.a11y-baseline.json` with the project. Later CI runs with `--baseline`
+compare current findings against that file and fail only on new findings at the
+configured `--fail-on` severity:
+
+```bash
+npx a11y-shiftleft check \
+  --dynamic \
+  --baseline \
+  --fail-on warning \
+  --out reports
+```
+
+After intentionally accepting the current state, refresh the baseline:
+
+```bash
+npx a11y-shiftleft check --dynamic --update-baseline --out reports
+```
+
+Use a custom baseline path when needed:
+
+```bash
+npx a11y-shiftleft check \
+  --dynamic \
+  --baseline \
+  --baseline-file config/a11y-baseline.json \
+  --out reports
 ```
 
 If a scan fails because of Node, Playwright, Chromium, config, or app startup
@@ -536,6 +593,10 @@ See [docs/roadmap.md](docs/roadmap.md) for planned improvements such as
 Lighthouse score collection, broader remediation coverage, stronger Vue/Angular
 static coverage, and WCAG-based compliance-support presets for ADA Title II and
 Section 508 workflows.
+
+See [docs/ai-suggestions.md](docs/ai-suggestions.md) for the future optional
+`@a11y-shiftleft/ai` package plan. AI-assisted remediation is intentionally
+separate from the core CLI and opt-in only.
 
 See [docs/adoption-strategy.md](docs/adoption-strategy.md) for the adoption
 plan covering npm scripts, generated GitHub Actions workflows, future

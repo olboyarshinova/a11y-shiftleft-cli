@@ -139,6 +139,36 @@ export interface DedupedIssue extends TriagedIssue {
   fingerprint: string;
   duplicateCount: number;
   sources?: string[];
+  baselineStatus?: "new" | "existing";
+}
+
+export interface BaselineEntry {
+  fingerprint: string;
+  ruleId: string;
+  severity: Severity;
+  source: string;
+  target: string;
+  wcag: string[];
+}
+
+export interface BaselineFile {
+  version: 1;
+  generatedAt: string;
+  issues: BaselineEntry[];
+}
+
+export interface BaselineComparisonSummary {
+  enabled: boolean;
+  file: string;
+  updated: boolean;
+  baselineIssues: number;
+  currentIssues: number;
+  existingIssues: number;
+  newIssues: number;
+  resolvedIssues: number;
+  newCritical: number;
+  newWarning: number;
+  newInfo: number;
 }
 
 export interface ReportMetrics {
@@ -146,6 +176,7 @@ export interface ReportMetrics {
   cwd?: string;
   urls?: string[];
   standard?: ComplianceStandardMetadata;
+  baseline?: BaselineComparisonSummary;
   scanDurationMs?: number;
   rawCount?: number;
   uniqueCount?: number;
@@ -182,6 +213,7 @@ export interface ReportSummary {
   framework: Framework | string;
   urls: string[];
   standard?: ComplianceStandardMetadata;
+  baseline?: BaselineComparisonSummary;
   complianceEvidence: ComplianceEvidenceSummary;
   bySource: Record<string, number>;
   bySeverity: Record<string, number>;

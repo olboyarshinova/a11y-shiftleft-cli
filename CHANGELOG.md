@@ -21,6 +21,15 @@
   remain in repeated report runs.
 - Compressed JPEG state screenshots by default for `explore`, with configurable
   screenshot format, JPEG quality, and full-page capture.
+- Default screenshot redaction for sensitive form fields in `explore`, with an
+  explicit `--no-screenshot-redaction` escape hatch for local debugging.
+- `init --gitignore` for adding generated report directories to a project's
+  `.gitignore` without modifying files during package installation.
+- Optional AI suggestions architecture documentation for a future separate
+  `@a11y-shiftleft/ai` package.
+- Baseline mode for `check`, including `.a11y-baseline.json`, `--baseline`,
+  `--baseline-file`, and `--update-baseline` so CI can fail only on new
+  accessibility findings.
 - Adoption telemetry collector support for separately recording manual npm
   website download snapshots alongside npm API periods.
 

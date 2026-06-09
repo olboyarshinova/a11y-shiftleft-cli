@@ -37,12 +37,17 @@ for reproducible empirical validation.
   stable enough to support public Marketplace usage.
 - Publish a public demo repository and before/after case study showing a full
   pull request workflow with findings, fixes, and generated reports.
+- Design read-only `--interactive` issue review with deterministic remediation
+  hints and copy-paste snippets before introducing AI suggestions.
 
 ## Later
 
 - Add a Lighthouse adapter for accessibility score collection and comparison
   with axe findings.
 - Compare axe and Lighthouse disagreements in a separate report section.
+- Introduce optional AI-assisted remediation through a separate
+  `@a11y-shiftleft/ai` package, following the privacy and safety rules in
+  [ai-suggestions.md](ai-suggestions.md).
 - Open selected external open-source pull requests after the docs, generated CI
   workflow, and sample reports are stable enough for maintainers to review.
 - Explore VPAT/evidence-binder export templates for organizations that need
@@ -54,5 +59,6 @@ for reproducible empirical validation.
 - No WCAG conformance certification claim.
 - No ADA or Section 508 legal compliance certification claim.
 - No custom AST compiler.
-- No ML-based triage.
+- No ML-based triage in the core CLI.
+- No automatic AI code changes in the core CLI.
 - No SaaS authorization or hosted dashboard.

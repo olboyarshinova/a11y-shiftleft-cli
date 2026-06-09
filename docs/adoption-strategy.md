@@ -216,7 +216,7 @@ appear:
 - research validation discussion category
 
 An `adoption story` template is especially useful because public user reports
-can become credible evidence for future grant, academic, or immigration
+can become credible evidence for future grant, academic, or product validation
 materials.
 
 ### Engineering Blog Topics

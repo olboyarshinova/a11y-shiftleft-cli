@@ -38,6 +38,7 @@ interface ExploreOptions {
   screenshotFormat?: string;
   screenshotQuality?: string;
   screenshotFullPage?: boolean;
+  screenshotRedaction?: boolean;
   semiAuto?: boolean;
 }
 
@@ -64,6 +65,7 @@ export function registerExploreCommand(program: Command): void {
     .option("--screenshot-format <format>", "Screenshot format: jpeg or png", "jpeg")
     .option("--screenshot-quality <quality>", "JPEG screenshot quality from 1 to 100", "70")
     .option("--screenshot-full-page", "Capture full-page screenshots instead of viewport screenshots")
+    .option("--no-screenshot-redaction", "Do not mask sensitive fields in screenshots")
     .option("--semi-auto", "Generate a Markdown manual review checklist alongside automated reports")
     .action(async (options: ExploreOptions) => {
       const startedAt = Date.now();
@@ -106,6 +108,7 @@ export function registerExploreCommand(program: Command): void {
         screenshotFormat: toScreenshotFormat(options.screenshotFormat),
         screenshotQuality: toScreenshotQuality(options.screenshotQuality),
         screenshotFullPage: Boolean(options.screenshotFullPage),
+        screenshotRedaction: options.screenshotRedaction,
         onProgress: (event) => {
           if (event.type === "state") {
             const screenshot = event.state.screenshot ? ` screenshot=${event.state.screenshot}` : "";
