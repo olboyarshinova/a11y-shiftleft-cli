@@ -20,6 +20,18 @@ for reproducible empirical validation.
   Vue, and Angular.
 - Stabilize zero-config `explore` mode for safe UI-state discovery, including
   screenshots and exploration graph artifacts.
+- Continue hardening `explore` against state explosion with explicit depth and
+  state limits, URL plus DOM accessibility fingerprints, and safer handling for
+  repeated or equivalent UI states.
+- Add CLI quality-of-life flags: `--quiet` for CI-friendly output and
+  `--verbose` for adapter timings, skipped checks, baseline details, and
+  troubleshooting context.
+- Add readable severity output for local runs, including colorized critical,
+  warning, and info labels while preserving plain output for CI and report
+  files.
+- Improve framework autodetection messaging so React, Vue, and Angular projects
+  receive clear adapter install recommendations when optimized static checks are
+  not available yet.
 - Add GitHub Discussions categories after the first external users appear.
 
 ## Mid Term
@@ -28,8 +40,23 @@ for reproducible empirical validation.
   config, and CI environment readiness.
 - Add deeper framework-specific remediation examples for common React, Vue, and
   Angular issues.
+- Expand config discovery beyond `.a11y-shiftleft.json` with `.a11yrc.json`
+  and `package.json#a11y`, while treating executable config files as a later
+  security-sensitive decision.
+- Add configurable safe-mode policies for `explore`, including blocked text,
+  role, selector, and URL patterns, dialog auto-dismiss behavior, and optional
+  request blocking for external or high-risk API traffic.
+- Add report retention settings for generated artifacts, such as maximum saved
+  runs and maximum age in days, so local binary screenshots and old reports do
+  not accumulate indefinitely.
 - Add an HTML exploration dashboard that visualizes checked pages/states,
   screenshots, and accessibility findings while the scan is running.
+- Add screenshot annotations in `exploration.html` by storing finding selector
+  bounding boxes and rendering reviewable overlays instead of drawing directly
+  into compressed screenshots.
+- Add a local `dashboard` command that serves historical accessibility metrics
+  from generated reports, including trend charts, top rules, and page-level
+  comparisons across scans.
 - Create a documentation website with quick start guides, framework-specific
   setup pages, CI/compliance-support examples, troubleshooting, and sample
   reports so teams can adopt the CLI without reading the full README first.
@@ -39,15 +66,35 @@ for reproducible empirical validation.
   pull request workflow with findings, fixes, and generated reports.
 - Design read-only `--interactive` issue review with deterministic remediation
   hints and copy-paste snippets before introducing AI suggestions.
+- Add scoped ignore support through an `a11y-ignore.json` style file that
+  requires rule, target, reason, owner, and expiration metadata.
+- Add optional Git hook setup for Husky and Lefthook so staged accessibility
+  checks can run before commits without becoming a hard dependency of the core
+  CLI.
+- Add incremental scan support for pull requests by prioritizing changed static
+  files and a small configured set of dynamic smoke-test URLs before running
+  broader scheduled scans.
+- Add a `watch` command for real-time development feedback: debounce file
+  changes, rerun static checks for changed files, rescan configured URLs, and
+  update lightweight live report artifacts.
+- Prototype a browser overlay mode after `watch` is stable, so local dev pages
+  can highlight affected elements from accessibility findings without requiring
+  a full browser extension.
+- Add progress output for long-running crawl, explore, watch, and dashboard
+  indexing workflows, while keeping non-animated output available for CI.
 
 ## Later
 
 - Add a Lighthouse adapter for accessibility score collection and comparison
   with axe findings.
-- Compare axe and Lighthouse disagreements in a separate report section.
+- Compare axe and Lighthouse disagreements in a separate report section and
+  surface the comparison in the local dashboard.
 - Introduce optional AI-assisted remediation through a separate
   `@a11y-shiftleft/ai` package, following the privacy and safety rules in
   [ai-suggestions.md](ai-suggestions.md).
+- Consider a separate `@a11y-shiftleft/browser` package for Chrome extension or
+  DevTools panel work once CLI reports, live feedback, and overlay behavior are
+  stable enough to justify a browser-specific project.
 - Open selected external open-source pull requests after the docs, generated CI
   workflow, and sample reports are stable enough for maintainers to review.
 - Explore VPAT/evidence-binder export templates for organizations that need
@@ -61,4 +108,5 @@ for reproducible empirical validation.
 - No custom AST compiler.
 - No ML-based triage in the core CLI.
 - No automatic AI code changes in the core CLI.
+- No browser extension bundled into the core CLI.
 - No SaaS authorization or hosted dashboard.

@@ -30,6 +30,18 @@
 - Baseline mode for `check`, including `.a11y-baseline.json`, `--baseline`,
   `--baseline-file`, and `--update-baseline` so CI can fail only on new
   accessibility findings.
+- Roadmap notes for future real-time developer feedback via `watch`, local
+  browser overlay, and a separate browser extension package.
+- Roadmap notes for a future local metrics dashboard and Lighthouse comparison
+  workflow.
+- Roadmap notes for CLI quality-of-life improvements including quiet/verbose
+  output, broader config discovery, progress output, and screenshot annotations.
+- Roadmap notes for future Git hook setup, incremental scans, smart ignores,
+  and colorized local severity output.
+- Roadmap notes for additional `explore` state-explosion safeguards,
+  configurable safe-mode policies, and generated report retention.
+- README preview showing how the generated `exploration.html` visual report is
+  structured.
 - Adoption telemetry collector support for separately recording manual npm
   website download snapshots alongside npm API periods.
 

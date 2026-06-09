@@ -130,6 +130,32 @@ tabs, disclosure widgets, and modal triggers. It saves:
 Open `reports/exploration.html` to review checked states visually: each state
 includes its screenshot, issue summary, top findings, and recorded transitions.
 
+A typical visual report is organized like this:
+
+```txt
+Accessibility Exploration
+States visited: 4 | Screenshots: 4 | Actions tried: 7
+
+State state-1
+URL: http://localhost:3000/
+Issues: critical 0, warning 2, info 0
+
+[ screenshot preview ]
+
+Top findings:
+- warning button-name button.icon-close
+- warning page-has-heading-one html
+
+Transitions:
+- Click: Open filters -> state-2
+- Navigate: Favorites -> state-3
+```
+
+The real HTML report renders this as a local dashboard with summary metrics,
+state cards, compressed screenshots, top findings, and navigation/action edges.
+Private screenshots are not committed to the repository; they are generated
+inside the selected report output directory.
+
 Report lifecycle:
 
 - `check` overwrites `a11y-report.json`, `a11y-metrics.csv`, and
