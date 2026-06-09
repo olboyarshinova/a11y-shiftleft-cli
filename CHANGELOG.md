@@ -19,6 +19,15 @@
 - Adapter packages now declare optional framework runtime peer dependencies
   (`react`, `vue`, and `@angular/core`) so npm metadata signals the intended
   host framework without installing framework runtimes.
+- Deduplication now separates matching selectors across different URLs and
+  matching static findings across different source locations.
+- `check --static` and `check --dynamic` now behave as explicit scan modes.
+- ESLint adapter output is filtered to accessibility-related rules so ordinary
+  project lint findings do not appear in accessibility reports.
+- Dynamic axe scans now continue across remaining URLs when one page fails.
+- GitHub PR reporting now updates an existing accessibility comment instead of
+  posting a new comment on every run.
+- CSV report export now recursively flattens nested evidence fields.
 
 ## 0.4.0 - 2026-06-06
 

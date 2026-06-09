@@ -15,6 +15,23 @@ export type PullRequestContext = {
 
 type CommentClient = {
   issues: {
+    listComments?: (payload: {
+      owner: string;
+      repo: string;
+      issue_number: number;
+      per_page?: number;
+    }) => Promise<{
+      data: Array<{
+        id: number;
+        body?: string | null;
+      }>;
+    }>;
+    updateComment?: (payload: {
+      owner: string;
+      repo: string;
+      comment_id: number;
+      body: string;
+    }) => Promise<unknown>;
     createComment: (payload: {
       owner: string;
       repo: string;
@@ -33,6 +50,8 @@ export type PostCommentOptions = {
 export type PostCommentResult = {
   skipped: boolean;
 };
+
+const COMMENT_MARKER = "<!-- a11y-shiftleft-report -->";
 
 export function getPullRequestContext(
   env: GitHubEnv = process.env
@@ -96,12 +115,25 @@ export async function postA11yComment({
   }
 
   const client = octokit ?? new Octokit({ auth: context.token });
+  const markedBody = withCommentMarker(body);
+  const existingComment = await findExistingComment(client, context);
+
+  if (existingComment && client.issues.updateComment) {
+    await client.issues.updateComment({
+      owner: context.owner,
+      repo: context.repo,
+      comment_id: existingComment.id,
+      body: markedBody
+    });
+
+    return { skipped: false };
+  }
 
   await client.issues.createComment({
     owner: context.owner,
     repo: context.repo,
     issue_number: context.issue_number,
-    body
+    body: markedBody
   });
 
   return { skipped: false };
@@ -116,4 +148,25 @@ function isMissingFileError(error: unknown): boolean {
     error !== null &&
     "code" in error &&
     error.code === "ENOENT";
+}
+
+function withCommentMarker(body: string): string {
+  if (body.includes(COMMENT_MARKER)) return body;
+  return `${COMMENT_MARKER}\n${body}`;
+}
+
+async function findExistingComment(
+  client: CommentClient,
+  context: PullRequestContext
+): Promise<{ id: number } | null> {
+  if (!client.issues.listComments) return null;
+
+  const response = await client.issues.listComments({
+    owner: context.owner,
+    repo: context.repo,
+    issue_number: context.issue_number,
+    per_page: 100
+  });
+
+  return response.data.find((comment) => comment.body?.includes(COMMENT_MARKER)) || null;
 }

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { filterByWcagConformance, filterByWcagLevel, parseFormats, parseUrls, shouldFail } from "../../dist/commands/check.js";
+import { filterByWcagConformance, filterByWcagLevel, parseFormats, parseUrls, resolveCheckModes, shouldFail } from "../../dist/commands/check.js";
 
 const summary = {
   critical: 1,
@@ -47,6 +47,32 @@ test("parseUrls supports repeated and comma separated URLs", () => {
       "http://localhost:4200/settings"
     ]
   );
+});
+
+test("resolveCheckModes treats static and dynamic flags as explicit modes", () => {
+  assert.deepEqual(resolveCheckModes({
+    staticRequested: true,
+    hasDynamicInput: true,
+    configDynamicEnabled: true
+  }), {
+    runStatic: true,
+    runDynamic: false
+  });
+
+  assert.deepEqual(resolveCheckModes({
+    dynamicRequested: true,
+    configDynamicEnabled: false
+  }), {
+    runStatic: false,
+    runDynamic: true
+  });
+
+  assert.deepEqual(resolveCheckModes({
+    hasDynamicInput: true
+  }), {
+    runStatic: true,
+    runDynamic: true
+  });
 });
 
 test("filterByWcagLevel keeps findings up to the selected conformance level", () => {

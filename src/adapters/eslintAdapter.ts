@@ -25,6 +25,27 @@ type AngularTemplatePlugin = ESLint.Plugin & {
   };
 };
 
+const VUE_ACCESSIBILITY_RULES = new Set([
+  "vue/html-button-has-type",
+  "vue/no-v-html"
+]);
+
+const ANGULAR_TEMPLATE_ACCESSIBILITY_RULES = new Set([
+  "@angular-eslint/template/alt-text",
+  "@angular-eslint/template/click-events-have-key-events",
+  "@angular-eslint/template/elements-content",
+  "@angular-eslint/template/interactive-supports-focus",
+  "@angular-eslint/template/label-has-associated-control",
+  "@angular-eslint/template/mouse-events-have-key-events",
+  "@angular-eslint/template/no-autofocus",
+  "@angular-eslint/template/no-distracting-elements",
+  "@angular-eslint/template/no-positive-tabindex",
+  "@angular-eslint/template/role-has-required-aria",
+  "@angular-eslint/template/table-scope",
+  "@angular-eslint/template/valid-aria",
+  "@angular-eslint/template/button-has-type"
+]);
+
 export async function runEslintAdapter(config: A11yConfig): Promise<Issue[]> {
   const patterns = config.static.include;
 
@@ -191,15 +212,17 @@ async function loadAdapterModule<T>(packageName: string, config: A11yConfig): Pr
 }
 
 function toIssues(results: ESLint.LintResult[], config: A11yConfig): Issue[] {
-  return results.flatMap((result) => result.messages.map((message) => ({
-    source: "eslint",
-    framework: config.framework,
-    ruleId: message.ruleId || "eslint/unknown",
-    file: path.relative(config.cwd, result.filePath),
-    line: message.line,
-    column: message.column,
-    message: message.message
-  })));
+  return results.flatMap((result) => result.messages
+    .filter((message) => isAccessibilityRule(message.ruleId))
+    .map((message) => ({
+      source: "eslint",
+      framework: config.framework,
+      ruleId: message.ruleId || "eslint/unknown",
+      file: path.relative(config.cwd, result.filePath),
+      line: message.line,
+      column: message.column,
+      message: message.message
+    })));
 }
 
 function adapterError(config: A11yConfig, error: unknown): Issue {
@@ -217,4 +240,13 @@ function isModuleResolutionError(error: unknown): error is NodeJS.ErrnoException
   if (!(error instanceof Error)) return false;
   const code = "code" in error ? String(error.code) : "";
   return code === "ERR_MODULE_NOT_FOUND" || code === "MODULE_NOT_FOUND";
+}
+
+function isAccessibilityRule(ruleId: string | null): boolean {
+  if (!ruleId) return false;
+
+  return ruleId.startsWith("jsx-a11y/") ||
+    ruleId.startsWith("vuejs-accessibility/") ||
+    VUE_ACCESSIBILITY_RULES.has(ruleId) ||
+    ANGULAR_TEMPLATE_ACCESSIBILITY_RULES.has(ruleId);
 }

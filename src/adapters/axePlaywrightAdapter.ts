@@ -24,23 +24,27 @@ export async function runAxePlaywrightAdapter(config: A11yConfig): Promise<Issue
     config.dynamic.urls = scanUrls;
 
     for (const url of scanUrls) {
-      await page.goto(url, { waitUntil: "networkidle" });
-      const results = await new AxeBuilder({ page }).analyze();
+      try {
+        await page.goto(url, { waitUntil: "networkidle" });
+        const results = await new AxeBuilder({ page }).analyze();
 
-      for (const violation of results.violations) {
-        for (const node of violation.nodes) {
-          issues.push({
-            source: "axe",
-            framework: config.framework,
-            ruleId: violation.id,
-            impact: violation.impact || undefined,
-            wcag: violation.tags.filter((tag: string) => tag.startsWith("wcag")),
-            tags: violation.tags,
-            selector: node.target.join(" "),
-            message: violation.help,
-            url
-          });
+        for (const violation of results.violations) {
+          for (const node of violation.nodes) {
+            issues.push({
+              source: "axe",
+              framework: config.framework,
+              ruleId: violation.id,
+              impact: violation.impact || undefined,
+              wcag: violation.tags.filter((tag: string) => tag.startsWith("wcag")),
+              tags: violation.tags,
+              selector: node.target.join(" "),
+              message: violation.help,
+              url
+            });
+          }
         }
+      } catch (error) {
+        issues.push(createScanErrorIssue(config, url, error));
       }
     }
   } finally {
@@ -122,4 +126,17 @@ export function normalizeSameOriginUrl(candidate: string, baseUrl: string): stri
 
 function uniqueUrls(urls: string[]): string[] {
   return [...new Set(urls)];
+}
+
+function createScanErrorIssue(config: A11yConfig, url: string, error: unknown): Issue {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return {
+    source: "axe",
+    framework: config.framework,
+    ruleId: "adapter/axe-scan-error",
+    severity: "warning",
+    url,
+    message: `Dynamic scan failed for ${url}: ${message}`
+  };
 }

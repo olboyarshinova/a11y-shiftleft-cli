@@ -8,7 +8,7 @@ interface WriteReportOptions {
   semiAuto?: boolean;
 }
 
-type SummaryValue = string | number | boolean | string[] | PageSummary[] | ComplianceEvidenceSummary | ComplianceStandardMetadata | Record<string, number>;
+type SummaryValue = string | number | boolean | null | undefined;
 
 export async function writeReports(
   outputDir: string,
@@ -128,7 +128,7 @@ export function toMarkdown(report: A11yReport): string {
 | Framework | ${report.summary.framework} |
 | Standard | ${formatStandard(report.summary.standard)} |
 | Automated coverage | ${report.summary.standard?.automatedCoverage || "partial"} |
-| Manual review required | ${report.summary.standard?.requiresManualReview ? "yes" : "yes"} |
+| Manual review required | ${complianceEvidence.requiresManualReview ? "yes" : "no"} |
 | WCAG-mapped findings | ${complianceEvidence.wcagMappedFindings} |
 | Unmapped findings | ${complianceEvidence.unmappedFindings} |
 | Affected pages | ${complianceEvidence.affectedPages} |
@@ -310,7 +310,7 @@ function formatComplianceEvidence(evidence: ComplianceEvidenceSummary): string {
 | Unmapped findings | ${evidence.unmappedFindings} |
 | Affected pages | ${evidence.affectedPages} |
 | Automated coverage | ${evidence.automatedCoverage} |
-| Manual review required | ${evidence.requiresManualReview ? "yes" : "yes"} |
+| Manual review required | ${evidence.requiresManualReview ? "yes" : "no"} |
 
 Top affected pages:
 
@@ -336,34 +336,33 @@ function flattenSummary(summary: ReportSummary): [string, SummaryValue][] {
   const rows: [string, SummaryValue][] = [];
 
   for (const [key, value] of Object.entries(summary)) {
-    if (Array.isArray(value)) {
-      if (key === "byPage") {
-        for (const [index, page] of value.entries()) {
-          rows.push([`${key}.${index}.url`, page.url]);
-          rows.push([`${key}.${index}.total`, page.total]);
-          rows.push([`${key}.${index}.critical`, page.critical]);
-          rows.push([`${key}.${index}.warning`, page.warning]);
-          rows.push([`${key}.${index}.info`, page.info]);
-          rows.push([`${key}.${index}.severityScore`, page.severityScore]);
-        }
-        continue;
-      }
-
-      rows.push([key, value.join("|")]);
-      continue;
-    }
-
-    if (value && typeof value === "object") {
-      for (const [nestedKey, nestedValue] of Object.entries(value)) {
-        rows.push([`${key}.${nestedKey}`, nestedValue as SummaryValue]);
-      }
-      continue;
-    }
-
-    rows.push([key, value]);
+    flattenValue(key, value, rows);
   }
 
   return rows;
+}
+
+function flattenValue(key: string, value: unknown, rows: [string, SummaryValue][]): void {
+  if (Array.isArray(value)) {
+    if (value.every((item) => !item || typeof item !== "object")) {
+      rows.push([key, value.join("|")]);
+      return;
+    }
+
+    for (const [index, item] of value.entries()) {
+      flattenValue(`${key}.${index}`, item, rows);
+    }
+    return;
+  }
+
+  if (value && typeof value === "object") {
+    for (const [nestedKey, nestedValue] of Object.entries(value)) {
+      flattenValue(`${key}.${nestedKey}`, nestedValue, rows);
+    }
+    return;
+  }
+
+  rows.push([key, value as SummaryValue]);
 }
 
 function formatCsvValue(value: SummaryValue): string {

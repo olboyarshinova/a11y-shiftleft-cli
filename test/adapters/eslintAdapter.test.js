@@ -86,3 +86,36 @@ test("runEslintAdapter reports Angular fallback template findings", async () => 
   );
   assert.equal(issues[0].file, path.join("src", "app", "app.component.html"));
 });
+
+test("runEslintAdapter ignores non-accessibility project ESLint findings", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-react-non-a11y-static-"));
+  await fs.mkdir(path.join(cwd, "src"), { recursive: true });
+  await fs.writeFile(
+    path.join(cwd, "eslint.config.js"),
+    `export default [{
+  files: ["**/*.js"],
+  languageOptions: {
+    ecmaVersion: "latest",
+    sourceType: "module"
+  },
+  rules: {
+    "no-unused-vars": "error"
+  }
+}];
+`
+  );
+  await fs.writeFile(
+    path.join(cwd, "src", "unused.js"),
+    "const unused = 1;\n"
+  );
+
+  const issues = await runEslintAdapter({
+    cwd,
+    framework: "react",
+    static: {
+      include: ["src/**/*.js"]
+    }
+  });
+
+  assert.deepEqual(issues, []);
+});

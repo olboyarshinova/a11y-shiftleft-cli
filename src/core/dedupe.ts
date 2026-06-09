@@ -26,9 +26,17 @@ export function dedupeIssues(issues: TriagedIssue[]): DedupedIssue[] {
 }
 
 function createFingerprint(issue: TriagedIssue): string {
+  const target = [
+    issue.url ? `url=${issue.url}` : "",
+    issue.selector ? `selector=${issue.selector}` : "",
+    issue.file ? `file=${issue.file}` : "",
+    Number.isFinite(issue.line) ? `line=${issue.line}` : "",
+    Number.isFinite(issue.column) ? `column=${issue.column}` : ""
+  ].filter(Boolean).join("|") || "target=unknown";
+
   return [
     issue.ruleId,
-    issue.selector || issue.file || issue.url || "unknown-target",
+    target,
     issue.severity || "unknown-severity"
   ].join("::");
 }

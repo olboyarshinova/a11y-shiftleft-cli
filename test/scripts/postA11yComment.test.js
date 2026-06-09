@@ -118,12 +118,57 @@ test("postA11yComment can be tested with an injected client", async () => {
   });
 
   assert.deepEqual(result, { skipped: false });
-  assert.deepEqual(calls, [
+	  assert.deepEqual(calls, [
+	    {
+	      owner: "owner",
+	      repo: "repo",
+	      issue_number: 3,
+	      body: "<!-- a11y-shiftleft-report -->\nbody"
+	    }
+	  ]);
+	});
+
+test("postA11yComment updates an existing report comment", async () => {
+  const reportDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-comment-update-"));
+  await fs.writeFile(path.join(reportDir, "a11y-comment.md"), "updated body");
+
+  const createCalls = [];
+  const updateCalls = [];
+  const result = await postA11yComment({
+    reportDir,
+    env: {
+      GITHUB_TOKEN: "token",
+      GITHUB_REPOSITORY: "owner/repo",
+      PR_NUMBER: "3"
+    },
+    octokit: {
+      issues: {
+        listComments: async () => ({
+          data: [
+            {
+              id: 99,
+              body: "<!-- a11y-shiftleft-report -->\nold body"
+            }
+          ]
+        }),
+        updateComment: async (payload) => {
+          updateCalls.push(payload);
+        },
+        createComment: async (payload) => {
+          createCalls.push(payload);
+        }
+      }
+    }
+  });
+
+  assert.deepEqual(result, { skipped: false });
+  assert.deepEqual(createCalls, []);
+  assert.deepEqual(updateCalls, [
     {
       owner: "owner",
       repo: "repo",
-      issue_number: 3,
-      body: "body"
+      comment_id: 99,
+      body: "<!-- a11y-shiftleft-report -->\nupdated body"
     }
   ]);
 });

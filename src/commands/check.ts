@@ -31,6 +31,13 @@ interface CheckOptions {
   semiAuto?: boolean;
 }
 
+interface CheckModeOptions {
+  staticRequested?: boolean;
+  dynamicRequested?: boolean;
+  hasDynamicInput?: boolean;
+  configDynamicEnabled?: boolean;
+}
+
 export function registerCheckCommand(program: Command): void {
   program
     .command("check")
@@ -55,6 +62,7 @@ export function registerCheckCommand(program: Command): void {
     .action(async (options: CheckOptions) => {
       const startedAt = Date.now();
       const urls = parseUrls(options.url);
+      const staticOnly = Boolean(options.static && !options.dynamic);
       const config = await loadConfig({
         cwd: options.cwd,
         config: options.config
@@ -68,7 +76,7 @@ export function registerCheckCommand(program: Command): void {
           include: options.include
         },
         dynamic: {
-          enabled: options.dynamic || urls.length > 0 || options.crawl ? true : undefined,
+          enabled: !staticOnly && (options.dynamic || urls.length > 0 || options.crawl) ? true : undefined,
           urls: urls.length > 0 ? urls : undefined,
           crawl: options.crawl ? true : undefined,
           crawlDepth: toPositiveInteger(options.crawlDepth),
@@ -76,8 +84,12 @@ export function registerCheckCommand(program: Command): void {
         }
       });
 
-      const runStatic = options.static || !options.dynamic;
-      const runDynamic = options.dynamic || urls.length > 0 || Boolean(options.crawl) || config.dynamic.enabled;
+      const { runStatic, runDynamic } = resolveCheckModes({
+        staticRequested: Boolean(options.static),
+        dynamicRequested: Boolean(options.dynamic),
+        hasDynamicInput: urls.length > 0 || Boolean(options.crawl),
+        configDynamicEnabled: config.dynamic.enabled
+      });
       const standard = resolveStandard(config.standard);
       const framework = config.framework === "auto"
         ? await detectFramework(config.cwd)
@@ -130,6 +142,32 @@ export function registerCheckCommand(program: Command): void {
         process.exitCode = 1;
       }
     });
+}
+
+export function resolveCheckModes({
+  staticRequested = false,
+  dynamicRequested = false,
+  hasDynamicInput = false,
+  configDynamicEnabled = false
+}: CheckModeOptions): { runStatic: boolean; runDynamic: boolean } {
+  if (staticRequested && !dynamicRequested) {
+    return {
+      runStatic: true,
+      runDynamic: false
+    };
+  }
+
+  if (dynamicRequested && !staticRequested) {
+    return {
+      runStatic: false,
+      runDynamic: true
+    };
+  }
+
+  return {
+    runStatic: true,
+    runDynamic: dynamicRequested || hasDynamicInput || configDynamicEnabled
+  };
 }
 
 export function filterByWcagLevel(issues: TriagedIssue[], level?: WcagLevel): TriagedIssue[] {
