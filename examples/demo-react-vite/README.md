@@ -12,6 +12,7 @@ pull request flow.
 - installing the CLI plus the React adapter package
 - running `doctor` before a scan
 - scanning a running Vite app with axe/Playwright
+- exploring a stateful modal with screenshots and `exploration.html`
 - generating reports in `reports/`
 - running the same scan in GitHub Actions
 
@@ -28,6 +29,7 @@ In another terminal:
 ```bash
 npm run doctor:a11y
 npm run test:a11y
+a11y-shiftleft explore --url http://localhost:3000 --framework react --out reports --fail-on none
 ```
 
 Open the generated report:
@@ -44,6 +46,8 @@ The demo page intentionally includes examples such as:
 - a form field without a visible label
 - a low-contrast button
 - an icon-only button without an accessible name
+- a modal state with intentionally missing dialog/button/input accessibility
+  metadata for explore-mode screenshots
 
 These are teaching examples, not production recommendations.
 

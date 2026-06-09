@@ -127,6 +127,10 @@ tabs, disclosure widgets, and modal triggers. It saves:
 
 Open `reports/exploration.html` to review checked states visually: each state
 includes its screenshot, issue summary, top findings, and recorded transitions.
+Before each `explore` run, the CLI removes stale generated artifacts such as
+old `exploration.html`, `exploration-graph.json`, and `screenshots/state-*.png`
+from the selected output directory. Use `--no-clean` to keep previous generated
+artifacts.
 
 Safe mode skips submit/reset buttons, form buttons without an explicit safe
 marker, external links, and actions whose labels look destructive or

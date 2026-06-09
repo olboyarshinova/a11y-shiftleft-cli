@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
 function App() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   return (
     <main className="page">
       <section className="hero">
@@ -44,7 +46,42 @@ function App() {
           <h3>Icon-only action with no name</h3>
           <button className="icon-button" type="button"></button>
         </article>
+
+        <article>
+          <h3>Stateful modal issue</h3>
+          <p className="muted">Explore mode can open this dialog and scan the new UI state.</p>
+          <button
+            className="secondary-button"
+            type="button"
+            data-a11y-explore
+            onClick={() => setIsModalOpen(true)}
+          >
+            Open audit modal
+          </button>
+        </article>
       </section>
+
+      {isModalOpen && (
+        <div className="modal-backdrop">
+          <div className="audit-modal" role="dialog" aria-modal="true">
+            <div className="modal-header">
+              <h2>Audit export settings</h2>
+              <button
+                className="icon-button modal-close"
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+              ></button>
+            </div>
+            <p className="muted">
+              This dialog intentionally includes accessibility defects for demo scans.
+            </p>
+            <input type="text" placeholder="Report name" />
+            <button className="low-contrast-button" type="button">
+              Preview report
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

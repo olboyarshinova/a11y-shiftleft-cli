@@ -17,6 +17,8 @@
   screenshots and an exploration graph artifact.
 - Visual `exploration.html` report for `explore` runs, showing checked states,
   screenshots, findings, and state transitions.
+- Safe cleanup for `explore` output artifacts so stale state screenshots do not
+  remain in repeated report runs.
 - Adoption telemetry collector support for separately recording manual npm
   website download snapshots alongside npm API periods.
 
@@ -33,6 +35,8 @@
 - Dynamic axe scans now continue across remaining URLs when one page fails.
 - GitHub PR reporting now updates an existing accessibility comment instead of
   posting a new comment on every run.
+- React/Vite demo now includes a stateful modal with intentional accessibility
+  issues for `explore` scans.
 - CSV report export now recursively flattens nested evidence fields.
 - Compliance preset filtering now limits mapped findings by preset WCAG
   version/level while preserving unmapped best-practice findings separately.

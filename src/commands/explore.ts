@@ -6,6 +6,7 @@ import { detectFramework } from "../core/detectFramework.js";
 import { normalizeIssue } from "../core/normalize.js";
 import { triageIssues } from "../core/severity.js";
 import { resolveStandard } from "../core/standards.js";
+import { cleanExploreArtifacts } from "../reporters/cleanExploreArtifacts.js";
 import { writeExplorationHtml } from "../reporters/writeExplorationHtml.js";
 import { writeReports } from "../reporters/writeReports.js";
 import type {
@@ -31,6 +32,7 @@ interface ExploreOptions {
   wcagFilter?: string;
   wcagVersion?: string;
   format?: string[];
+  clean?: boolean;
   html?: boolean;
   screenshots?: boolean;
   semiAuto?: boolean;
@@ -53,6 +55,7 @@ export function registerExploreCommand(program: Command): void {
     .option("--wcag-filter <level>", "Only report findings mapped to WCAG level A, AA, or AAA")
     .option("--wcag-version <version>", "Limit mapped findings to WCAG version 2.0, 2.1, or 2.2")
     .option("--format <formats...>", "Report formats: json, csv, markdown, or all")
+    .option("--no-clean", "Keep previous generated report artifacts in the output directory")
     .option("--no-html", "Do not generate exploration.html")
     .option("--no-screenshots", "Do not save state screenshots")
     .option("--semi-auto", "Generate a Markdown manual review checklist alongside automated reports")
@@ -82,6 +85,10 @@ export function registerExploreCommand(program: Command): void {
         wcagVersion: options.wcagVersion ? config.wcagVersion : standard.wcagVersion,
         wcagLevel: standard.wcagLevel
       };
+
+      if (options.clean !== false) {
+        await cleanExploreArtifacts(effectiveConfig.outputDir);
+      }
 
       const exploration = await runExplorePlaywrightAdapter(effectiveConfig, {
         url: options.url,
