@@ -449,6 +449,19 @@ npm run collect:adoption -- \
   --out analysis/adoption-cli.json
 ```
 
+To collect one snapshot across the CLI and framework adapter packages:
+
+```bash
+npm run collect:adoption:snapshot -- \
+  --period last-month \
+  --out analysis/adoption-snapshot.json
+```
+
+The scheduled `Adoption Snapshot` GitHub Actions workflow runs weekly and
+uploads this JSON as a workflow artifact. It does not rewrite the README
+automatically, so public docs stay stable while evidence snapshots remain
+reproducible.
+
 ## Roadmap
 
 See [docs/roadmap.md](docs/roadmap.md) for planned improvements such as
