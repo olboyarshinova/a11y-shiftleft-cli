@@ -4,6 +4,17 @@ Use this recipe when a project needs Section 508 support evidence. The CLI can
 help collect automated findings and report metadata, but it does not certify
 legal compliance.
 
+Section508.gov explains that the Revised 508 Standards incorporate WCAG 2.0
+Level AA success criteria and conformance requirements for web and non-web
+electronic content. Verify current procurement requirements with the relevant
+agency or counsel.
+
+Official reference:
+
+```txt
+https://www.section508.gov/develop/applicability-conformance/
+```
+
 ## Install
 
 ```bash

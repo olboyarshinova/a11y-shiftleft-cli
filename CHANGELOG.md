@@ -28,6 +28,10 @@
 - GitHub PR reporting now updates an existing accessibility comment instead of
   posting a new comment on every run.
 - CSV report export now recursively flattens nested evidence fields.
+- Compliance preset filtering now limits mapped findings by preset WCAG
+  version/level while preserving unmapped best-practice findings separately.
+- README and recipes now use current compliance-support wording and include an
+  ADA Title II evidence recipe.
 
 ## 0.4.0 - 2026-06-06
 

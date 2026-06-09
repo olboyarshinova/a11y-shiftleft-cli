@@ -113,9 +113,11 @@ export function registerCheckCommand(program: Command): void {
 
       const normalized = rawIssues.map(normalizeIssue);
       const triaged = triageIssues(normalized);
+      const explicitWcagFilter = toWcagLevel(options.wcagFilter);
       const filtered = filterByWcagConformance(triaged, {
-        level: toWcagLevel(options.wcagFilter),
-        version: effectiveConfig.wcagVersion
+        level: explicitWcagFilter || effectiveConfig.wcagLevel,
+        version: effectiveConfig.wcagVersion,
+        includeUnmapped: !explicitWcagFilter
       });
       const uniqueIssues = dedupeIssues(filtered);
       const report = await writeReports(effectiveConfig.outputDir, uniqueIssues, {
@@ -171,7 +173,7 @@ export function resolveCheckModes({
 }
 
 export function filterByWcagLevel(issues: TriagedIssue[], level?: WcagLevel): TriagedIssue[] {
-  return filterByWcagConformance(issues, { level });
+  return filterByWcagConformance(issues, { level, includeUnmapped: false });
 }
 
 export function filterByWcagConformance(
@@ -179,13 +181,15 @@ export function filterByWcagConformance(
   options: {
     level?: WcagLevel;
     version?: WcagVersion;
+    includeUnmapped?: boolean;
   } = {}
 ): TriagedIssue[] {
   if (!options.level && !options.version) return issues;
+  const includeUnmapped = options.includeUnmapped ?? !options.level;
 
   return issues.flatMap((issue) => {
     if (issue.wcagCriteria.length === 0) {
-      return options.level ? [] : [issue];
+      return includeUnmapped ? [issue] : [];
     }
 
     const criteria = issue.wcagCriteria.filter((criterion) => {

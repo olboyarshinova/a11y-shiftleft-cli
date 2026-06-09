@@ -111,6 +111,7 @@ Short setup recipes are available for common workflows:
 - [Vue/Vite](docs/recipes/vue-vite.md)
 - [Next.js](docs/recipes/nextjs.md)
 - [GitHub Actions](docs/recipes/github-actions.md)
+- [ADA Title II](docs/recipes/ada-title-ii.md)
 - [Section 508](docs/recipes/section-508.md)
 
 Scan several known routes in one run:
@@ -229,7 +230,9 @@ npx a11y-shiftleft check --url http://localhost:3000 --standard ada-title-ii --o
 npx a11y-shiftleft check --url http://localhost:3000 --standard wcag22-aa --out reports
 ```
 
-The presets configure report metadata and WCAG filtering defaults:
+The presets configure report metadata and WCAG filtering defaults. Mapped
+findings are limited to the selected WCAG version and Level AA target, while
+unmapped best-practice findings remain visible in a separate report section.
 
 | Preset | Report meaning | WCAG target |
 |---|---|---|
@@ -476,10 +479,10 @@ Automated tools only catch part of accessibility defects and should be combined
 with manual review, keyboard testing, screen reader testing, and organizational
 compliance review.
 
-Future compliance-support presets will align scans and report metadata with
-WCAG-based legal workflows, such as ADA Title II using WCAG 2.1 A/AA and Section
-508 using WCAG 2.0 A/AA. They will support evidence collection and remediation
-tracking, not legal certification.
+Current compliance-support presets align scans and report metadata with
+WCAG-based workflows, such as ADA Title II using WCAG 2.1 A/AA and Section 508
+using WCAG 2.0 A/AA. They support evidence collection and remediation tracking,
+not legal certification.
 
 Current non-goals:
 

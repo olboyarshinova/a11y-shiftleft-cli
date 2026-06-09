@@ -154,3 +154,74 @@ test("filterByWcagConformance filters criteria by selected WCAG version", () => 
 
   assert.deepEqual(issues.map((issue) => issue.ruleId), ["color-contrast"]);
 });
+
+test("filterByWcagConformance can keep unmapped findings for standard presets", () => {
+  const issues = filterByWcagConformance([
+    {
+      source: "axe",
+      framework: "react",
+      ruleId: "color-contrast",
+      wcag: ["1.4.3"],
+      wcagCriteria: [{
+        id: "1.4.3",
+        title: "Contrast (Minimum)",
+        level: "AA",
+        principle: "perceivable",
+        introducedIn: "2.0",
+        url: "https://example.com"
+      }],
+      severity: "critical",
+      message: "Text needs more contrast"
+    },
+    {
+      source: "axe",
+      framework: "react",
+      ruleId: "target-size",
+      wcag: ["2.5.8"],
+      wcagCriteria: [{
+        id: "2.5.8",
+        title: "Target Size (Minimum)",
+        level: "AA",
+        principle: "operable",
+        introducedIn: "2.2",
+        url: "https://example.com"
+      }],
+      severity: "warning",
+      message: "Target is too small"
+    },
+    {
+      source: "axe",
+      framework: "react",
+      ruleId: "page-has-heading-one",
+      wcag: [],
+      wcagCriteria: [],
+      severity: "warning",
+      message: "Page should contain a level-one heading"
+    }
+  ], {
+    level: "AA",
+    version: "2.0",
+    includeUnmapped: true
+  });
+
+  assert.deepEqual(issues.map((issue) => issue.ruleId), [
+    "color-contrast",
+    "page-has-heading-one"
+  ]);
+});
+
+test("filterByWcagLevel excludes unmapped findings for explicit WCAG filters", () => {
+  const issues = filterByWcagLevel([
+    {
+      source: "axe",
+      framework: "react",
+      ruleId: "page-has-heading-one",
+      wcag: [],
+      wcagCriteria: [],
+      severity: "warning",
+      message: "Page should contain a level-one heading"
+    }
+  ], "AA");
+
+  assert.deepEqual(issues, []);
+});
