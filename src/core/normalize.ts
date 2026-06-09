@@ -23,6 +23,9 @@ export function normalizeIssue(issue: Issue): NormalizedIssue {
     line: issue.line,
     column: issue.column,
     url: issue.url,
+    stateId: issue.stateId,
+    stateLabel: issue.stateLabel,
+    screenshot: issue.screenshot,
     message: issue.message || "Accessibility issue detected."
   };
 }

@@ -13,6 +13,8 @@
   accessibility CI repository.
 - Multi-package adoption snapshot collector and weekly GitHub Actions artifact
   workflow.
+- Experimental `explore` command for safe zero-config UI-state discovery with
+  screenshots and an exploration graph artifact.
 - Adoption telemetry collector support for separately recording manual npm
   website download snapshots alongside npm API periods.
 
@@ -34,6 +36,8 @@
   version/level while preserving unmapped best-practice findings separately.
 - README and recipes now use current compliance-support wording and include an
   ADA Title II evidence recipe.
+- Command help for `--cwd` no longer prints the caller's local working
+  directory as a default value.
 
 ## 0.4.0 - 2026-06-06
 

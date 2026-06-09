@@ -107,6 +107,9 @@ export interface Issue {
   line?: number;
   column?: number;
   url?: string;
+  stateId?: string;
+  stateLabel?: string;
+  screenshot?: string;
   message?: string;
   remediation?: RemediationHint;
 }
@@ -123,6 +126,9 @@ export interface NormalizedIssue extends Required<Pick<Issue, "source" | "framew
   line?: number;
   column?: number;
   url?: string;
+  stateId?: string;
+  stateLabel?: string;
+  screenshot?: string;
 }
 
 export interface TriagedIssue extends NormalizedIssue {
@@ -199,4 +205,48 @@ export interface PageSummary {
   warning: number;
   info: number;
   severityScore: number;
+}
+
+export type ExploreActionType = "click" | "navigate";
+
+export interface ExploreAction {
+  id: string;
+  type: ExploreActionType;
+  selector?: string;
+  url?: string;
+  label: string;
+  text?: string;
+  role?: string;
+}
+
+export interface ExplorationState {
+  id: string;
+  url: string;
+  title?: string;
+  depth: number;
+  fingerprint: string;
+  actionLabel: string;
+  screenshot?: string;
+  issueCount: number;
+  actionCount: number;
+}
+
+export interface ExplorationEdge {
+  from: string;
+  to: string;
+  action: ExploreAction;
+}
+
+export interface ExplorationGraph {
+  generatedAt: string;
+  startUrl: string;
+  states: ExplorationState[];
+  edges: ExplorationEdge[];
+  summary: {
+    statesVisited: number;
+    actionsTried: number;
+    screenshots: number;
+    maxDepth: number;
+    maxStates: number;
+  };
 }

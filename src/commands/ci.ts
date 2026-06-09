@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 interface CiOptions {
-  cwd: string;
+  cwd?: string;
   url: string[];
   startCommand: string;
   failOn: string;
@@ -15,14 +15,14 @@ export function registerCiCommand(program: Command): void {
   program
     .command("ci")
     .description("Generate GitHub Actions workflow for accessibility checks.")
-    .option("--cwd <dir>", "Target project directory", process.cwd())
+    .option("--cwd <dir>", "Target project directory")
     .option("--url <urls...>", "URL(s) to scan in CI", ["http://localhost:3000"])
     .option("--start-command <command>", "Command that starts the app in CI", "npm run dev -- --host localhost --port 3000")
     .option("--fail-on <severity>", "critical, warning, info, or none", "critical")
     .option("--standard <standard>", "Compliance support preset: wcag22-aa, ada-title-ii, or section508", "wcag22-aa")
     .option("--force", "Overwrite existing workflow")
     .action(async (options: CiOptions) => {
-      const cwd = path.resolve(options.cwd);
+      const cwd = path.resolve(options.cwd || process.cwd());
       const target = path.join(cwd, ".github/workflows/a11y.yml");
 
       if (!options.force && await exists(target)) {

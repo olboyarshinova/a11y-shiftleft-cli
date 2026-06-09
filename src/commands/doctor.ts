@@ -14,7 +14,7 @@ export interface DoctorCheck {
 }
 
 interface DoctorOptions {
-  cwd: string;
+  cwd?: string;
   config?: string;
   framework?: string;
   url?: string;
@@ -36,7 +36,7 @@ export function registerDoctorCommand(program: Command): void {
   program
     .command("doctor")
     .description("Check local setup before running accessibility scans.")
-    .option("--cwd <dir>", "Target project directory", process.cwd())
+    .option("--cwd <dir>", "Target project directory")
     .option("--config <file>", "Config path relative to cwd")
     .option("--framework <name>", "Target framework: auto, react, vue, angular, or unknown")
     .option("--url <url>", "Target URL to verify before dynamic scans")

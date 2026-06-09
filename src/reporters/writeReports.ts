@@ -109,7 +109,9 @@ export function toMarkdown(report: A11yReport): string {
     .map((issue) => {
       const criteria = formatCriteria(issue);
       const remediation = formatRemediation(issue);
-      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}: ${issue.message}${remediation}`;
+      const state = issue.stateLabel ? ` state: ${issue.stateLabel}` : "";
+      const screenshot = issue.screenshot ? ` screenshot: ${issue.screenshot}` : "";
+      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}${state}${screenshot}: ${issue.message}${remediation}`;
     })
     .join("\n");
 

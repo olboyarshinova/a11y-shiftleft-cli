@@ -18,6 +18,8 @@ for reproducible empirical validation.
   guidance for early teams.
 - Validate companion adapter package publishing and installation for React,
   Vue, and Angular.
+- Stabilize zero-config `explore` mode for safe UI-state discovery, including
+  screenshots and exploration graph artifacts.
 - Add GitHub Discussions categories after the first external users appear.
 
 ## Mid Term
@@ -26,6 +28,8 @@ for reproducible empirical validation.
   config, and CI environment readiness.
 - Add deeper framework-specific remediation examples for common React, Vue, and
   Angular issues.
+- Add an HTML exploration dashboard that visualizes checked pages/states,
+  screenshots, and accessibility findings while the scan is running.
 - Create a documentation website with quick start guides, framework-specific
   setup pages, CI/compliance-support examples, troubleshooting, and sample
   reports so teams can adopt the CLI without reading the full README first.

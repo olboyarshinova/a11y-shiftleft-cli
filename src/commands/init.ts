@@ -5,7 +5,7 @@ import { defaultConfig } from "../config/defaultConfig.js";
 import type { A11yConfig, Framework } from "../types.js";
 
 interface InitOptions {
-  cwd: string;
+  cwd?: string;
   force?: boolean;
   framework?: string;
 }
@@ -14,11 +14,11 @@ export function registerInitCommand(program: Command): void {
   program
     .command("init")
     .description("Create a default a11y-shiftleft config.")
-    .option("--cwd <dir>", "Target project directory", process.cwd())
+    .option("--cwd <dir>", "Target project directory")
     .option("--framework <name>", "Target framework: auto, react, vue, angular, or unknown")
     .option("--force", "Overwrite existing config")
     .action(async (options: InitOptions) => {
-      const cwd = path.resolve(options.cwd);
+      const cwd = path.resolve(options.cwd || process.cwd());
       const target = path.join(cwd, ".a11y-shiftleft.json");
       const framework = toFramework(options.framework);
 

@@ -12,7 +12,7 @@ import { resolveStandard } from "../core/standards.js";
 import type { ComplianceStandard, Framework, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel, WcagVersion } from "../types.js";
 
 interface CheckOptions {
-  cwd: string;
+  cwd?: string;
   config?: string;
   framework?: string;
   static?: boolean;
@@ -42,7 +42,7 @@ export function registerCheckCommand(program: Command): void {
   program
     .command("check")
     .description("Run static and/or dynamic accessibility checks.")
-    .option("--cwd <dir>", "Target project directory", process.cwd())
+    .option("--cwd <dir>", "Target project directory")
     .option("--config <file>", "Config path relative to cwd")
     .option("--framework <name>", "react, vue, angular, or auto")
     .option("--static", "Run static checks only")

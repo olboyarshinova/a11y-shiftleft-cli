@@ -32,11 +32,13 @@ Target Project
 CLI
   init
   check
+  explore
   ci
 
 Adapters
   eslintAdapter
   axePlaywrightAdapter
+  explorePlaywrightAdapter
 
 Core Engine
   normalize
@@ -48,6 +50,8 @@ Reporters
   a11y-report.json
   a11y-metrics.csv
   a11y-comment.md
+  exploration-graph.json
+  screenshots/
 ```
 
 ## Source And Runtime
@@ -103,6 +107,28 @@ Run a dynamic scan against the app URL:
 ```bash
 npx a11y-shiftleft check --dynamic --url http://localhost:3000 --out reports
 ```
+
+Explore UI states without writing scenarios:
+
+```bash
+npx a11y-shiftleft explore --url http://localhost:3000 --depth 2 --out reports
+```
+
+`explore` opens the start URL, scans it with axe, then safely follows
+same-origin links and low-risk UI expansion controls such as menu buttons,
+tabs, disclosure widgets, and modal triggers. It saves:
+
+- `reports/a11y-report.json`
+- `reports/a11y-comment.md`
+- `reports/exploration-graph.json`
+- `reports/screenshots/state-*.png`
+
+Safe mode skips submit/reset buttons, form buttons without an explicit safe
+marker, external links, and actions whose labels look destructive or
+transactional, such as delete, logout, save, checkout, or payment. Add
+`data-a11y-skip` to any element that should never be clicked during automated
+exploration. Add `data-a11y-explore` only when a form button or custom control
+is safe to exercise in automated scans.
 
 Short setup recipes are available for common workflows:
 
