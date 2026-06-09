@@ -15,6 +15,8 @@
   workflow.
 - Experimental `explore` command for safe zero-config UI-state discovery with
   screenshots and an exploration graph artifact.
+- Visual `exploration.html` report for `explore` runs, showing checked states,
+  screenshots, findings, and state transitions.
 - Adoption telemetry collector support for separately recording manual npm
   website download snapshots alongside npm API periods.
 

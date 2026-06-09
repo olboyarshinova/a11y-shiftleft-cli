@@ -6,6 +6,7 @@ import { detectFramework } from "../core/detectFramework.js";
 import { normalizeIssue } from "../core/normalize.js";
 import { triageIssues } from "../core/severity.js";
 import { resolveStandard } from "../core/standards.js";
+import { writeExplorationHtml } from "../reporters/writeExplorationHtml.js";
 import { writeReports } from "../reporters/writeReports.js";
 import type {
   ComplianceStandard,
@@ -30,6 +31,7 @@ interface ExploreOptions {
   wcagFilter?: string;
   wcagVersion?: string;
   format?: string[];
+  html?: boolean;
   screenshots?: boolean;
   semiAuto?: boolean;
 }
@@ -51,6 +53,7 @@ export function registerExploreCommand(program: Command): void {
     .option("--wcag-filter <level>", "Only report findings mapped to WCAG level A, AA, or AAA")
     .option("--wcag-version <version>", "Limit mapped findings to WCAG version 2.0, 2.1, or 2.2")
     .option("--format <formats...>", "Report formats: json, csv, markdown, or all")
+    .option("--no-html", "Do not generate exploration.html")
     .option("--no-screenshots", "Do not save state screenshots")
     .option("--semi-auto", "Generate a Markdown manual review checklist alongside automated reports")
     .action(async (options: ExploreOptions) => {
@@ -127,6 +130,9 @@ export function registerExploreCommand(program: Command): void {
         formats: parseFormats(options.format),
         semiAuto: Boolean(options.semiAuto)
       });
+      if (options.html !== false) {
+        await writeExplorationHtml(effectiveConfig.outputDir, exploration.graph, report.issues);
+      }
 
       console.log(JSON.stringify({
         ...report.summary,

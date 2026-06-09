@@ -50,6 +50,7 @@ Reporters
   a11y-report.json
   a11y-metrics.csv
   a11y-comment.md
+  exploration.html
   exploration-graph.json
   screenshots/
 ```
@@ -120,8 +121,12 @@ tabs, disclosure widgets, and modal triggers. It saves:
 
 - `reports/a11y-report.json`
 - `reports/a11y-comment.md`
+- `reports/exploration.html`
 - `reports/exploration-graph.json`
 - `reports/screenshots/state-*.png`
+
+Open `reports/exploration.html` to review checked states visually: each state
+includes its screenshot, issue summary, top findings, and recorded transitions.
 
 Safe mode skips submit/reset buttons, form buttons without an explicit safe
 marker, external links, and actions whose labels look destructive or
