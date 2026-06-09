@@ -62,6 +62,12 @@ for reproducible empirical validation.
   reports so teams can adopt the CLI without reading the full README first.
 - Package a dedicated GitHub Action wrapper after the generated workflow path is
   stable enough to support public Marketplace usage.
+- Add a `pr-comment` command for manual pull request feedback that can scan a
+  provided preview URL, update an existing accessibility comment, and apply
+  severity labels when GitHub credentials are available.
+- Extend the GitHub Action wrapper with uploaded `exploration.html` artifacts,
+  stable artifact links in PR comments, preview URL inputs, and optional
+  severity labels.
 - Publish a public demo repository and before/after case study showing a full
   pull request workflow with findings, fixes, and generated reports.
 - Design read-only `--interactive` issue review with deterministic remediation
@@ -85,10 +91,13 @@ for reproducible empirical validation.
 
 ## Later
 
-- Add a Lighthouse adapter for accessibility score collection and comparison
-  with axe findings.
-- Compare axe and Lighthouse disagreements in a separate report section and
-  surface the comparison in the local dashboard.
+- Add an optional Lighthouse integration, such as `check --with-lighthouse`,
+  that records Lighthouse accessibility scores, audit details, documentation
+  links, and relevant performance/accessibility recommendations in the same
+  report pipeline.
+- Compare axe and Lighthouse disagreements in a separate report section,
+  include Lighthouse suggested fixes where useful, and surface the comparison in
+  `exploration.html` and the local dashboard.
 - Introduce optional AI-assisted remediation through a separate
   `@a11y-shiftleft/ai` package, following the privacy and safety rules in
   [ai-suggestions.md](ai-suggestions.md).

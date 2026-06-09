@@ -34,6 +34,10 @@
   browser overlay, and a separate browser extension package.
 - Roadmap notes for a future local metrics dashboard and Lighthouse comparison
   workflow.
+- Roadmap notes for optional Lighthouse recommendation capture through the
+  existing report and visual exploration workflow.
+- Roadmap notes for future manual PR comments, GitHub Action artifacts, preview
+  URL inputs, and severity labels.
 - Roadmap notes for CLI quality-of-life improvements including quiet/verbose
   output, broader config discovery, progress output, and screenshot annotations.
 - Roadmap notes for future Git hook setup, incremental scans, smart ignores,

@@ -616,9 +616,9 @@ reproducible.
 ## Roadmap
 
 See [docs/roadmap.md](docs/roadmap.md) for planned improvements such as
-Lighthouse score collection, broader remediation coverage, stronger Vue/Angular
-static coverage, and WCAG-based compliance-support presets for ADA Title II and
-Section 508 workflows.
+optional Lighthouse score and recommendation capture, broader remediation
+coverage, stronger Vue/Angular static coverage, and WCAG-based
+compliance-support presets for ADA Title II and Section 508 workflows.
 
 See [docs/ai-suggestions.md](docs/ai-suggestions.md) for the future optional
 `@a11y-shiftleft/ai` package plan. AI-assisted remediation is intentionally
@@ -634,7 +634,7 @@ Marketplace Action support, documentation-site priorities, and outreach targets.
 |---|---|---|
 | axe-core | Accessibility rules engine used by many integrations | Engine-level API, not a full PR metrics and orchestration workflow |
 | @axe-core/playwright | Dynamic checks inside Playwright tests | Requires test code and does not merge static findings by default |
-| Lighthouse | Quick page quality audits across performance, SEO, best practices, and accessibility | Score-oriented page audit, not static/dynamic correlation or PR dataset generation |
+| Lighthouse | Quick page quality audits across performance, SEO, best practices, and accessibility | Score-oriented page audit; future integration can bring Lighthouse recommendations into the static+dynamic report workflow |
 | WAVE | Visual review and manual inspection support | Browser/manual workflow, not npm-first CI orchestration |
 | Pa11y | CLI accessibility scans for URLs | Strong page scanner, but not focused on static+dynamic dedupe and longitudinal metrics |
 | eslint-plugin-jsx-a11y | React JSX static accessibility linting | Static React-only layer; cannot inspect rendered DOM states |
