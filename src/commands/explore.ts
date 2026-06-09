@@ -1,5 +1,5 @@
 import type { Command } from "commander";
-import { runExplorePlaywrightAdapter, writeExplorationGraph } from "../adapters/explorePlaywrightAdapter.js";
+import { runExplorePlaywrightAdapter, writeExplorationGraph, type ScreenshotFormat } from "../adapters/explorePlaywrightAdapter.js";
 import { loadConfig } from "../config/loadConfig.js";
 import { dedupeIssues } from "../core/dedupe.js";
 import { detectFramework } from "../core/detectFramework.js";
@@ -35,6 +35,9 @@ interface ExploreOptions {
   clean?: boolean;
   html?: boolean;
   screenshots?: boolean;
+  screenshotFormat?: string;
+  screenshotQuality?: string;
+  screenshotFullPage?: boolean;
   semiAuto?: boolean;
 }
 
@@ -58,6 +61,9 @@ export function registerExploreCommand(program: Command): void {
     .option("--no-clean", "Keep previous generated report artifacts in the output directory")
     .option("--no-html", "Do not generate exploration.html")
     .option("--no-screenshots", "Do not save state screenshots")
+    .option("--screenshot-format <format>", "Screenshot format: jpeg or png", "jpeg")
+    .option("--screenshot-quality <quality>", "JPEG screenshot quality from 1 to 100", "70")
+    .option("--screenshot-full-page", "Capture full-page screenshots instead of viewport screenshots")
     .option("--semi-auto", "Generate a Markdown manual review checklist alongside automated reports")
     .action(async (options: ExploreOptions) => {
       const startedAt = Date.now();
@@ -97,6 +103,9 @@ export function registerExploreCommand(program: Command): void {
         maxStates: toPositiveInteger(options.limit),
         maxActionsPerState: toPositiveInteger(options.actionsPerState),
         screenshots: options.screenshots,
+        screenshotFormat: toScreenshotFormat(options.screenshotFormat),
+        screenshotQuality: toScreenshotQuality(options.screenshotQuality),
+        screenshotFullPage: Boolean(options.screenshotFullPage),
         onProgress: (event) => {
           if (event.type === "state") {
             const screenshot = event.state.screenshot ? ` screenshot=${event.state.screenshot}` : "";
@@ -186,5 +195,19 @@ function toPositiveInteger(value: string | undefined): number | undefined {
   if (!value) return undefined;
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 1) return undefined;
+  return parsed;
+}
+
+function toScreenshotFormat(value: string | undefined): ScreenshotFormat {
+  if (value === "jpeg" || value === "png") return value;
+  throw new Error("Unsupported screenshot format. Use jpeg or png.");
+}
+
+function toScreenshotQuality(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 100) {
+    throw new Error("Screenshot quality must be an integer from 1 to 100.");
+  }
   return parsed;
 }

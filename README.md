@@ -123,14 +123,47 @@ tabs, disclosure widgets, and modal triggers. It saves:
 - `reports/a11y-comment.md`
 - `reports/exploration.html`
 - `reports/exploration-graph.json`
-- `reports/screenshots/state-*.png`
+- `reports/screenshots/state-*.jpg`
 
 Open `reports/exploration.html` to review checked states visually: each state
 includes its screenshot, issue summary, top findings, and recorded transitions.
-Before each `explore` run, the CLI removes stale generated artifacts such as
-old `exploration.html`, `exploration-graph.json`, and `screenshots/state-*.png`
-from the selected output directory. Use `--no-clean` to keep previous generated
-artifacts.
+
+Report lifecycle:
+
+- `check` overwrites `a11y-report.json`, `a11y-metrics.csv`, and
+  `a11y-comment.md` in the selected output directory.
+- `explore` cleans stale generated artifacts before a new run, including
+  `a11y-report.json`, `a11y-comment.md`, `exploration.html`,
+  `exploration-graph.json`, and generated state screenshots.
+- After fixing an accessibility issue, rerun the same command. The fixed issue
+  should disappear from the new report; do not edit old report files by hand.
+- Use `--no-clean` only when you intentionally want to keep previous generated
+  artifacts for manual comparison.
+
+Screenshots are compressed by default as viewport JPEG files at quality `70` to
+keep reports small:
+
+```bash
+npx a11y-shiftleft explore --url http://localhost:3000 --out reports
+```
+
+Use PNG or full-page screenshots only when the extra detail is worth the larger
+artifact size:
+
+```bash
+npx a11y-shiftleft explore \
+  --url http://localhost:3000 \
+  --screenshot-format png \
+  --screenshot-full-page \
+  --out reports
+```
+
+For applications that may expose personal data, login screens, or payment
+details, disable screenshots:
+
+```bash
+npx a11y-shiftleft explore --url http://localhost:3000 --no-screenshots --out reports
+```
 
 Safe mode skips submit/reset buttons, form buttons without an explicit safe
 marker, external links, and actions whose labels look destructive or

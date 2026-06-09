@@ -14,20 +14,22 @@ test("cleanExploreArtifacts removes generated reports and stale state screenshot
   await fs.writeFile(path.join(outputDir, "exploration.html"), "<html></html>");
   await fs.writeFile(path.join(outputDir, "custom-team-report.json"), "{}");
   await fs.writeFile(path.join(screenshotsDir, "state-1.png"), "old screenshot");
-  await fs.writeFile(path.join(screenshotsDir, "state-12.png"), "old screenshot");
+  await fs.writeFile(path.join(screenshotsDir, "state-2.jpg"), "old screenshot");
+  await fs.writeFile(path.join(screenshotsDir, "state-12.jpeg"), "old screenshot");
   await fs.writeFile(path.join(screenshotsDir, "custom.png"), "keep me");
 
   const result = await cleanExploreArtifacts(outputDir);
 
   assert.deepEqual(result, {
     filesRemoved: 2,
-    screenshotsRemoved: 2
+    screenshotsRemoved: 3
   });
   assert.equal(await exists(path.join(outputDir, "a11y-report.json")), false);
   assert.equal(await exists(path.join(outputDir, "exploration.html")), false);
   assert.equal(await exists(path.join(outputDir, "custom-team-report.json")), true);
   assert.equal(await exists(path.join(screenshotsDir, "state-1.png")), false);
-  assert.equal(await exists(path.join(screenshotsDir, "state-12.png")), false);
+  assert.equal(await exists(path.join(screenshotsDir, "state-2.jpg")), false);
+  assert.equal(await exists(path.join(screenshotsDir, "state-12.jpeg")), false);
   assert.equal(await exists(path.join(screenshotsDir, "custom.png")), true);
 });
 

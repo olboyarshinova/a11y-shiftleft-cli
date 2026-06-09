@@ -27,7 +27,11 @@ const DEFAULT_MAX_DEPTH = 2;
 const DEFAULT_MAX_STATES = 20;
 const DEFAULT_MAX_ACTIONS_PER_STATE = 8;
 const DEFAULT_WAIT_MS = 250;
+const DEFAULT_SCREENSHOT_FORMAT = "jpeg";
+const DEFAULT_SCREENSHOT_QUALITY = 70;
 const DANGEROUS_ACTION_PATTERN = /\b(delete|remove|destroy|logout|log out|sign out|submit|save|create|update|send|pay|payment|purchase|buy|checkout|confirm|удалить|выйти|отправить|сохранить|создать|обновить|купить|оплатить|оформить|подтвердить)\b/i;
+
+export type ScreenshotFormat = "jpeg" | "png";
 
 interface ExplorePlaywrightOptions {
   url: string;
@@ -36,6 +40,9 @@ interface ExplorePlaywrightOptions {
   maxStates?: number;
   maxActionsPerState?: number;
   screenshots?: boolean;
+  screenshotFormat?: ScreenshotFormat;
+  screenshotQuality?: number;
+  screenshotFullPage?: boolean;
   waitMs?: number;
   onProgress?: (event: ExploreProgressEvent) => void;
 }
@@ -80,6 +87,8 @@ export async function runExplorePlaywrightAdapter(
     DEFAULT_MAX_ACTIONS_PER_STATE
   );
   const screenshots = options.screenshots ?? true;
+  const screenshotFormat = options.screenshotFormat || DEFAULT_SCREENSHOT_FORMAT;
+  const screenshotQuality = normalizeScreenshotQuality(options.screenshotQuality);
   const waitMs = positiveOrDefault(options.waitMs, DEFAULT_WAIT_MS);
   let actionsTried = 0;
   let screenshotsSaved = 0;
@@ -119,7 +128,13 @@ export async function runExplorePlaywrightAdapter(
       const stateId = `state-${states.length + 1}`;
       const actionLabel = current.via?.label || "Initial page";
       const screenshot = screenshots
-        ? await captureStateScreenshot(page, options.outputDir, stateId)
+        ? await captureStateScreenshot(page, {
+          outputDir: options.outputDir,
+          stateId,
+          format: screenshotFormat,
+          quality: screenshotQuality,
+          fullPage: Boolean(options.screenshotFullPage)
+        })
         : undefined;
       if (screenshot) screenshotsSaved += 1;
 
@@ -490,17 +505,25 @@ async function discoverSafeActions(
 
 async function captureStateScreenshot(
   page: Page,
-  outputDir: string,
-  stateId: string
+  options: {
+    outputDir: string;
+    stateId: string;
+    format: ScreenshotFormat;
+    quality: number;
+    fullPage: boolean;
+  }
 ): Promise<string | undefined> {
-  const screenshotsDir = path.join(outputDir, "screenshots");
-  const filename = `${stateId}.png`;
+  const screenshotsDir = path.join(options.outputDir, "screenshots");
+  const extension = options.format === "jpeg" ? "jpg" : "png";
+  const filename = `${options.stateId}.${extension}`;
   const screenshotPath = path.join(screenshotsDir, filename);
 
   await fs.mkdir(screenshotsDir, { recursive: true });
   await page.screenshot({
     path: screenshotPath,
-    fullPage: true
+    fullPage: options.fullPage,
+    type: options.format,
+    ...(options.format === "jpeg" ? { quality: options.quality } : {})
   });
 
   return path.posix.join("screenshots", filename);
@@ -527,6 +550,11 @@ function createExploreErrorIssue(
 
 function positiveOrDefault(value: number | undefined, fallback: number): number {
   return Number.isInteger(value) && Number(value) > 0 ? Number(value) : fallback;
+}
+
+function normalizeScreenshotQuality(value: number | undefined): number {
+  if (!Number.isInteger(value)) return DEFAULT_SCREENSHOT_QUALITY;
+  return Math.min(100, Math.max(1, Number(value)));
 }
 
 function hash(value: string): string {

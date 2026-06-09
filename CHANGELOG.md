@@ -19,6 +19,8 @@
   screenshots, findings, and state transitions.
 - Safe cleanup for `explore` output artifacts so stale state screenshots do not
   remain in repeated report runs.
+- Compressed JPEG state screenshots by default for `explore`, with configurable
+  screenshot format, JPEG quality, and full-page capture.
 - Adoption telemetry collector support for separately recording manual npm
   website download snapshots alongside npm API periods.
 
