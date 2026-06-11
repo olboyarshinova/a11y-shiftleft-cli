@@ -123,6 +123,40 @@ export function renderExplorationHtml(
       overflow: hidden;
     }
 
+    .triage-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+
+    .triage-list {
+      display: grid;
+      gap: 10px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .triage-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: grid;
+      gap: 6px;
+      padding: 10px;
+    }
+
+    .triage-title {
+      align-items: start;
+      display: flex;
+      gap: 8px;
+      justify-content: space-between;
+    }
+
+    .triage-title a,
+    .edge a {
+      color: inherit;
+    }
+
     .states {
       display: grid;
       gap: 14px;
@@ -247,6 +281,7 @@ export function renderExplorationHtml(
       }
 
       .summary,
+      .triage,
       .states {
         grid-column: 1 / -1;
       }
@@ -267,6 +302,10 @@ export function renderExplorationHtml(
       ${metric("Critical", totals.critical, "critical")}
       ${metric("Warning", totals.warning, "warning")}
       ${metric("Info", totals.info, "info")}
+    </section>
+
+    <section class="panel triage" aria-label="Triage overview">
+      ${renderTriageOverview(states, issues)}
     </section>
 
     <section class="panel states" aria-label="Checked states">
@@ -322,6 +361,81 @@ function renderState(state: StateViewModel): string {
     ${renderIssues(state.issues)}
   </div>
 </article>`;
+}
+
+function renderTriageOverview(states: StateViewModel[], issues: DedupedIssue[]): string {
+  return `<h2>Triage Overview</h2>
+  <div class="triage-grid">
+    <div>
+      <h3>Most Affected States</h3>
+      ${renderTopStates(states)}
+    </div>
+    <div>
+      <h3>Top Rules</h3>
+      ${renderTopRules(issues)}
+    </div>
+  </div>`;
+}
+
+function renderTopStates(states: StateViewModel[]): string {
+  const rankedStates = states
+    .map((state) => ({
+      ...state,
+      severityScore: sumSeverityScore(state.issues)
+    }))
+    .filter((state) => state.issues.length > 0)
+    .sort((a, b) => {
+      if (b.severityScore !== a.severityScore) return b.severityScore - a.severityScore;
+      if (b.issues.length !== a.issues.length) return b.issues.length - a.issues.length;
+      return a.id.localeCompare(b.id);
+    })
+    .slice(0, 6);
+
+  if (rankedStates.length === 0) {
+    return `<p class="muted">No affected states were detected by automated exploration.</p>`;
+  }
+
+  return `<ol class="triage-list">
+    ${rankedStates.map((state) => {
+      const summary = summarizeIssues(state.issues);
+      return `<li class="triage-item">
+        <div class="triage-title">
+          <a href="#${escapeAttribute(state.id)}"><strong>${escapeHtml(state.id)}</strong></a>
+          <span class="badge">score ${state.severityScore}</span>
+        </div>
+        <div class="url">${escapeHtml(state.url)}</div>
+        <div class="badges">
+          ${summary.critical ? badge("critical", `${summary.critical} critical`) : ""}
+          ${summary.warning ? badge("warning", `${summary.warning} warning`) : ""}
+          ${summary.info ? badge("info", `${summary.info} info`) : ""}
+        </div>
+      </li>`;
+    }).join("\n")}
+  </ol>`;
+}
+
+function renderTopRules(issues: DedupedIssue[]): string {
+  const ruleSummaries = summarizeRules(issues).slice(0, 8);
+
+  if (ruleSummaries.length === 0) {
+    return `<p class="muted">No rule findings were detected by automated exploration.</p>`;
+  }
+
+  return `<ol class="triage-list">
+    ${ruleSummaries.map((rule) => `<li class="triage-item">
+      <div class="triage-title">
+        <code>${escapeHtml(rule.ruleId)}</code>
+        <span class="badge">score ${rule.severityScore}</span>
+      </div>
+      <div class="badges">
+        ${rule.critical ? badge("critical", `${rule.critical} critical`) : ""}
+        ${rule.warning ? badge("warning", `${rule.warning} warning`) : ""}
+        ${rule.info ? badge("info", `${rule.info} info`) : ""}
+      </div>
+      ${rule.criteria.length > 0 ? `<div class="url">${escapeHtml(rule.criteria.join(", "))}</div>` : ""}
+      ${rule.states.length > 0 ? `<div class="url">States: ${rule.states.map((stateId) => `<a href="#${escapeAttribute(stateId)}">${escapeHtml(stateId)}</a>`).join(", ")}</div>` : ""}
+    </li>`).join("\n")}
+  </ol>`;
 }
 
 function renderIssues(issues: DedupedIssue[]): string {
@@ -395,6 +509,70 @@ function summarizeIssues(issues: DedupedIssue[]): Record<Severity, number> {
     warning: 0,
     info: 0
   });
+}
+
+function summarizeRules(issues: DedupedIssue[]): Array<{
+  ruleId: string;
+  critical: number;
+  warning: number;
+  info: number;
+  severityScore: number;
+  states: string[];
+  criteria: string[];
+}> {
+  const summaries = new Map<string, {
+    ruleId: string;
+    critical: number;
+    warning: number;
+    info: number;
+    severityScore: number;
+    states: Set<string>;
+    criteria: Set<string>;
+  }>();
+
+  for (const issue of issues) {
+    const summary = summaries.get(issue.ruleId) || {
+      ruleId: issue.ruleId,
+      critical: 0,
+      warning: 0,
+      info: 0,
+      severityScore: 0,
+      states: new Set<string>(),
+      criteria: new Set<string>()
+    };
+
+    summary[issue.severity] += 1;
+    summary.severityScore += severityScore(issue.severity);
+    if (issue.stateId) summary.states.add(issue.stateId);
+    for (const criterion of issue.wcagCriteria || []) {
+      summary.criteria.add(`WCAG ${criterion.id} ${criterion.title}, Level ${criterion.level}`);
+    }
+    summaries.set(issue.ruleId, summary);
+  }
+
+  return [...summaries.values()]
+    .map((summary) => ({
+      ...summary,
+      states: [...summary.states].sort(),
+      criteria: [...summary.criteria].sort()
+    }))
+    .sort((a, b) => {
+      if (b.severityScore !== a.severityScore) return b.severityScore - a.severityScore;
+      const totalA = a.critical + a.warning + a.info;
+      const totalB = b.critical + b.warning + b.info;
+      if (totalB !== totalA) return totalB - totalA;
+      return a.ruleId.localeCompare(b.ruleId);
+    });
+}
+
+function sumSeverityScore(issues: DedupedIssue[]): number {
+  return issues.reduce((total, issue) => total + severityScore(issue.severity), 0);
+}
+
+function severityScore(severity: Severity): number {
+  if (severity === "critical") return 5;
+  if (severity === "warning") return 2;
+  return 1;
 }
 
 function escapeHtml(value: string | number | undefined): string {

@@ -223,17 +223,22 @@ tabs, disclosure widgets, and modal triggers. It saves:
 - `reports/exploration-graph.json`
 - `reports/screenshots/state-*.jpg`
 
-Open `reports/exploration.html` to review checked states visually. Each state
-includes its screenshot, issue summary, top findings, and recorded transitions.
-The report also includes skipped actions with reasons, such as submit buttons,
-payment links, destructive controls, external links, or project-specific
-safe-mode blocklist matches.
+Open `reports/exploration.html` to review checked states visually. The report
+starts with a triage overview for the most affected states and top rules, then
+shows each state with its screenshot, issue summary, top findings, and recorded
+transitions. It also includes skipped actions with reasons, such as submit
+buttons, payment links, destructive controls, external links, or
+project-specific safe-mode blocklist matches.
 
 A typical visual report is organized like this:
 
 ```txt
 Accessibility Exploration
 States visited: 4 | Screenshots: 4 | Actions tried: 7
+
+Triage Overview
+- Most affected states: state-1 score 4, state-3 score 2
+- Top rules: button-name score 4, page-has-heading-one score 2
 
 State state-1
 URL: http://localhost:3000/

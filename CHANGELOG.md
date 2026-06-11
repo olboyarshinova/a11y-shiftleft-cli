@@ -88,6 +88,8 @@
   `--json-summary` for scripts that parse stdout.
 - Compact interactive `check --crawl` progress output for crawl discovery and
   per-page dynamic scans.
+- Triage overview in `exploration.html`, including most affected states, top
+  rules, severity scores, state anchors, and WCAG metadata where available.
 
 ### Changed
 

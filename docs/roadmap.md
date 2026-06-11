@@ -49,8 +49,9 @@ for reproducible empirical validation.
   high-risk API traffic.
 - Continue hardening report retention with clearer dry-run previews and
   retention summaries in generated reports.
-- Add an HTML exploration dashboard that visualizes checked pages/states,
-  screenshots, and accessibility findings while the scan is running.
+- Continue expanding `exploration.html` from a static triage overview into a
+  richer dashboard that can visualize checked pages/states, screenshots, and
+  accessibility findings while the scan is running.
 - Add screenshot annotations in `exploration.html` by storing finding selector
   bounding boxes and rendering reviewable overlays instead of drawing directly
   into compressed screenshots.

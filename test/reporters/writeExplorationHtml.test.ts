@@ -76,7 +76,14 @@ const issues = [
     framework: "react",
     ruleId: "button-name",
     wcag: ["4.1.2"],
-    wcagCriteria: [],
+    wcagCriteria: [{
+      id: "4.1.2",
+      title: "Name, Role, Value",
+      level: "A",
+      principle: "robust",
+      introducedIn: "2.0",
+      url: "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
+    }],
     tags: [],
     severity: "critical",
     selector: ".icon-button",
@@ -98,6 +105,11 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /screenshots\/state-1\.png/);
   assert.match(html, /button-name/);
   assert.match(html, /Buttons must have discernible text/);
+  assert.match(html, /Triage Overview/);
+  assert.match(html, /Most Affected States/);
+  assert.match(html, /Top Rules/);
+  assert.match(html, /score 5/);
+  assert.match(html, /WCAG 4\.1\.2 Name, Role, Value, Level A/);
   assert.match(html, /state-1.*->.*state-2/s);
   assert.match(html, /Skipped Actions/);
   assert.match(html, /Submit\/reset controls are blocked by safe mode/);
