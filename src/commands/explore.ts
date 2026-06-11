@@ -47,6 +47,8 @@ interface ExploreOptions {
   safeAllowSelector?: string[];
   dismissDialogs?: boolean;
   semiAuto?: boolean;
+  quiet?: boolean;
+  verbose?: boolean;
 }
 
 export function registerExploreCommand(program: Command): void {
@@ -81,6 +83,8 @@ export function registerExploreCommand(program: Command): void {
     .option("--safe-allow-selector <selectors...>", "Selectors allowed to override form-button safety blocks")
     .option("--no-dismiss-dialogs", "Do not auto-dismiss browser dialogs during exploration")
     .option("--semi-auto", "Generate a Markdown manual review checklist alongside automated reports")
+    .option("--quiet", "Suppress progress and console summary output")
+    .option("--verbose", "Print exploration settings before progress and the JSON summary")
     .action(async (options: ExploreOptions) => {
       const startedAt = Date.now();
       const config = await loadConfig({
@@ -123,19 +127,52 @@ export function registerExploreCommand(program: Command): void {
         await cleanExploreArtifacts(effectiveConfig.outputDir);
       }
 
+      const maxDepth = toPositiveInteger(options.depth);
+      const maxStates = toPositiveInteger(options.limit);
+      const maxActionsPerState = toPositiveInteger(options.actionsPerState);
+      const screenshotFormat = toScreenshotFormat(options.screenshotFormat);
+      const screenshotQuality = toScreenshotQuality(options.screenshotQuality);
+      const formats = parseFormats(options.format);
+
+      if (!options.quiet && options.verbose) {
+        console.log(formatVerboseExploreSummary({
+          url: options.url,
+          framework,
+          outputDir: effectiveConfig.outputDir,
+          maxDepth: maxDepth || 2,
+          maxStates: maxStates || 20,
+          maxActionsPerState: maxActionsPerState || 8,
+          formats,
+          html: options.html !== false,
+          screenshots: options.screenshots !== false,
+          screenshotFormat,
+          screenshotQuality: screenshotQuality || 70,
+          screenshotFullPage: Boolean(options.screenshotFullPage),
+          screenshotRedaction: options.screenshotRedaction !== false,
+          safeModeEnabled: effectiveConfig.explore.safeMode.enabled,
+          safeModeDismissDialogs: effectiveConfig.explore.safeMode.dismissDialogs,
+          safeModeBlockedText: effectiveConfig.explore.safeMode.blockedText,
+          safeModeBlockedRoles: effectiveConfig.explore.safeMode.blockedRoles,
+          safeModeBlockedUrls: effectiveConfig.explore.safeMode.blockedUrls,
+          safeModeBlockedSelectors: effectiveConfig.explore.safeMode.blockedSelectors
+        }));
+      }
+
       const exploration = await runExplorePlaywrightAdapter(effectiveConfig, {
         url: options.url,
         outputDir: effectiveConfig.outputDir,
-        maxDepth: toPositiveInteger(options.depth),
-        maxStates: toPositiveInteger(options.limit),
-        maxActionsPerState: toPositiveInteger(options.actionsPerState),
+        maxDepth,
+        maxStates,
+        maxActionsPerState,
         screenshots: options.screenshots,
-        screenshotFormat: toScreenshotFormat(options.screenshotFormat),
-        screenshotQuality: toScreenshotQuality(options.screenshotQuality),
+        screenshotFormat,
+        screenshotQuality,
         screenshotFullPage: Boolean(options.screenshotFullPage),
         screenshotRedaction: options.screenshotRedaction,
         safeMode: effectiveConfig.explore.safeMode,
         onProgress: (event) => {
+          if (options.quiet) return;
+
           if (event.type === "state") {
             const screenshot = event.state.screenshot ? ` screenshot=${event.state.screenshot}` : "";
             console.log(`[explore] ${event.state.id} depth=${event.state.depth} issues=${event.state.issueCount}${screenshot}`);
@@ -172,17 +209,19 @@ export function registerExploreCommand(program: Command): void {
         uniqueCount: uniqueIssues.length,
         duplicateCount: filtered.length - uniqueIssues.length
       }, {
-        formats: parseFormats(options.format),
+        formats,
         semiAuto: Boolean(options.semiAuto)
       });
       if (options.html !== false) {
         await writeExplorationHtml(effectiveConfig.outputDir, exploration.graph, report.issues);
       }
 
-      console.log(JSON.stringify({
-        ...report.summary,
-        exploration: exploration.graph.summary
-      }, null, 2));
+      if (!options.quiet) {
+        console.log(JSON.stringify({
+          ...report.summary,
+          exploration: exploration.graph.summary
+        }, null, 2));
+      }
 
       if (shouldFail(report.summary, config.failOn)) {
         process.exitCode = 1;
@@ -241,6 +280,47 @@ function toScreenshotQuality(value: string | undefined): number | undefined {
   return parsed;
 }
 
+export function formatVerboseExploreSummary(options: {
+  url: string;
+  framework: Framework;
+  outputDir: string;
+  maxDepth: number;
+  maxStates: number;
+  maxActionsPerState: number;
+  formats: string[];
+  html: boolean;
+  screenshots: boolean;
+  screenshotFormat: ScreenshotFormat;
+  screenshotQuality: number;
+  screenshotFullPage: boolean;
+  screenshotRedaction: boolean;
+  safeModeEnabled: boolean;
+  safeModeDismissDialogs: boolean;
+  safeModeBlockedText: string[];
+  safeModeBlockedRoles: string[];
+  safeModeBlockedUrls: string[];
+  safeModeBlockedSelectors: string[];
+}): string {
+  return [
+    "a11y-shiftleft explore",
+    `url: ${options.url}`,
+    `framework: ${options.framework}`,
+    `limits: depth=${options.maxDepth}, states=${options.maxStates}, actionsPerState=${options.maxActionsPerState}`,
+    `output: ${options.outputDir}`,
+    `formats: ${options.formats.join(", ")}`,
+    `html: ${options.html ? "on" : "off"}`,
+    `screenshots: ${options.screenshots ? `${options.screenshotFormat} quality=${options.screenshotQuality}` : "off"}`,
+    `screenshotFullPage: ${options.screenshotFullPage ? "on" : "off"}`,
+    `screenshotRedaction: ${options.screenshotRedaction ? "on" : "off"}`,
+    `safeMode: ${options.safeModeEnabled ? "on" : "off"}`,
+    `safeModeDismissDialogs: ${options.safeModeDismissDialogs ? "on" : "off"}`,
+    `safeModeBlockedText: ${formatPatternList(options.safeModeBlockedText)}`,
+    `safeModeBlockedRoles: ${formatPatternList(options.safeModeBlockedRoles)}`,
+    `safeModeBlockedUrls: ${formatPatternList(options.safeModeBlockedUrls)}`,
+    `safeModeBlockedSelectors: ${formatPatternList(options.safeModeBlockedSelectors)}`
+  ].join("\n");
+}
+
 function toPatternList(values: string[] | undefined): string[] | undefined {
   if (!values || values.length === 0) return undefined;
 
@@ -250,4 +330,8 @@ function toPatternList(values: string[] | undefined): string[] | undefined {
     .filter(Boolean);
 
   return patterns.length > 0 ? patterns : undefined;
+}
+
+function formatPatternList(patterns: string[]): string {
+  return patterns.length > 0 ? patterns.join(", ") : "none";
 }

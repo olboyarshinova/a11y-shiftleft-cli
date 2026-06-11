@@ -334,6 +334,20 @@ npx a11y-shiftleft explore \
   --out reports
 ```
 
+Suppress `explore` progress logs and console summary while still writing report
+files:
+
+```bash
+npx a11y-shiftleft explore --url http://localhost:3000 --quiet --out reports
+```
+
+Print exploration limits, screenshot settings, safe-mode settings, and output
+formats before progress logs:
+
+```bash
+npx a11y-shiftleft explore --url http://localhost:3000 --verbose --out reports
+```
+
 Short setup recipes are available for common workflows:
 
 - [Angular](docs/recipes/angular.md)

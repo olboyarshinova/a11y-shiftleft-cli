@@ -23,9 +23,9 @@ for reproducible empirical validation.
 - Continue hardening `explore` against state explosion with explicit depth and
   state limits, URL plus DOM accessibility fingerprints, and safer handling for
   repeated or equivalent UI states.
-- Continue expanding CLI quality-of-life controls after the initial `--quiet`
-  and `--verbose` support, especially around clearer skipped-check reasons,
-  report paths, and troubleshooting context.
+- Continue expanding CLI quality-of-life controls after the initial `check` and
+  `explore` `--quiet`/`--verbose` support, especially around clearer
+  skipped-check reasons, report paths, and troubleshooting context.
 - Add readable severity output for local runs, including colorized critical,
   warning, and info labels while preserving plain output for CI and report
   files.

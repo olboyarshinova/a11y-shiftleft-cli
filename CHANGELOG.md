@@ -73,6 +73,8 @@
   roles, URLs, selectors, allowed selectors, and browser dialog auto-dismiss.
 - Config discovery for `.a11yrc.json` and `package.json#a11y` in addition to
   the existing `.a11y-shiftleft.json` and `--config` path.
+- `explore --quiet` and `explore --verbose` output controls for CI-friendly
+  visual scans and local troubleshooting.
 
 ### Changed
 
