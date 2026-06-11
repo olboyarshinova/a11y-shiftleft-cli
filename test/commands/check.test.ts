@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { filterByWcagConformance, filterByWcagLevel, formatVerboseCheckSummary, parseFormats, parseUrls, resolveCheckModes, shouldFail } from "../../dist/commands/check.js";
+import { filterByWcagConformance, filterByWcagLevel, formatCheckConsoleSummary, formatVerboseCheckSummary, parseFormats, parseUrls, resolveCheckModes, shouldFail } from "../../dist/commands/check.js";
 
 const summary = {
   critical: 1,
@@ -162,6 +162,122 @@ test("formatVerboseCheckSummary renders scan context without JSON parsing requir
   assert.match(output, /retention: enabled deletedRuns=2/);
   assert.match(output, /static: enabled, findings=1, duration=25ms/);
   assert.match(output, /dynamic: enabled, findings=2, duration=150ms/);
+});
+
+test("formatCheckConsoleSummary renders a readable local summary", () => {
+  const output = formatCheckConsoleSummary({
+    generatedAt: "2026-06-11T00:00:00.000Z",
+    summary: {
+      total: 2,
+      critical: 1,
+      warning: 1,
+      info: 0,
+      rawCount: 3,
+      uniqueCount: 2,
+      duplicateCount: 1,
+      duplicateRate: 0.3333,
+      scanDurationMs: 125,
+      framework: "react",
+      urls: ["http://localhost:3000"],
+      complianceEvidence: {
+        automatedCoverage: "partial",
+        requiresManualReview: true,
+        totalFindings: 2,
+        wcagMappedFindings: 1,
+        unmappedFindings: 1,
+        affectedPages: 1,
+        topAffectedPages: []
+      },
+      bySource: {
+        axe: 1,
+        eslint: 1
+      },
+      bySeverity: {
+        critical: 1,
+        warning: 1
+      },
+      byConfidence: {
+        high: 1,
+        medium: 1
+      },
+      byCategory: {
+        contrast: 1,
+        headings: 1
+      },
+      byPour: {
+        perceivable: 1
+      },
+      byWcagLevel: {
+        AA: 1
+      },
+      byWcagVersion: {
+        "2.0": 1
+      },
+      byUnmappedRule: {
+        "page-has-heading-one": 1
+      },
+      byPage: [{
+        url: "http://localhost:3000",
+        total: 2,
+        critical: 1,
+        warning: 1,
+        info: 0,
+        severityScore: 7
+      }]
+    },
+    issues: [
+      {
+        source: "axe",
+        framework: "react",
+        ruleId: "color-contrast",
+        wcag: ["1.4.3"],
+        wcagCriteria: [{
+          id: "1.4.3",
+          title: "Contrast (Minimum)",
+          level: "AA",
+          principle: "perceivable",
+          introducedIn: "2.0",
+          url: "https://example.com"
+        }],
+        tags: [],
+        severity: "critical",
+        confidence: "high",
+        confidenceScore: 95,
+        confidenceReason: "Axe rule with direct WCAG mapping.",
+        category: "contrast",
+        message: "Text needs more contrast",
+        fingerprint: "axe:color-contrast:html",
+        duplicateCount: 0
+      },
+      {
+        source: "axe",
+        framework: "react",
+        ruleId: "page-has-heading-one",
+        wcag: [],
+        wcagCriteria: [],
+        tags: [],
+        severity: "warning",
+        confidence: "medium",
+        confidenceScore: 70,
+        confidenceReason: "Best-practice dynamic finding.",
+        category: "headings",
+        message: "Page should contain a level-one heading",
+        fingerprint: "axe:page-has-heading-one:html",
+        duplicateCount: 0
+      }
+    ]
+  }, {
+    outputDir: "reports",
+    formats: ["json", "markdown"],
+    semiAuto: true
+  });
+
+  assert.match(output, /Findings: total 2 \| CRITICAL 1 \| WARNING 1 \| INFO 0/);
+  assert.match(output, /Sources: axe: 1, eslint: 1/);
+  assert.match(output, /color-contrast: 1/);
+  assert.match(output, /reports\/a11y-comment.md/);
+  assert.match(output, /reports\/a11y-manual-checklist.md/);
+  assert.match(output, /--json-summary/);
 });
 
 test("filterByWcagLevel keeps findings up to the selected conformance level", () => {

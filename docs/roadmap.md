@@ -26,9 +26,9 @@ for reproducible empirical validation.
 - Continue expanding CLI quality-of-life controls after the initial `check` and
   `explore` `--quiet`/`--verbose` support, especially around clearer
   report paths and troubleshooting context.
-- Add readable severity output for local runs, including colorized critical,
-  warning, and info labels while preserving plain output for CI and report
-  files.
+- Continue polishing readable local output after the initial `check` summary,
+  including progress context for longer scans while preserving plain output for
+  CI and report files.
 - Improve framework autodetection messaging so React, Vue, and Angular projects
   receive clear adapter install recommendations when optimized static checks are
   not available yet.

@@ -79,6 +79,8 @@
   exploration actions with reviewable safe-mode reasons.
 - Opt-in report retention cleanup for timestamped output directories via
   config or `--retention-max-runs` / `--retention-max-age-days`.
+- Readable local `check` summary with severity counts, top rules, affected
+  pages, report paths, and `--json-summary` for scripts that parse stdout.
 
 ### Changed
 

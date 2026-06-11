@@ -12,7 +12,7 @@ import { resolveStandard } from "../core/standards.js";
 import { applyBaseline } from "../core/baseline.js";
 import { applyIgnores, DEFAULT_IGNORE_FILE } from "../core/ignore.js";
 import { applyReportRetention } from "../core/reportRetention.js";
-import type { ComplianceStandard, Framework, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel, WcagVersion } from "../types.js";
+import type { A11yReport, ComplianceStandard, Framework, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel, WcagVersion } from "../types.js";
 
 interface CheckOptions {
   cwd?: string;
@@ -42,6 +42,7 @@ interface CheckOptions {
   retentionMaxAgeDays?: string;
   quiet?: boolean;
   verbose?: boolean;
+  jsonSummary?: boolean;
 }
 
 interface CheckModeOptions {
@@ -81,7 +82,8 @@ export function registerCheckCommand(program: Command): void {
     .option("--retention-max-age-days <days>", "Remove report run directories older than this many days")
     .option("--no-retention", "Disable report retention cleanup")
     .option("--quiet", "Suppress console summary output")
-    .option("--verbose", "Print scan mode, adapter timing, and report context before the JSON summary")
+    .option("--verbose", "Print scan mode, adapter timing, and report context before the summary")
+    .option("--json-summary", "Print the machine-readable JSON summary to stdout")
     .action(async (options: CheckOptions) => {
       const startedAt = Date.now();
       const urls = parseUrls(options.url);
@@ -242,7 +244,16 @@ export function registerCheckCommand(program: Command): void {
           }));
         }
 
-        console.log(JSON.stringify(report.summary, null, 2));
+        const summaryOutput = shouldPrintJsonSummary(options)
+          ? JSON.stringify(report.summary, null, 2)
+          : formatCheckConsoleSummary(report, {
+            outputDir: effectiveConfig.outputDir,
+            formats,
+            semiAuto: Boolean(options.semiAuto),
+            color: Boolean(process.stdout.isTTY && !process.env.NO_COLOR)
+          });
+
+        console.log(summaryOutput);
       }
 
       if (shouldFail(report.summary, config.failOn)) {
@@ -341,6 +352,123 @@ export function formatVerboseCheckSummary(options: {
     "adapters:",
     ...adapterLines
   ].join("\n");
+}
+
+export function formatCheckConsoleSummary(
+  report: A11yReport,
+  options: {
+    outputDir: string;
+    formats: ReportFormat[];
+    semiAuto?: boolean;
+    color?: boolean;
+  }
+): string {
+  const summary = report.summary;
+  const status = summary.total === 0
+    ? "No automated findings detected"
+    : "Accessibility findings detected";
+  const files = reportFiles(options.outputDir, options.formats, Boolean(options.semiAuto));
+  const topRules = topRuleCounts(report, 5);
+  const topPages = (summary.byPage || []).slice(0, 3);
+  const primaryReport = primaryReportPath(options.outputDir, options.formats);
+  const standard = summary.standard
+    ? `${summary.standard.label} (${summary.standard.wcagVersion} ${summary.standard.wcagLevel})`
+    : "WCAG 2.2 Level AA support mode";
+
+  return [
+    "a11y-shiftleft check",
+    `Status: ${status}`,
+    `Findings: total ${summary.total} | ${severityLabel("critical", summary.critical, options.color)} | ${severityLabel("warning", summary.warning, options.color)} | ${severityLabel("info", summary.info, options.color)}`,
+    `Framework: ${summary.framework}`,
+    `Standard: ${standard}`,
+    `Sources: ${formatCountMap(summary.bySource)}`,
+    `Confidence: ${formatCountMap(summary.byConfidence)}`,
+    `WCAG levels: ${formatCountMap(summary.byWcagLevel)}`,
+    `Duplicates removed: ${summary.duplicateCount} of ${summary.rawCount} raw findings`,
+    `Duration: ${summary.scanDurationMs}ms`,
+    "",
+    "Top rules:",
+    ...formatList(topRules.map(([ruleId, count]) => `${ruleId}: ${count}`), "No rule findings."),
+    "",
+    "Top pages:",
+    ...formatList(topPages.map((page) => `${page.url}: ${page.total} findings, score ${page.severityScore}`), "No page-level findings."),
+    "",
+    "Reports:",
+    ...files.map((file) => `  - ${file}`),
+    "",
+    "Next:",
+    `  - Open ${primaryReport} for the generated report.`,
+    "  - Use --semi-auto when you need the manual review checklist.",
+    "  - Use --json-summary when a script needs the stdout summary as JSON."
+  ].join("\n");
+}
+
+function shouldPrintJsonSummary(options: Pick<CheckOptions, "jsonSummary">): boolean {
+  return Boolean(options.jsonSummary || process.env.CI || !process.stdout.isTTY);
+}
+
+function reportFiles(outputDir: string, formats: ReportFormat[], semiAuto: boolean): string[] {
+  const files = [];
+
+  if (formats.includes("markdown")) files.push(joinOutputPath(outputDir, "a11y-comment.md"));
+  if (formats.includes("json")) files.push(joinOutputPath(outputDir, "a11y-report.json"));
+  if (formats.includes("csv")) files.push(joinOutputPath(outputDir, "a11y-metrics.csv"));
+  if (semiAuto) files.push(joinOutputPath(outputDir, "a11y-manual-checklist.md"));
+
+  return files;
+}
+
+function primaryReportPath(outputDir: string, formats: ReportFormat[]): string {
+  if (formats.includes("markdown")) return joinOutputPath(outputDir, "a11y-comment.md");
+  if (formats.includes("json")) return joinOutputPath(outputDir, "a11y-report.json");
+  if (formats.includes("csv")) return joinOutputPath(outputDir, "a11y-metrics.csv");
+  return outputDir;
+}
+
+function topRuleCounts(report: A11yReport, limit: number): [string, number][] {
+  const counts = report.issues.reduce<Record<string, number>>((acc, issue) => {
+    acc[issue.ruleId] = (acc[issue.ruleId] || 0) + 1;
+    return acc;
+  }, {});
+
+  return Object.entries(counts)
+    .sort((a, b) => {
+      if (b[1] !== a[1]) return b[1] - a[1];
+      return a[0].localeCompare(b[0]);
+    })
+    .slice(0, limit);
+}
+
+function formatList(items: string[], fallback: string): string[] {
+  if (items.length === 0) return [`  - ${fallback}`];
+  return items.map((item) => `  - ${item}`);
+}
+
+function severityLabel(severity: Severity, count: number, color = false): string {
+  const label = `${severity.toUpperCase()} ${count}`;
+  if (!color) return label;
+
+  if (severity === "critical") return `\u001b[31m${label}\u001b[0m`;
+  if (severity === "warning") return `\u001b[33m${label}\u001b[0m`;
+  return `\u001b[36m${label}\u001b[0m`;
+}
+
+function formatCountMap(counts: Record<string, number> | undefined): string {
+  const entries = Object.entries(counts || {});
+  if (entries.length === 0) return "none";
+
+  return entries
+    .sort((a, b) => {
+      if (b[1] !== a[1]) return b[1] - a[1];
+      return a[0].localeCompare(b[0]);
+    })
+    .map(([key, value]) => `${key}: ${value}`)
+    .join(", ");
+}
+
+function joinOutputPath(outputDir: string, fileName: string): string {
+  if (outputDir.endsWith("/")) return `${outputDir}${fileName}`;
+  return `${outputDir}/${fileName}`;
 }
 
 export function filterByWcagLevel(issues: TriagedIssue[], level?: WcagLevel): TriagedIssue[] {

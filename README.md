@@ -104,7 +104,7 @@ npx a11y-shiftleft doctor --url http://localhost:3000
 npx a11y-shiftleft check --dynamic --url http://localhost:3000 --out reports
 ```
 
-6. Open the generated report files:
+6. Read the terminal summary, then open the generated report files:
 
 ```txt
 reports/a11y-comment.md
@@ -114,6 +114,10 @@ reports/a11y-metrics.csv
 
 `a11y-comment.md` is the easiest file to read first. `a11y-report.json` is for
 automation and deeper debugging. `a11y-metrics.csv` is for trend tracking.
+
+In an interactive terminal, `check` prints a readable summary with severity
+counts, top rules, affected pages, and report paths. Use `--json-summary` when a
+script needs the stdout summary as JSON.
 
 ## Pick Your Setup
 
@@ -505,6 +509,13 @@ issues, run:
 npx a11y-shiftleft doctor --url http://localhost:3000
 ```
 
+Interactive local runs print a readable terminal summary. Ask for JSON when a
+script needs to parse stdout:
+
+```bash
+npx a11y-shiftleft check --dynamic --url http://localhost:3000 --json-summary --out reports
+```
+
 Suppress console output in CI while still writing report files and preserving
 the exit code:
 
@@ -513,7 +524,7 @@ npx a11y-shiftleft check --dynamic --url http://localhost:3000 --quiet --out rep
 ```
 
 Print scan modes, adapter timings, URL context, baseline settings, and output
-formats before the JSON summary:
+formats before the normal summary:
 
 ```bash
 npx a11y-shiftleft check --dynamic --url http://localhost:3000 --verbose --out reports
