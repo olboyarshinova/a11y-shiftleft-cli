@@ -172,6 +172,7 @@ npx a11y-shiftleft check --url http://localhost:3000 --out reports
 |---|---|---|
 | `.a11y-shiftleft.json` | Project config for framework, WCAG target, URLs, and scan options | Yes |
 | `.a11y-baseline.json` | Accepted known findings for baseline mode | Yes, when using `--baseline` |
+| `a11y-ignore.json` | Temporary scoped ignores with reason, owner, and expiration | Yes, when intentionally used |
 | `reports/a11y-comment.md` | Human-readable report for local review or PR comments | Usually no |
 | `reports/a11y-report.json` | Machine-readable findings and evidence | Usually no |
 | `reports/a11y-metrics.csv` | Run metrics for trend analysis | Usually no |
@@ -376,6 +377,36 @@ npx a11y-shiftleft check \
   --baseline \
   --baseline-file config/a11y-baseline.json \
   --out reports
+```
+
+Use scoped ignores for temporary, reviewed exceptions. The CLI automatically
+applies `a11y-ignore.json` when the file exists:
+
+```json
+{
+  "version": 1,
+  "ignores": [
+    {
+      "ruleId": "color-contrast",
+      "selector": ".legacy-muted-text",
+      "reason": "Legacy theme is scheduled for replacement.",
+      "owner": "@frontend-team",
+      "expires": "2026-09-30"
+    }
+  ]
+}
+```
+
+Every ignore must include `reason`, `owner`, `expires`, and at least one match
+field such as `fingerprint`, `ruleId`, `source`, `severity`, `selector`,
+`file`, `url`, `target`, or `wcag`. Expired or invalid entries do not hide
+findings and are counted in the report summary.
+
+Use a custom ignore file or disable ignores for a run:
+
+```bash
+npx a11y-shiftleft check --dynamic --url http://localhost:3000 --ignore-file config/a11y-ignore.json --out reports
+npx a11y-shiftleft check --dynamic --url http://localhost:3000 --no-ignore --out reports
 ```
 
 If a scan fails because of Node, Playwright, Chromium, config, or app startup

@@ -75,8 +75,8 @@ for reproducible empirical validation.
   pull request workflow with findings, fixes, and generated reports.
 - Design read-only `--interactive` issue review with deterministic remediation
   hints and copy-paste snippets before introducing AI suggestions.
-- Add scoped ignore support through an `a11y-ignore.json` style file that
-  requires rule, target, reason, owner, and expiration metadata.
+- Continue hardening scoped `a11y-ignore.json` support with clearer expiry
+  reminders, stale-ignore cleanup guidance, and optional owner summaries.
 - Add optional Git hook setup for Husky and Lefthook so staged accessibility
   checks can run before commits without becoming a hard dependency of the core
   CLI.

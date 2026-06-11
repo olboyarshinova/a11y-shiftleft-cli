@@ -10,6 +10,7 @@ import { detectFramework } from "../core/detectFramework.js";
 import { matchesWcagLevel, matchesWcagVersion } from "../core/wcagMap.js";
 import { resolveStandard } from "../core/standards.js";
 import { applyBaseline } from "../core/baseline.js";
+import { applyIgnores, DEFAULT_IGNORE_FILE } from "../core/ignore.js";
 import type { ComplianceStandard, Framework, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel, WcagVersion } from "../types.js";
 
 interface CheckOptions {
@@ -33,6 +34,8 @@ interface CheckOptions {
   baseline?: boolean;
   baselineFile?: string;
   updateBaseline?: boolean;
+  ignore?: boolean;
+  ignoreFile?: string;
   quiet?: boolean;
   verbose?: boolean;
 }
@@ -68,6 +71,8 @@ export function registerCheckCommand(program: Command): void {
     .option("--baseline", "Compare against .a11y-baseline.json and fail only on new findings")
     .option("--baseline-file <file>", "Baseline file path")
     .option("--update-baseline", "Overwrite the baseline file with the current findings")
+    .option("--ignore-file <file>", "Scoped ignore file path", DEFAULT_IGNORE_FILE)
+    .option("--no-ignore", "Disable a11y-ignore.json filtering")
     .option("--quiet", "Suppress console summary output")
     .option("--verbose", "Print scan mode, adapter timing, and report context before the JSON summary")
     .action(async (options: CheckOptions) => {
@@ -162,15 +167,20 @@ export function registerCheckCommand(program: Command): void {
         includeUnmapped: !explicitWcagFilter
       });
       const uniqueIssues = dedupeIssues(filtered);
+      const ignoreResult = await applyIgnores(uniqueIssues, {
+        cwd: effectiveConfig.cwd,
+        enabled: options.ignore !== false,
+        ignoreFile: options.ignoreFile
+      });
       const baselineEnabled = Boolean(options.baseline || options.updateBaseline);
       const baselineResult = baselineEnabled
-        ? await applyBaseline(uniqueIssues, {
+        ? await applyBaseline(ignoreResult.issues, {
           cwd: effectiveConfig.cwd,
           baselineFile: options.baselineFile,
           update: Boolean(options.updateBaseline)
         })
         : undefined;
-      const reportIssues = baselineResult?.issues || uniqueIssues;
+      const reportIssues = baselineResult?.issues || ignoreResult.issues;
       const formats = parseFormats(options.format);
       const report = await writeReports(effectiveConfig.outputDir, reportIssues, {
         framework,
@@ -182,9 +192,10 @@ export function registerCheckCommand(program: Command): void {
           wcagLevel: effectiveConfig.wcagLevel
         },
         baseline: baselineResult?.summary,
+        ignore: ignoreResult.summary,
         scanDurationMs: Date.now() - startedAt,
         rawCount: rawIssues.length,
-        uniqueCount: uniqueIssues.length,
+        uniqueCount: ignoreResult.issues.length,
         duplicateCount: filtered.length - uniqueIssues.length
       }, {
         formats,
@@ -203,6 +214,9 @@ export function registerCheckCommand(program: Command): void {
             formats,
             baselineEnabled,
             baselineFile: options.baselineFile || ".a11y-baseline.json",
+            ignoreEnabled: Boolean(ignoreResult.summary?.enabled),
+            ignoreFile: options.ignoreFile || DEFAULT_IGNORE_FILE,
+            ignoredIssues: ignoreResult.summary?.ignoredIssues || 0,
             updateBaseline: Boolean(options.updateBaseline),
             standard: effectiveConfig.standard,
             wcagVersion: effectiveConfig.wcagVersion,
@@ -265,6 +279,9 @@ export function formatVerboseCheckSummary(options: {
   formats: ReportFormat[];
   baselineEnabled: boolean;
   baselineFile: string;
+  ignoreEnabled: boolean;
+  ignoreFile: string;
+  ignoredIssues: number;
   updateBaseline: boolean;
   standard: ComplianceStandard;
   wcagVersion: WcagVersion;
@@ -284,6 +301,9 @@ export function formatVerboseCheckSummary(options: {
   const baseline = options.baselineEnabled
     ? `enabled file=${options.baselineFile}${options.updateBaseline ? " update=true" : ""}`
     : "disabled";
+  const ignore = options.ignoreEnabled
+    ? `enabled file=${options.ignoreFile} ignored=${options.ignoredIssues}`
+    : "disabled";
 
   return [
     "a11y-shiftleft check",
@@ -294,6 +314,7 @@ export function formatVerboseCheckSummary(options: {
     `standard: ${options.standard}`,
     `wcag: ${options.wcagVersion} ${options.wcagLevel}`,
     `baseline: ${baseline}`,
+    `ignore: ${ignore}`,
     `output: ${options.outputDir}`,
     `formats: ${options.formats.join(", ")}`,
     "adapters:",

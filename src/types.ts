@@ -171,6 +171,37 @@ export interface DedupedIssue extends TriagedIssue {
   baselineStatus?: "new" | "existing";
 }
 
+export interface IgnoreEntry {
+  id?: string;
+  fingerprint?: string | string[];
+  ruleId?: string | string[];
+  source?: string | string[];
+  severity?: Severity | Severity[];
+  selector?: string | string[];
+  file?: string | string[];
+  url?: string | string[];
+  target?: string | string[];
+  wcag?: string | string[];
+  reason: string;
+  owner: string;
+  expires: string;
+}
+
+export interface IgnoreFile {
+  version: 1;
+  ignores: IgnoreEntry[];
+}
+
+export interface IgnoreSummary {
+  enabled: boolean;
+  file: string;
+  totalRules: number;
+  activeRules: number;
+  expiredRules: number;
+  invalidRules: number;
+  ignoredIssues: number;
+}
+
 export interface BaselineEntry {
   fingerprint: string;
   ruleId: string;
@@ -206,6 +237,7 @@ export interface ReportMetrics {
   urls?: string[];
   standard?: ComplianceStandardMetadata;
   baseline?: BaselineComparisonSummary;
+  ignore?: IgnoreSummary;
   scanDurationMs?: number;
   rawCount?: number;
   uniqueCount?: number;
@@ -243,6 +275,7 @@ export interface ReportSummary {
   urls: string[];
   standard?: ComplianceStandardMetadata;
   baseline?: BaselineComparisonSummary;
+  ignore?: IgnoreSummary;
   complianceEvidence: ComplianceEvidenceSummary;
   bySource: Record<string, number>;
   bySeverity: Record<string, number>;

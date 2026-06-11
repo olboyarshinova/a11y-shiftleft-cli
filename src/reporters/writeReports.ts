@@ -85,6 +85,7 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     urls: metrics.urls || [],
     standard: metrics.standard,
     baseline: metrics.baseline,
+    ignore: metrics.ignore,
     complianceEvidence: summarizeComplianceEvidence(issues, byPage, metrics.standard),
     bySource: countBy(issues, "source"),
     bySeverity: countBy(issues, "severity"),
@@ -140,7 +141,7 @@ export function toMarkdown(report: A11yReport): string {
 | Framework | ${report.summary.framework} |
 | Standard | ${formatStandard(report.summary.standard)} |
 ${formatBaselineRows(report.summary.baseline)}| Automated coverage | ${report.summary.standard?.automatedCoverage || "partial"} |
-| Manual review required | ${complianceEvidence.requiresManualReview ? "yes" : "no"} |
+${formatIgnoreRows(report.summary.ignore)}| Manual review required | ${complianceEvidence.requiresManualReview ? "yes" : "no"} |
 | WCAG-mapped findings | ${complianceEvidence.wcagMappedFindings} |
 | Unmapped findings | ${complianceEvidence.unmappedFindings} |
 | Affected pages | ${complianceEvidence.affectedPages} |
@@ -320,6 +321,18 @@ function formatBaselineRows(baseline: ReportSummary["baseline"]): string {
     `| Existing baseline issues | ${baseline.existingIssues} |`,
     `| New findings | ${baseline.newIssues} |`,
     `| Resolved baseline findings | ${baseline.resolvedIssues} |`
+  ].join("\n")}\n`;
+}
+
+function formatIgnoreRows(ignore: ReportSummary["ignore"]): string {
+  if (!ignore?.enabled) return "";
+
+  return `${[
+    `| Ignore file | ${ignore.file} |`,
+    `| Ignored findings | ${ignore.ignoredIssues} |`,
+    `| Active ignore rules | ${ignore.activeRules} |`,
+    `| Expired ignore rules | ${ignore.expiredRules} |`,
+    `| Invalid ignore rules | ${ignore.invalidRules} |`
   ].join("\n")}\n`;
 }
 

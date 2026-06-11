@@ -139,6 +139,9 @@ test("formatVerboseCheckSummary renders scan context without JSON parsing requir
     formats: ["json", "markdown"],
     baselineEnabled: true,
     baselineFile: ".a11y-baseline.json",
+    ignoreEnabled: true,
+    ignoreFile: "a11y-ignore.json",
+    ignoredIssues: 2,
     updateBaseline: false,
     standard: "wcag22-aa",
     wcagVersion: "2.2",
@@ -153,6 +156,7 @@ test("formatVerboseCheckSummary renders scan context without JSON parsing requir
   assert.match(output, /urls: http:\/\/localhost:3000/);
   assert.match(output, /crawl: enabled depth=1 limit=10/);
   assert.match(output, /baseline: enabled file=.a11y-baseline.json/);
+  assert.match(output, /ignore: enabled file=a11y-ignore.json ignored=2/);
   assert.match(output, /static: enabled, findings=1, duration=25ms/);
   assert.match(output, /dynamic: enabled, findings=2, duration=150ms/);
 });

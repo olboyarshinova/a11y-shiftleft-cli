@@ -288,6 +288,40 @@ test("writeReports includes baseline comparison metadata", async () => {
   assert.match(markdown, /baseline: new/);
 });
 
+test("writeReports includes ignore metadata", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-ignore-"));
+
+  const report = await writeReports(
+    outputDir,
+    [],
+    {
+      framework: "react",
+      rawCount: 2,
+      uniqueCount: 1,
+      duplicateCount: 0,
+      ignore: {
+        enabled: true,
+        file: "a11y-ignore.json",
+        totalRules: 3,
+        activeRules: 1,
+        expiredRules: 1,
+        invalidRules: 1,
+        ignoredIssues: 1
+      }
+    }
+  );
+
+  const csv = await fs.readFile(path.join(outputDir, "a11y-metrics.csv"), "utf8");
+  const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+
+  assert.equal(report.summary.ignore?.ignoredIssues, 1);
+  assert.match(csv, /ignore\.ignoredIssues,1/);
+  assert.match(csv, /ignore\.expiredRules,1/);
+  assert.match(markdown, /Ignore file \| a11y-ignore\.json/);
+  assert.match(markdown, /Ignored findings \| 1/);
+  assert.match(markdown, /Invalid ignore rules \| 1/);
+});
+
 test("writeReports can limit output formats", async () => {
   const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-format-"));
 

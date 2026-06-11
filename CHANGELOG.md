@@ -67,6 +67,8 @@
   confidence precision, and issue-category reporting.
 - `check --quiet` and `check --verbose` output controls for CI-friendly runs
   and local troubleshooting.
+- Scoped `a11y-ignore.json` support with required `reason`, `owner`, and
+  `expires` metadata for temporary reviewed exceptions.
 
 ### Changed
 
