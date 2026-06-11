@@ -3,7 +3,13 @@ import path from "node:path";
 import { createRequire } from "node:module";
 import type { Command } from "commander";
 import { discoverConfig, type DiscoveredConfig } from "../config/loadConfig.js";
-import { adapterPackagesForFramework } from "../core/frameworkAdapters.js";
+import { detectFramework } from "../core/detectFramework.js";
+import {
+  adapterInstallCommand,
+  adapterInstallPackagesForFramework,
+  adapterPackagesForFramework,
+  getAdapterRecommendation
+} from "../core/frameworkAdapters.js";
 import type { Framework } from "../types.js";
 
 export type DoctorStatus = "pass" | "warn" | "fail";
@@ -28,6 +34,11 @@ interface DoctorRuntime {
   env: NodeJS.ProcessEnv;
   fetch: typeof fetch;
   checkChromium: () => Promise<DoctorCheck>;
+}
+
+interface FrameworkResolution {
+  framework: Framework;
+  source: "option" | "config" | "package.json" | "unknown";
 }
 
 const MIN_NODE_MAJOR = 18;
@@ -68,16 +79,18 @@ export async function runDoctorChecks(
 ): Promise<DoctorCheck[]> {
   const cwd = path.resolve(options.cwd || process.cwd());
   const discoveredConfig = await discoverConfig(cwd, options.config);
-  const framework = toFramework(options.framework) ||
-    toFramework(discoveredConfig.config.framework) ||
-    "auto";
+  const frameworkResolution = await resolveDoctorFramework(cwd, {
+    optionFramework: toFramework(options.framework),
+    configFramework: toFramework(discoveredConfig.config.framework)
+  });
   const checks: DoctorCheck[] = [];
 
   checks.push(checkNodeVersion(runtime.nodeVersion));
   checks.push(await checkProjectDirectory(cwd));
   checks.push(checkConfigFile(discoveredConfig));
+  checks.push(checkFrameworkResolution(frameworkResolution));
   checks.push(checkPackageResolution(cwd, "playwright"));
-  checks.push(...checkFrameworkAdapterPackages(cwd, framework));
+  checks.push(...checkFrameworkAdapterPackages(cwd, frameworkResolution.framework));
   checks.push(await runtime.checkChromium());
   checks.push(checkCiEnvironment(runtime.env));
 
@@ -95,17 +108,44 @@ export async function runDoctorChecks(
 }
 
 export function checkFrameworkAdapterPackages(cwd: string, framework: Framework): DoctorCheck[] {
-  const requiredPackages = adapterPackagesForFramework(framework);
+  const recommendation = getAdapterRecommendation(framework);
 
-  if (requiredPackages.length === 0) {
+  if (!recommendation) {
     return [{
-      name: "Framework adapters",
+      name: "Framework adapter",
       status: "warn",
-      message: "Framework is auto/unknown. Configure --framework or an a11y config file for more specific adapter checks."
+      message: "Framework is auto/unknown. Dynamic checks still work. Configure --framework or add an a11y config file for static adapter guidance."
     }];
   }
 
-  return requiredPackages.map((packageName) => checkPackageResolution(cwd, packageName));
+  const adapterPackages = adapterInstallPackagesForFramework(framework);
+  const requiredPackages = adapterPackagesForFramework(framework);
+  const foundAdapterBundle = adapterPackages.some((packageName) => isPackageResolvable(cwd, packageName));
+  const foundRequiredPackages = requiredPackages.length > 0 &&
+    requiredPackages.every((packageName) => isPackageResolvable(cwd, packageName));
+  const install = adapterInstallCommand(adapterPackages);
+
+  if (foundAdapterBundle) {
+    return [{
+      name: "Framework adapter",
+      status: "pass",
+      message: `Found ${adapterPackages.join(", ")}. ${recommendation.note}`
+    }];
+  }
+
+  if (foundRequiredPackages) {
+    return [{
+      name: "Framework adapter",
+      status: "pass",
+      message: `Found ${requiredPackages.join(", ")}. ${recommendation.note}`
+    }];
+  }
+
+  return [{
+    name: "Framework adapter",
+    status: "warn",
+    message: `${framework} detected. Install the optimized static adapter: ${install}. Dynamic checks still work without it.`
+  }];
 }
 
 export function summarizeDoctorChecks(checks: DoctorCheck[]): Record<DoctorStatus, number> {
@@ -126,6 +166,73 @@ export function formatDoctorChecks(checks: DoctorCheck[]): string {
   ];
 
   return lines.join("\n");
+}
+
+async function resolveDoctorFramework(
+  cwd: string,
+  options: {
+    optionFramework?: Framework;
+    configFramework?: Framework;
+  }
+): Promise<FrameworkResolution> {
+  if (options.optionFramework && options.optionFramework !== "auto" && options.optionFramework !== "unknown") {
+    return {
+      framework: options.optionFramework,
+      source: "option"
+    };
+  }
+
+  if (options.configFramework && options.configFramework !== "auto" && options.configFramework !== "unknown") {
+    return {
+      framework: options.configFramework,
+      source: "config"
+    };
+  }
+
+  const detectedFramework = await detectFramework(cwd);
+  if (detectedFramework !== "unknown" && detectedFramework !== "auto") {
+    return {
+      framework: detectedFramework,
+      source: "package.json"
+    };
+  }
+
+  return {
+    framework: options.optionFramework || options.configFramework || "auto",
+    source: "unknown"
+  };
+}
+
+function checkFrameworkResolution(resolution: FrameworkResolution): DoctorCheck {
+  if (resolution.source === "option") {
+    return {
+      name: "Framework",
+      status: "pass",
+      message: `Using ${resolution.framework} from --framework.`
+    };
+  }
+
+  if (resolution.source === "config") {
+    return {
+      name: "Framework",
+      status: "pass",
+      message: `Using ${resolution.framework} from a11y config.`
+    };
+  }
+
+  if (resolution.source === "package.json") {
+    return {
+      name: "Framework",
+      status: "pass",
+      message: `Detected ${resolution.framework} from package.json.`
+    };
+  }
+
+  return {
+    name: "Framework",
+    status: "warn",
+    message: "Could not detect React, Vue, or Angular from package.json. Dynamic checks still work; use --framework for static adapter guidance."
+  };
 }
 
 function checkNodeVersion(nodeVersion: string): DoctorCheck {
@@ -189,20 +296,28 @@ function checkConfigFile(config: DiscoveredConfig): DoctorCheck {
 }
 
 function checkPackageResolution(cwd: string, packageName: string): DoctorCheck {
-  try {
-    const requireFromProject = createRequire(path.join(cwd, "package.json"));
-    requireFromProject.resolve(packageName);
+  if (isPackageResolvable(cwd, packageName)) {
     return {
       name: packageName,
       status: "pass",
       message: `${packageName} is resolvable from the target project.`
     };
+  }
+
+  return {
+    name: packageName,
+    status: "warn",
+    message: `${packageName} is not resolvable from the target project. Install the CLI locally or run npm install.`
+  };
+}
+
+function isPackageResolvable(cwd: string, packageName: string): boolean {
+  try {
+    const requireFromProject = createRequire(path.join(cwd, "package.json"));
+    requireFromProject.resolve(packageName);
+    return true;
   } catch {
-    return {
-      name: packageName,
-      status: "warn",
-      message: `${packageName} is not resolvable from the target project. Install the CLI locally or run npm install.`
-    };
+    return false;
   }
 }
 

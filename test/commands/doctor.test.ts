@@ -25,6 +25,7 @@ test("runDoctorChecks reports local setup and reachable target URL", async () =>
 
   assert.equal(checks.find((check) => check.name === "Node.js")?.status, "pass");
   assert.equal(checks.find((check) => check.name === "Config file")?.status, "pass");
+  assert.equal(checks.find((check) => check.name === "Framework")?.status, "warn");
   assert.equal(checks.find((check) => check.name === "Target URL")?.status, "pass");
 });
 
@@ -57,6 +58,43 @@ test("checkFrameworkAdapterPackages warns when framework is auto", () => {
   assert.equal(checks.length, 1);
   assert.equal(checks[0].status, "warn");
   assert.match(checks[0].message, /Framework is auto\/unknown/);
+});
+
+test("checkFrameworkAdapterPackages recommends user-facing adapter bundles", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-doctor-adapter-"));
+  const checks = checkFrameworkAdapterPackages(cwd, "react");
+
+  assert.equal(checks.length, 1);
+  assert.equal(checks[0].name, "Framework adapter");
+  assert.equal(checks[0].status, "warn");
+  assert.match(checks[0].message, /@a11y-shiftleft\/react/);
+  assert.match(checks[0].message, /npm install --save-dev/);
+});
+
+test("runDoctorChecks autodetects React from package.json", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-doctor-react-"));
+  await fs.writeFile(path.join(cwd, "package.json"), JSON.stringify({
+    dependencies: {
+      react: "^19.0.0"
+    }
+  }));
+
+  const checks = await runDoctorChecks({
+    cwd
+  }, {
+    nodeVersion: "22.0.0",
+    env: {},
+    checkChromium: async () => ({
+      name: "Chromium",
+      status: "pass",
+      message: "Mock browser installed."
+    }),
+    fetch: async () => new Response("", { status: 200 })
+  });
+
+  assert.equal(checks.find((check) => check.name === "Framework")?.status, "pass");
+  assert.match(checks.find((check) => check.name === "Framework")?.message || "", /Detected react/);
+  assert.match(checks.find((check) => check.name === "Framework adapter")?.message || "", /@a11y-shiftleft\/react/);
 });
 
 test("runDoctorChecks warns when config and URL are missing", async () => {

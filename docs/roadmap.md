@@ -91,6 +91,9 @@ for reproducible empirical validation.
 - Prototype a browser overlay mode after `watch` is stable, so local dev pages
   can highlight affected elements from accessibility findings without requiring
   a full browser extension.
+- Explore a DevTools-style local inspection layer after the overlay prototype,
+  reusing the same core report schema to show rule, severity, WCAG metadata,
+  confidence, and suggested remediation next to affected DOM elements.
 - Add progress output for long-running crawl, explore, watch, and dashboard
   indexing workflows, while keeping non-animated output available for CI.
 
@@ -106,9 +109,9 @@ for reproducible empirical validation.
 - Introduce optional AI-assisted remediation through a separate
   `@a11y-shiftleft/ai` package, following the privacy and safety rules in
   [ai-suggestions.md](ai-suggestions.md).
-- Consider a separate `@a11y-shiftleft/browser` package for Chrome extension or
-  DevTools panel work once CLI reports, live feedback, and overlay behavior are
-  stable enough to justify a browser-specific project.
+- Consider a separate `@a11y-shiftleft/browser` package for a Chrome extension
+  or DevTools panel once CLI reports, live feedback, overlay behavior, and
+  privacy controls are stable enough to justify a browser-specific project.
 - Open selected external open-source pull requests after the docs, generated CI
   workflow, and sample reports are stable enough for maintainers to review.
 - Explore VPAT/evidence-binder export templates for organizations that need

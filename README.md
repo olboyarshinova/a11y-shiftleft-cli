@@ -152,6 +152,14 @@ npx a11y-shiftleft adapter add vue
 npx a11y-shiftleft adapter add angular
 ```
 
+`doctor` can also detect React, Vue, or Angular from `package.json` and print a
+framework-specific adapter recommendation when optimized static checks are not
+installed yet:
+
+```bash
+npx a11y-shiftleft doctor --url http://localhost:3000
+```
+
 Then initialize the matching framework config:
 
 ```bash

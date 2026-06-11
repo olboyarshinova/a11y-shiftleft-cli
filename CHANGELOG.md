@@ -81,6 +81,9 @@
   config or `--retention-max-runs` / `--retention-max-age-days`.
 - Readable local `check` summary with severity counts, top rules, affected
   pages, report paths, and `--json-summary` for scripts that parse stdout.
+- `doctor` now autodetects React, Vue, and Angular from `package.json` and
+  recommends the matching `@a11y-shiftleft/*` adapter bundle for optimized
+  static checks.
 
 ### Changed
 
