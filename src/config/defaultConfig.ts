@@ -34,5 +34,10 @@ export const defaultConfig = {
       allowedSelectors: ["[data-a11y-explore]"],
       dismissDialogs: true
     }
+  },
+  retention: {
+    enabled: false,
+    maxRuns: 5,
+    maxAgeDays: 14
   }
 } satisfies Omit<A11yConfig, "cwd" | "configPath">;

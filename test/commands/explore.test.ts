@@ -22,7 +22,8 @@ test("formatVerboseExploreSummary renders exploration context", () => {
     safeModeBlockedText: ["logout", "delete"],
     safeModeBlockedRoles: [],
     safeModeBlockedUrls: ["*/checkout*"],
-    safeModeBlockedSelectors: ["[data-danger]"]
+    safeModeBlockedSelectors: ["[data-danger]"],
+    retentionEnabled: true
   });
 
   assert.match(output, /a11y-shiftleft explore/);
@@ -36,4 +37,5 @@ test("formatVerboseExploreSummary renders exploration context", () => {
   assert.match(output, /safeModeBlockedRoles: none/);
   assert.match(output, /safeModeBlockedUrls: \*\/checkout\*/);
   assert.match(output, /safeModeBlockedSelectors: \[data-danger\]/);
+  assert.match(output, /retention: on/);
 });

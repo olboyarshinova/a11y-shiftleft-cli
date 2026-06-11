@@ -6,6 +6,7 @@ import { detectFramework } from "../core/detectFramework.js";
 import { normalizeIssue } from "../core/normalize.js";
 import { triageIssues } from "../core/severity.js";
 import { resolveStandard } from "../core/standards.js";
+import { applyReportRetention } from "../core/reportRetention.js";
 import { cleanExploreArtifacts } from "../reporters/cleanExploreArtifacts.js";
 import { writeExplorationHtml } from "../reporters/writeExplorationHtml.js";
 import { writeReports } from "../reporters/writeReports.js";
@@ -47,6 +48,9 @@ interface ExploreOptions {
   safeAllowSelector?: string[];
   dismissDialogs?: boolean;
   semiAuto?: boolean;
+  retention?: boolean;
+  retentionMaxRuns?: string;
+  retentionMaxAgeDays?: string;
   quiet?: boolean;
   verbose?: boolean;
 }
@@ -83,6 +87,9 @@ export function registerExploreCommand(program: Command): void {
     .option("--safe-allow-selector <selectors...>", "Selectors allowed to override form-button safety blocks")
     .option("--no-dismiss-dialogs", "Do not auto-dismiss browser dialogs during exploration")
     .option("--semi-auto", "Generate a Markdown manual review checklist alongside automated reports")
+    .option("--retention-max-runs <count>", "Keep at most this many report run directories including the current output")
+    .option("--retention-max-age-days <days>", "Remove report run directories older than this many days")
+    .option("--no-retention", "Disable report retention cleanup")
     .option("--quiet", "Suppress progress and console summary output")
     .option("--verbose", "Print exploration settings before progress and the JSON summary")
     .action(async (options: ExploreOptions) => {
@@ -110,6 +117,11 @@ export function registerExploreCommand(program: Command): void {
             allowedSelectors: toPatternList(options.safeAllowSelector),
             dismissDialogs: options.dismissDialogs === false ? false : undefined
           }
+        },
+        retention: {
+          enabled: retentionRequested(options),
+          maxRuns: toPositiveInteger(options.retentionMaxRuns),
+          maxAgeDays: toPositiveInteger(options.retentionMaxAgeDays)
         }
       });
       const standard = resolveStandard(config.standard);
@@ -154,7 +166,8 @@ export function registerExploreCommand(program: Command): void {
           safeModeBlockedText: effectiveConfig.explore.safeMode.blockedText,
           safeModeBlockedRoles: effectiveConfig.explore.safeMode.blockedRoles,
           safeModeBlockedUrls: effectiveConfig.explore.safeMode.blockedUrls,
-          safeModeBlockedSelectors: effectiveConfig.explore.safeMode.blockedSelectors
+          safeModeBlockedSelectors: effectiveConfig.explore.safeMode.blockedSelectors,
+          retentionEnabled: effectiveConfig.retention.enabled
         }));
       }
 
@@ -215,11 +228,13 @@ export function registerExploreCommand(program: Command): void {
       if (options.html !== false) {
         await writeExplorationHtml(effectiveConfig.outputDir, exploration.graph, report.issues);
       }
+      const retentionSummary = await applyReportRetention(effectiveConfig.outputDir, effectiveConfig.retention);
 
       if (!options.quiet) {
         console.log(JSON.stringify({
           ...report.summary,
-          exploration: exploration.graph.summary
+          exploration: exploration.graph.summary,
+          retention: retentionSummary.enabled ? retentionSummary : undefined
         }, null, 2));
       }
 
@@ -300,6 +315,7 @@ export function formatVerboseExploreSummary(options: {
   safeModeBlockedRoles: string[];
   safeModeBlockedUrls: string[];
   safeModeBlockedSelectors: string[];
+  retentionEnabled: boolean;
 }): string {
   return [
     "a11y-shiftleft explore",
@@ -317,7 +333,8 @@ export function formatVerboseExploreSummary(options: {
     `safeModeBlockedText: ${formatPatternList(options.safeModeBlockedText)}`,
     `safeModeBlockedRoles: ${formatPatternList(options.safeModeBlockedRoles)}`,
     `safeModeBlockedUrls: ${formatPatternList(options.safeModeBlockedUrls)}`,
-    `safeModeBlockedSelectors: ${formatPatternList(options.safeModeBlockedSelectors)}`
+    `safeModeBlockedSelectors: ${formatPatternList(options.safeModeBlockedSelectors)}`,
+    `retention: ${options.retentionEnabled ? "on" : "off"}`
   ].join("\n");
 }
 
@@ -334,4 +351,10 @@ function toPatternList(values: string[] | undefined): string[] | undefined {
 
 function formatPatternList(patterns: string[]): string {
   return patterns.length > 0 ? patterns.join(", ") : "none";
+}
+
+function retentionRequested(options: Pick<ExploreOptions, "retention" | "retentionMaxRuns" | "retentionMaxAgeDays">): boolean | undefined {
+  if (options.retention === false) return false;
+  if (options.retentionMaxRuns || options.retentionMaxAgeDays) return true;
+  return undefined;
 }

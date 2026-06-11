@@ -263,6 +263,32 @@ Report lifecycle:
   when they are intentionally part of docs, demos, or release evidence.
 - Commit `.a11y-baseline.json` when using `--baseline`; it is the accepted
   known-findings file that lets CI block only new accessibility regressions.
+- Use report retention when you write timestamped output directories such as
+  `reports/run-2026-06-11`. Retention only removes sibling directories that
+  contain a11y-shiftleft report marker files and never removes the current
+  output directory.
+
+Enable retention from the command line:
+
+```bash
+npx a11y-shiftleft explore \
+  --url http://localhost:3000 \
+  --out reports/run-2026-06-11 \
+  --retention-max-runs 5 \
+  --retention-max-age-days 14
+```
+
+Or keep it in config:
+
+```json
+{
+  "retention": {
+    "enabled": true,
+    "maxRuns": 5,
+    "maxAgeDays": 14
+  }
+}
+```
 
 Screenshots are compressed by default as viewport JPEG files at quality `70` to
 keep reports small:

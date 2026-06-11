@@ -11,6 +11,7 @@ import { matchesWcagLevel, matchesWcagVersion } from "../core/wcagMap.js";
 import { resolveStandard } from "../core/standards.js";
 import { applyBaseline } from "../core/baseline.js";
 import { applyIgnores, DEFAULT_IGNORE_FILE } from "../core/ignore.js";
+import { applyReportRetention } from "../core/reportRetention.js";
 import type { ComplianceStandard, Framework, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel, WcagVersion } from "../types.js";
 
 interface CheckOptions {
@@ -36,6 +37,9 @@ interface CheckOptions {
   updateBaseline?: boolean;
   ignore?: boolean;
   ignoreFile?: string;
+  retention?: boolean;
+  retentionMaxRuns?: string;
+  retentionMaxAgeDays?: string;
   quiet?: boolean;
   verbose?: boolean;
 }
@@ -73,6 +77,9 @@ export function registerCheckCommand(program: Command): void {
     .option("--update-baseline", "Overwrite the baseline file with the current findings")
     .option("--ignore-file <file>", "Scoped ignore file path", DEFAULT_IGNORE_FILE)
     .option("--no-ignore", "Disable a11y-ignore.json filtering")
+    .option("--retention-max-runs <count>", "Keep at most this many report run directories including the current output")
+    .option("--retention-max-age-days <days>", "Remove report run directories older than this many days")
+    .option("--no-retention", "Disable report retention cleanup")
     .option("--quiet", "Suppress console summary output")
     .option("--verbose", "Print scan mode, adapter timing, and report context before the JSON summary")
     .action(async (options: CheckOptions) => {
@@ -97,6 +104,11 @@ export function registerCheckCommand(program: Command): void {
           crawl: options.crawl ? true : undefined,
           crawlDepth: toPositiveInteger(options.crawlDepth),
           crawlLimit: toPositiveInteger(options.crawlLimit)
+        },
+        retention: {
+          enabled: retentionRequested(options),
+          maxRuns: toPositiveInteger(options.retentionMaxRuns),
+          maxAgeDays: toPositiveInteger(options.retentionMaxAgeDays)
         }
       });
 
@@ -201,6 +213,7 @@ export function registerCheckCommand(program: Command): void {
         formats,
         semiAuto: Boolean(options.semiAuto)
       });
+      const retentionSummary = await applyReportRetention(effectiveConfig.outputDir, effectiveConfig.retention);
 
       if (!options.quiet) {
         if (options.verbose) {
@@ -223,7 +236,9 @@ export function registerCheckCommand(program: Command): void {
             wcagLevel: effectiveConfig.wcagLevel,
             crawl: Boolean(effectiveConfig.dynamic.crawl),
             crawlDepth: effectiveConfig.dynamic.crawlDepth,
-            crawlLimit: effectiveConfig.dynamic.crawlLimit
+            crawlLimit: effectiveConfig.dynamic.crawlLimit,
+            retentionEnabled: retentionSummary.enabled,
+            retentionDeletedRuns: retentionSummary.deletedRuns
           }));
         }
 
@@ -289,6 +304,8 @@ export function formatVerboseCheckSummary(options: {
   crawl?: boolean;
   crawlDepth?: number;
   crawlLimit?: number;
+  retentionEnabled: boolean;
+  retentionDeletedRuns: number;
 }): string {
   const adapterLines = options.adapterRuns.map((run) => {
     const status = run.enabled ? "enabled" : "skipped";
@@ -304,6 +321,9 @@ export function formatVerboseCheckSummary(options: {
   const ignore = options.ignoreEnabled
     ? `enabled file=${options.ignoreFile} ignored=${options.ignoredIssues}`
     : "disabled";
+  const retention = options.retentionEnabled
+    ? `enabled deletedRuns=${options.retentionDeletedRuns}`
+    : "disabled";
 
   return [
     "a11y-shiftleft check",
@@ -315,6 +335,7 @@ export function formatVerboseCheckSummary(options: {
     `wcag: ${options.wcagVersion} ${options.wcagLevel}`,
     `baseline: ${baseline}`,
     `ignore: ${ignore}`,
+    `retention: ${retention}`,
     `output: ${options.outputDir}`,
     `formats: ${options.formats.join(", ")}`,
     "adapters:",
@@ -449,4 +470,10 @@ function toPositiveInteger(value: string | undefined): number | undefined {
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 1) return undefined;
   return parsed;
+}
+
+function retentionRequested(options: Pick<CheckOptions, "retention" | "retentionMaxRuns" | "retentionMaxAgeDays">): boolean | undefined {
+  if (options.retention === false) return false;
+  if (options.retentionMaxRuns || options.retentionMaxAgeDays) return true;
+  return undefined;
 }

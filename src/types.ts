@@ -104,6 +104,12 @@ export interface ExploreConfig {
   safeMode: ExploreSafeModeConfig;
 }
 
+export interface RetentionConfig {
+  enabled: boolean;
+  maxRuns: number;
+  maxAgeDays: number;
+}
+
 export interface A11yConfig {
   cwd: string;
   configPath?: string;
@@ -117,15 +123,17 @@ export interface A11yConfig {
   dynamic: DynamicConfig;
   metrics: MetricsConfig;
   explore: ExploreConfig;
+  retention: RetentionConfig;
 }
 
-export type ConfigOverrides = Partial<Omit<A11yConfig, "static" | "dynamic" | "metrics" | "explore">> & {
+export type ConfigOverrides = Partial<Omit<A11yConfig, "static" | "dynamic" | "metrics" | "explore" | "retention">> & {
   static?: Partial<StaticConfig>;
   dynamic?: Partial<DynamicConfig>;
   metrics?: Partial<MetricsConfig>;
   explore?: Partial<Omit<ExploreConfig, "safeMode">> & {
     safeMode?: Partial<ExploreSafeModeConfig>;
   };
+  retention?: Partial<RetentionConfig>;
 };
 
 export interface Issue {

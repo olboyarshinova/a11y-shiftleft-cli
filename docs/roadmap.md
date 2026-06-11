@@ -46,9 +46,8 @@ for reproducible empirical validation.
 - Continue hardening configurable safe-mode policies for `explore`, including
   clearer skip reporting and optional request blocking for external or
   high-risk API traffic.
-- Add report retention settings for generated artifacts, such as maximum saved
-  runs and maximum age in days, so local binary screenshots and old reports do
-  not accumulate indefinitely.
+- Continue hardening report retention with clearer dry-run previews and
+  retention summaries in generated reports.
 - Add an HTML exploration dashboard that visualizes checked pages/states,
   screenshots, and accessibility findings while the scan is running.
 - Add screenshot annotations in `exploration.html` by storing finding selector

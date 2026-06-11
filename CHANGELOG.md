@@ -77,6 +77,8 @@
   visual scans and local troubleshooting.
 - `exploration-graph.json` and `exploration.html` now include skipped
   exploration actions with reviewable safe-mode reasons.
+- Opt-in report retention cleanup for timestamped output directories via
+  config or `--retention-max-runs` / `--retention-max-age-days`.
 
 ### Changed
 
