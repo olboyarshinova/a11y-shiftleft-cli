@@ -386,8 +386,16 @@ files:
 npx a11y-shiftleft explore --url http://localhost:3000 --quiet --out reports
 ```
 
+Interactive local `explore` runs print compact progress lines and a readable
+final summary with visited states, skipped actions, screenshots, top rules, and
+report paths. Ask for JSON when a script needs to parse stdout:
+
+```bash
+npx a11y-shiftleft explore --url http://localhost:3000 --json-summary --out reports
+```
+
 Print exploration limits, screenshot settings, safe-mode settings, and output
-formats before progress logs:
+formats before progress logs and the final summary:
 
 ```bash
 npx a11y-shiftleft explore --url http://localhost:3000 --verbose --out reports

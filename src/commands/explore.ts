@@ -10,9 +10,14 @@ import { applyReportRetention } from "../core/reportRetention.js";
 import { cleanExploreArtifacts } from "../reporters/cleanExploreArtifacts.js";
 import { writeExplorationHtml } from "../reporters/writeExplorationHtml.js";
 import { writeReports } from "../reporters/writeReports.js";
+import type { ReportRetentionSummary } from "../core/reportRetention.js";
 import type {
+  A11yReport,
   ComplianceStandard,
+  ExplorationGraph,
+  ExplorationState,
   Framework,
+  ReportFormat,
   Severity,
   WcagLevel,
   WcagVersion
@@ -53,7 +58,13 @@ interface ExploreOptions {
   retentionMaxAgeDays?: string;
   quiet?: boolean;
   verbose?: boolean;
+  jsonSummary?: boolean;
 }
+
+type ExploreSummaryOutput = A11yReport["summary"] & {
+  exploration: ExplorationGraph["summary"];
+  retention?: ReportRetentionSummary;
+};
 
 export function registerExploreCommand(program: Command): void {
   program
@@ -91,7 +102,8 @@ export function registerExploreCommand(program: Command): void {
     .option("--retention-max-age-days <days>", "Remove report run directories older than this many days")
     .option("--no-retention", "Disable report retention cleanup")
     .option("--quiet", "Suppress progress and console summary output")
-    .option("--verbose", "Print exploration settings before progress and the JSON summary")
+    .option("--verbose", "Print exploration settings before progress and the summary")
+    .option("--json-summary", "Print the machine-readable JSON summary to stdout")
     .action(async (options: ExploreOptions) => {
       const startedAt = Date.now();
       const config = await loadConfig({
@@ -145,6 +157,8 @@ export function registerExploreCommand(program: Command): void {
       const screenshotFormat = toScreenshotFormat(options.screenshotFormat);
       const screenshotQuality = toScreenshotQuality(options.screenshotQuality);
       const formats = parseFormats(options.format);
+      const progressEnabled = shouldPrintExploreProgress(options);
+      let visitedStates = 0;
 
       if (!options.quiet && options.verbose) {
         console.log(formatVerboseExploreSummary({
@@ -184,15 +198,25 @@ export function registerExploreCommand(program: Command): void {
         screenshotRedaction: options.screenshotRedaction,
         safeMode: effectiveConfig.explore.safeMode,
         onProgress: (event) => {
-          if (options.quiet) return;
+          if (!progressEnabled) return;
 
           if (event.type === "state") {
-            const screenshot = event.state.screenshot ? ` screenshot=${event.state.screenshot}` : "";
-            console.log(`[explore] ${event.state.id} depth=${event.state.depth} issues=${event.state.issueCount}${screenshot}`);
+            visitedStates += 1;
+            console.log(formatExploreProgressMessage({
+              type: "state",
+              state: event.state,
+              visitedStates,
+              maxStates: maxStates || 20
+            }));
           }
 
           if (event.type === "actions") {
-            console.log(`[explore] ${event.stateId} queued safe actions=${event.actionCount} skipped=${event.skippedActionCount}`);
+            console.log(formatExploreProgressMessage({
+              type: "actions",
+              stateId: event.stateId,
+              actionCount: event.actionCount,
+              skippedActionCount: event.skippedActionCount
+            }));
           }
         }
       });
@@ -231,11 +255,22 @@ export function registerExploreCommand(program: Command): void {
       const retentionSummary = await applyReportRetention(effectiveConfig.outputDir, effectiveConfig.retention);
 
       if (!options.quiet) {
-        console.log(JSON.stringify({
+        const summary: ExploreSummaryOutput = {
           ...report.summary,
           exploration: exploration.graph.summary,
           retention: retentionSummary.enabled ? retentionSummary : undefined
-        }, null, 2));
+        };
+        const summaryOutput = shouldPrintExploreJsonSummary(options)
+          ? JSON.stringify(summary, null, 2)
+          : formatExploreConsoleSummary(report, exploration.graph, {
+            outputDir: effectiveConfig.outputDir,
+            formats,
+            html: options.html !== false,
+            screenshots: options.screenshots !== false,
+            retention: retentionSummary.enabled ? retentionSummary : undefined
+          });
+
+        console.log(summaryOutput);
       }
 
       if (shouldFail(report.summary, config.failOn)) {
@@ -336,6 +371,143 @@ export function formatVerboseExploreSummary(options: {
     `safeModeBlockedSelectors: ${formatPatternList(options.safeModeBlockedSelectors)}`,
     `retention: ${options.retentionEnabled ? "on" : "off"}`
   ].join("\n");
+}
+
+export function formatExploreProgressMessage(event:
+  | {
+    type: "state";
+    state: ExplorationState;
+    visitedStates: number;
+    maxStates: number;
+  }
+  | {
+    type: "actions";
+    stateId: string;
+    actionCount: number;
+    skippedActionCount: number;
+  }
+): string {
+  if (event.type === "state") {
+    const screenshot = event.state.screenshot ? ` screenshot=${event.state.screenshot}` : "";
+    return `[explore] visited ${event.visitedStates}/${event.maxStates} ${event.state.id} depth=${event.state.depth} issues=${event.state.issueCount}${screenshot}`;
+  }
+
+  return `[explore] ${event.stateId} queued=${event.actionCount} skipped=${event.skippedActionCount}`;
+}
+
+export function formatExploreConsoleSummary(
+  report: A11yReport,
+  graph: ExplorationGraph,
+  options: {
+    outputDir: string;
+    formats: ReportFormat[];
+    html: boolean;
+    screenshots: boolean;
+    retention?: ReportRetentionSummary;
+  }
+): string {
+  const summary = report.summary;
+  const status = summary.total === 0
+    ? "No automated findings detected"
+    : "Accessibility findings detected";
+  const files = explorationReportFiles(options.outputDir, options.formats, {
+    html: options.html,
+    screenshots: options.screenshots
+  });
+  const topRules = topRuleCounts(report, 5);
+  const topStates = [...graph.states]
+    .sort((a, b) => {
+      if (b.issueCount !== a.issueCount) return b.issueCount - a.issueCount;
+      return a.id.localeCompare(b.id);
+    })
+    .slice(0, 5);
+  const retention = options.retention
+    ? `deleted ${options.retention.deletedRuns}, kept ${options.retention.keptRuns}`
+    : "off";
+
+  return [
+    "a11y-shiftleft explore",
+    `Status: ${status}`,
+    `Exploration: states ${graph.summary.statesVisited}/${graph.summary.maxStates} | actions tried ${graph.summary.actionsTried} | skipped ${graph.summary.skippedActions} | screenshots ${graph.summary.screenshots}`,
+    `Findings: total ${summary.total} | CRITICAL ${summary.critical} | WARNING ${summary.warning} | INFO ${summary.info}`,
+    `Framework: ${summary.framework}`,
+    `Retention: ${retention}`,
+    "",
+    "Top rules:",
+    ...formatList(topRules.map(([ruleId, count]) => `${ruleId}: ${count}`), "No rule findings."),
+    "",
+    "Top states:",
+    ...formatList(topStates.map((state) => `${state.id}: ${state.issueCount} findings at ${state.url}`), "No explored states."),
+    "",
+    "Reports:",
+    ...files.map((file) => `  - ${file}`),
+    "",
+    "Next:",
+    options.html
+      ? `  - Open ${joinOutputPath(options.outputDir, "exploration.html")} for the visual state report.`
+      : `  - Open ${primaryReportPath(options.outputDir, options.formats)} for the generated report.`,
+    "  - Use --no-screenshots for sensitive pages or CI runs that must not store images.",
+    "  - Use --json-summary when a script needs the stdout summary as JSON."
+  ].join("\n");
+}
+
+function shouldPrintExploreProgress(options: Pick<ExploreOptions, "quiet">): boolean {
+  return Boolean(!options.quiet && process.stdout.isTTY && !process.env.CI);
+}
+
+function shouldPrintExploreJsonSummary(options: Pick<ExploreOptions, "jsonSummary">): boolean {
+  return Boolean(options.jsonSummary || process.env.CI || !process.stdout.isTTY);
+}
+
+function explorationReportFiles(
+  outputDir: string,
+  formats: ReportFormat[],
+  options: {
+    html: boolean;
+    screenshots: boolean;
+  }
+): string[] {
+  const files = [];
+
+  if (options.html) files.push(joinOutputPath(outputDir, "exploration.html"));
+  files.push(joinOutputPath(outputDir, "exploration-graph.json"));
+  if (formats.includes("markdown")) files.push(joinOutputPath(outputDir, "a11y-comment.md"));
+  if (formats.includes("json")) files.push(joinOutputPath(outputDir, "a11y-report.json"));
+  if (formats.includes("csv")) files.push(joinOutputPath(outputDir, "a11y-metrics.csv"));
+  if (options.screenshots) files.push(joinOutputPath(outputDir, "screenshots/"));
+
+  return files;
+}
+
+function primaryReportPath(outputDir: string, formats: ReportFormat[]): string {
+  if (formats.includes("markdown")) return joinOutputPath(outputDir, "a11y-comment.md");
+  if (formats.includes("json")) return joinOutputPath(outputDir, "a11y-report.json");
+  if (formats.includes("csv")) return joinOutputPath(outputDir, "a11y-metrics.csv");
+  return outputDir;
+}
+
+function topRuleCounts(report: A11yReport, limit: number): [string, number][] {
+  const counts = report.issues.reduce<Record<string, number>>((acc, issue) => {
+    acc[issue.ruleId] = (acc[issue.ruleId] || 0) + 1;
+    return acc;
+  }, {});
+
+  return Object.entries(counts)
+    .sort((a, b) => {
+      if (b[1] !== a[1]) return b[1] - a[1];
+      return a[0].localeCompare(b[0]);
+    })
+    .slice(0, limit);
+}
+
+function formatList(items: string[], fallback: string): string[] {
+  if (items.length === 0) return [`  - ${fallback}`];
+  return items.map((item) => `  - ${item}`);
+}
+
+function joinOutputPath(outputDir: string, fileName: string): string {
+  if (outputDir.endsWith("/")) return `${outputDir}${fileName}`;
+  return `${outputDir}/${fileName}`;
 }
 
 function toPatternList(values: string[] | undefined): string[] | undefined {

@@ -84,6 +84,8 @@
 - `doctor` now autodetects React, Vue, and Angular from `package.json` and
   recommends the matching `@a11y-shiftleft/*` adapter bundle for optimized
   static checks.
+- Readable local `explore` progress and final summary output, with
+  `--json-summary` for scripts that parse stdout.
 
 ### Changed
 
