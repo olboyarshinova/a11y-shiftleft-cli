@@ -179,7 +179,7 @@ export function registerExploreCommand(program: Command): void {
           }
 
           if (event.type === "actions") {
-            console.log(`[explore] ${event.stateId} queued safe actions=${event.actionCount}`);
+            console.log(`[explore] ${event.stateId} queued safe actions=${event.actionCount} skipped=${event.skippedActionCount}`);
           }
         }
       });

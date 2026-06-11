@@ -213,6 +213,9 @@ tabs, disclosure widgets, and modal triggers. It saves:
 
 Open `reports/exploration.html` to review checked states visually. Each state
 includes its screenshot, issue summary, top findings, and recorded transitions.
+The report also includes skipped actions with reasons, such as submit buttons,
+payment links, destructive controls, external links, or project-specific
+safe-mode blocklist matches.
 
 A typical visual report is organized like this:
 
@@ -233,6 +236,10 @@ Top findings:
 Transitions:
 - Click: Open filters -> state-2
 - Navigate: Favorites -> state-3
+
+Skipped actions:
+- Submit order: blocked by safe mode
+- Checkout: matched destructive or transactional action pattern
 ```
 
 The real HTML report renders this as a local dashboard with summary metrics,

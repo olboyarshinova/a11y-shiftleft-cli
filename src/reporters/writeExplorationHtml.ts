@@ -262,6 +262,7 @@ export function renderExplorationHtml(
     <section class="summary" aria-label="Exploration summary">
       ${metric("States visited", graph.summary.statesVisited)}
       ${metric("Actions tried", graph.summary.actionsTried)}
+      ${metric("Actions skipped", graph.summary.skippedActions || 0)}
       ${metric("Screenshots", graph.summary.screenshots)}
       ${metric("Critical", totals.critical, "critical")}
       ${metric("Warning", totals.warning, "warning")}
@@ -275,6 +276,11 @@ export function renderExplorationHtml(
     <section class="panel" aria-label="Exploration edges">
       <h2>State Graph</h2>
       ${renderEdges(graph)}
+    </section>
+
+    <section class="panel" aria-label="Skipped actions">
+      <h2>Skipped Actions</h2>
+      ${renderSkippedActions(graph)}
     </section>
 
     <section class="panel" aria-label="Manual review note">
@@ -342,6 +348,23 @@ function renderEdges(graph: ExplorationGraph): string {
       <div><a href="#${escapeAttribute(edge.from)}">${escapeHtml(edge.from)}</a> -> <a href="#${escapeAttribute(edge.to)}">${escapeHtml(edge.to)}</a></div>
       <div class="muted">${escapeHtml(edge.action.label)}</div>
       ${edge.action.selector ? `<div><code>${escapeHtml(edge.action.selector)}</code></div>` : ""}
+    </li>`).join("\n")}
+  </ul>`;
+}
+
+function renderSkippedActions(graph: ExplorationGraph): string {
+  const skippedActions = graph.skippedActions || [];
+
+  if (skippedActions.length === 0) {
+    return `<p class="muted">No skipped actions were recorded.</p>`;
+  }
+
+  return `<ul class="edge-list">
+    ${skippedActions.slice(0, 30).map((action) => `<li class="edge">
+      <div><a href="#${escapeAttribute(action.stateId)}">${escapeHtml(action.stateId)}</a>: ${escapeHtml(action.label)}</div>
+      <div class="muted">${escapeHtml(action.reason)}</div>
+      ${action.selector ? `<div><code>${escapeHtml(action.selector)}</code></div>` : ""}
+      ${action.url ? `<div class="url">${escapeHtml(action.url)}</div>` : ""}
     </li>`).join("\n")}
   </ul>`;
 }

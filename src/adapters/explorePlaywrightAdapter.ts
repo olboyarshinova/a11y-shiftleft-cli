@@ -9,6 +9,7 @@ import type {
   ExplorationState,
   ExploreAction,
   ExploreSafeModeConfig,
+  ExploreSkippedAction,
   Issue
 } from "../types.js";
 
@@ -97,7 +98,7 @@ interface ExploreResult {
 
 type ExploreProgressEvent =
   | { type: "state"; state: ExplorationState }
-  | { type: "actions"; stateId: string; actionCount: number };
+  | { type: "actions"; stateId: string; actionCount: number; skippedActionCount: number };
 
 interface QueuedState {
   path: ExploreAction[];
@@ -113,6 +114,17 @@ interface PageFingerprint {
 }
 
 type RawExploreAction = Omit<ExploreAction, "id">;
+type RawSkippedAction = Omit<ExploreSkippedAction, "stateId">;
+
+interface ActionDiscoveryResult {
+  actions: ExploreAction[];
+  skipped: RawSkippedAction[];
+}
+
+interface ActionSafetyResult {
+  safe: boolean;
+  reason?: string;
+}
 
 export async function runExplorePlaywrightAdapter(
   config: A11yConfig,
@@ -122,6 +134,7 @@ export async function runExplorePlaywrightAdapter(
   const issues: Issue[] = [];
   const states: ExplorationState[] = [];
   const edges: ExplorationGraph["edges"] = [];
+  const skippedActions: ExploreSkippedAction[] = [];
   const fingerprintToStateId = new Map<string, string>();
   const maxDepth = positiveOrDefault(options.maxDepth, DEFAULT_MAX_DEPTH);
   const maxStates = positiveOrDefault(options.maxStates, DEFAULT_MAX_STATES);
@@ -196,9 +209,14 @@ export async function runExplorePlaywrightAdapter(
       });
       issues.push(...stateIssues);
 
-      const actions = current.depth >= maxDepth
-        ? []
+      const discovery = current.depth >= maxDepth
+        ? { actions: [], skipped: [] }
         : await discoverSafeActions(page, pageState.url, maxActionsPerState, safeMode);
+      const actions = discovery.actions;
+      skippedActions.push(...discovery.skipped.map((action) => ({
+        ...action,
+        stateId
+      })));
       const state: ExplorationState = {
         id: stateId,
         url: pageState.url,
@@ -227,7 +245,8 @@ export async function runExplorePlaywrightAdapter(
       options.onProgress?.({
         type: "actions",
         stateId,
-        actionCount: actions.length
+        actionCount: actions.length,
+        skippedActionCount: discovery.skipped.length
       });
 
       for (const action of actions) {
@@ -257,9 +276,11 @@ export async function runExplorePlaywrightAdapter(
       startUrl: options.url,
       states,
       edges,
+      skippedActions,
       summary: {
         statesVisited: states.length,
         actionsTried,
+        skippedActions: skippedActions.length,
         screenshots: screenshotsSaved,
         maxDepth,
         maxStates
@@ -308,6 +329,14 @@ export function isSafeExploreActionWithConfig(
   baseUrl: string,
   safeMode: ExploreSafeModeConfig
 ): boolean {
+  return getExploreActionSafety(action, baseUrl, safeMode).safe;
+}
+
+export function getExploreActionSafety(
+  action: ExploreAction,
+  baseUrl: string,
+  safeMode: ExploreSafeModeConfig
+): ActionSafetyResult {
   const searchable = [
     action.label,
     action.text,
@@ -316,18 +345,53 @@ export function isSafeExploreActionWithConfig(
   ].filter(Boolean).join(" ");
 
   if (safeMode.enabled) {
-    if (DANGEROUS_ACTION_PATTERN.test(searchable)) return false;
-    if (matchesAnyPattern(safeMode.blockedText, searchable)) return false;
-    if (action.role && matchesAnyPattern(safeMode.blockedRoles, action.role)) return false;
-    if (action.url && matchesAnyPattern(safeMode.blockedUrls, action.url)) return false;
-    if (action.selector && matchesAnyPattern(safeMode.blockedSelectors, action.selector)) return false;
+    if (DANGEROUS_ACTION_PATTERN.test(searchable)) {
+      return {
+        safe: false,
+        reason: "Matched built-in destructive or transactional action pattern."
+      };
+    }
+    if (matchesAnyPattern(safeMode.blockedText, searchable)) {
+      return {
+        safe: false,
+        reason: "Matched configured safe-mode blocked text pattern."
+      };
+    }
+    if (action.role && matchesAnyPattern(safeMode.blockedRoles, action.role)) {
+      return {
+        safe: false,
+        reason: "Matched configured safe-mode blocked role pattern."
+      };
+    }
+    if (action.url && matchesAnyPattern(safeMode.blockedUrls, action.url)) {
+      return {
+        safe: false,
+        reason: "Matched configured safe-mode blocked URL pattern."
+      };
+    }
+    if (action.selector && matchesAnyPattern(safeMode.blockedSelectors, action.selector)) {
+      return {
+        safe: false,
+        reason: "Matched configured safe-mode blocked selector pattern."
+      };
+    }
   }
 
   if (action.type === "navigate") {
-    return Boolean(normalizeExploreUrl(action.url, baseUrl));
+    return normalizeExploreUrl(action.url, baseUrl)
+      ? { safe: true }
+      : {
+        safe: false,
+        reason: "Navigation target is external, unsupported, or invalid."
+      };
   }
 
-  return Boolean(action.selector);
+  return action.selector
+    ? { safe: true }
+    : {
+      safe: false,
+      reason: "Click action has no stable selector."
+    };
 }
 
 async function replayPath(
@@ -443,8 +507,11 @@ async function discoverSafeActions(
   baseUrl: string,
   maxActions: number,
   safeMode: ExploreSafeModeConfig
-): Promise<ExploreAction[]> {
-  const rawActions = await page.$$eval(INTERACTIVE_SELECTOR, (elements, safeMode): RawExploreAction[] => {
+): Promise<ActionDiscoveryResult> {
+  const discovery = await page.$$eval(INTERACTIVE_SELECTOR, (elements, safeMode): {
+    actions: RawExploreAction[];
+    skipped: RawSkippedAction[];
+  } => {
     function textOf(element: Element): string {
       return [
         element.getAttribute("aria-label"),
@@ -510,12 +577,52 @@ async function discoverSafeActions(
       });
     }
 
-    return elements.flatMap((element): RawExploreAction[] => {
-      if (!isVisible(element)) return [];
-      if (element.closest("[data-a11y-skip], [aria-hidden='true']")) return [];
-      if (element.getAttribute("aria-disabled") === "true") return [];
-      if ("disabled" in element && Boolean((element as HTMLButtonElement).disabled)) return [];
-      if (safeMode.enabled && matchesSelectorList(element, safeMode.blockedSelectors)) return [];
+    function skippedAction(
+      element: Element,
+      reason: string,
+      type: RawSkippedAction["type"] = "unknown"
+    ): RawSkippedAction {
+      const tag = element.tagName.toLowerCase();
+      const role = element.getAttribute("role") || tag;
+      const text = textOf(element);
+      const selector = selectorFor(element);
+      const url = tag === "a" ? (element as HTMLAnchorElement).href : undefined;
+
+      return {
+        type,
+        selector,
+        url,
+        label: text || role,
+        text,
+        role,
+        reason
+      };
+    }
+
+    const actions: RawExploreAction[] = [];
+    const skipped: RawSkippedAction[] = [];
+
+    for (const element of elements) {
+      if (!isVisible(element)) {
+        skipped.push(skippedAction(element, "Element is not visible."));
+        continue;
+      }
+      if (element.closest("[data-a11y-skip], [aria-hidden='true']")) {
+        skipped.push(skippedAction(element, "Element is marked with data-a11y-skip or hidden from assistive technology."));
+        continue;
+      }
+      if (element.getAttribute("aria-disabled") === "true") {
+        skipped.push(skippedAction(element, "Element is aria-disabled."));
+        continue;
+      }
+      if ("disabled" in element && Boolean((element as HTMLButtonElement).disabled)) {
+        skipped.push(skippedAction(element, "Element is disabled."));
+        continue;
+      }
+      if (safeMode.enabled && matchesSelectorList(element, safeMode.blockedSelectors)) {
+        skipped.push(skippedAction(element, "Matched configured safe-mode blocked selector."));
+        continue;
+      }
 
       const tag = element.tagName.toLowerCase();
       const role = element.getAttribute("role") || tag;
@@ -525,33 +632,57 @@ async function discoverSafeActions(
 
       if (tag === "a") {
         const anchor = element as HTMLAnchorElement;
-        if (anchor.target === "_blank" || anchor.hasAttribute("download")) return [];
+        if (anchor.target === "_blank" || anchor.hasAttribute("download")) {
+          skipped.push(skippedAction(element, "Link opens a new tab/window or downloads a file.", "navigate"));
+          continue;
+        }
 
-        return [{
+        actions.push({
           type: "navigate",
           selector,
           url: anchor.href,
           label: text ? `Navigate: ${text}` : `Navigate: ${anchor.href}`,
           text,
           role
-        }];
+        });
+        continue;
       }
 
       const buttonType = element.getAttribute("type")?.toLowerCase();
       if (safeMode.enabled) {
-        if ((buttonType === "submit" || buttonType === "reset") && !forcedExplore) return [];
-        if (tag === "button" && element.closest("form") && !forcedExplore) return [];
+        if ((buttonType === "submit" || buttonType === "reset") && !forcedExplore) {
+          skipped.push(skippedAction(element, "Submit/reset controls are blocked by safe mode unless explicitly allowed.", "click"));
+          continue;
+        }
+        if (tag === "button" && element.closest("form") && !forcedExplore) {
+          skipped.push(skippedAction(element, "Form buttons are blocked by safe mode unless marked with data-a11y-explore.", "click"));
+          continue;
+        }
       }
 
-      return [{
+      actions.push({
         type: "click",
         selector,
         label: text ? `Click: ${text}` : `Click: ${role}`,
         text,
         role
-      }];
-    });
+      });
+    }
+
+    return {
+      actions,
+      skipped
+    };
   }, safeMode);
+
+  const rawActions = discovery.actions;
+  const skippedActions = [...discovery.skipped];
+  const seenSkipped = new Set(skippedActions.map((action) => [
+    action.type,
+    action.selector,
+    action.url,
+    action.reason
+  ].filter(Boolean).join("|")));
 
   const seen = new Set<string>();
   const actions: ExploreAction[] = [];
@@ -572,14 +703,44 @@ async function discoverSafeActions(
     const key = `${action.type}:${action.selector || action.url}`;
 
     if (seen.has(key)) continue;
-    if (!isSafeExploreActionWithConfig(action, baseUrl, safeMode)) continue;
+
+    const safety = getExploreActionSafety(action, baseUrl, safeMode);
+    if (!safety.safe) {
+      const skipped = toSkippedAction(action, safety.reason || "Action blocked by safe mode.");
+      const skippedKey = [
+        skipped.type,
+        skipped.selector,
+        skipped.url,
+        skipped.reason
+      ].filter(Boolean).join("|");
+      if (!seenSkipped.has(skippedKey)) {
+        seenSkipped.add(skippedKey);
+        skippedActions.push(skipped);
+      }
+      continue;
+    }
 
     seen.add(key);
     actions.push(action);
     if (actions.length >= maxActions) break;
   }
 
-  return actions;
+  return {
+    actions,
+    skipped: skippedActions
+  };
+}
+
+function toSkippedAction(action: ExploreAction, reason: string): RawSkippedAction {
+  return {
+    type: action.type,
+    selector: action.selector,
+    url: action.url,
+    label: action.label,
+    text: action.text,
+    role: action.role,
+    reason
+  };
 }
 
 async function captureStateScreenshot(

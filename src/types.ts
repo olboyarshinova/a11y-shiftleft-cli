@@ -333,6 +333,17 @@ export interface ExploreAction {
   role?: string;
 }
 
+export interface ExploreSkippedAction {
+  stateId: string;
+  type: ExploreActionType | "unknown";
+  selector?: string;
+  url?: string;
+  label: string;
+  text?: string;
+  role?: string;
+  reason: string;
+}
+
 export interface ExplorationState {
   id: string;
   url: string;
@@ -356,9 +367,11 @@ export interface ExplorationGraph {
   startUrl: string;
   states: ExplorationState[];
   edges: ExplorationEdge[];
+  skippedActions: ExploreSkippedAction[];
   summary: {
     statesVisited: number;
     actionsTried: number;
+    skippedActions: number;
     screenshots: number;
     maxDepth: number;
     maxStates: number;

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  getExploreActionSafety,
   isSafeExploreAction,
   isSafeExploreActionWithConfig,
   normalizeExploreUrl,
@@ -117,6 +118,28 @@ test("isSafeExploreActionWithConfig applies custom safe-mode patterns", () => {
     text: "Open panel",
     role: "button"
   }, "http://localhost:3000/", safeMode), false);
+});
+
+test("getExploreActionSafety returns reviewable skip reasons", () => {
+  const safety = getExploreActionSafety({
+    id: "payment",
+    type: "navigate",
+    url: "http://localhost:3000/checkout",
+    label: "Navigate: Checkout",
+    text: "Checkout",
+    role: "a"
+  }, "http://localhost:3000/", {
+    enabled: true,
+    blockedText: [],
+    blockedRoles: [],
+    blockedUrls: [],
+    blockedSelectors: [],
+    allowedSelectors: ["[data-a11y-explore]"],
+    dismissDialogs: true
+  });
+
+  assert.equal(safety.safe, false);
+  assert.match(safety.reason || "", /destructive or transactional/);
 });
 
 test("isSafeExploreActionWithConfig still blocks external URLs when safe mode is disabled", () => {

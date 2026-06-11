@@ -75,6 +75,8 @@
   the existing `.a11y-shiftleft.json` and `--config` path.
 - `explore --quiet` and `explore --verbose` output controls for CI-friendly
   visual scans and local troubleshooting.
+- `exploration-graph.json` and `exploration.html` now include skipped
+  exploration actions with reviewable safe-mode reasons.
 
 ### Changed
 

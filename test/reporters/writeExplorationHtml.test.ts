@@ -49,9 +49,21 @@ const graph = {
       }
     }
   ],
+  skippedActions: [
+    {
+      stateId: "state-1",
+      type: "click",
+      selector: "button[type=\"submit\"]",
+      label: "Submit order",
+      text: "Submit order",
+      role: "button",
+      reason: "Submit/reset controls are blocked by safe mode unless explicitly allowed."
+    }
+  ],
   summary: {
     statesVisited: 2,
     actionsTried: 1,
+    skippedActions: 1,
     screenshots: 2,
     maxDepth: 2,
     maxStates: 20
@@ -87,6 +99,8 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /button-name/);
   assert.match(html, /Buttons must have discernible text/);
   assert.match(html, /state-1.*->.*state-2/s);
+  assert.match(html, /Skipped Actions/);
+  assert.match(html, /Submit\/reset controls are blocked by safe mode/);
   assert.match(html, /Coverage Note/);
 });
 
