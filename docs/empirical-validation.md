@@ -28,7 +28,7 @@ accessibility tooling?
 Create one row per pull request:
 
 ```csv
-pr_id,repo,framework,phase,opened_at,merged_at,violations_raw,violations_unique,critical,warning,info,duplicates_removed,duplicate_rate,time_to_fix_hours,false_positive_count,confirmed_issue_count,dx_score
+pr_id,repo,framework,phase,opened_at,merged_at,violations_raw,violations_unique,critical,warning,info,high_confidence,medium_confidence,low_confidence,duplicates_removed,duplicate_rate,time_to_fix_hours,false_positive_count,confirmed_issue_count,dx_score
 ```
 
 The repository includes a blank template and a small synthetic example:
@@ -45,6 +45,7 @@ Where:
 | `phase` | `baseline` or `intervention` |
 | `violations_raw` | Findings before deduplication |
 | `violations_unique` | Findings after deduplication |
+| `high_confidence`, `medium_confidence`, `low_confidence` | Findings grouped by tooling evidence strength |
 | `time_to_fix_hours` | Hours between first accessibility finding and merged fix |
 | `false_positive_count` | Findings marked by reviewers as not actionable |
 | `confirmed_issue_count` | Findings accepted as actionable |

@@ -1,8 +1,9 @@
 # GitHub Actions Recipe
 
-Use this recipe to add accessibility checks to pull requests.
+Use this recipe to add accessibility checks to pull requests without making
+every PR wait for a full-site crawl.
 
-## Generate Workflow
+## Generate Fast PR Workflow
 
 ```bash
 npx a11y-shiftleft ci \
@@ -11,18 +12,50 @@ npx a11y-shiftleft ci \
   --fail-on warning
 ```
 
-## Commit Workflow
+The default workflow runs on `pull_request` and uses a bounded crawl
+(`--crawl-depth 1`, `--crawl-limit 10`) so feedback usually stays in the
+30-90 second range for small and medium frontend apps.
 
-The generator writes:
+## Generate Split PR And Full-Site Workflows
+
+```bash
+npx a11y-shiftleft ci \
+  --profile split \
+  --url http://localhost:3000 \
+  --start-command "npm run dev -- --host localhost --port 3000" \
+  --fail-on critical \
+  --full-fail-on none \
+  --crawl-limit 10 \
+  --full-crawl-depth 3 \
+  --full-crawl-limit 100
+```
+
+This creates two workflows:
+
+```txt
+.github/workflows/a11y-pr.yml
+.github/workflows/a11y-full.yml
+```
+
+Use the PR workflow for fast blocking feedback. Use the full-site workflow for
+manual or scheduled coverage through `workflow_dispatch` and the weekly cron
+schedule. The full-site workflow uploads artifacts and keeps `--fail-on none`
+by default so it does not create noisy scheduled failures while the team is
+tracking remediation.
+
+## Commit Workflow Files
+
+The single-profile generator writes:
 
 ```txt
 .github/workflows/a11y.yml
 ```
 
-Commit that file with the project changes:
+The split-profile generator writes `a11y-pr.yml` and `a11y-full.yml`.
+Commit the generated workflow file or files with the project changes:
 
 ```bash
-git add .github/workflows/a11y.yml
+git add .github/workflows/
 git commit -m "Add accessibility CI"
 ```
 

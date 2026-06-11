@@ -21,13 +21,29 @@ test("triageIssues maps axe impact to severity", () => {
 test("triageIssues preserves explicit severity", () => {
   const [issue] = triageIssues([
     {
+      source: "axe",
+      framework: "react",
       ruleId: "color-contrast",
+      wcag: ["1.4.3"],
+      wcagCriteria: [{
+        id: "1.4.3",
+        title: "Contrast (Minimum)",
+        level: "AA",
+        principle: "perceivable",
+        introducedIn: "2.0",
+        url: "https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html"
+      }],
+      tags: ["wcag143"],
+      selector: ".button",
+      message: "Elements must meet contrast requirements",
       impact: "serious",
       severity: "warning"
     }
   ]);
 
   assert.equal(issue.severity, "warning");
+  assert.equal(issue.confidence, "high");
+  assert.equal(issue.category, "contrast");
 });
 
 test("triageIssues infers severity from rule hints", () => {

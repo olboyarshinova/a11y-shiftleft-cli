@@ -2,6 +2,23 @@ export type Framework = "react" | "vue" | "angular" | "auto" | "unknown";
 
 export type Severity = "critical" | "warning" | "info";
 
+export type ConfidenceLevel = "high" | "medium" | "low";
+
+export type IssueCategory =
+  | "aria"
+  | "contrast"
+  | "focus"
+  | "forms"
+  | "headings"
+  | "images"
+  | "keyboard"
+  | "landmarks"
+  | "structure"
+  | "widgets"
+  | "best-practice"
+  | "adapter"
+  | "other";
+
 export type AxeImpact = "critical" | "serious" | "moderate" | "minor";
 
 export type ReportFormat = "json" | "csv" | "markdown";
@@ -101,6 +118,10 @@ export interface Issue {
   wcagCriteria?: WcagCriterion[];
   tags?: string[];
   severity?: Severity;
+  confidence?: ConfidenceLevel;
+  confidenceScore?: number;
+  confidenceReason?: string;
+  category?: IssueCategory;
   impact?: AxeImpact | string;
   selector?: string;
   file?: string;
@@ -118,6 +139,10 @@ export interface NormalizedIssue extends Required<Pick<Issue, "source" | "framew
   wcag: string[];
   wcagCriteria: WcagCriterion[];
   tags: string[];
+  confidence?: ConfidenceLevel;
+  confidenceScore?: number;
+  confidenceReason?: string;
+  category?: IssueCategory;
   remediation?: RemediationHint;
   severity?: Severity;
   impact?: string;
@@ -133,6 +158,10 @@ export interface NormalizedIssue extends Required<Pick<Issue, "source" | "framew
 
 export interface TriagedIssue extends NormalizedIssue {
   severity: Severity;
+  confidence: ConfidenceLevel;
+  confidenceScore: number;
+  confidenceReason: string;
+  category: IssueCategory;
 }
 
 export interface DedupedIssue extends TriagedIssue {
@@ -217,6 +246,8 @@ export interface ReportSummary {
   complianceEvidence: ComplianceEvidenceSummary;
   bySource: Record<string, number>;
   bySeverity: Record<string, number>;
+  byConfidence: Record<string, number>;
+  byCategory: Record<string, number>;
   byPour: Record<string, number>;
   byWcagLevel: Record<string, number>;
   byWcagVersion: Record<string, number>;

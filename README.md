@@ -8,7 +8,12 @@ Framework-agnostic CLI orchestrator for shift-left accessibility validation.
 
 The CLI is designed to run inside any web project. It combines dynamic axe scans,
 static accessibility checks where supported, finding normalization,
-deduplication, severity triage, and CI-friendly reporting.
+deduplication, severity triage, confidence scoring, issue categorization, and
+CI-friendly reporting.
+
+Severity answers "how risky is this finding?" Confidence answers "how strong is
+the tooling evidence?" so teams can prioritize high-confidence critical findings
+without losing lower-confidence review leads.
 
 ## Why This Exists
 
@@ -44,6 +49,7 @@ Core Engine
   normalize
   wcagMap
   severity
+  classification
   dedupe
 
 Reporters
@@ -61,57 +67,123 @@ The project source is written in TypeScript under `src/`. The npm CLI runs the
 compiled JavaScript and declaration files from `dist/`, while `bin/cli.js`
 remains a small executable entrypoint for package consumers.
 
-## Use In Any Project
+## Quick Start
 
-Install the CLI from [npm](https://www.npmjs.com/package/a11y-shiftleft-cli)
-in the project you want to scan:
+Use this flow when you already have a web app that can run on `localhost`.
+Dynamic scans work with any framework because the CLI tests the rendered page in
+a browser.
+
+1. Install the CLI in the project you want to scan:
 
 ```bash
 npm install --save-dev a11y-shiftleft-cli
 npx playwright install chromium
-npx a11y-shiftleft init --framework react --gitignore
 ```
 
-Use `--framework angular`, `--framework vue`, or `--framework auto` for other
-projects. The selected framework is stored in `.a11y-shiftleft.json`.
-Use `--gitignore` to add generated report directories such as `reports/` and
-`.a11y-reports/` to the target project's `.gitignore`.
-
-Framework-specific static checks are lazy-loaded. Install only the adapter
-dependencies your project needs:
+2. Add the default config and keep generated reports out of git:
 
 ```bash
-npx a11y-shiftleft adapter add react
-npm install --save-dev @a11y-shiftleft/react      # React
-npm install --save-dev @a11y-shiftleft/vue        # Vue
-npm install --save-dev @a11y-shiftleft/angular    # Angular
+npx a11y-shiftleft init --framework auto --gitignore
 ```
 
-Check that the local setup is ready:
-
-```bash
-npx a11y-shiftleft doctor
-```
-
-Start your app in another terminal:
+3. Start your app in another terminal:
 
 ```bash
 npm run dev
 ```
 
-Then verify that the app URL is reachable:
+4. Check that the setup and URL are ready:
 
 ```bash
 npx a11y-shiftleft doctor --url http://localhost:3000
 ```
 
-Run a dynamic scan against the app URL:
+5. Run your first accessibility scan:
 
 ```bash
 npx a11y-shiftleft check --dynamic --url http://localhost:3000 --out reports
 ```
 
-Explore UI states without writing scenarios:
+6. Open the generated report files:
+
+```txt
+reports/a11y-comment.md
+reports/a11y-report.json
+reports/a11y-metrics.csv
+```
+
+`a11y-comment.md` is the easiest file to read first. `a11y-report.json` is for
+automation and deeper debugging. `a11y-metrics.csv` is for trend tracking.
+
+## Pick Your Setup
+
+| Goal | Command |
+|---|---|
+| Scan one running app URL | `npx a11y-shiftleft check --dynamic --url http://localhost:3000 --out reports` |
+| Scan several known pages | `npx a11y-shiftleft check --dynamic --url http://localhost:3000 http://localhost:3000/settings --out reports` |
+| Let the CLI discover safe same-origin pages | `npx a11y-shiftleft check --dynamic --url http://localhost:3000 --crawl --crawl-depth 1 --crawl-limit 10 --out reports` |
+| Create a visual state report with screenshots | `npx a11y-shiftleft explore --url http://localhost:3000 --depth 2 --out reports` |
+| Add a fast PR workflow | `npx a11y-shiftleft ci --url http://localhost:3000 --start-command "npm run dev -- --host localhost --port 3000"` |
+
+Dynamic scanning is the portable baseline: React, Vue, Angular, Svelte, Next.js,
+Nuxt, Astro, Rails, Django, static HTML, and other apps can be scanned if they
+are running at a URL.
+
+## Static Checks
+
+Static checks are optional. They add framework-specific lint findings on top of
+the dynamic browser scan. Install only the adapter package for your project:
+
+| Project | Install |
+|---|---|
+| React | `npm install --save-dev @a11y-shiftleft/react` |
+| Vue | `npm install --save-dev @a11y-shiftleft/vue` |
+| Angular | `npm install --save-dev @a11y-shiftleft/angular` |
+
+You can also ask the CLI to print the recommended install command:
+
+```bash
+npx a11y-shiftleft adapter add react
+npx a11y-shiftleft adapter add vue
+npx a11y-shiftleft adapter add angular
+```
+
+Then initialize the matching framework config:
+
+```bash
+npx a11y-shiftleft init --framework react --gitignore
+```
+
+Run static checks:
+
+```bash
+npx a11y-shiftleft check --static --framework react --out reports
+```
+
+Run static and dynamic checks together:
+
+```bash
+npx a11y-shiftleft check --url http://localhost:3000 --out reports
+```
+
+## What Gets Created
+
+| Path | Purpose | Commit it? |
+|---|---|---|
+| `.a11y-shiftleft.json` | Project config for framework, WCAG target, URLs, and scan options | Yes |
+| `.a11y-baseline.json` | Accepted known findings for baseline mode | Yes, when using `--baseline` |
+| `reports/a11y-comment.md` | Human-readable report for local review or PR comments | Usually no |
+| `reports/a11y-report.json` | Machine-readable findings and evidence | Usually no |
+| `reports/a11y-metrics.csv` | Run metrics for trend analysis | Usually no |
+| `reports/exploration.html` | Visual state report from `explore` | Usually no |
+| `reports/screenshots/` | Generated screenshots from `explore` | No |
+
+`npx a11y-shiftleft init --gitignore` adds common report directories such as
+`reports/` and `.a11y-reports/` to `.gitignore`.
+
+## Visual Exploration
+
+Use `explore` when you do not want to list every route manually:
 
 ```bash
 npx a11y-shiftleft explore --url http://localhost:3000 --depth 2 --out reports
@@ -127,7 +199,7 @@ tabs, disclosure widgets, and modal triggers. It saves:
 - `reports/exploration-graph.json`
 - `reports/screenshots/state-*.jpg`
 
-Open `reports/exploration.html` to review checked states visually: each state
+Open `reports/exploration.html` to review checked states visually. Each state
 includes its screenshot, issue summary, top findings, and recorded transitions.
 
 A typical visual report is organized like this:
@@ -229,6 +301,8 @@ Short setup recipes are available for common workflows:
 - [ADA Title II](docs/recipes/ada-title-ii.md)
 - [Section 508](docs/recipes/section-508.md)
 
+## More Check Options
+
 Scan several known routes in one run:
 
 ```bash
@@ -311,6 +385,20 @@ issues, run:
 npx a11y-shiftleft doctor --url http://localhost:3000
 ```
 
+Suppress console output in CI while still writing report files and preserving
+the exit code:
+
+```bash
+npx a11y-shiftleft check --dynamic --url http://localhost:3000 --quiet --out reports
+```
+
+Print scan modes, adapter timings, URL context, baseline settings, and output
+formats before the JSON summary:
+
+```bash
+npx a11y-shiftleft check --dynamic --url http://localhost:3000 --verbose --out reports
+```
+
 Discover and scan same-origin pages from a starting URL:
 
 ```bash
@@ -333,12 +421,6 @@ npx a11y-shiftleft check \
   --out reports
 ```
 
-Run static checks where supported:
-
-```bash
-npx a11y-shiftleft check --static --framework react --out reports
-```
-
 Vue projects can use the basic fallback scanner too:
 
 ```bash
@@ -353,12 +435,6 @@ npx a11y-shiftleft check \
   --framework react \
   --include "src/**/*.{js,jsx,ts,tsx}" \
   --out reports
-```
-
-Run both static and dynamic checks:
-
-```bash
-npx a11y-shiftleft check --url http://localhost:3000 --out reports
 ```
 
 Filter findings to criteria included in WCAG Level AA conformance:
@@ -411,6 +487,8 @@ npx a11y-shiftleft check \
 
 ## Generate CI
 
+Generate the default fast PR workflow:
+
 ```bash
 npx a11y-shiftleft ci \
   --url http://localhost:3000 \
@@ -418,6 +496,42 @@ npx a11y-shiftleft ci \
   --fail-on critical \
   --standard wcag22-aa
 ```
+
+This creates a pull-request workflow that runs a bounded dynamic crawl:
+
+```txt
+.github/workflows/a11y.yml
+```
+
+By default the PR workflow uses `--crawl-depth 1` and `--crawl-limit 10`, so it
+is intended to give quick feedback instead of scanning every reachable page.
+
+Generate separate workflows for quick PR checks and scheduled full-site checks:
+
+```bash
+npx a11y-shiftleft ci \
+  --profile split \
+  --url http://localhost:3000 \
+  --start-command "npm run dev -- --host localhost --port 3000" \
+  --fail-on critical \
+  --full-fail-on none \
+  --crawl-limit 10 \
+  --full-crawl-depth 3 \
+  --full-crawl-limit 100 \
+  --standard wcag22-aa
+```
+
+This creates:
+
+```txt
+.github/workflows/a11y-pr.yml
+.github/workflows/a11y-full.yml
+```
+
+The PR workflow runs on `pull_request`, posts the report comment, and keeps the
+scan bounded for review speed. The full-site workflow runs on
+`workflow_dispatch` and a weekly schedule, uploads a separate artifact, and
+does not comment on pull requests.
 
 Generate CI for a known route set and a compliance-support preset:
 
@@ -427,12 +541,6 @@ npx a11y-shiftleft ci \
   --start-command "npm run dev -- --host localhost --port 4200" \
   --fail-on warning \
   --standard section508
-```
-
-This creates:
-
-```txt
-.github/workflows/a11y.yml
 ```
 
 ## IDE Feedback
@@ -450,7 +558,9 @@ See [docs/empirical-validation.md](docs/empirical-validation.md) for the
 baseline vs intervention study design, metrics, statistical tests, and data
 collection template. See
 [docs/research-paper-outline.md](docs/research-paper-outline.md) for the IMRaD
-paper/capstone outline.
+paper/capstone outline. See
+[docs/evidence-methodology.md](docs/evidence-methodology.md) for confidence
+scoring, issue-category reporting, and false-positive validation rules.
 
 Run the sample analysis:
 
@@ -487,11 +597,16 @@ clarity, logical navigation, form label quality, complex widget focus behavior,
 and screen reader smoke testing.
 
 Each normalized finding includes WCAG references where the adapter or rule map
-can identify them:
+can identify them, plus confidence and category metadata for triage:
 
 ```json
 {
   "ruleId": "color-contrast",
+  "severity": "critical",
+  "confidence": "high",
+  "confidenceScore": 95,
+  "confidenceReason": "Detected by axe on the rendered DOM with a concrete selector and WCAG mapping.",
+  "category": "contrast",
   "wcag": ["1.4.3"],
   "wcagCriteria": [
     {
@@ -544,6 +659,8 @@ Each run exports machine-readable metrics for CI and empirical analysis:
 | `duplicateCount` | Removed duplicate findings |
 | `duplicateRate` | `duplicateCount / rawCount` |
 | `critical`, `warning`, `info` | Severity counts |
+| `byConfidence` | High, medium, and low confidence counts |
+| `byCategory` | Finding counts by accessibility family, such as `forms`, `focus`, `aria`, and `contrast` |
 | `scanDurationMs` | Runtime duration for the scan |
 | `standard` | Selected WCAG-based support preset and compliance note metadata |
 | `complianceEvidence` | Evidence summary for WCAG-mapped findings, unmapped findings, affected pages, and manual-review status |
@@ -573,7 +690,11 @@ prioritize the highest-risk pages first.
 
 ## Adoption Metrics
 
-The project can collect adoption evidence snapshots for npm and GitHub:
+Adoption counts are captured as reproducible JSON snapshots instead of being
+hard-coded in the README. npm download counts change over time and can include
+humans, CI systems, package mirrors, security scanners, and bots.
+
+Collect npm and GitHub activity:
 
 ```bash
 npm run collect:adoption -- \
@@ -583,22 +704,9 @@ npm run collect:adoption -- \
   --out analysis/adoption.json
 ```
 
-The npm downloads API reports download counts, but it does not expose country
-or person-level data. Treat npm downloads as ecosystem activity because they can
-include humans, CI systems, package mirrors, security scanners, and bots. Use
-GitHub unique views/clones and referrers as stronger human-adoption signals.
-
-If you also record the visible download count from the npm package page, store
-it as a separate website snapshot so it is not mixed with API periods:
-
-```bash
-npm run collect:adoption -- \
-  --package a11y-shiftleft-cli \
-  --period last-month \
-  --npm-website-downloads 586 \
-  --npm-website-captured-at 2026-06-07 \
-  --out analysis/adoption-cli.json
-```
+The npm downloads API does not expose country or person-level data. Use npm
+downloads as ecosystem activity and GitHub unique views, unique clones, and
+referrers as stronger human-adoption signals.
 
 To collect one snapshot across the CLI and framework adapter packages:
 
@@ -702,22 +810,7 @@ nvm use
 node bin/cli.js check --dynamic --url http://localhost:3000 --out reports
 ```
 
-## Release Verification
-
-For release checks, run:
-
-```bash
-npm test
-npm run test:fixtures
-npm run build:demo
-npm_config_cache=.npm-cache npm pack --dry-run
-npm_config_cache=.npm-cache npm pack --workspace @a11y-shiftleft/react --dry-run --ignore-scripts
-npm_config_cache=.npm-cache npm pack --workspace @a11y-shiftleft/vue --dry-run --ignore-scripts
-npm_config_cache=.npm-cache npm pack --workspace @a11y-shiftleft/angular --dry-run --ignore-scripts
-```
-
-See [docs/release-checklist.md](docs/release-checklist.md) for the full release
-checklist.
+## Release Notes
 
 Latest release:
 

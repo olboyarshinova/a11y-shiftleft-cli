@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { enrichIssueEvidence } from "../core/classification.js";
 import { createManualChecklist, toManualChecklistMarkdown } from "../core/manualChecklist.js";
 import type { A11yReport, ComplianceEvidenceSummary, ComplianceStandardMetadata, DedupedIssue, PageSummary, ReportFormat, ReportMetrics, ReportSummary, Severity } from "../types.js";
 
@@ -18,11 +19,14 @@ export async function writeReports(
 ): Promise<A11yReport> {
   await fs.mkdir(outputDir, { recursive: true });
   const formats = new Set(options.formats || ["json", "csv", "markdown"]);
+  const reportIssues = issues.map((issue) => issue.confidence && issue.category
+    ? issue
+    : enrichIssueEvidence(issue));
 
   const report = {
     generatedAt: new Date().toISOString(),
-    summary: summarize(issues, metrics),
-    issues
+    summary: summarize(reportIssues, metrics),
+    issues: reportIssues
   };
 
   if (formats.has("json")) {
@@ -50,7 +54,7 @@ export async function writeReports(
     const checklist = createManualChecklist({
       framework: report.summary.framework,
       urls: report.summary.urls,
-      issues
+      issues: reportIssues
     });
 
     await fs.writeFile(
@@ -84,6 +88,8 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     complianceEvidence: summarizeComplianceEvidence(issues, byPage, metrics.standard),
     bySource: countBy(issues, "source"),
     bySeverity: countBy(issues, "severity"),
+    byConfidence: countBy(issues, "confidence"),
+    byCategory: countBy(issues, "category"),
     byPour: countByPour(issues),
     byWcagLevel: countByWcagLevel(issues),
     byWcagVersion: countByWcagVersion(issues),
@@ -113,7 +119,9 @@ export function toMarkdown(report: A11yReport): string {
       const state = issue.stateLabel ? ` state: ${issue.stateLabel}` : "";
       const screenshot = issue.screenshot ? ` screenshot: ${issue.screenshot}` : "";
       const baseline = issue.baselineStatus ? ` baseline: ${issue.baselineStatus}` : "";
-      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}${state}${screenshot}${baseline}: ${issue.message}${remediation}`;
+      const confidence = formatIssueConfidence(issue);
+      const category = issue.category ? ` category: ${issue.category}` : "";
+      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}${state}${screenshot}${baseline}${category}${confidence}: ${issue.message}${remediation}`;
     })
     .join("\n");
 
@@ -139,6 +147,8 @@ ${formatBaselineRows(report.summary.baseline)}| Automated coverage | ${report.su
 | POUR | ${formatCountMap(report.summary.byPour)} |
 | WCAG levels | ${formatCountMap(report.summary.byWcagLevel)} |
 | WCAG versions | ${formatCountMap(report.summary.byWcagVersion)} |
+| Confidence | ${formatCountMap(report.summary.byConfidence)} |
+| Categories | ${formatCountMap(report.summary.byCategory)} |
 | Rules without WCAG mapping | ${formatCountMap(report.summary.byUnmappedRule)} |
 
 ${formatPageSummary(report.summary.byPage || [])}
@@ -151,7 +161,7 @@ ${formatDisclaimer(report.summary.standard)}
 `;
 }
 
-function countBy(items: DedupedIssue[], field: "source" | "severity"): Record<string, number> {
+function countBy(items: DedupedIssue[], field: "source" | "severity" | "confidence" | "category"): Record<string, number> {
   return items.reduce<Record<string, number>>((acc, item) => {
     const key = item[field] || "unknown";
     acc[key] = (acc[key] || 0) + 1;
@@ -274,6 +284,16 @@ function formatFrameworkExample(issue: DedupedIssue): string {
 
   const [framework, example] = entries[0];
   return `\n  - ${framework} example: \`${example}\``;
+}
+
+function formatIssueConfidence(issue: DedupedIssue): string {
+  if (!issue.confidence) return "";
+
+  const score = Number.isFinite(issue.confidenceScore)
+    ? ` ${issue.confidenceScore}%`
+    : "";
+
+  return ` confidence: ${issue.confidence}${score}`;
 }
 
 function formatCountMap(counts: Record<string, number> | undefined): string {

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { filterByWcagConformance, filterByWcagLevel, parseFormats, parseUrls, resolveCheckModes, shouldFail } from "../../dist/commands/check.js";
+import { filterByWcagConformance, filterByWcagLevel, formatVerboseCheckSummary, parseFormats, parseUrls, resolveCheckModes, shouldFail } from "../../dist/commands/check.js";
 
 const summary = {
   critical: 1,
@@ -113,6 +113,48 @@ test("resolveCheckModes treats static and dynamic flags as explicit modes", () =
     runStatic: true,
     runDynamic: true
   });
+});
+
+test("formatVerboseCheckSummary renders scan context without JSON parsing requirements", () => {
+  const output = formatVerboseCheckSummary({
+    framework: "react",
+    runStatic: true,
+    runDynamic: true,
+    adapterRuns: [
+      {
+        name: "static",
+        enabled: true,
+        issueCount: 1,
+        durationMs: 25
+      },
+      {
+        name: "dynamic",
+        enabled: true,
+        issueCount: 2,
+        durationMs: 150
+      }
+    ],
+    urls: ["http://localhost:3000"],
+    outputDir: "reports",
+    formats: ["json", "markdown"],
+    baselineEnabled: true,
+    baselineFile: ".a11y-baseline.json",
+    updateBaseline: false,
+    standard: "wcag22-aa",
+    wcagVersion: "2.2",
+    wcagLevel: "AA",
+    crawl: true,
+    crawlDepth: 1,
+    crawlLimit: 10
+  });
+
+  assert.match(output, /framework: react/);
+  assert.match(output, /modes: static=on, dynamic=on/);
+  assert.match(output, /urls: http:\/\/localhost:3000/);
+  assert.match(output, /crawl: enabled depth=1 limit=10/);
+  assert.match(output, /baseline: enabled file=.a11y-baseline.json/);
+  assert.match(output, /static: enabled, findings=1, duration=25ms/);
+  assert.match(output, /dynamic: enabled, findings=2, duration=150ms/);
 });
 
 test("filterByWcagLevel keeps findings up to the selected conformance level", () => {

@@ -33,6 +33,8 @@ interface CheckOptions {
   baseline?: boolean;
   baselineFile?: string;
   updateBaseline?: boolean;
+  quiet?: boolean;
+  verbose?: boolean;
 }
 
 interface CheckModeOptions {
@@ -66,6 +68,8 @@ export function registerCheckCommand(program: Command): void {
     .option("--baseline", "Compare against .a11y-baseline.json and fail only on new findings")
     .option("--baseline-file <file>", "Baseline file path")
     .option("--update-baseline", "Overwrite the baseline file with the current findings")
+    .option("--quiet", "Suppress console summary output")
+    .option("--verbose", "Print scan mode, adapter timing, and report context before the JSON summary")
     .action(async (options: CheckOptions) => {
       const startedAt = Date.now();
       const urls = parseUrls(options.url);
@@ -109,13 +113,44 @@ export function registerCheckCommand(program: Command): void {
       };
 
       const rawIssues = [];
+      const adapterRuns: AdapterRunSummary[] = [];
 
       if (runStatic && effectiveConfig.static.enabled) {
-        rawIssues.push(...await runEslintAdapter(effectiveConfig));
+        const adapterStartedAt = Date.now();
+        const issues = await runEslintAdapter(effectiveConfig);
+        adapterRuns.push({
+          name: "static",
+          enabled: true,
+          issueCount: issues.length,
+          durationMs: Date.now() - adapterStartedAt
+        });
+        rawIssues.push(...issues);
+      } else {
+        adapterRuns.push({
+          name: "static",
+          enabled: false,
+          issueCount: 0,
+          durationMs: 0
+        });
       }
 
       if (runDynamic && effectiveConfig.dynamic.enabled !== false) {
-        rawIssues.push(...await runAxePlaywrightAdapter(effectiveConfig));
+        const adapterStartedAt = Date.now();
+        const issues = await runAxePlaywrightAdapter(effectiveConfig);
+        adapterRuns.push({
+          name: "dynamic",
+          enabled: true,
+          issueCount: issues.length,
+          durationMs: Date.now() - adapterStartedAt
+        });
+        rawIssues.push(...issues);
+      } else {
+        adapterRuns.push({
+          name: "dynamic",
+          enabled: false,
+          issueCount: 0,
+          durationMs: 0
+        });
       }
 
       const normalized = rawIssues.map(normalizeIssue);
@@ -136,6 +171,7 @@ export function registerCheckCommand(program: Command): void {
         })
         : undefined;
       const reportIssues = baselineResult?.issues || uniqueIssues;
+      const formats = parseFormats(options.format);
       const report = await writeReports(effectiveConfig.outputDir, reportIssues, {
         framework,
         cwd: effectiveConfig.cwd,
@@ -151,11 +187,34 @@ export function registerCheckCommand(program: Command): void {
         uniqueCount: uniqueIssues.length,
         duplicateCount: filtered.length - uniqueIssues.length
       }, {
-        formats: parseFormats(options.format),
+        formats,
         semiAuto: Boolean(options.semiAuto)
       });
 
-      console.log(JSON.stringify(report.summary, null, 2));
+      if (!options.quiet) {
+        if (options.verbose) {
+          console.log(formatVerboseCheckSummary({
+            framework,
+            runStatic,
+            runDynamic,
+            adapterRuns,
+            urls: runDynamic ? effectiveConfig.dynamic.urls : [],
+            outputDir: effectiveConfig.outputDir,
+            formats,
+            baselineEnabled,
+            baselineFile: options.baselineFile || ".a11y-baseline.json",
+            updateBaseline: Boolean(options.updateBaseline),
+            standard: effectiveConfig.standard,
+            wcagVersion: effectiveConfig.wcagVersion,
+            wcagLevel: effectiveConfig.wcagLevel,
+            crawl: Boolean(effectiveConfig.dynamic.crawl),
+            crawlDepth: effectiveConfig.dynamic.crawlDepth,
+            crawlLimit: effectiveConfig.dynamic.crawlLimit
+          }));
+        }
+
+        console.log(JSON.stringify(report.summary, null, 2));
+      }
 
       if (shouldFail(report.summary, config.failOn)) {
         process.exitCode = 1;
@@ -187,6 +246,59 @@ export function resolveCheckModes({
     runStatic: true,
     runDynamic: dynamicRequested || hasDynamicInput || configDynamicEnabled
   };
+}
+
+export interface AdapterRunSummary {
+  name: "static" | "dynamic";
+  enabled: boolean;
+  issueCount: number;
+  durationMs: number;
+}
+
+export function formatVerboseCheckSummary(options: {
+  framework: Framework;
+  runStatic: boolean;
+  runDynamic: boolean;
+  adapterRuns: AdapterRunSummary[];
+  urls: string[];
+  outputDir: string;
+  formats: ReportFormat[];
+  baselineEnabled: boolean;
+  baselineFile: string;
+  updateBaseline: boolean;
+  standard: ComplianceStandard;
+  wcagVersion: WcagVersion;
+  wcagLevel: WcagLevel;
+  crawl?: boolean;
+  crawlDepth?: number;
+  crawlLimit?: number;
+}): string {
+  const adapterLines = options.adapterRuns.map((run) => {
+    const status = run.enabled ? "enabled" : "skipped";
+    return `  - ${run.name}: ${status}, findings=${run.issueCount}, duration=${run.durationMs}ms`;
+  });
+  const urls = options.urls.length > 0 ? options.urls.join(", ") : "none";
+  const crawl = options.crawl
+    ? `enabled depth=${options.crawlDepth || 1} limit=${options.crawlLimit || 10}`
+    : "disabled";
+  const baseline = options.baselineEnabled
+    ? `enabled file=${options.baselineFile}${options.updateBaseline ? " update=true" : ""}`
+    : "disabled";
+
+  return [
+    "a11y-shiftleft check",
+    `framework: ${options.framework}`,
+    `modes: static=${options.runStatic ? "on" : "off"}, dynamic=${options.runDynamic ? "on" : "off"}`,
+    `urls: ${urls}`,
+    `crawl: ${crawl}`,
+    `standard: ${options.standard}`,
+    `wcag: ${options.wcagVersion} ${options.wcagLevel}`,
+    `baseline: ${baseline}`,
+    `output: ${options.outputDir}`,
+    `formats: ${options.formats.join(", ")}`,
+    "adapters:",
+    ...adapterLines
+  ].join("\n");
 }
 
 export function filterByWcagLevel(issues: TriagedIssue[], level?: WcagLevel): TriagedIssue[] {

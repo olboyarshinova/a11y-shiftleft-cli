@@ -50,6 +50,8 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
           url: "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
         }],
         file: "src/App.jsx",
+        line: 10,
+        column: 5,
         url: "http://localhost:3000/",
         message: "Image elements must have alternate text"
       }
@@ -78,6 +80,14 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.deepEqual(report.summary.bySource, {
     axe: 1,
     eslint: 1
+  });
+  assert.deepEqual(report.summary.byConfidence, {
+    high: 1,
+    medium: 1
+  });
+  assert.deepEqual(report.summary.byCategory, {
+    aria: 1,
+    images: 1
   });
   assert.deepEqual(report.summary.byPour, {
     robust: 1,
@@ -143,6 +153,9 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
 
   assert.equal(json.summary.framework, "react");
   assert.equal(json.summary.standard.id, "ada-title-ii");
+  assert.equal(json.issues[0].confidence, "high");
+  assert.equal(json.issues[0].confidenceScore, 95);
+  assert.equal(json.issues[0].category, "aria");
   assert.equal(json.issues[0].remediation.summary, "Give every button an accessible name.");
   assert.match(csv, /duplicateRate,0\.5/);
   assert.match(csv, /standard\.id,ada-title-ii/);
@@ -150,6 +163,8 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(csv, /complianceEvidence\.wcagMappedFindings,2/);
   assert.match(csv, /complianceEvidence\.affectedPages,2/);
   assert.match(csv, /bySource\.axe,1/);
+  assert.match(csv, /byConfidence\.high,1/);
+  assert.match(csv, /byCategory\.aria,1/);
   assert.match(csv, /byPour\.robust,1/);
   assert.match(csv, /byWcagVersion\.2\.0,2/);
   assert.match(csv, /byPage\.0\.url,http:\/\/localhost:3000\/settings/);
@@ -164,6 +179,9 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /Page Risk Ranking/);
   assert.match(markdown, /http:\/\/localhost:3000\/settings \| 1 \| 1 \| 0 \| 0 \| 5/);
   assert.match(markdown, /WCAG versions \| 2\.0: 2/);
+  assert.match(markdown, /Confidence \| high: 1, medium: 1/);
+  assert.match(markdown, /Categories \| aria: 1, images: 1/);
+  assert.match(markdown, /category: aria confidence: high 95%/);
   assert.match(markdown, /WCAG 4\.1\.2 Name, Role, Value, Level A/);
   assert.match(markdown, /Fix: Give every button an accessible name/);
   assert.match(markdown, /name-role-value/);

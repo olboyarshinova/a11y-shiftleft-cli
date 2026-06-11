@@ -1,4 +1,5 @@
 import type { AxeImpact, NormalizedIssue, Severity, TriagedIssue } from "../types.js";
+import { enrichIssueEvidence } from "./classification.js";
 
 const AXE_IMPACT_TO_SEVERITY = {
   critical: "critical",
@@ -24,7 +25,7 @@ const WARNING_RULE_HINTS = [
 ];
 
 export function triageIssues(issues: NormalizedIssue[]): TriagedIssue[] {
-  return issues.map((issue) => ({
+  return issues.map((issue) => enrichIssueEvidence({
     ...issue,
     severity: issue.severity || inferSeverity(issue)
   }));

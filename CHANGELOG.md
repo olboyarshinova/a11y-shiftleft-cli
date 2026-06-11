@@ -57,6 +57,16 @@
   `dist-test` execution path.
 - Adoption telemetry collector support for separately recording manual npm
   website download snapshots alongside npm API periods.
+- Split CI generation profiles for fast PR accessibility crawls and separate
+  scheduled full-site accessibility crawls.
+- Repository CI now uses a bounded accessibility PR crawl plus a separate
+  scheduled full-site accessibility workflow artifact.
+- Confidence scoring, confidence reasons, and issue-category metadata for
+  findings and report summaries.
+- Evidence methodology documentation for validating false positives,
+  confidence precision, and issue-category reporting.
+- `check --quiet` and `check --verbose` output controls for CI-friendly runs
+  and local troubleshooting.
 
 ### Changed
 
@@ -76,8 +86,8 @@
 - CSV report export now recursively flattens nested evidence fields.
 - Compliance preset filtering now limits mapped findings by preset WCAG
   version/level while preserving unmapped best-practice findings separately.
-- README and recipes now use current compliance-support wording and include an
-  ADA Title II evidence recipe.
+- README and recipes now use current compliance-support wording, include an ADA
+  Title II evidence recipe, and provide a simpler beginner quick start.
 - Command help for `--cwd` no longer prints the caller's local working
   directory as a default value.
 
