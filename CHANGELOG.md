@@ -32,10 +32,14 @@
   accessibility findings.
 - Roadmap notes for future real-time developer feedback via `watch`, local
   browser overlay, and a separate browser extension package.
+- Roadmap notes for `watch` run-to-run deltas such as fixed, new, and remaining
+  findings in terminal feedback.
 - Roadmap notes for a future local metrics dashboard and Lighthouse comparison
   workflow.
 - Roadmap notes for optional Lighthouse recommendation capture through the
   existing report and visual exploration workflow.
+- Roadmap notes for a future documentation website privacy section covering
+  screenshots, report artifacts, `.gitignore`, and baseline files.
 - Roadmap notes for future manual PR comments, GitHub Action artifacts, preview
   URL inputs, and severity labels.
 - Roadmap notes for CLI quality-of-life improvements including quiet/verbose
@@ -46,6 +50,11 @@
   configurable safe-mode policies, and generated report retention.
 - README preview showing how the generated `exploration.html` visual report is
   structured.
+- TypeScript source for the CLI program registration, fixture verification
+  script, and Vite demo config while preserving stable JavaScript runtime
+  wrappers for npm consumers.
+- TypeScript test sources with a dedicated `tsconfig.test.json` build and
+  `dist-test` execution path.
 - Adoption telemetry collector support for separately recording manual npm
   website download snapshots alongside npm API periods.
 

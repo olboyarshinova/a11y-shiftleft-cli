@@ -60,6 +60,9 @@ for reproducible empirical validation.
 - Create a documentation website with quick start guides, framework-specific
   setup pages, CI/compliance-support examples, troubleshooting, and sample
   reports so teams can adopt the CLI without reading the full README first.
+- Add a privacy section to the documentation website covering screenshot
+  redaction, `--no-screenshots`, generated report directories, `.gitignore`
+  setup, baseline files, and safe handling of local artifacts.
 - Package a dedicated GitHub Action wrapper after the generated workflow path is
   stable enough to support public Marketplace usage.
 - Add a `pr-comment` command for manual pull request feedback that can scan a
@@ -83,6 +86,9 @@ for reproducible empirical validation.
 - Add a `watch` command for real-time development feedback: debounce file
   changes, rerun static checks for changed files, rescan configured URLs, and
   update lightweight live report artifacts.
+- Make `watch` compute run-to-run deltas so local terminal feedback can show
+  fixed findings, new findings, and remaining findings after each debounced
+  scan while refreshing `exploration.html` or a lightweight live report.
 - Prototype a browser overlay mode after `watch` is stable, so local dev pages
   can highlight affected elements from accessibility findings without requiring
   a full browser extension.
