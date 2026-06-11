@@ -226,9 +226,11 @@ tabs, disclosure widgets, and modal triggers. It saves:
 Open `reports/exploration.html` to review checked states visually. The report
 starts with a triage overview for the most affected states and top rules, then
 shows each state with its screenshot, issue summary, top findings, and recorded
-transitions. It also includes skipped actions with reasons, such as submit
-buttons, payment links, destructive controls, external links, or
-project-specific safe-mode blocklist matches.
+transitions. When Playwright can resolve the affected selector, the report draws
+a reviewable overlay around the finding on the screenshot. It also includes
+skipped actions with reasons, such as submit buttons, payment links,
+destructive controls, external links, or project-specific safe-mode blocklist
+matches.
 
 A typical visual report is organized like this:
 
@@ -245,6 +247,7 @@ URL: http://localhost:3000/
 Issues: critical 0, warning 2, info 0
 
 [ screenshot preview ]
+[ red overlay around affected element when bounds are available ]
 
 Top findings:
 - warning button-name button.icon-close

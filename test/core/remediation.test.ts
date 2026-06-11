@@ -42,6 +42,30 @@ test("normalizeIssue attaches remediation hints", () => {
   assert.equal(issue.remediation?.frameworkExamples?.react?.includes("aria-label"), true);
 });
 
+test("normalizeIssue preserves visual element bounds", () => {
+  const issue = normalizeIssue({
+    source: "axe",
+    framework: "react",
+    ruleId: "button-name",
+    elementBounds: {
+      x: 10,
+      y: 20,
+      width: 30,
+      height: 12,
+      coordinateSpace: "viewport"
+    },
+    message: "Buttons must have discernible text"
+  });
+
+  assert.deepEqual(issue.elementBounds, {
+    x: 10,
+    y: 20,
+    width: 30,
+    height: 12,
+    coordinateSpace: "viewport"
+  });
+});
+
 test("getRemediationHint explains page heading best-practice rules", () => {
   const hint = getRemediationHint("page-has-heading-one", [], "angular");
 

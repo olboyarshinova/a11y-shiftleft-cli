@@ -52,9 +52,9 @@ for reproducible empirical validation.
 - Continue expanding `exploration.html` from a static triage overview into a
   richer dashboard that can visualize checked pages/states, screenshots, and
   accessibility findings while the scan is running.
-- Add screenshot annotations in `exploration.html` by storing finding selector
-  bounding boxes and rendering reviewable overlays instead of drawing directly
-  into compressed screenshots.
+- Continue hardening screenshot annotations in `exploration.html`, including
+  better selector matching, edge-case handling for full-page screenshots, and
+  clearer overlay legends.
 - Add a local `dashboard` command that serves historical accessibility metrics
   from generated reports, including trend charts, top rules, and page-level
   comparisons across scans.

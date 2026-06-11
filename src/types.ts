@@ -70,6 +70,14 @@ export interface RemediationHint {
   frameworkExamples?: Partial<Record<Exclude<Framework, "auto" | "unknown">, string>>;
 }
 
+export interface ElementBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  coordinateSpace: "viewport" | "document";
+}
+
 export interface StaticConfig {
   enabled: boolean;
   include: string[];
@@ -157,6 +165,7 @@ export interface Issue {
   stateId?: string;
   stateLabel?: string;
   screenshot?: string;
+  elementBounds?: ElementBounds;
   message?: string;
   remediation?: RemediationHint;
 }
@@ -180,6 +189,7 @@ export interface NormalizedIssue extends Required<Pick<Issue, "source" | "framew
   stateId?: string;
   stateLabel?: string;
   screenshot?: string;
+  elementBounds?: ElementBounds;
 }
 
 export interface TriagedIssue extends NormalizedIssue {

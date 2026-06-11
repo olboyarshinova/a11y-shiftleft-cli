@@ -90,6 +90,8 @@
   per-page dynamic scans.
 - Triage overview in `exploration.html`, including most affected states, top
   rules, severity scores, state anchors, and WCAG metadata where available.
+- Best-effort screenshot annotations in `exploration.html` using selector
+  bounding boxes stored in issue evidence instead of modifying screenshot files.
 
 ### Changed
 

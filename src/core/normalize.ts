@@ -30,6 +30,7 @@ export function normalizeIssue(issue: Issue): NormalizedIssue {
     stateId: issue.stateId,
     stateLabel: issue.stateLabel,
     screenshot: issue.screenshot,
+    elementBounds: issue.elementBounds,
     message: issue.message || "Accessibility issue detected."
   };
 }

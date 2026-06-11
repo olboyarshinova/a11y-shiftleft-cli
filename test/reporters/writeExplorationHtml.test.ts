@@ -91,6 +91,13 @@ const issues = [
     stateId: "state-1",
     stateLabel: "Initial page",
     screenshot: "screenshots/state-1.png",
+    elementBounds: {
+      x: 10,
+      y: 20,
+      width: 30,
+      height: 12,
+      coordinateSpace: "viewport"
+    },
     message: "Buttons must have discernible text",
     fingerprint: "button-name::state-1",
     duplicateCount: 0
@@ -110,6 +117,8 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /Top Rules/);
   assert.match(html, /score 5/);
   assert.match(html, /WCAG 4\.1\.2 Name, Role, Value, Level A/);
+  assert.match(html, /annotation annotation-critical/);
+  assert.match(html, /left: 10%; top: 20%; width: 30%; height: 12%/);
   assert.match(html, /state-1.*->.*state-2/s);
   assert.match(html, /Skipped Actions/);
   assert.match(html, /Submit\/reset controls are blocked by safe mode/);

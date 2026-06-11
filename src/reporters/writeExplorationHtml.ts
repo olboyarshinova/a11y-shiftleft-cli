@@ -173,10 +173,37 @@ export function renderExplorationHtml(
     .state img {
       aspect-ratio: 16 / 10;
       background: #eef1f5;
-      border-bottom: 1px solid var(--line);
       display: block;
       object-fit: cover;
       width: 100%;
+    }
+
+    .screenshot-frame {
+      background: #eef1f5;
+      border-bottom: 1px solid var(--line);
+      position: relative;
+    }
+
+    .annotation {
+      border: 2px solid var(--warning);
+      border-radius: 4px;
+      box-shadow: 0 0 0 9999px rgb(30 36 48 / 4%);
+      min-height: 10px;
+      min-width: 10px;
+      pointer-events: none;
+      position: absolute;
+    }
+
+    .annotation-critical {
+      border-color: var(--critical);
+    }
+
+    .annotation-warning {
+      border-color: var(--warning);
+    }
+
+    .annotation-info {
+      border-color: var(--info);
     }
 
     .state-body {
@@ -343,9 +370,7 @@ function renderState(state: StateViewModel): string {
     : badge("ok", "no findings");
 
   return `<article class="state" id="${escapeAttribute(state.id)}">
-  ${state.screenshot
-    ? `<img src="${escapeAttribute(state.screenshot)}" alt="Screenshot for ${escapeAttribute(state.id)}">`
-    : `<div class="placeholder">No screenshot</div>`}
+  ${renderStateScreenshot(state)}
   <div class="state-body">
     <div class="state-title">
       <div>
@@ -361,6 +386,43 @@ function renderState(state: StateViewModel): string {
     ${renderIssues(state.issues)}
   </div>
 </article>`;
+}
+
+function renderStateScreenshot(state: StateViewModel): string {
+  if (!state.screenshot) {
+    return `<div class="placeholder">No screenshot</div>`;
+  }
+
+  const annotations = state.issues
+    .filter((issue) => issue.elementBounds)
+    .slice(0, 12)
+    .map((issue, index) => renderAnnotation(issue, index + 1))
+    .join("\n");
+
+  return `<div class="screenshot-frame">
+    <img src="${escapeAttribute(state.screenshot)}" alt="Screenshot for ${escapeAttribute(state.id)}">
+    ${annotations}
+  </div>`;
+}
+
+function renderAnnotation(issue: DedupedIssue, index: number): string {
+  const bounds = issue.elementBounds;
+  if (!bounds) return "";
+
+  return `<span
+    class="annotation annotation-${issue.severity}"
+    title="${escapeAttribute(`${index}. ${issue.severity} ${issue.ruleId}: ${issue.message}`)}"
+    style="${formatBoundsStyle(bounds)}"
+  ></span>`;
+}
+
+function formatBoundsStyle(bounds: NonNullable<DedupedIssue["elementBounds"]>): string {
+  return [
+    `left: ${bounds.x}%`,
+    `top: ${bounds.y}%`,
+    `width: ${bounds.width}%`,
+    `height: ${bounds.height}%`
+  ].join("; ");
 }
 
 function renderTriageOverview(states: StateViewModel[], issues: DedupedIssue[]): string {

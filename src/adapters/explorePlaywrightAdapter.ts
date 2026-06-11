@@ -12,6 +12,7 @@ import type {
   ExploreSkippedAction,
   Issue
 } from "../types.js";
+import type { ElementBounds } from "../types.js";
 
 const INTERACTIVE_SELECTOR = [
   "a[href]",
@@ -205,7 +206,8 @@ export async function runExplorePlaywrightAdapter(
       const stateIssues = await scanState(config, page, {
         stateId,
         stateLabel: actionLabel,
-        screenshot
+        screenshot,
+        screenshotFullPage: Boolean(options.screenshotFullPage)
       });
       issues.push(...stateIssues);
 
@@ -471,6 +473,7 @@ async function scanState(
     stateId: string;
     stateLabel: string;
     screenshot?: string;
+    screenshotFullPage: boolean;
   }
 ): Promise<Issue[]> {
   try {
@@ -479,6 +482,13 @@ async function scanState(
 
     for (const violation of results.violations) {
       for (const node of violation.nodes) {
+        const selector = node.target.join(" ");
+        const elementBounds = state.screenshot
+          ? await getElementBounds(page, selector, {
+            fullPage: state.screenshotFullPage
+          })
+          : undefined;
+
         issues.push({
           source: "axe",
           framework: config.framework,
@@ -486,12 +496,13 @@ async function scanState(
           impact: violation.impact || undefined,
           wcag: violation.tags.filter((tag: string) => tag.startsWith("wcag")),
           tags: violation.tags,
-          selector: node.target.join(" "),
+          selector,
           message: violation.help,
           url: page.url(),
           stateId: state.stateId,
           stateLabel: state.stateLabel,
-          screenshot: state.screenshot
+          screenshot: state.screenshot,
+          elementBounds
         });
       }
     }
@@ -500,6 +511,108 @@ async function scanState(
   } catch (error) {
     return [createExploreErrorIssue(config, page.url(), error)];
   }
+}
+
+async function getElementBounds(
+  page: Page,
+  selector: string,
+  options: {
+    fullPage: boolean;
+  }
+): Promise<ElementBounds | undefined> {
+  if (!selector) return undefined;
+
+  try {
+    if (options.fullPage) {
+      const bounds = await page.evaluate((selectorText) => {
+        const element = document.querySelector(selectorText);
+        if (!element) return null;
+
+        const rect = element.getBoundingClientRect();
+        const doc = document.documentElement;
+        const body = document.body;
+        const documentWidth = Math.max(
+          doc.scrollWidth,
+          body?.scrollWidth || 0,
+          window.innerWidth
+        );
+        const documentHeight = Math.max(
+          doc.scrollHeight,
+          body?.scrollHeight || 0,
+          window.innerHeight
+        );
+
+        return {
+          x: rect.left + window.scrollX,
+          y: rect.top + window.scrollY,
+          width: rect.width,
+          height: rect.height,
+          containerWidth: documentWidth,
+          containerHeight: documentHeight
+        };
+      }, selector);
+
+      return toPercentBounds(bounds, "document");
+    }
+
+    const rect = await page.locator(selector).first().boundingBox({
+      timeout: 500
+    }).catch(() => null);
+    const viewport = await page.evaluate(() => ({
+      containerWidth: window.innerWidth,
+      containerHeight: window.innerHeight
+    }));
+
+    return toPercentBounds(rect ? {
+      ...rect,
+      containerWidth: viewport.containerWidth,
+      containerHeight: viewport.containerHeight
+    } : null, "viewport");
+  } catch {
+    return undefined;
+  }
+}
+
+function toPercentBounds(
+  rect: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    containerWidth: number;
+    containerHeight: number;
+  } | null,
+  coordinateSpace: ElementBounds["coordinateSpace"]
+): ElementBounds | undefined {
+  if (!rect) return undefined;
+  if (rect.width <= 0 || rect.height <= 0) return undefined;
+  if (rect.containerWidth <= 0 || rect.containerHeight <= 0) return undefined;
+
+  const x = clampPercent((rect.x / rect.containerWidth) * 100);
+  const y = clampPercent((rect.y / rect.containerHeight) * 100);
+  const right = clampPercent(((rect.x + rect.width) / rect.containerWidth) * 100);
+  const bottom = clampPercent(((rect.y + rect.height) / rect.containerHeight) * 100);
+  const width = roundPercent(Math.max(0, right - x));
+  const height = roundPercent(Math.max(0, bottom - y));
+
+  if (width <= 0 || height <= 0) return undefined;
+
+  return {
+    x: roundPercent(x),
+    y: roundPercent(y),
+    width,
+    height,
+    coordinateSpace
+  };
+}
+
+function clampPercent(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, value));
+}
+
+function roundPercent(value: number): number {
+  return Math.round(value * 1000) / 1000;
 }
 
 async function discoverSafeActions(
