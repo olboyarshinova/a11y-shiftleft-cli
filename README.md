@@ -182,6 +182,17 @@ npx a11y-shiftleft check --url http://localhost:3000 --out reports
 `npx a11y-shiftleft init --gitignore` adds common report directories such as
 `reports/` and `.a11y-reports/` to `.gitignore`.
 
+Config discovery order:
+
+1. `--config <file>`
+2. `.a11y-shiftleft.json`
+3. `.a11yrc.json`
+4. `package.json` field named `a11y`
+
+Use `.a11y-shiftleft.json` for the clearest generated setup. Use `.a11yrc.json`
+or `package.json#a11y` when your project already keeps tool settings in those
+places.
+
 ## Visual Exploration
 
 Use `explore` when you do not want to list every route manually:

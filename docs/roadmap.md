@@ -40,9 +40,9 @@ for reproducible empirical validation.
   config, and CI environment readiness.
 - Add deeper framework-specific remediation examples for common React, Vue, and
   Angular issues.
-- Expand config discovery beyond `.a11y-shiftleft.json` with `.a11yrc.json`
-  and `package.json#a11y`, while treating executable config files as a later
-  security-sensitive decision.
+- Continue treating executable config files as a later security-sensitive
+  decision; JSON config discovery now covers `.a11y-shiftleft.json`,
+  `.a11yrc.json`, and `package.json#a11y`.
 - Continue hardening configurable safe-mode policies for `explore`, including
   clearer skip reporting and optional request blocking for external or
   high-risk API traffic.

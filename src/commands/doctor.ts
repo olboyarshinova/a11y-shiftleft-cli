@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { createRequire } from "node:module";
 import type { Command } from "commander";
+import { discoverConfig, type DiscoveredConfig } from "../config/loadConfig.js";
 import { adapterPackagesForFramework } from "../core/frameworkAdapters.js";
 import type { Framework } from "../types.js";
 
@@ -29,7 +30,6 @@ interface DoctorRuntime {
   checkChromium: () => Promise<DoctorCheck>;
 }
 
-const DEFAULT_CONFIG_FILE = ".a11y-shiftleft.json";
 const MIN_NODE_MAJOR = 18;
 
 export function registerDoctorCommand(program: Command): void {
@@ -67,13 +67,15 @@ export async function runDoctorChecks(
   }
 ): Promise<DoctorCheck[]> {
   const cwd = path.resolve(options.cwd || process.cwd());
-  const configPath = path.resolve(cwd, options.config || DEFAULT_CONFIG_FILE);
-  const framework = toFramework(options.framework) || await readConfiguredFramework(configPath);
+  const discoveredConfig = await discoverConfig(cwd, options.config);
+  const framework = toFramework(options.framework) ||
+    toFramework(discoveredConfig.config.framework) ||
+    "auto";
   const checks: DoctorCheck[] = [];
 
   checks.push(checkNodeVersion(runtime.nodeVersion));
   checks.push(await checkProjectDirectory(cwd));
-  checks.push(await checkConfigFile(configPath));
+  checks.push(checkConfigFile(discoveredConfig));
   checks.push(checkPackageResolution(cwd, "playwright"));
   checks.push(...checkFrameworkAdapterPackages(cwd, framework));
   checks.push(await runtime.checkChromium());
@@ -99,7 +101,7 @@ export function checkFrameworkAdapterPackages(cwd: string, framework: Framework)
     return [{
       name: "Framework adapters",
       status: "warn",
-      message: "Framework is auto/unknown. Configure --framework or .a11y-shiftleft.json for more specific adapter checks."
+      message: "Framework is auto/unknown. Configure --framework or an a11y config file for more specific adapter checks."
     }];
   }
 
@@ -170,27 +172,25 @@ async function checkProjectDirectory(cwd: string): Promise<DoctorCheck> {
   };
 }
 
-async function checkConfigFile(configPath: string): Promise<DoctorCheck> {
-  try {
-    await fs.access(configPath);
+function checkConfigFile(config: DiscoveredConfig): DoctorCheck {
+  if (config.found) {
     return {
       name: "Config file",
       status: "pass",
-      message: `Found ${path.basename(configPath)}.`
-    };
-  } catch {
-    return {
-      name: "Config file",
-      status: "warn",
-      message: `No ${path.basename(configPath)} found. Run npx a11y-shiftleft init to create one.`
+      message: `Found ${config.source}.`
     };
   }
+
+  return {
+    name: "Config file",
+    status: "warn",
+    message: "No a11y config found. Run npx a11y-shiftleft init to create one."
+  };
 }
 
 function checkPackageResolution(cwd: string, packageName: string): DoctorCheck {
-  const requireFromProject = createRequire(path.join(cwd, "package.json"));
-
   try {
+    const requireFromProject = createRequire(path.join(cwd, "package.json"));
     requireFromProject.resolve(packageName);
     return {
       name: packageName,
@@ -203,16 +203,6 @@ function checkPackageResolution(cwd: string, packageName: string): DoctorCheck {
       status: "warn",
       message: `${packageName} is not resolvable from the target project. Install the CLI locally or run npm install.`
     };
-  }
-}
-
-async function readConfiguredFramework(configPath: string): Promise<Framework> {
-  try {
-    const raw = await fs.readFile(configPath, "utf8");
-    const config = JSON.parse(raw) as { framework?: unknown };
-    return toFramework(config.framework) || "auto";
-  } catch {
-    return "auto";
   }
 }
 

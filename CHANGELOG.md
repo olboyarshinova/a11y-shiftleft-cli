@@ -71,6 +71,8 @@
   `expires` metadata for temporary reviewed exceptions.
 - Configurable `explore.safeMode` rules for project-specific blocked text,
   roles, URLs, selectors, allowed selectors, and browser dialog auto-dismiss.
+- Config discovery for `.a11yrc.json` and `package.json#a11y` in addition to
+  the existing `.a11y-shiftleft.json` and `--config` path.
 
 ### Changed
 

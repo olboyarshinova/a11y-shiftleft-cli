@@ -28,6 +28,29 @@ test("runDoctorChecks reports local setup and reachable target URL", async () =>
   assert.equal(checks.find((check) => check.name === "Target URL")?.status, "pass");
 });
 
+test("runDoctorChecks discovers .a11yrc.json config", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-doctor-rc-"));
+  await fs.writeFile(path.join(cwd, ".a11yrc.json"), JSON.stringify({
+    framework: "auto"
+  }));
+
+  const checks = await runDoctorChecks({
+    cwd
+  }, {
+    nodeVersion: "22.0.0",
+    env: {},
+    checkChromium: async () => ({
+      name: "Chromium",
+      status: "pass",
+      message: "Mock browser installed."
+    }),
+    fetch: async () => new Response("", { status: 200 })
+  });
+
+  assert.equal(checks.find((check) => check.name === "Config file")?.status, "pass");
+  assert.match(checks.find((check) => check.name === "Config file")?.message || "", /\.a11yrc\.json/);
+});
+
 test("checkFrameworkAdapterPackages warns when framework is auto", () => {
   const checks = checkFrameworkAdapterPackages(process.cwd(), "auto");
 
