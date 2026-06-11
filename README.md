@@ -525,8 +525,10 @@ issues, run:
 npx a11y-shiftleft doctor --url http://localhost:3000
 ```
 
-Interactive local runs print a readable terminal summary. Ask for JSON when a
-script needs to parse stdout:
+Interactive local runs print a readable terminal summary. `check --crawl` also
+prints compact crawl and page-scan progress in an interactive terminal, so long
+same-origin scans do not look stuck. Ask for JSON when a script needs to parse
+stdout:
 
 ```bash
 npx a11y-shiftleft check --dynamic --url http://localhost:3000 --json-summary --out reports

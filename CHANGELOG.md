@@ -86,6 +86,8 @@
   static checks.
 - Readable local `explore` progress and final summary output, with
   `--json-summary` for scripts that parse stdout.
+- Compact interactive `check --crawl` progress output for crawl discovery and
+  per-page dynamic scans.
 
 ### Changed
 

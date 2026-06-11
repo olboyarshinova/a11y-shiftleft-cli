@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  type AxeProgressEvent,
   crawlSameOriginUrls,
   normalizeSameOriginUrl
 } from "../../dist/adapters/axePlaywrightAdapter.js";
@@ -35,7 +36,7 @@ test("crawlSameOriginUrls discovers bounded same-origin links", async () => {
   ]);
   let currentUrl = "";
   const page = {
-    goto: async (url) => {
+    goto: async (url: string) => {
       currentUrl = url;
     },
     $$eval: async () => linksByUrl.get(currentUrl) || []
@@ -50,5 +51,34 @@ test("crawlSameOriginUrls discovers bounded same-origin links", async () => {
     "http://localhost:3000/",
     "http://localhost:3000/about",
     "http://localhost:3000/contact"
+  ]);
+});
+
+test("crawlSameOriginUrls reports discovery progress", async () => {
+  const progress: AxeProgressEvent[] = [];
+  const linksByUrl = new Map([
+    ["http://localhost:3000/", [
+      "http://localhost:3000/about"
+    ]],
+    ["http://localhost:3000/about", []]
+  ]);
+  let currentUrl = "";
+  const page = {
+    goto: async (url: string) => {
+      currentUrl = url;
+    },
+    $$eval: async () => linksByUrl.get(currentUrl) || []
+  };
+
+  await crawlSameOriginUrls(page, ["http://localhost:3000/"], {
+    maxDepth: 1,
+    maxUrls: 5,
+    onProgress: (event) => progress.push(event)
+  });
+
+  assert.deepEqual(progress.map((event) => event.type), ["crawl", "crawl"]);
+  assert.deepEqual(progress.filter((event) => event.type === "crawl").map((event) => event.url), [
+    "http://localhost:3000/",
+    "http://localhost:3000/about"
   ]);
 });

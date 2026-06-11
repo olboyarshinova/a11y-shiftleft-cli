@@ -7,7 +7,44 @@ interface CrawlQueueItem {
   depth: number;
 }
 
-export async function runAxePlaywrightAdapter(config: A11yConfig): Promise<Issue[]> {
+export interface AxePlaywrightOptions {
+  onProgress?: (event: AxeProgressEvent) => void;
+}
+
+export type AxeProgressEvent =
+  | {
+    type: "crawl";
+    url: string;
+    depth: number;
+    discoveredCount: number;
+    queuedCount: number;
+    maxUrls: number;
+  }
+  | {
+    type: "scan-start";
+    url: string;
+    scannedCount: number;
+    totalUrls: number;
+  }
+  | {
+    type: "scan-complete";
+    url: string;
+    scannedCount: number;
+    totalUrls: number;
+    issueCount: number;
+  }
+  | {
+    type: "scan-error";
+    url: string;
+    scannedCount: number;
+    totalUrls: number;
+    message: string;
+  };
+
+export async function runAxePlaywrightAdapter(
+  config: A11yConfig,
+  options: AxePlaywrightOptions = {}
+): Promise<Issue[]> {
   const browser = await chromium.launch();
   const issues: Issue[] = [];
 
@@ -17,19 +54,30 @@ export async function runAxePlaywrightAdapter(config: A11yConfig): Promise<Issue
     const scanUrls = config.dynamic.crawl
       ? await crawlSameOriginUrls(page, config.dynamic.urls, {
         maxDepth: config.dynamic.crawlDepth,
-        maxUrls: config.dynamic.crawlLimit
+        maxUrls: config.dynamic.crawlLimit,
+        onProgress: options.onProgress
       })
       : uniqueUrls(config.dynamic.urls);
 
     config.dynamic.urls = scanUrls;
 
-    for (const url of scanUrls) {
+    for (const [index, url] of scanUrls.entries()) {
+      const scannedCount = index + 1;
+
       try {
+        options.onProgress?.({
+          type: "scan-start",
+          url,
+          scannedCount,
+          totalUrls: scanUrls.length
+        });
         await page.goto(url, { waitUntil: "networkidle" });
         const results = await new AxeBuilder({ page }).analyze();
+        let issueCount = 0;
 
         for (const violation of results.violations) {
           for (const node of violation.nodes) {
+            issueCount += 1;
             issues.push({
               source: "axe",
               framework: config.framework,
@@ -43,7 +91,21 @@ export async function runAxePlaywrightAdapter(config: A11yConfig): Promise<Issue
             });
           }
         }
+        options.onProgress?.({
+          type: "scan-complete",
+          url,
+          scannedCount,
+          totalUrls: scanUrls.length,
+          issueCount
+        });
       } catch (error) {
+        options.onProgress?.({
+          type: "scan-error",
+          url,
+          scannedCount,
+          totalUrls: scanUrls.length,
+          message: error instanceof Error ? error.message : String(error)
+        });
         issues.push(createScanErrorIssue(config, url, error));
       }
     }
@@ -63,6 +125,7 @@ export async function crawlSameOriginUrls(
   options: {
     maxDepth: number;
     maxUrls: number;
+    onProgress?: (event: AxeProgressEvent) => void;
   }
 ): Promise<string[]> {
   const normalizedStartUrls = uniqueUrls(startUrls);
@@ -78,6 +141,14 @@ export async function crawlSameOriginUrls(
 
     visited.add(current.url);
     discovered.push(current.url);
+    options.onProgress?.({
+      type: "crawl",
+      url: current.url,
+      depth: current.depth,
+      discoveredCount: discovered.length,
+      queuedCount: queue.length,
+      maxUrls
+    });
 
     if (current.depth >= maxDepth) continue;
 

@@ -26,9 +26,10 @@ for reproducible empirical validation.
 - Continue expanding CLI quality-of-life controls after the initial `check` and
   `explore` `--quiet`/`--verbose` support, especially around clearer
   report paths and troubleshooting context.
-- Continue polishing readable local output after the initial `check` summary
-  and `explore` progress output, especially for crawl, watch, and dashboard
-  indexing while preserving plain output for CI and report files.
+- Continue polishing readable local output after the initial `check` summary,
+  `check --crawl` progress, and `explore` progress output, especially for
+  watch and dashboard indexing while preserving plain output for CI and report
+  files.
 - Improve framework autodetection messaging so React, Vue, and Angular projects
   receive clear adapter install recommendations when optimized static checks are
   not available yet.
@@ -94,9 +95,9 @@ for reproducible empirical validation.
 - Explore a DevTools-style local inspection layer after the overlay prototype,
   reusing the same core report schema to show rule, severity, WCAG metadata,
   confidence, and suggested remediation next to affected DOM elements.
-- Add progress output for long-running crawl, watch, and dashboard indexing
-  workflows, building on the initial `explore` progress summary while keeping
-  non-animated output available for CI.
+- Add progress output for long-running watch and dashboard indexing workflows,
+  building on the initial `check --crawl` and `explore` progress summaries
+  while keeping non-animated output available for CI.
 
 ## Later
 

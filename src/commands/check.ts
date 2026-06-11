@@ -2,6 +2,7 @@ import type { Command } from "commander";
 import { loadConfig } from "../config/loadConfig.js";
 import { runEslintAdapter } from "../adapters/eslintAdapter.js";
 import { runAxePlaywrightAdapter } from "../adapters/axePlaywrightAdapter.js";
+import type { AxeProgressEvent } from "../adapters/axePlaywrightAdapter.js";
 import { normalizeIssue } from "../core/normalize.js";
 import { dedupeIssues } from "../core/dedupe.js";
 import { triageIssues } from "../core/severity.js";
@@ -133,6 +134,7 @@ export function registerCheckCommand(program: Command): void {
 
       const rawIssues = [];
       const adapterRuns: AdapterRunSummary[] = [];
+      const progressEnabled = shouldPrintCheckProgress(options);
 
       if (runStatic && effectiveConfig.static.enabled) {
         const adapterStartedAt = Date.now();
@@ -155,7 +157,12 @@ export function registerCheckCommand(program: Command): void {
 
       if (runDynamic && effectiveConfig.dynamic.enabled !== false) {
         const adapterStartedAt = Date.now();
-        const issues = await runAxePlaywrightAdapter(effectiveConfig);
+        const issues = await runAxePlaywrightAdapter(effectiveConfig, {
+          onProgress: (event) => {
+            if (!progressEnabled) return;
+            console.log(formatCheckProgressMessage(event));
+          }
+        });
         adapterRuns.push({
           name: "dynamic",
           enabled: true,
@@ -401,6 +408,26 @@ export function formatCheckConsoleSummary(
     "  - Use --semi-auto when you need the manual review checklist.",
     "  - Use --json-summary when a script needs the stdout summary as JSON."
   ].join("\n");
+}
+
+export function formatCheckProgressMessage(event: AxeProgressEvent): string {
+  if (event.type === "crawl") {
+    return `[check] crawl discovered ${event.discoveredCount}/${event.maxUrls} depth=${event.depth} queued=${event.queuedCount} ${event.url}`;
+  }
+
+  if (event.type === "scan-start") {
+    return `[check] scan ${event.scannedCount}/${event.totalUrls} ${event.url}`;
+  }
+
+  if (event.type === "scan-complete") {
+    return `[check] scan ${event.scannedCount}/${event.totalUrls} done issues=${event.issueCount} ${event.url}`;
+  }
+
+  return `[check] scan ${event.scannedCount}/${event.totalUrls} failed ${event.url}: ${event.message}`;
+}
+
+function shouldPrintCheckProgress(options: Pick<CheckOptions, "quiet" | "jsonSummary">): boolean {
+  return Boolean(!options.quiet && !options.jsonSummary && process.stdout.isTTY && !process.env.CI);
 }
 
 function shouldPrintJsonSummary(options: Pick<CheckOptions, "jsonSummary">): boolean {

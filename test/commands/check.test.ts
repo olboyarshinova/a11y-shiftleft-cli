@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { filterByWcagConformance, filterByWcagLevel, formatCheckConsoleSummary, formatVerboseCheckSummary, parseFormats, parseUrls, resolveCheckModes, shouldFail } from "../../dist/commands/check.js";
+import { filterByWcagConformance, filterByWcagLevel, formatCheckConsoleSummary, formatCheckProgressMessage, formatVerboseCheckSummary, parseFormats, parseUrls, resolveCheckModes, shouldFail } from "../../dist/commands/check.js";
 
 const summary = {
   critical: 1,
@@ -278,6 +278,40 @@ test("formatCheckConsoleSummary renders a readable local summary", () => {
   assert.match(output, /reports\/a11y-comment.md/);
   assert.match(output, /reports\/a11y-manual-checklist.md/);
   assert.match(output, /--json-summary/);
+});
+
+test("formatCheckProgressMessage renders crawl and scan progress", () => {
+  assert.equal(formatCheckProgressMessage({
+    type: "crawl",
+    url: "http://localhost:3000/settings",
+    depth: 1,
+    discoveredCount: 2,
+    queuedCount: 3,
+    maxUrls: 10
+  }), "[check] crawl discovered 2/10 depth=1 queued=3 http://localhost:3000/settings");
+
+  assert.equal(formatCheckProgressMessage({
+    type: "scan-start",
+    url: "http://localhost:3000/settings",
+    scannedCount: 2,
+    totalUrls: 10
+  }), "[check] scan 2/10 http://localhost:3000/settings");
+
+  assert.equal(formatCheckProgressMessage({
+    type: "scan-complete",
+    url: "http://localhost:3000/settings",
+    scannedCount: 2,
+    totalUrls: 10,
+    issueCount: 4
+  }), "[check] scan 2/10 done issues=4 http://localhost:3000/settings");
+
+  assert.equal(formatCheckProgressMessage({
+    type: "scan-error",
+    url: "http://localhost:3000/settings",
+    scannedCount: 2,
+    totalUrls: 10,
+    message: "timeout"
+  }), "[check] scan 2/10 failed http://localhost:3000/settings: timeout");
 });
 
 test("filterByWcagLevel keeps findings up to the selected conformance level", () => {
