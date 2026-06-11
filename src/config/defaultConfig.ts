@@ -23,5 +23,16 @@ export const defaultConfig = {
     enabled: true,
     csv: true,
     json: true
+  },
+  explore: {
+    safeMode: {
+      enabled: true,
+      blockedText: [],
+      blockedRoles: [],
+      blockedUrls: [],
+      blockedSelectors: [],
+      allowedSelectors: ["[data-a11y-explore]"],
+      dismissDialogs: true
+    }
   }
 } satisfies Omit<A11yConfig, "cwd" | "configPath">;

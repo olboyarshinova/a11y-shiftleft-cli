@@ -292,6 +292,37 @@ transactional, such as delete, logout, save, checkout, or payment. Add
 exploration. Add `data-a11y-explore` only when a form button or custom control
 is safe to exercise in automated scans.
 
+You can add project-specific safe-mode rules in `.a11y-shiftleft.json`:
+
+```json
+{
+  "explore": {
+    "safeMode": {
+      "blockedText": ["logout", "delete", "pay*", "confirm"],
+      "blockedRoles": ["menuitem"],
+      "blockedUrls": ["*/checkout*", "*/account/billing*"],
+      "blockedSelectors": ["[data-danger]", "[data-payment]"],
+      "allowedSelectors": ["[data-a11y-explore]"],
+      "dismissDialogs": true
+    }
+  }
+}
+```
+
+Safe-mode patterns are case-insensitive strings with optional `*` wildcards.
+They are not executable JavaScript regexes.
+
+You can also add one-off rules from the command line:
+
+```bash
+npx a11y-shiftleft explore \
+  --url http://localhost:3000 \
+  --safe-block-text logout delete pay \
+  --safe-block-url "*/checkout*" \
+  --safe-block-selector "[data-danger]" \
+  --out reports
+```
+
 Short setup recipes are available for common workflows:
 
 - [Angular](docs/recipes/angular.md)

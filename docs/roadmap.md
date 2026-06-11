@@ -43,9 +43,9 @@ for reproducible empirical validation.
 - Expand config discovery beyond `.a11y-shiftleft.json` with `.a11yrc.json`
   and `package.json#a11y`, while treating executable config files as a later
   security-sensitive decision.
-- Add configurable safe-mode policies for `explore`, including blocked text,
-  role, selector, and URL patterns, dialog auto-dismiss behavior, and optional
-  request blocking for external or high-risk API traffic.
+- Continue hardening configurable safe-mode policies for `explore`, including
+  clearer skip reporting and optional request blocking for external or
+  high-risk API traffic.
 - Add report retention settings for generated artifacts, such as maximum saved
   runs and maximum age in days, so local binary screenshots and old reports do
   not accumulate indefinitely.

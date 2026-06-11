@@ -39,6 +39,13 @@ interface ExploreOptions {
   screenshotQuality?: string;
   screenshotFullPage?: boolean;
   screenshotRedaction?: boolean;
+  safeMode?: boolean;
+  safeBlockText?: string[];
+  safeBlockRole?: string[];
+  safeBlockUrl?: string[];
+  safeBlockSelector?: string[];
+  safeAllowSelector?: string[];
+  dismissDialogs?: boolean;
   semiAuto?: boolean;
 }
 
@@ -66,6 +73,13 @@ export function registerExploreCommand(program: Command): void {
     .option("--screenshot-quality <quality>", "JPEG screenshot quality from 1 to 100", "70")
     .option("--screenshot-full-page", "Capture full-page screenshots instead of viewport screenshots")
     .option("--no-screenshot-redaction", "Do not mask sensitive fields in screenshots")
+    .option("--no-safe-mode", "Disable safe-mode action blocking for exploration")
+    .option("--safe-block-text <patterns...>", "Additional text patterns to skip during exploration")
+    .option("--safe-block-role <patterns...>", "Additional role patterns to skip during exploration")
+    .option("--safe-block-url <patterns...>", "Additional URL patterns to skip during exploration")
+    .option("--safe-block-selector <selectors...>", "Additional selectors to skip during exploration")
+    .option("--safe-allow-selector <selectors...>", "Selectors allowed to override form-button safety blocks")
+    .option("--no-dismiss-dialogs", "Do not auto-dismiss browser dialogs during exploration")
     .option("--semi-auto", "Generate a Markdown manual review checklist alongside automated reports")
     .action(async (options: ExploreOptions) => {
       const startedAt = Date.now();
@@ -81,6 +95,17 @@ export function registerExploreCommand(program: Command): void {
         dynamic: {
           enabled: true,
           urls: [options.url]
+        },
+        explore: {
+          safeMode: {
+            enabled: options.safeMode === false ? false : undefined,
+            blockedText: toPatternList(options.safeBlockText),
+            blockedRoles: toPatternList(options.safeBlockRole),
+            blockedUrls: toPatternList(options.safeBlockUrl),
+            blockedSelectors: toPatternList(options.safeBlockSelector),
+            allowedSelectors: toPatternList(options.safeAllowSelector),
+            dismissDialogs: options.dismissDialogs === false ? false : undefined
+          }
         }
       });
       const standard = resolveStandard(config.standard);
@@ -109,6 +134,7 @@ export function registerExploreCommand(program: Command): void {
         screenshotQuality: toScreenshotQuality(options.screenshotQuality),
         screenshotFullPage: Boolean(options.screenshotFullPage),
         screenshotRedaction: options.screenshotRedaction,
+        safeMode: effectiveConfig.explore.safeMode,
         onProgress: (event) => {
           if (event.type === "state") {
             const screenshot = event.state.screenshot ? ` screenshot=${event.state.screenshot}` : "";
@@ -213,4 +239,15 @@ function toScreenshotQuality(value: string | undefined): number | undefined {
     throw new Error("Screenshot quality must be an integer from 1 to 100.");
   }
   return parsed;
+}
+
+function toPatternList(values: string[] | undefined): string[] | undefined {
+  if (!values || values.length === 0) return undefined;
+
+  const patterns = values
+    .flatMap((value) => value.split(","))
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  return patterns.length > 0 ? patterns : undefined;
 }

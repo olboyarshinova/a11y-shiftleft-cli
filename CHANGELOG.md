@@ -69,6 +69,8 @@
   and local troubleshooting.
 - Scoped `a11y-ignore.json` support with required `reason`, `owner`, and
   `expires` metadata for temporary reviewed exceptions.
+- Configurable `explore.safeMode` rules for project-specific blocked text,
+  roles, URLs, selectors, allowed selectors, and browser dialog auto-dismiss.
 
 ### Changed
 

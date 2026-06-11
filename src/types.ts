@@ -90,6 +90,20 @@ export interface MetricsConfig {
   json: boolean;
 }
 
+export interface ExploreSafeModeConfig {
+  enabled: boolean;
+  blockedText: string[];
+  blockedRoles: string[];
+  blockedUrls: string[];
+  blockedSelectors: string[];
+  allowedSelectors: string[];
+  dismissDialogs: boolean;
+}
+
+export interface ExploreConfig {
+  safeMode: ExploreSafeModeConfig;
+}
+
 export interface A11yConfig {
   cwd: string;
   configPath?: string;
@@ -102,12 +116,16 @@ export interface A11yConfig {
   static: StaticConfig;
   dynamic: DynamicConfig;
   metrics: MetricsConfig;
+  explore: ExploreConfig;
 }
 
-export type ConfigOverrides = Partial<Omit<A11yConfig, "static" | "dynamic" | "metrics">> & {
+export type ConfigOverrides = Partial<Omit<A11yConfig, "static" | "dynamic" | "metrics" | "explore">> & {
   static?: Partial<StaticConfig>;
   dynamic?: Partial<DynamicConfig>;
   metrics?: Partial<MetricsConfig>;
+  explore?: Partial<Omit<ExploreConfig, "safeMode">> & {
+    safeMode?: Partial<ExploreSafeModeConfig>;
+  };
 };
 
 export interface Issue {
