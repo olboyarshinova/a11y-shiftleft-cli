@@ -36,17 +36,25 @@ that scope.
 
 ## GitHub Actions
 
-The repository includes two workflows:
+The repository includes these workflows:
 
 ```txt
 .github/workflows/quality.yml
 .github/workflows/a11y.yml
+.github/workflows/publish-github-package.yml
 ```
 
 `quality.yml` should pass on pull requests and pushes to `main`.
 
 `a11y.yml` scans the intentionally broken demo app with `--fail-on none`, so it
 uploads accessibility artifacts without failing the workflow.
+
+`publish-github-package.yml` is a manual workflow that publishes the same CLI
+code to GitHub Packages as `@olboyarshinova/a11y-shiftleft-cli`. GitHub
+Packages npm registry requires scoped package names, so the workflow
+temporarily changes the package name during the Actions run and publishes to
+`https://npm.pkg.github.com` with `GITHUB_TOKEN`. It does not commit the scoped
+package name back to the repository.
 
 PR comments are posted by `scripts/post-a11y-comment.js`. The script skips
 commenting when GitHub PR environment variables are missing, and it can build
@@ -177,6 +185,15 @@ npm publish --workspace @a11y-shiftleft/angular --access public
 If npm two-factor authentication is enabled, enter the current authenticator
 app code when prompted. Do not store OTP values in shell history, scripts, or
 repository files.
+
+Optionally publish the GitHub Packages mirror from the GitHub UI:
+
+```txt
+Actions -> Publish GitHub Package -> Run workflow
+```
+
+After it succeeds, the package should appear in the repository sidebar under
+`Packages` as `@olboyarshinova/a11y-shiftleft-cli`.
 
 After publishing, verify:
 

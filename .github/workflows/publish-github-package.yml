@@ -1,0 +1,40 @@
+name: Publish GitHub Package
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: "@olboyarshinova"
+
+      - run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Prepare scoped package metadata
+        run: |
+          npm pkg set name="@olboyarshinova/a11y-shiftleft-cli"
+          npm pkg set publishConfig.registry="https://npm.pkg.github.com"
+
+      - name: Verify package contents
+        run: npm pack --dry-run
+
+      - name: Publish to GitHub Packages
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
