@@ -267,6 +267,17 @@ export interface BaselineComparisonSummary {
   newInfo: number;
 }
 
+export interface ReportRetentionEvidence {
+  enabled: boolean;
+  rootDir: string;
+  currentOutputDir: string;
+  maxRuns: number;
+  maxAgeDays: number;
+  candidateRuns: number;
+  deletedRuns: number;
+  keptRuns: number;
+}
+
 export interface ReportMetrics {
   framework?: Framework | string;
   cwd?: string;
@@ -274,6 +285,7 @@ export interface ReportMetrics {
   standard?: ComplianceStandardMetadata;
   baseline?: BaselineComparisonSummary;
   ignore?: IgnoreSummary;
+  retention?: ReportRetentionEvidence;
   scanDurationMs?: number;
   rawCount?: number;
   uniqueCount?: number;
@@ -312,6 +324,7 @@ export interface ReportSummary {
   standard?: ComplianceStandardMetadata;
   baseline?: BaselineComparisonSummary;
   ignore?: IgnoreSummary;
+  retention?: ReportRetentionEvidence;
   complianceEvidence: ComplianceEvidenceSummary;
   bySource: Record<string, number>;
   bySeverity: Record<string, number>;

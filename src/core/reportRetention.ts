@@ -1,23 +1,14 @@
 import fs from "node:fs/promises";
 import type { Dirent } from "node:fs";
 import path from "node:path";
-import type { RetentionConfig } from "../types.js";
+import type { ReportRetentionEvidence, RetentionConfig } from "../types.js";
 
 interface ReportRun {
   dir: string;
   mtimeMs: number;
 }
 
-export interface ReportRetentionSummary {
-  enabled: boolean;
-  rootDir: string;
-  currentOutputDir: string;
-  maxRuns: number;
-  maxAgeDays: number;
-  candidateRuns: number;
-  deletedRuns: number;
-  keptRuns: number;
-}
+export interface ReportRetentionSummary extends ReportRetentionEvidence {}
 
 interface ApplyReportRetentionOptions {
   now?: Date;

@@ -287,6 +287,9 @@ Report lifecycle:
   `reports/run-2026-06-11`. Retention only removes sibling directories that
   contain a11y-shiftleft report marker files and never removes the current
   output directory.
+- When retention is enabled, `a11y-report.json`, `a11y-metrics.csv`, and
+  `a11y-comment.md` include a retention summary with deleted, kept, and
+  candidate run counts.
 
 Enable retention from the command line:
 

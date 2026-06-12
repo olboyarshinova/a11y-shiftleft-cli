@@ -322,6 +322,41 @@ test("writeReports includes ignore metadata", async () => {
   assert.match(markdown, /Invalid ignore rules \| 1/);
 });
 
+test("writeReports includes retention metadata", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-retention-"));
+
+  const report = await writeReports(
+    outputDir,
+    [],
+    {
+      framework: "react",
+      rawCount: 0,
+      uniqueCount: 0,
+      duplicateCount: 0,
+      retention: {
+        enabled: true,
+        rootDir: path.dirname(outputDir),
+        currentOutputDir: outputDir,
+        maxRuns: 5,
+        maxAgeDays: 14,
+        candidateRuns: 4,
+        deletedRuns: 2,
+        keptRuns: 2
+      }
+    }
+  );
+
+  const csv = await fs.readFile(path.join(outputDir, "a11y-metrics.csv"), "utf8");
+  const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+
+  assert.equal(report.summary.retention?.deletedRuns, 2);
+  assert.match(csv, /retention\.deletedRuns,2/);
+  assert.match(csv, /retention\.keptRuns,2/);
+  assert.match(markdown, /Retention policy \| maxRuns 5, maxAgeDays 14/);
+  assert.match(markdown, /Retention deleted runs \| 2/);
+  assert.match(markdown, /Retention evidence \| recorded/);
+});
+
 test("writeReports can limit output formats", async () => {
   const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-format-"));
 

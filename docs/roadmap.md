@@ -48,7 +48,7 @@ for reproducible empirical validation.
   clearer skip reporting and optional request blocking for external or
   high-risk API traffic.
 - Continue hardening report retention with clearer dry-run previews and
-  retention summaries in generated reports.
+  historical cleanup previews before deleting old report runs.
 - Continue expanding `exploration.html` from a static triage overview into a
   richer dashboard that can visualize checked pages/states, screenshots, and
   accessibility findings while the scan is running.

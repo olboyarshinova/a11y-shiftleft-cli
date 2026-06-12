@@ -232,6 +232,7 @@ export function registerExploreCommand(program: Command): void {
         includeUnmapped: !explicitWcagFilter
       });
       const uniqueIssues = dedupeIssues(filtered);
+      const retentionSummary = await applyReportRetention(effectiveConfig.outputDir, effectiveConfig.retention);
       const report = await writeReports(effectiveConfig.outputDir, uniqueIssues, {
         framework,
         cwd: effectiveConfig.cwd,
@@ -241,6 +242,7 @@ export function registerExploreCommand(program: Command): void {
           wcagVersion: effectiveConfig.wcagVersion,
           wcagLevel: effectiveConfig.wcagLevel
         },
+        retention: retentionSummary.enabled ? retentionSummary : undefined,
         scanDurationMs: Date.now() - startedAt,
         rawCount: exploration.issues.length,
         uniqueCount: uniqueIssues.length,
@@ -252,7 +254,6 @@ export function registerExploreCommand(program: Command): void {
       if (options.html !== false) {
         await writeExplorationHtml(effectiveConfig.outputDir, exploration.graph, report.issues);
       }
-      const retentionSummary = await applyReportRetention(effectiveConfig.outputDir, effectiveConfig.retention);
 
       if (!options.quiet) {
         const summary: ExploreSummaryOutput = {

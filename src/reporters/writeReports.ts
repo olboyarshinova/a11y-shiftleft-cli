@@ -86,6 +86,7 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     standard: metrics.standard,
     baseline: metrics.baseline,
     ignore: metrics.ignore,
+    retention: metrics.retention,
     complianceEvidence: summarizeComplianceEvidence(issues, byPage, metrics.standard),
     bySource: countBy(issues, "source"),
     bySeverity: countBy(issues, "severity"),
@@ -142,6 +143,7 @@ export function toMarkdown(report: A11yReport): string {
 | Standard | ${formatStandard(report.summary.standard)} |
 ${formatBaselineRows(report.summary.baseline)}| Automated coverage | ${report.summary.standard?.automatedCoverage || "partial"} |
 ${formatIgnoreRows(report.summary.ignore)}| Manual review required | ${complianceEvidence.requiresManualReview ? "yes" : "no"} |
+${formatRetentionRows(report.summary.retention)}| Retention evidence | ${report.summary.retention?.enabled ? "recorded" : "none"} |
 | WCAG-mapped findings | ${complianceEvidence.wcagMappedFindings} |
 | Unmapped findings | ${complianceEvidence.unmappedFindings} |
 | Affected pages | ${complianceEvidence.affectedPages} |
@@ -333,6 +335,17 @@ function formatIgnoreRows(ignore: ReportSummary["ignore"]): string {
     `| Active ignore rules | ${ignore.activeRules} |`,
     `| Expired ignore rules | ${ignore.expiredRules} |`,
     `| Invalid ignore rules | ${ignore.invalidRules} |`
+  ].join("\n")}\n`;
+}
+
+function formatRetentionRows(retention: ReportSummary["retention"]): string {
+  if (!retention?.enabled) return "";
+
+  return `${[
+    `| Retention policy | maxRuns ${retention.maxRuns}, maxAgeDays ${retention.maxAgeDays} |`,
+    `| Retention candidate runs | ${retention.candidateRuns} |`,
+    `| Retention deleted runs | ${retention.deletedRuns} |`,
+    `| Retention kept runs | ${retention.keptRuns} |`
   ].join("\n")}\n`;
 }
 

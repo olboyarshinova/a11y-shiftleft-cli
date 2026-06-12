@@ -203,6 +203,7 @@ export function registerCheckCommand(program: Command): void {
         : undefined;
       const reportIssues = baselineResult?.issues || ignoreResult.issues;
       const formats = parseFormats(options.format);
+      const retentionSummary = await applyReportRetention(effectiveConfig.outputDir, effectiveConfig.retention);
       const report = await writeReports(effectiveConfig.outputDir, reportIssues, {
         framework,
         cwd: effectiveConfig.cwd,
@@ -214,6 +215,7 @@ export function registerCheckCommand(program: Command): void {
         },
         baseline: baselineResult?.summary,
         ignore: ignoreResult.summary,
+        retention: retentionSummary.enabled ? retentionSummary : undefined,
         scanDurationMs: Date.now() - startedAt,
         rawCount: rawIssues.length,
         uniqueCount: ignoreResult.issues.length,
@@ -222,7 +224,6 @@ export function registerCheckCommand(program: Command): void {
         formats,
         semiAuto: Boolean(options.semiAuto)
       });
-      const retentionSummary = await applyReportRetention(effectiveConfig.outputDir, effectiveConfig.retention);
 
       if (!options.quiet) {
         if (options.verbose) {
