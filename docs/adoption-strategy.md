@@ -292,8 +292,8 @@ for broad endorsement.
 Example:
 
 ```txt
-Hi! I maintain a11y-shiftleft-cli, a framework-agnostic accessibility CI
-orchestrator that combines static checks, axe/Playwright dynamic scans,
+Hi! I maintain a11y-shiftleft-cli, an accessibility CI orchestrator that works
+across web frameworks and combines static checks, axe/Playwright dynamic scans,
 deduplication, WCAG metadata, and PR-ready reports.
 
 I noticed your project already invests in accessibility. I prepared a small

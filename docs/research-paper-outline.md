@@ -24,7 +24,7 @@ Topics to cover:
 - The research gap is orchestration: unified static and dynamic findings,
   deduplication, severity triage, PR feedback, and reproducible metrics.
 - Contribution: an open-source npm CLI that integrates existing engines into a
-  framework-agnostic shift-left workflow.
+  shift-left workflow that works across web frameworks.
 
 Research questions:
 
@@ -159,7 +159,7 @@ Conclusion validity:
 
 Restate the contribution:
 
-- A framework-agnostic accessibility orchestration CLI.
+- An accessibility orchestration CLI that works across web frameworks.
 - Reproducible PR-level metrics.
 - Empirical validation path for shift-left accessibility workflows.
 

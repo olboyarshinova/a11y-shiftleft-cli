@@ -1,8 +1,8 @@
 # Roadmap
 
 This roadmap keeps the project focused on practical shift-left accessibility
-orchestration. The CLI should stay framework-agnostic, npm-first, and suitable
-for reproducible empirical validation.
+orchestration. The CLI should work across web frameworks, stay npm-first, and
+remain suitable for reproducible empirical validation.
 
 ## Near Term
 

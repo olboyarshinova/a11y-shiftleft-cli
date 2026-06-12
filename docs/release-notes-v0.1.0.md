@@ -1,7 +1,7 @@
 # v0.1.0 Release Notes
 
-`a11y-shiftleft-cli` v0.1.0 is the first public MVP release for a
-framework-agnostic accessibility orchestration CLI.
+`a11y-shiftleft-cli` v0.1.0 is the first public MVP release for an
+accessibility orchestration CLI that works across web frameworks.
 
 ## Highlights
 

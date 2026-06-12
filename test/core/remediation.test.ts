@@ -80,3 +80,41 @@ test("getRemediationHint explains Angular button type findings", () => {
   assert.equal(hint?.summary.includes("type"), true);
   assert.equal(hint?.frameworkExamples?.angular?.includes("type=\"button\""), true);
 });
+
+test("getRemediationHint explains document metadata findings", () => {
+  const titleHint = getRemediationHint("document-title", getWcagCriteria(["2.4.2"]), "react");
+  const langHint = getRemediationHint("html-has-lang", getWcagCriteria(["3.1.1"]), "react");
+
+  assert.equal(titleHint?.summary.includes("title"), true);
+  assert.equal(titleHint?.docs.some((url) => url.includes("page-titled")), true);
+  assert.equal(langHint?.summary.includes("language"), true);
+  assert.equal(langHint?.frameworkExamples?.react?.includes("lang=\"en\""), true);
+});
+
+test("getRemediationHint explains ARIA validation findings", () => {
+  const hint = getRemediationHint("aria-valid-attr-value", getWcagCriteria(["4.1.2"]), "unknown");
+
+  assert.equal(hint?.summary.includes("valid values"), true);
+  assert.equal(hint?.howToFix.some((step) => step.includes("aria-*")), true);
+  assert.equal(hint?.docs.some((url) => url.includes("name-role-value")), true);
+});
+
+test("getRemediationHint explains form input purpose and naming findings", () => {
+  const autocompleteHint = getRemediationHint("autocomplete-valid", getWcagCriteria(["1.3.5"]), "vue");
+  const selectHint = getRemediationHint("select-name", getWcagCriteria(["4.1.2"]), "angular");
+
+  assert.equal(autocompleteHint?.summary.includes("autocomplete"), true);
+  assert.equal(autocompleteHint?.frameworkExamples?.vue?.includes("autocomplete=\"email\""), true);
+  assert.equal(selectHint?.summary.includes("select"), true);
+  assert.equal(selectHint?.frameworkExamples?.angular?.includes("<select"), true);
+});
+
+test("getRemediationHint explains heading and list structure findings", () => {
+  const headingHint = getRemediationHint("heading-order", getWcagCriteria(["1.3.1"]), "react");
+  const listHint = getRemediationHint("listitem", getWcagCriteria(["1.3.1"]), "unknown");
+
+  assert.equal(headingHint?.summary.includes("logical order"), true);
+  assert.equal(headingHint?.frameworkExamples?.react?.includes("<h2>"), true);
+  assert.equal(listHint?.summary.includes("inside semantic lists"), true);
+  assert.equal(listHint?.docs.some((url) => url.includes("info-and-relationships")), true);
+});

@@ -7,9 +7,9 @@ CI/PR feedback.
 
 ## Research Question
 
-Does a framework-agnostic accessibility orchestration CLI reduce accessibility
-defects and developer review effort compared with ad hoc or manually triggered
-accessibility tooling?
+Does an accessibility orchestration CLI that works across web frameworks reduce
+accessibility defects and developer review effort compared with ad hoc or
+manually triggered accessibility tooling?
 
 ## Study Design
 

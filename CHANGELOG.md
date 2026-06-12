@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+
+- WCAG metadata and remediation hints for additional common axe findings,
+  including document title, page language, ARIA validation, autocomplete
+  purpose, input button names, select names, heading order, and list structure.
+
 ## 0.5.1 - 2026-06-12
 
 ### Added

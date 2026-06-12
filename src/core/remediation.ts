@@ -11,6 +11,60 @@ const RULE_HINTS: Record<string, RemediationHint> = {
       "https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html"
     ]
   },
+  "document-title": {
+    summary: "Give the page a descriptive document title.",
+    howToFix: [
+      "Set a title that identifies the current page or route.",
+      "Keep titles unique enough that browser tabs and screen reader page lists are understandable."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/page-titled.html",
+      "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/title"
+    ],
+    frameworkExamples: {
+      react: "<title>Favorite items</title>",
+      vue: "<title>Favorite items</title>",
+      angular: "<title>Favorite items</title>"
+    }
+  },
+  "html-has-lang": {
+    summary: "Declare the primary language of the page on the html element.",
+    howToFix: [
+      "Add a lang attribute to the html element, such as lang=\"en\".",
+      "Use the language that matches the main page content."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/language-of-page.html",
+      "https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/lang"
+    ],
+    frameworkExamples: {
+      react: "<html lang=\"en\">",
+      vue: "<html lang=\"en\">",
+      angular: "<html lang=\"en\">"
+    }
+  },
+  "html-lang-valid": {
+    summary: "Use a valid BCP 47 language code on the html element.",
+    howToFix: [
+      "Replace invalid language values with a valid code such as en, es, fr, or en-US.",
+      "Keep the lang value aligned with the main content language."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/language-of-page.html",
+      "https://www.w3.org/International/questions/qa-html-language-declarations"
+    ]
+  },
+  "valid-lang": {
+    summary: "Use valid language codes wherever lang attributes appear.",
+    howToFix: [
+      "Replace invalid lang values with valid BCP 47 language codes.",
+      "Use lang on content fragments only when they differ from the page language."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/language-of-page.html",
+      "https://www.w3.org/International/questions/qa-html-language-declarations"
+    ]
+  },
   "image-alt": {
     summary: "Provide useful alternative text for meaningful images, or mark decorative images as decorative.",
     howToFix: [
@@ -54,6 +108,21 @@ const RULE_HINTS: Record<string, RemediationHint> = {
       angular: "<img [src]=\"avatarUrl\" alt=\"Customer profile photo\">"
     }
   },
+  "input-image-alt": {
+    summary: "Provide alternative text for image submit buttons.",
+    howToFix: [
+      "Add alt text that describes the action performed by the image button.",
+      "Prefer a text button when the image is not essential."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
+    ],
+    frameworkExamples: {
+      react: "<input type=\"image\" src={searchIcon} alt=\"Search\" />",
+      vue: "<input type=\"image\" :src=\"searchIcon\" alt=\"Search\">",
+      angular: "<input type=\"image\" [src]=\"searchIcon\" alt=\"Search\">"
+    }
+  },
   "button-name": {
     summary: "Give every button an accessible name.",
     howToFix: [
@@ -67,6 +136,21 @@ const RULE_HINTS: Record<string, RemediationHint> = {
       react: "<button type=\"button\" aria-label=\"Open menu\"><MenuIcon /></button>",
       vue: "<button type=\"button\" aria-label=\"Open menu\"><MenuIcon /></button>",
       angular: "<button type=\"button\" aria-label=\"Open menu\"><app-menu-icon /></button>"
+    }
+  },
+  "input-button-name": {
+    summary: "Give every input button an accessible name.",
+    howToFix: [
+      "Add a value attribute that describes the button action.",
+      "Use a native button with visible text when the control is not constrained to input."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
+    ],
+    frameworkExamples: {
+      react: "<input type=\"button\" value=\"Add favorite\" />",
+      vue: "<input type=\"button\" value=\"Add favorite\">",
+      angular: "<input type=\"button\" value=\"Add favorite\">"
     }
   },
   "link-name": {
@@ -95,6 +179,33 @@ const RULE_HINTS: Record<string, RemediationHint> = {
       vue: "<label for=\"email\">Email</label><input id=\"email\" name=\"email\">",
       angular: "<label for=\"email\">Email</label><input id=\"email\" name=\"email\">"
     }
+  },
+  "select-name": {
+    summary: "Give every select element a visible label or accessible name.",
+    howToFix: [
+      "Connect a visible label to the select with for/id.",
+      "Use aria-label only when a visible label is not practical."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/labels-or-instructions.html",
+      "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
+    ],
+    frameworkExamples: {
+      react: "<label htmlFor=\"sort\">Sort by</label><select id=\"sort\" name=\"sort\" />",
+      vue: "<label for=\"sort\">Sort by</label><select id=\"sort\" name=\"sort\"></select>",
+      angular: "<label for=\"sort\">Sort by</label><select id=\"sort\" name=\"sort\"></select>"
+    }
+  },
+  "form-field-multiple-labels": {
+    summary: "Avoid multiple competing labels for one form control.",
+    howToFix: [
+      "Keep one primary visible label associated with the form control.",
+      "Move helper text into aria-describedby when extra instructions are needed."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/labels-or-instructions.html",
+      "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
+    ]
   },
   "jsx-a11y/label-has-associated-control": {
     summary: "Associate every form label with its control.",
@@ -178,6 +289,17 @@ const RULE_HINTS: Record<string, RemediationHint> = {
       "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
     ]
   },
+  "aria-allowed-attr": {
+    summary: "Use ARIA attributes only on elements and roles that support them.",
+    howToFix: [
+      "Remove unsupported aria-* attributes from the element.",
+      "If the attribute is needed, use a role or native element that supports it."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html",
+      "https://www.w3.org/TR/wai-aria-1.2/#states_and_properties"
+    ]
+  },
   "aria-roles": {
     summary: "Use valid ARIA roles and avoid overriding native semantics unnecessarily.",
     howToFix: [
@@ -187,6 +309,82 @@ const RULE_HINTS: Record<string, RemediationHint> = {
     docs: [
       "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
     ]
+  },
+  "aria-valid-attr": {
+    summary: "Use valid ARIA attribute names.",
+    howToFix: [
+      "Fix typos in aria-* attributes.",
+      "Remove custom aria-* attributes that are not defined by WAI-ARIA."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html",
+      "https://www.w3.org/TR/wai-aria-1.2/#states_and_properties"
+    ]
+  },
+  "aria-valid-attr-value": {
+    summary: "Use valid values for ARIA attributes.",
+    howToFix: [
+      "Check the allowed value type for the failing aria-* attribute.",
+      "Use true/false, token, id reference, or number values only where the ARIA specification allows them."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html",
+      "https://www.w3.org/TR/wai-aria-1.2/#states_and_properties"
+    ]
+  },
+  "heading-order": {
+    summary: "Keep headings in a logical order.",
+    howToFix: [
+      "Do not skip heading levels only for visual styling.",
+      "Use CSS for size and keep heading levels aligned with the page outline."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/tutorials/page-structure/headings/",
+      "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
+    ],
+    frameworkExamples: {
+      react: "<main><h1>Settings</h1><section><h2>Notifications</h2></section></main>",
+      vue: "<main><h1>Settings</h1><section><h2>Notifications</h2></section></main>",
+      angular: "<main><h1>Settings</h1><section><h2>Notifications</h2></section></main>"
+    }
+  },
+  "listitem": {
+    summary: "Use list items only inside semantic lists.",
+    howToFix: [
+      "Place li elements inside ul or ol.",
+      "If the content is not a list, use neutral elements such as div or p instead."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html",
+      "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/li"
+    ]
+  },
+  "list": {
+    summary: "Use semantic list markup for list content.",
+    howToFix: [
+      "Use ul or ol for grouped list items.",
+      "Do not use list roles or li elements for layout-only groups."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html",
+      "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/ul"
+    ]
+  },
+  "autocomplete-valid": {
+    summary: "Use valid autocomplete tokens for fields that collect user information.",
+    howToFix: [
+      "Use standardized autocomplete values such as email, name, tel, street-address, or one-time-code.",
+      "Remove invalid tokens so browsers and assistive technologies can identify input purpose."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/identify-input-purpose.html",
+      "https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/autocomplete"
+    ],
+    frameworkExamples: {
+      react: "<input id=\"email\" name=\"email\" autoComplete=\"email\" />",
+      vue: "<input id=\"email\" name=\"email\" autocomplete=\"email\">",
+      angular: "<input id=\"email\" name=\"email\" autocomplete=\"email\">"
+    }
   },
   "landmark-one-main": {
     summary: "Add exactly one main landmark so users can jump to the primary page content.",

@@ -1,8 +1,23 @@
 import type { WcagCriterion, WcagLevel, WcagVersion } from "../types.js";
 
 const RULE_TO_WCAG: Record<string, string[]> = {
+  "aria-allowed-attr": ["4.1.2"],
+  "aria-valid-attr": ["4.1.2"],
+  "aria-valid-attr-value": ["4.1.2"],
+  "autocomplete-valid": ["1.3.5"],
   "color-contrast": ["1.4.3"],
+  "document-title": ["2.4.2"],
+  "form-field-multiple-labels": ["1.3.1", "3.3.2"],
+  "heading-order": ["1.3.1"],
+  "html-has-lang": ["3.1.1"],
+  "html-lang-valid": ["3.1.1"],
   "image-alt": ["1.1.1"],
+  "input-button-name": ["4.1.2"],
+  "input-image-alt": ["1.1.1"],
+  "list": ["1.3.1"],
+  "listitem": ["1.3.1"],
+  "select-name": ["4.1.2"],
+  "valid-lang": ["3.1.1"],
   "@angular-eslint/template/alt-text": ["1.1.1"],
   "@angular-eslint/template/click-events-have-key-events": ["2.1.1"],
   "@angular-eslint/template/interactive-supports-focus": ["2.1.1", "2.4.3"],
@@ -42,6 +57,14 @@ const WCAG_CRITERIA: Record<string, WcagCriterion> = {
     introducedIn: "2.0",
     url: "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
   },
+  "1.3.5": {
+    id: "1.3.5",
+    title: "Identify Input Purpose",
+    level: "AA",
+    principle: "perceivable",
+    introducedIn: "2.1",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/identify-input-purpose.html"
+  },
   "1.4.3": {
     id: "1.4.3",
     title: "Contrast (Minimum)",
@@ -73,6 +96,22 @@ const WCAG_CRITERIA: Record<string, WcagCriterion> = {
     principle: "operable",
     introducedIn: "2.0",
     url: "https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-in-context.html"
+  },
+  "2.4.2": {
+    id: "2.4.2",
+    title: "Page Titled",
+    level: "A",
+    principle: "operable",
+    introducedIn: "2.0",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/page-titled.html"
+  },
+  "3.1.1": {
+    id: "3.1.1",
+    title: "Language of Page",
+    level: "A",
+    principle: "understandable",
+    introducedIn: "2.0",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/language-of-page.html"
   },
   "3.3.2": {
     id: "3.3.2",

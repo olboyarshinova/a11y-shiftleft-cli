@@ -11,6 +11,11 @@ import {
 test("mapRuleToWcag maps exact known rules", () => {
   assert.deepEqual(mapRuleToWcag("color-contrast"), ["1.4.3"]);
   assert.deepEqual(mapRuleToWcag("button-name"), ["4.1.2"]);
+  assert.deepEqual(mapRuleToWcag("document-title"), ["2.4.2"]);
+  assert.deepEqual(mapRuleToWcag("html-has-lang"), ["3.1.1"]);
+  assert.deepEqual(mapRuleToWcag("aria-valid-attr-value"), ["4.1.2"]);
+  assert.deepEqual(mapRuleToWcag("autocomplete-valid"), ["1.3.5"]);
+  assert.deepEqual(mapRuleToWcag("listitem"), ["1.3.1"]);
   assert.deepEqual(mapRuleToWcag("@angular-eslint/template/alt-text"), ["1.1.1"]);
   assert.deepEqual(mapRuleToWcag("@angular-eslint/template/valid-aria"), ["4.1.2"]);
 });
@@ -41,6 +46,15 @@ test("getWcagCriteria includes WCAG 2.2-only criteria", () => {
   assert.equal(criterion.title, "Target Size (Minimum)");
   assert.equal(criterion.level, "AA");
   assert.equal(criterion.introducedIn, "2.2");
+});
+
+test("getWcagCriteria includes WCAG 2.1 input purpose criteria", () => {
+  const [criterion] = getWcagCriteria(["1.3.5"]);
+
+  assert.equal(criterion.id, "1.3.5");
+  assert.equal(criterion.title, "Identify Input Purpose");
+  assert.equal(criterion.level, "AA");
+  assert.equal(criterion.introducedIn, "2.1");
 });
 
 test("normalizeWcagReferences converts axe wcag tags to success criteria", () => {
