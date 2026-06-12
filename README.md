@@ -6,10 +6,10 @@
 
 Accessibility testing CLI for web apps, pull requests, and local reports.
 
-The CLI is designed to run inside any web project. It is framework-agnostic at
-runtime because dynamic checks scan the rendered page in a browser, and it can
-add framework-specific static checks when React, Vue, or Angular adapters are
-installed.
+The CLI is designed to run inside any web project. Dynamic checks work with any
+web framework because they scan the rendered page in a browser. For React, Vue,
+and Angular projects, optional adapters can add framework-specific static
+checks.
 
 Severity answers "how risky is this finding?" Confidence answers "how strong is
 the tooling evidence?" so teams can prioritize high-confidence critical findings
@@ -61,15 +61,25 @@ npx a11y-shiftleft init --framework auto --gitignore
 npm run dev
 ```
 
-4. Set the URL printed by your dev server. The examples below use `APP_URL`
-   so they work with any local port:
+4. Set the URL printed by your dev server. `APP_URL` is just a terminal
+   shortcut for "the URL where my app is running":
 
 ```bash
 export APP_URL=http://localhost:5173
 ```
 
-Use whatever your app prints, such as `http://localhost:3000`,
-`http://localhost:4200`, or a preview URL.
+Use whatever your app prints. For example, if your dev server says
+`Local: http://localhost:4200`, run:
+
+```bash
+export APP_URL=http://localhost:4200
+```
+
+You can also skip `APP_URL` and pass the URL directly:
+
+```bash
+npx a11y-shiftleft check --dynamic --url http://localhost:4200 --out reports
+```
 
 5. Check that the setup and URL are ready:
 
@@ -100,8 +110,8 @@ script needs the stdout summary as JSON.
 
 ## Pick Your Setup
 
-Commands below use `APP_URL` as a placeholder for your running app or preview
-URL.
+Commands below use `APP_URL` to avoid hard-coding one port. Replace it with
+your real local URL or preview URL if you prefer.
 
 | Goal | Command |
 |---|---|
@@ -174,28 +184,20 @@ npx a11y-shiftleft check --url $APP_URL --out reports
 | `reports/exploration.html` | Visual state report from `explore` | Usually no |
 | `reports/screenshots/` | Generated screenshots from `explore` | No |
 
-`npx a11y-shiftleft init --gitignore` adds common report directories such as
-`reports/` and `.a11y-reports/` to `.gitignore`.
+`npx a11y-shiftleft init --gitignore` adds generated report directories to
+`.gitignore`.
 
-Commit `.a11y-shiftleft.json` when it defines shared project defaults that CI
-and teammates should reuse. Keep it local, use `.a11yrc.json`, or pass
-`--config <file>` when the config contains personal local URLs, temporary
-experiments, or machine-specific paths.
+Commit `.a11y-shiftleft.json` only when it defines shared project defaults that
+CI and teammates should reuse. Keep local-only URLs, experiments, and
+machine-specific paths out of git.
 
-Config discovery order:
-
-1. `--config <file>`
-2. `.a11y-shiftleft.json`
-3. `.a11yrc.json`
-4. `package.json` field named `a11y`
-
-Use `.a11y-shiftleft.json` for the clearest generated setup. Use `.a11yrc.json`
-or `package.json#a11y` when your project already keeps tool settings in those
-places.
+Config can live in `.a11y-shiftleft.json`, `.a11yrc.json`, `package.json#a11y`,
+or a file passed with `--config`.
 
 ## Visual Exploration
 
-Use `explore` when you do not want to list every route manually:
+Use `explore` when you do not want to list every route manually or want a
+graphical report of visited states:
 
 ```bash
 npx a11y-shiftleft explore --url $APP_URL --depth 2 --out reports
@@ -212,48 +214,16 @@ tabs, disclosure widgets, and modal triggers. It saves:
 - `reports/screenshots/state-*.jpg`
 
 Open `reports/exploration.html` to review checked states visually. The report
-starts with a triage overview for the most affected states and top rules, then
-shows each state with its screenshot, issue summary, top findings, and recorded
-transitions. When Playwright can resolve the affected selector, the report draws
-a reviewable overlay around the finding on the screenshot. It also includes
-skipped actions with reasons, such as submit buttons, payment links,
-destructive controls, external links, or project-specific safe-mode blocklist
-matches.
+shows a triage overview, state screenshots, top findings, recorded transitions,
+skipped actions, and reviewable overlays around affected elements when their
+bounds are available.
 
-A typical visual report is organized like this:
+Screenshots are compressed and sensitive form fields are masked by default. Use
+`--no-screenshots` for apps that may expose personal data, login screens,
+payment details, or production records.
 
-```txt
-Accessibility Exploration
-States visited: 4 | Screenshots: 4 | Actions tried: 7
-
-Triage Overview
-- Most affected states: state-1 score 4, state-3 score 2
-- Top rules: button-name score 4, page-has-heading-one score 2
-
-State state-1
-URL: $APP_URL/
-Issues: critical 0, warning 2, info 0
-
-[ screenshot preview ]
-[ red overlay around affected element when bounds are available ]
-
-Top findings:
-- warning button-name button.icon-close
-- warning page-has-heading-one html
-
-Transitions:
-- Click: Open filters -> state-2
-- Navigate: Favorites -> state-3
-
-Skipped actions:
-- Submit order: blocked by safe mode
-- Checkout: matched destructive or transactional action pattern
-```
-
-The real HTML report renders this as a local dashboard with summary metrics,
-state cards, compressed screenshots, top findings, and navigation/action edges.
-Private screenshots are not committed to the repository; they are generated
-inside the selected report output directory.
+See [docs/visual-reports.md](docs/visual-reports.md) for screenshot privacy,
+safe-mode blocklists, and advanced `explore` options.
 
 ## Historical Dashboard
 
@@ -272,177 +242,8 @@ npx a11y-shiftleft dashboard --reports reports --no-serve
 ```
 
 The dashboard data uses paths relative to the selected reports directory rather
-than absolute local filesystem paths.
-
-Report lifecycle:
-
-- `check` overwrites `a11y-report.json`, `a11y-metrics.csv`, and
-  `a11y-comment.md` in the selected output directory.
-- `explore` cleans stale generated artifacts before a new run, including
-  `a11y-report.json`, `a11y-comment.md`, `exploration.html`,
-  `exploration-graph.json`, and generated state screenshots.
-- After fixing an accessibility issue, rerun the same command. The fixed issue
-  should disappear from the new report; do not edit old report files by hand.
-- Use `--no-clean` only when you intentionally want to keep previous generated
-  artifacts for manual comparison.
-- Keep generated report directories out of git by running
-  `npx a11y-shiftleft init --gitignore`. Commit anonymized sample reports only
-  when they are intentionally part of docs, demos, or release evidence.
-- Commit `.a11y-baseline.json` when using `--baseline`; it is the accepted
-  known-findings file that lets CI block only new accessibility regressions.
-- Use report retention when you write timestamped output directories such as
-  `reports/run-2026-06-11`. Retention only removes sibling directories that
-  contain a11y-shiftleft report marker files and never removes the current
-  output directory.
-- When retention is enabled, `a11y-report.json`, `a11y-metrics.csv`, and
-  `a11y-comment.md` include a retention summary with deleted, kept, and
-  candidate run counts.
-- Use `--retention-dry-run` first when you want to preview cleanup without
-  deleting old runs. Reports store retention counts only, not local filesystem
-  paths.
-
-Enable retention from the command line:
-
-```bash
-npx a11y-shiftleft explore \
-  --url $APP_URL \
-  --out reports/run-2026-06-11 \
-  --retention-max-runs 5 \
-  --retention-max-age-days 14
-```
-
-Preview cleanup without deleting old report runs:
-
-```bash
-npx a11y-shiftleft explore \
-  --url $APP_URL \
-  --out reports/run-2026-06-11 \
-  --retention-max-runs 5 \
-  --retention-max-age-days 14 \
-  --retention-dry-run
-```
-
-Or keep it in config:
-
-```json
-{
-  "retention": {
-    "enabled": true,
-    "maxRuns": 5,
-    "maxAgeDays": 14,
-    "dryRun": false
-  }
-}
-```
-
-Screenshots are compressed by default as viewport JPEG files at quality `70` to
-keep reports small:
-
-```bash
-npx a11y-shiftleft explore --url $APP_URL --out reports
-```
-
-Use PNG or full-page screenshots only when the extra detail is worth the larger
-artifact size:
-
-```bash
-npx a11y-shiftleft explore \
-  --url $APP_URL \
-  --screenshot-format png \
-  --screenshot-full-page \
-  --out reports
-```
-
-Sensitive form fields are masked in screenshots by default. The redaction covers
-common password, email, phone, token, card, address, and one-time-code inputs, as
-well as elements marked with `data-a11y-sensitive`, `data-a11y-redact`, or
-`data-private`.
-
-For applications that may expose real personal data, login screens, payment
-details, or production customer records, disable screenshots entirely:
-
-```bash
-npx a11y-shiftleft explore --url $APP_URL --no-screenshots --out reports
-```
-
-If you intentionally need raw local screenshots for debugging, disable masking:
-
-```bash
-npx a11y-shiftleft explore \
-  --url $APP_URL \
-  --no-screenshot-redaction \
-  --out reports
-```
-
-Safe mode skips submit/reset buttons, form buttons without an explicit safe
-marker, external links, and actions whose labels look destructive or
-transactional, such as delete, logout, save, checkout, or payment. Add
-`data-a11y-skip` to any element that should never be clicked during automated
-exploration. Add `data-a11y-explore` only when a form button or custom control
-is safe to exercise in automated scans.
-
-You can add project-specific safe-mode rules in `.a11y-shiftleft.json`:
-
-```json
-{
-  "explore": {
-    "safeMode": {
-      "blockedText": ["logout", "delete", "pay*", "confirm"],
-      "blockedRoles": ["menuitem"],
-      "blockedUrls": ["*/checkout*", "*/account/billing*"],
-      "blockedSelectors": ["[data-danger]", "[data-payment]"],
-      "allowedSelectors": ["[data-a11y-explore]"],
-      "dismissDialogs": true
-    }
-  }
-}
-```
-
-Safe-mode patterns are case-insensitive strings with optional `*` wildcards.
-They are not executable JavaScript regexes.
-
-You can also add one-off rules from the command line:
-
-```bash
-npx a11y-shiftleft explore \
-  --url $APP_URL \
-  --safe-block-text logout delete pay \
-  --safe-block-url "*/checkout*" \
-  --safe-block-selector "[data-danger]" \
-  --out reports
-```
-
-Suppress `explore` progress logs and console summary while still writing report
-files:
-
-```bash
-npx a11y-shiftleft explore --url $APP_URL --quiet --out reports
-```
-
-Interactive local `explore` runs print compact progress lines and a readable
-final summary with visited states, skipped actions, screenshots, top rules, and
-report paths. Ask for JSON when a script needs to parse stdout:
-
-```bash
-npx a11y-shiftleft explore --url $APP_URL --json-summary --out reports
-```
-
-Print exploration limits, screenshot settings, safe-mode settings, and output
-formats before progress logs and the final summary:
-
-```bash
-npx a11y-shiftleft explore --url $APP_URL --verbose --out reports
-```
-
-Short setup recipes are available for common workflows:
-
-- [Angular](docs/recipes/angular.md)
-- [React/Vite](docs/recipes/react-vite.md)
-- [Vue/Vite](docs/recipes/vue-vite.md)
-- [Next.js](docs/recipes/nextjs.md)
-- [GitHub Actions](docs/recipes/github-actions.md)
-- [ADA Title II](docs/recipes/ada-title-ii.md)
-- [Section 508](docs/recipes/section-508.md)
+than absolute local filesystem paths. Use timestamped output folders when you
+want dashboard trends across multiple runs.
 
 ## More Check Options
 
@@ -455,41 +256,20 @@ npx a11y-shiftleft check \
   --out reports
 ```
 
-You can also separate URLs with commas:
+Let the CLI discover safe same-origin pages:
 
 ```bash
 npx a11y-shiftleft check \
   --dynamic \
-  --url $APP_URL,$APP_URL/favorites,$APP_URL/settings \
+  --url $APP_URL \
+  --crawl \
+  --crawl-depth 1 \
+  --crawl-limit 10 \
   --out reports
 ```
 
-For repeated project scans, store routes in `.a11y-shiftleft.json`:
-
-```json
-{
-  "dynamic": {
-    "enabled": true,
-    "urls": [
-      "http://localhost:5173",
-      "http://localhost:5173/favorites",
-      "http://localhost:5173/settings"
-    ]
-  }
-}
-```
-
-Replace `http://localhost:5173` with the URL and port your app actually uses.
-
-Then run:
-
-```bash
-npx a11y-shiftleft check --dynamic --out reports
-```
-
-Use baseline mode when adopting the CLI in a project that already has known
-accessibility findings. The first run creates `.a11y-baseline.json` from the
-current unique findings:
+Use baseline mode when adopting the CLI in a project with known findings. The
+first run creates `.a11y-baseline.json` from the current unique findings:
 
 ```bash
 npx a11y-shiftleft check --dynamic --baseline --out reports
@@ -507,24 +287,7 @@ npx a11y-shiftleft check \
   --out reports
 ```
 
-After intentionally accepting the current state, refresh the baseline:
-
-```bash
-npx a11y-shiftleft check --dynamic --update-baseline --out reports
-```
-
-Use a custom baseline path when needed:
-
-```bash
-npx a11y-shiftleft check \
-  --dynamic \
-  --baseline \
-  --baseline-file config/a11y-baseline.json \
-  --out reports
-```
-
-Use scoped ignores for temporary, reviewed exceptions. The CLI automatically
-applies `a11y-ignore.json` when the file exists:
+Use `a11y-ignore.json` only for temporary, reviewed exceptions:
 
 ```json
 {
@@ -541,18 +304,6 @@ applies `a11y-ignore.json` when the file exists:
 }
 ```
 
-Every ignore must include `reason`, `owner`, `expires`, and at least one match
-field such as `fingerprint`, `ruleId`, `source`, `severity`, `selector`,
-`file`, `url`, `target`, or `wcag`. Expired or invalid entries do not hide
-findings and are counted in the report summary.
-
-Use a custom ignore file or disable ignores for a run:
-
-```bash
-npx a11y-shiftleft check --dynamic --url $APP_URL --ignore-file config/a11y-ignore.json --out reports
-npx a11y-shiftleft check --dynamic --url $APP_URL --no-ignore --out reports
-```
-
 If a scan fails because of Node, Playwright, Chromium, config, or app startup
 issues, run:
 
@@ -560,39 +311,12 @@ issues, run:
 npx a11y-shiftleft doctor --url $APP_URL
 ```
 
-Interactive local runs print a readable terminal summary. `check --crawl` also
-prints compact crawl and page-scan progress in an interactive terminal, so long
-same-origin scans do not look stuck. Ask for JSON when a script needs to parse
-stdout:
+For scripts and CI logs:
 
 ```bash
 npx a11y-shiftleft check --dynamic --url $APP_URL --json-summary --out reports
-```
-
-Suppress console output in CI while still writing report files and preserving
-the exit code:
-
-```bash
 npx a11y-shiftleft check --dynamic --url $APP_URL --quiet --out reports
-```
-
-Print scan modes, adapter timings, URL context, baseline settings, and output
-formats before the normal summary:
-
-```bash
 npx a11y-shiftleft check --dynamic --url $APP_URL --verbose --out reports
-```
-
-Discover and scan same-origin pages from a starting URL:
-
-```bash
-npx a11y-shiftleft check \
-  --dynamic \
-  --url $APP_URL \
-  --crawl \
-  --crawl-depth 1 \
-  --crawl-limit 10 \
-  --out reports
 ```
 
 Write specific report formats:
@@ -605,12 +329,6 @@ npx a11y-shiftleft check \
   --out reports
 ```
 
-Vue projects can use the basic fallback scanner too:
-
-```bash
-npx a11y-shiftleft check --static --framework vue --include "src/**/*.vue" --out reports
-```
-
 Limit static checks to specific files:
 
 ```bash
@@ -621,15 +339,10 @@ npx a11y-shiftleft check \
   --out reports
 ```
 
-Filter findings to criteria included in WCAG Level AA conformance:
+Filter by WCAG target:
 
 ```bash
 npx a11y-shiftleft check --url $APP_URL --wcag-filter AA --out reports
-```
-
-Limit mapped findings to a specific WCAG version:
-
-```bash
 npx a11y-shiftleft check --url $APP_URL --wcag-version 2.0 --out reports
 ```
 
@@ -645,17 +358,14 @@ The presets configure report metadata and WCAG filtering defaults. Mapped
 findings are limited to the selected WCAG version and Level AA target, while
 unmapped best-practice findings remain visible in a separate report section.
 
-| Preset | Report meaning | WCAG target |
-|---|---|---|
-| `section508` | Section 508 web accessibility support mode | WCAG 2.0 AA |
-| `ada-title-ii` | ADA Title II web accessibility support mode | WCAG 2.1 AA |
-| `wcag22-aa` | WCAG 2.2 Level AA support mode | WCAG 2.2 AA |
-
 Generate a semi-automated manual review checklist alongside automated reports:
 
 ```bash
 npx a11y-shiftleft check --url $APP_URL --semi-auto --out reports
 ```
+
+See [docs/configuration.md](docs/configuration.md) for config sources,
+baseline refresh, scoped ignore rules, report cleanup, and retention settings.
 
 ## Scan A Different Directory
 
@@ -721,8 +431,8 @@ Generate CI for a known route set and a compliance-support preset:
 
 ```bash
 npx a11y-shiftleft ci \
-  --url http://localhost:4200 http://localhost:4200/favorites http://localhost:4200/settings \
-  --start-command "npm run dev -- --host localhost --port 4200" \
+  --url $APP_URL $APP_URL/favorites $APP_URL/settings \
+  --start-command "npm run dev -- --host localhost --port 5173" \
   --fail-on warning \
   --standard section508
 ```
@@ -735,36 +445,6 @@ is the repository-level orchestration layer for CI reports, dynamic scans,
 deduplication, and metrics.
 
 See [docs/ide-integration.md](docs/ide-integration.md) for a React setup.
-
-## Research Protocol
-
-See [docs/empirical-validation.md](docs/empirical-validation.md) for the
-baseline vs intervention study design, metrics, statistical tests, and data
-collection template. See
-[docs/research-paper-outline.md](docs/research-paper-outline.md) for the IMRaD
-paper/capstone outline. See
-[docs/evidence-methodology.md](docs/evidence-methodology.md) for confidence
-scoring, issue-category reporting, and false-positive validation rules.
-
-Run the sample analysis:
-
-```bash
-npm run analyze:metrics -- data/sample-pr-metrics.csv
-npm run analyze:metrics -- data/sample-pr-metrics.csv --out analysis/summary.json
-```
-
-Collect public adoption telemetry for evidence snapshots:
-
-```bash
-npm run collect:adoption -- --out analysis/adoption.json
-```
-
-Set `GITHUB_TOKEN` to include GitHub traffic data such as views, clones, and
-referrers:
-
-```bash
-GITHUB_TOKEN=<github-token> npm run collect:adoption -- --out analysis/adoption.json
-```
 
 ## Outputs
 
@@ -815,166 +495,30 @@ with the standard version your team targets:
 }
 ```
 
-## Reproducible Fixtures
+Automated reports do not certify full WCAG, ADA, or Section 508 conformance.
+Use them with manual keyboard review, screen reader checks, content review, and
+your organization's compliance process.
 
-The repository includes small intentionally flawed projects under
-`examples/fixtures` for repeatable scanner validation:
+## Project Docs
 
-```txt
-examples/fixtures/react
-examples/fixtures/vue
-examples/fixtures/angular
-```
-
-Run the fixture smoke test:
-
-```bash
-npm run test:fixtures
-```
-
-## Metrics
-
-Each run exports machine-readable metrics for CI and empirical analysis:
-
-| Metric | Meaning |
-|---|---|
-| `rawCount` | Findings before deduplication |
-| `uniqueCount` | Findings after deduplication |
-| `duplicateCount` | Removed duplicate findings |
-| `duplicateRate` | `duplicateCount / rawCount` |
-| `critical`, `warning`, `info` | Severity counts |
-| `byConfidence` | High, medium, and low confidence counts |
-| `byCategory` | Finding counts by accessibility family, such as `forms`, `focus`, `aria`, and `contrast` |
-| `scanDurationMs` | Runtime duration for the scan |
-| `standard` | Selected WCAG-based support preset and compliance note metadata |
-| `complianceEvidence` | Evidence summary for WCAG-mapped findings, unmapped findings, affected pages, and manual-review status |
-| `bySource` | Finding counts by adapter, such as `axe` or `eslint` |
-| `bySeverity` | Finding counts by severity |
-| `byPour` | Finding counts grouped by WCAG POUR principle |
-| `byWcagLevel` | Finding counts grouped by WCAG conformance level |
-| `byWcagVersion` | Finding counts grouped by WCAG version introduced |
-| `byUnmappedRule` | Finding counts for useful rules that do not map directly to WCAG criteria |
-| `byPage` | Page-level ranking by total findings and severity score |
-| `framework` | Detected or configured framework |
-| `urls` | Dynamic scan target URLs, including discovered crawl URLs |
-
-Each finding can include remediation metadata with a short fix summary,
-documentation links, and framework-specific examples for common React, Vue, and
-Angular rules. These hints are included in JSON output and surfaced in the
-Markdown PR comment for the top findings.
-
-Some axe and ESLint rules are best-practice checks rather than direct WCAG
-success-criterion mappings, such as page heading and landmark checks. The report
-keeps those findings visible under `byUnmappedRule` instead of forcing a false
-WCAG mapping.
-
-When dynamic scans include URLs, reports also include a page risk ranking. The
-score weights `critical` as 5, `warning` as 2, and `info` as 1 so teams can
-prioritize the highest-risk pages first.
-
-## Adoption Metrics
-
-Adoption counts are captured as reproducible JSON snapshots instead of being
-hard-coded in the README. npm download counts change over time and can include
-humans, CI systems, package mirrors, security scanners, and bots.
-
-Collect npm and GitHub activity:
-
-```bash
-npm run collect:adoption -- \
-  --package a11y-shiftleft-cli \
-  --repo olboyarshinova/a11y-shiftleft-cli \
-  --period last-month \
-  --out analysis/adoption.json
-```
-
-The npm downloads API does not expose country or person-level data. Use npm
-downloads as ecosystem activity and GitHub unique views, unique clones, and
-referrers as stronger human-adoption signals.
-
-To collect one snapshot across the CLI and framework adapter packages:
-
-```bash
-npm run collect:adoption:snapshot -- \
-  --period last-month \
-  --out analysis/adoption-snapshot.json
-```
-
-The scheduled `Adoption Snapshot` GitHub Actions workflow runs weekly and
-uploads this JSON as a workflow artifact. It does not rewrite the README
-automatically, so public docs stay stable while evidence snapshots remain
-reproducible.
-
-## Roadmap
-
-See [docs/roadmap.md](docs/roadmap.md) for planned improvements such as
-optional Lighthouse score and recommendation capture, broader remediation
-coverage, stronger Vue/Angular static coverage, and WCAG-based
-compliance-support presets for ADA Title II and Section 508 workflows.
-
-See [docs/ai-suggestions.md](docs/ai-suggestions.md) for the future optional
-`@a11y-shiftleft/ai` package plan. AI-assisted remediation is intentionally
-separate from the core CLI and opt-in only.
-
-See [docs/adoption-strategy.md](docs/adoption-strategy.md) for the adoption
-plan covering npm scripts, generated GitHub Actions workflows, future
-Marketplace Action support, documentation-site priorities, and outreach targets.
-
-## Competitive Positioning
-
-| Tool | Best For | Gap This Project Targets |
-|---|---|---|
-| axe-core | Accessibility rules engine used by many integrations | Engine-level API, not a full PR metrics and orchestration workflow |
-| @axe-core/playwright | Dynamic checks inside Playwright tests | Requires test code and does not merge static findings by default |
-| Lighthouse | Quick page quality audits across performance, SEO, best practices, and accessibility | Score-oriented page audit; future integration can bring Lighthouse recommendations into the static+dynamic report workflow |
-| WAVE | Visual review and manual inspection support | Browser/manual workflow, not npm-first CI orchestration |
-| Pa11y | CLI accessibility scans for URLs | Strong page scanner, but not focused on static+dynamic dedupe and longitudinal metrics |
-| eslint-plugin-jsx-a11y | React JSX static accessibility linting | Static React-only layer; cannot inspect rendered DOM states |
-| wick-a11y | Cypress accessibility plugin with rich Cypress reports | Cypress-specific workflow rather than framework-agnostic CLI orchestration |
-
-## Non-Goals
-
-This project does not claim to prove full WCAG, ADA, or Section 508 conformance.
-Automated tools only catch part of accessibility defects and should be combined
-with manual review, keyboard testing, screen reader testing, and organizational
-compliance review.
-
-Current compliance-support presets align scans and report metadata with
-WCAG-based workflows, such as ADA Title II using WCAG 2.1 A/AA and Section 508
-using WCAG 2.0 A/AA. They support evidence collection and remediation tracking,
-not legal certification.
-
-Current non-goals:
-
-```txt
-custom AST parsers
-machine-learning triage
-browser extension
-SaaS dashboard
-legal compliance certification
-```
-
-## Current Adapter Support
-
-| Adapter | Status |
-|---|---|
-| Dynamic axe scan | Working for any reachable web URL |
-| React static scan | Working fallback via `eslint-plugin-jsx-a11y` |
-| Vue static scan | Basic fallback via `eslint-plugin-vue` template rules |
-| Angular static scan | Working fallback via `@angular-eslint/eslint-plugin-template` accessibility rules |
-
-Framework static adapters are lazy-loaded and represented as optional peer
-dependencies. This keeps the CLI path framework-aware today and prepares the
-framework adapter packages `@a11y-shiftleft/react`, `@a11y-shiftleft/vue`, and
-`@a11y-shiftleft/angular`.
-
-Use `npx a11y-shiftleft adapter list` or
-`npx a11y-shiftleft adapter add <framework>` to print the recommended adapter
-dependencies for a project.
-
-Dynamic scanning is the portable baseline: any React, Vue, Angular, Svelte,
-Next.js, Nuxt, Astro, Rails, Django, or static HTML app can be scanned if it is
-running at a URL.
+- [Recipes](docs/recipes/index.md): setup guides for React, Vue, Angular,
+  Next.js, GitHub Actions, ADA Title II, and Section 508 workflows.
+- [Configuration](docs/configuration.md): config files, gitignore, baseline,
+  ignores, cleanup, and retention.
+- [Visual reports](docs/visual-reports.md): screenshot privacy, safe mode, and
+  advanced `explore` options.
+- [Roadmap](docs/roadmap.md): planned Lighthouse, watch mode, dashboard, and
+  remediation improvements.
+- [IDE feedback](docs/ide-integration.md): how to use existing ESLint IDE
+  integrations for inline accessibility hints.
+- [Evidence methodology](docs/evidence-methodology.md): confidence scoring,
+  issue categories, false-positive review, and metrics definitions.
+- [Empirical validation](docs/empirical-validation.md): baseline vs
+  intervention study design and analysis commands.
+- [Adoption strategy](docs/adoption-strategy.md): npm scripts, generated CI,
+  future GitHub Action wrapper, docs-site plan, and outreach ideas.
+- [AI suggestions plan](docs/ai-suggestions.md): future optional
+  `@a11y-shiftleft/ai` package.
 
 ## Local Demo
 
@@ -999,8 +543,9 @@ node bin/cli.js check --dynamic --url $APP_URL --out reports
 
 Latest release:
 
-- [v0.5.0](docs/release-notes-v0.5.0.md)
+- [v0.5.1](docs/release-notes-v0.5.1.md)
 
 Previous releases:
 
+- [v0.5.0](docs/release-notes-v0.5.0.md)
 - [v0.4.0](docs/release-notes-v0.4.0.md)

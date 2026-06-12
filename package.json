@@ -1,7 +1,7 @@
 {
   "name": "a11y-shiftleft-cli",
-  "version": "0.5.0",
-  "description": "Framework-agnostic accessibility validation orchestrator for shift-left workflows.",
+  "version": "0.5.1",
+  "description": "Accessibility testing CLI for web apps, pull requests, and local reports.",
   "type": "module",
   "license": "MIT",
   "homepage": "https://github.com/olboyarshinova/a11y-shiftleft-cli#readme",

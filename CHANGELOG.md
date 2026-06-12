@@ -2,11 +2,26 @@
 
 ## Unreleased
 
+## 0.5.1 - 2026-06-12
+
 ### Added
 
 - Initial `dashboard` command for indexing generated `a11y-report.json` files
   and serving a local historical summary with trends, top rules, affected
   pages, and recent runs.
+- Dedicated configuration documentation covering config source order,
+  `.gitignore`, baseline files, scoped ignores, report lifecycle, and retention.
+- Dedicated visual report documentation covering screenshot privacy, safe mode,
+  screenshot formats, and advanced `explore` output controls.
+
+### Changed
+
+- Streamlined the README for new users by keeping the main file focused on
+  install, first scan, visual reports, dashboard, CI, and outputs.
+- Replaced the package description with clearer npm metadata for accessibility
+  testing workflows.
+- Clarified `APP_URL` as a terminal shortcut and added direct URL examples for
+  users who prefer not to set an environment variable.
 
 ## 0.5.0 - 2026-06-12
 
