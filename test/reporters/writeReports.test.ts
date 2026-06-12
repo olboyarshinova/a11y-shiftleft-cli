@@ -324,6 +324,20 @@ test("writeReports includes ignore metadata", async () => {
 
 test("writeReports includes retention metadata", async () => {
   const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-retention-"));
+  const retentionSummary = {
+    enabled: true,
+    dryRun: true,
+    rootDir: path.dirname(outputDir),
+    currentOutputDir: outputDir,
+    maxRuns: 5,
+    maxAgeDays: 14,
+    candidateRuns: 4,
+    plannedDeletedRuns: 2,
+    deletedRuns: 0,
+    keptRuns: 2,
+    plannedDeletedRunDirs: [path.join(path.dirname(outputDir), "old-run")],
+    keptRunDirs: [path.join(path.dirname(outputDir), "fresh-run")]
+  };
 
   const report = await writeReports(
     outputDir,
@@ -333,28 +347,31 @@ test("writeReports includes retention metadata", async () => {
       rawCount: 0,
       uniqueCount: 0,
       duplicateCount: 0,
-      retention: {
-        enabled: true,
-        rootDir: path.dirname(outputDir),
-        currentOutputDir: outputDir,
-        maxRuns: 5,
-        maxAgeDays: 14,
-        candidateRuns: 4,
-        deletedRuns: 2,
-        keptRuns: 2
-      }
+      retention: retentionSummary
     }
   );
 
   const csv = await fs.readFile(path.join(outputDir, "a11y-metrics.csv"), "utf8");
   const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
 
-  assert.equal(report.summary.retention?.deletedRuns, 2);
-  assert.match(csv, /retention\.deletedRuns,2/);
+  assert.equal(report.summary.retention?.dryRun, true);
+  assert.equal(report.summary.retention?.plannedDeletedRuns, 2);
+  assert.equal(report.summary.retention?.deletedRuns, 0);
+  assert.ok(report.summary.retention);
+  assert.equal("rootDir" in report.summary.retention, false);
+  assert.match(csv, /retention\.dryRun,true/);
+  assert.match(csv, /retention\.plannedDeletedRuns,2/);
+  assert.match(csv, /retention\.deletedRuns,0/);
   assert.match(csv, /retention\.keptRuns,2/);
+  assert.doesNotMatch(csv, /rootDir/);
+  assert.doesNotMatch(csv, /currentOutputDir/);
+  assert.doesNotMatch(csv, /old-run/);
+  assert.doesNotMatch(markdown, /old-run/);
+  assert.match(markdown, /Retention mode \| dry-run preview/);
   assert.match(markdown, /Retention policy \| maxRuns 5, maxAgeDays 14/);
-  assert.match(markdown, /Retention deleted runs \| 2/);
-  assert.match(markdown, /Retention evidence \| recorded/);
+  assert.match(markdown, /Retention planned deleted runs \| 2/);
+  assert.match(markdown, /Retention deleted runs \| 0/);
+  assert.match(markdown, /Retention evidence \| dry-run/);
 });
 
 test("writeReports can limit output formats", async () => {

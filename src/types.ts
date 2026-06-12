@@ -116,6 +116,7 @@ export interface RetentionConfig {
   enabled: boolean;
   maxRuns: number;
   maxAgeDays: number;
+  dryRun: boolean;
 }
 
 export interface A11yConfig {
@@ -269,11 +270,11 @@ export interface BaselineComparisonSummary {
 
 export interface ReportRetentionEvidence {
   enabled: boolean;
-  rootDir: string;
-  currentOutputDir: string;
+  dryRun: boolean;
   maxRuns: number;
   maxAgeDays: number;
   candidateRuns: number;
+  plannedDeletedRuns: number;
   deletedRuns: number;
   keptRuns: number;
 }

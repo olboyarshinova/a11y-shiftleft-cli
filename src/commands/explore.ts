@@ -56,6 +56,7 @@ interface ExploreOptions {
   retention?: boolean;
   retentionMaxRuns?: string;
   retentionMaxAgeDays?: string;
+  retentionDryRun?: boolean;
   quiet?: boolean;
   verbose?: boolean;
   jsonSummary?: boolean;
@@ -100,6 +101,7 @@ export function registerExploreCommand(program: Command): void {
     .option("--semi-auto", "Generate a Markdown manual review checklist alongside automated reports")
     .option("--retention-max-runs <count>", "Keep at most this many report run directories including the current output")
     .option("--retention-max-age-days <days>", "Remove report run directories older than this many days")
+    .option("--retention-dry-run", "Preview report retention cleanup without deleting old runs")
     .option("--no-retention", "Disable report retention cleanup")
     .option("--quiet", "Suppress progress and console summary output")
     .option("--verbose", "Print exploration settings before progress and the summary")
@@ -133,7 +135,8 @@ export function registerExploreCommand(program: Command): void {
         retention: {
           enabled: retentionRequested(options),
           maxRuns: toPositiveInteger(options.retentionMaxRuns),
-          maxAgeDays: toPositiveInteger(options.retentionMaxAgeDays)
+          maxAgeDays: toPositiveInteger(options.retentionMaxAgeDays),
+          dryRun: options.retentionDryRun ? true : undefined
         }
       });
       const standard = resolveStandard(config.standard);
@@ -181,7 +184,8 @@ export function registerExploreCommand(program: Command): void {
           safeModeBlockedRoles: effectiveConfig.explore.safeMode.blockedRoles,
           safeModeBlockedUrls: effectiveConfig.explore.safeMode.blockedUrls,
           safeModeBlockedSelectors: effectiveConfig.explore.safeMode.blockedSelectors,
-          retentionEnabled: effectiveConfig.retention.enabled
+          retentionEnabled: effectiveConfig.retention.enabled,
+          retentionDryRun: effectiveConfig.retention.dryRun
         }));
       }
 
@@ -352,7 +356,12 @@ export function formatVerboseExploreSummary(options: {
   safeModeBlockedUrls: string[];
   safeModeBlockedSelectors: string[];
   retentionEnabled: boolean;
+  retentionDryRun: boolean;
 }): string {
+  const retention = options.retentionEnabled
+    ? options.retentionDryRun ? "dry-run" : "on"
+    : "off";
+
   return [
     "a11y-shiftleft explore",
     `url: ${options.url}`,
@@ -370,7 +379,7 @@ export function formatVerboseExploreSummary(options: {
     `safeModeBlockedRoles: ${formatPatternList(options.safeModeBlockedRoles)}`,
     `safeModeBlockedUrls: ${formatPatternList(options.safeModeBlockedUrls)}`,
     `safeModeBlockedSelectors: ${formatPatternList(options.safeModeBlockedSelectors)}`,
-    `retention: ${options.retentionEnabled ? "on" : "off"}`
+    `retention: ${retention}`
   ].join("\n");
 }
 
@@ -423,7 +432,9 @@ export function formatExploreConsoleSummary(
     })
     .slice(0, 5);
   const retention = options.retention
-    ? `deleted ${options.retention.deletedRuns}, kept ${options.retention.keptRuns}`
+    ? options.retention.dryRun
+      ? `dry-run planned delete ${options.retention.plannedDeletedRuns}, kept ${options.retention.keptRuns}`
+      : `deleted ${options.retention.deletedRuns}, kept ${options.retention.keptRuns}`
     : "off";
 
   return [
@@ -526,8 +537,9 @@ function formatPatternList(patterns: string[]): string {
   return patterns.length > 0 ? patterns.join(", ") : "none";
 }
 
-function retentionRequested(options: Pick<ExploreOptions, "retention" | "retentionMaxRuns" | "retentionMaxAgeDays">): boolean | undefined {
+function retentionRequested(options: Pick<ExploreOptions, "retention" | "retentionMaxRuns" | "retentionMaxAgeDays" | "retentionDryRun">): boolean | undefined {
   if (options.retention === false) return false;
+  if (options.retentionDryRun) return true;
   if (options.retentionMaxRuns || options.retentionMaxAgeDays) return true;
   return undefined;
 }

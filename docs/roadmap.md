@@ -47,8 +47,8 @@ for reproducible empirical validation.
 - Continue hardening configurable safe-mode policies for `explore`, including
   clearer skip reporting and optional request blocking for external or
   high-risk API traffic.
-- Continue hardening report retention with clearer dry-run previews and
-  historical cleanup previews before deleting old report runs.
+- Continue hardening report retention with optional detailed local-only preview
+  output and clearer history-management UX for timestamped report runs.
 - Continue expanding `exploration.html` from a static triage overview into a
   richer dashboard that can visualize checked pages/states, screenshots, and
   accessibility findings while the scan is running.

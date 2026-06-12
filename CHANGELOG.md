@@ -81,6 +81,10 @@
   config or `--retention-max-runs` / `--retention-max-age-days`.
 - Generated JSON, CSV, and Markdown reports now include retention evidence when
   retention cleanup is enabled.
+- `check` and `explore` now support `--retention-dry-run` to preview historical
+  report cleanup without deleting old runs.
+- Retention evidence in generated reports now omits local filesystem paths and
+  stores only cleanup counters and mode.
 - Readable local `check` summary with severity counts, top rules, affected
   pages, report paths, and `--json-summary` for scripts that parse stdout.
 - `doctor` now autodetects React, Vue, and Angular from `package.json` and

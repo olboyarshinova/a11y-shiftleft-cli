@@ -290,6 +290,9 @@ Report lifecycle:
 - When retention is enabled, `a11y-report.json`, `a11y-metrics.csv`, and
   `a11y-comment.md` include a retention summary with deleted, kept, and
   candidate run counts.
+- Use `--retention-dry-run` first when you want to preview cleanup without
+  deleting old runs. Reports store retention counts only, not local filesystem
+  paths.
 
 Enable retention from the command line:
 
@@ -301,6 +304,17 @@ npx a11y-shiftleft explore \
   --retention-max-age-days 14
 ```
 
+Preview cleanup without deleting old report runs:
+
+```bash
+npx a11y-shiftleft explore \
+  --url http://localhost:3000 \
+  --out reports/run-2026-06-11 \
+  --retention-max-runs 5 \
+  --retention-max-age-days 14 \
+  --retention-dry-run
+```
+
 Or keep it in config:
 
 ```json
@@ -308,7 +322,8 @@ Or keep it in config:
   "retention": {
     "enabled": true,
     "maxRuns": 5,
-    "maxAgeDays": 14
+    "maxAgeDays": 14,
+    "dryRun": false
   }
 }
 ```

@@ -13,13 +13,36 @@ test("applyReportRetention is a no-op when disabled", async () => {
   const summary = await applyReportRetention(current, {
     enabled: false,
     maxRuns: 1,
-    maxAgeDays: 1
+    maxAgeDays: 1,
+    dryRun: false
   }, {
     now: new Date("2026-06-11T00:00:00.000Z")
   });
 
   assert.equal(summary.enabled, false);
   assert.equal(await exists(oldRun), true);
+});
+
+test("applyReportRetention previews deletions during dry-run", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-retention-dry-run-"));
+  const current = await createReportRun(root, "current", "2026-06-11T00:00:00.000Z");
+  const staleRun = await createReportRun(root, "run-stale", "2026-05-01T00:00:00.000Z");
+
+  const summary = await applyReportRetention(current, {
+    enabled: true,
+    maxRuns: 10,
+    maxAgeDays: 14,
+    dryRun: true
+  }, {
+    now: new Date("2026-06-11T00:00:00.000Z")
+  });
+
+  assert.equal(summary.dryRun, true);
+  assert.equal(summary.plannedDeletedRuns, 1);
+  assert.equal(summary.deletedRuns, 0);
+  assert.deepEqual(summary.plannedDeletedRunDirs, [staleRun]);
+  assert.equal(await exists(staleRun), true);
+  assert.equal(await exists(current), true);
 });
 
 test("applyReportRetention removes report directories older than maxAgeDays", async () => {
@@ -33,7 +56,8 @@ test("applyReportRetention removes report directories older than maxAgeDays", as
   const summary = await applyReportRetention(current, {
     enabled: true,
     maxRuns: 10,
-    maxAgeDays: 14
+    maxAgeDays: 14,
+    dryRun: false
   }, {
     now: new Date("2026-06-11T00:00:00.000Z")
   });
@@ -55,7 +79,8 @@ test("applyReportRetention keeps maxRuns including the current output directory"
   const summary = await applyReportRetention(current, {
     enabled: true,
     maxRuns: 2,
-    maxAgeDays: 365
+    maxAgeDays: 365,
+    dryRun: false
   }, {
     now: new Date("2026-06-11T00:00:00.000Z")
   });

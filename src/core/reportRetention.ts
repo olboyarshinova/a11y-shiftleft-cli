@@ -8,7 +8,12 @@ interface ReportRun {
   mtimeMs: number;
 }
 
-export interface ReportRetentionSummary extends ReportRetentionEvidence {}
+export interface ReportRetentionSummary extends ReportRetentionEvidence {
+  rootDir: string;
+  currentOutputDir: string;
+  plannedDeletedRunDirs: string[];
+  keptRunDirs: string[];
+}
 
 interface ApplyReportRetentionOptions {
   now?: Date;
@@ -32,17 +37,22 @@ export async function applyReportRetention(
   const rootDir = path.dirname(currentOutputDir);
   const maxRuns = positiveOrDefault(config.maxRuns, 5);
   const maxAgeDays = positiveOrDefault(config.maxAgeDays, 14);
+  const dryRun = Boolean(config.dryRun);
 
   if (!config.enabled) {
     return {
       enabled: false,
+      dryRun,
       rootDir,
       currentOutputDir,
       maxRuns,
       maxAgeDays,
       candidateRuns: 0,
+      plannedDeletedRuns: 0,
       deletedRuns: 0,
-      keptRuns: 0
+      keptRuns: 0,
+      plannedDeletedRunDirs: [],
+      keptRunDirs: []
     };
   }
 
@@ -63,19 +73,31 @@ export async function applyReportRetention(
     deleteSet.add(run.dir);
   }
 
-  for (const dir of deleteSet) {
-    await fs.rm(dir, { recursive: true, force: true });
+  const plannedDeletedRunDirs = [...deleteSet].sort();
+  const keptRunDirs = runs
+    .map((run) => run.dir)
+    .filter((dir) => !deleteSet.has(dir))
+    .sort();
+
+  if (!dryRun) {
+    for (const dir of plannedDeletedRunDirs) {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
   }
 
   return {
     enabled: true,
+    dryRun,
     rootDir,
     currentOutputDir,
     maxRuns,
     maxAgeDays,
     candidateRuns: runs.length,
-    deletedRuns: deleteSet.size,
-    keptRuns: runs.length - deleteSet.size
+    plannedDeletedRuns: plannedDeletedRunDirs.length,
+    deletedRuns: dryRun ? 0 : plannedDeletedRunDirs.length,
+    keptRuns: keptRunDirs.length,
+    plannedDeletedRunDirs,
+    keptRunDirs
   };
 }
 

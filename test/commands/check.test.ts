@@ -150,6 +150,8 @@ test("formatVerboseCheckSummary renders scan context without JSON parsing requir
     crawlDepth: 1,
     crawlLimit: 10,
     retentionEnabled: true,
+    retentionDryRun: false,
+    retentionPlannedDeletedRuns: 2,
     retentionDeletedRuns: 2
   });
 

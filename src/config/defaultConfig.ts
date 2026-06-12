@@ -38,6 +38,7 @@ export const defaultConfig = {
   retention: {
     enabled: false,
     maxRuns: 5,
-    maxAgeDays: 14
+    maxAgeDays: 14,
+    dryRun: false
   }
 } satisfies Omit<A11yConfig, "cwd" | "configPath">;

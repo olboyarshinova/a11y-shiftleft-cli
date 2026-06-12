@@ -86,7 +86,7 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     standard: metrics.standard,
     baseline: metrics.baseline,
     ignore: metrics.ignore,
-    retention: metrics.retention,
+    retention: summarizeRetention(metrics.retention),
     complianceEvidence: summarizeComplianceEvidence(issues, byPage, metrics.standard),
     bySource: countBy(issues, "source"),
     bySeverity: countBy(issues, "severity"),
@@ -143,7 +143,7 @@ export function toMarkdown(report: A11yReport): string {
 | Standard | ${formatStandard(report.summary.standard)} |
 ${formatBaselineRows(report.summary.baseline)}| Automated coverage | ${report.summary.standard?.automatedCoverage || "partial"} |
 ${formatIgnoreRows(report.summary.ignore)}| Manual review required | ${complianceEvidence.requiresManualReview ? "yes" : "no"} |
-${formatRetentionRows(report.summary.retention)}| Retention evidence | ${report.summary.retention?.enabled ? "recorded" : "none"} |
+${formatRetentionRows(report.summary.retention)}| Retention evidence | ${formatRetentionEvidenceStatus(report.summary.retention)} |
 | WCAG-mapped findings | ${complianceEvidence.wcagMappedFindings} |
 | Unmapped findings | ${complianceEvidence.unmappedFindings} |
 | Affected pages | ${complianceEvidence.affectedPages} |
@@ -340,13 +340,21 @@ function formatIgnoreRows(ignore: ReportSummary["ignore"]): string {
 
 function formatRetentionRows(retention: ReportSummary["retention"]): string {
   if (!retention?.enabled) return "";
+  const mode = retention.dryRun ? "dry-run preview" : "cleanup";
 
   return `${[
+    `| Retention mode | ${mode} |`,
     `| Retention policy | maxRuns ${retention.maxRuns}, maxAgeDays ${retention.maxAgeDays} |`,
     `| Retention candidate runs | ${retention.candidateRuns} |`,
+    `| Retention planned deleted runs | ${retention.plannedDeletedRuns} |`,
     `| Retention deleted runs | ${retention.deletedRuns} |`,
     `| Retention kept runs | ${retention.keptRuns} |`
   ].join("\n")}\n`;
+}
+
+function formatRetentionEvidenceStatus(retention: ReportSummary["retention"]): string {
+  if (!retention?.enabled) return "none";
+  return retention.dryRun ? "dry-run" : "recorded";
 }
 
 function formatDisclaimer(standard: ComplianceStandardMetadata | undefined): string {
@@ -378,6 +386,21 @@ function formatComplianceEvidence(evidence: ComplianceEvidenceSummary): string {
 Top affected pages:
 
 ${topPages}`;
+}
+
+function summarizeRetention(retention: ReportMetrics["retention"]): ReportSummary["retention"] {
+  if (!retention) return undefined;
+
+  return {
+    enabled: retention.enabled,
+    dryRun: Boolean(retention.dryRun),
+    maxRuns: retention.maxRuns,
+    maxAgeDays: retention.maxAgeDays,
+    candidateRuns: retention.candidateRuns,
+    plannedDeletedRuns: retention.plannedDeletedRuns ?? retention.deletedRuns,
+    deletedRuns: retention.deletedRuns,
+    keptRuns: retention.keptRuns
+  };
 }
 
 function formatPageSummary(pages: PageSummary[]): string {

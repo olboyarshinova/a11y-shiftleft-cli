@@ -41,6 +41,7 @@ interface CheckOptions {
   retention?: boolean;
   retentionMaxRuns?: string;
   retentionMaxAgeDays?: string;
+  retentionDryRun?: boolean;
   quiet?: boolean;
   verbose?: boolean;
   jsonSummary?: boolean;
@@ -81,6 +82,7 @@ export function registerCheckCommand(program: Command): void {
     .option("--no-ignore", "Disable a11y-ignore.json filtering")
     .option("--retention-max-runs <count>", "Keep at most this many report run directories including the current output")
     .option("--retention-max-age-days <days>", "Remove report run directories older than this many days")
+    .option("--retention-dry-run", "Preview report retention cleanup without deleting old runs")
     .option("--no-retention", "Disable report retention cleanup")
     .option("--quiet", "Suppress console summary output")
     .option("--verbose", "Print scan mode, adapter timing, and report context before the summary")
@@ -111,7 +113,8 @@ export function registerCheckCommand(program: Command): void {
         retention: {
           enabled: retentionRequested(options),
           maxRuns: toPositiveInteger(options.retentionMaxRuns),
-          maxAgeDays: toPositiveInteger(options.retentionMaxAgeDays)
+          maxAgeDays: toPositiveInteger(options.retentionMaxAgeDays),
+          dryRun: options.retentionDryRun ? true : undefined
         }
       });
 
@@ -248,6 +251,8 @@ export function registerCheckCommand(program: Command): void {
             crawlDepth: effectiveConfig.dynamic.crawlDepth,
             crawlLimit: effectiveConfig.dynamic.crawlLimit,
             retentionEnabled: retentionSummary.enabled,
+            retentionDryRun: retentionSummary.dryRun,
+            retentionPlannedDeletedRuns: retentionSummary.plannedDeletedRuns,
             retentionDeletedRuns: retentionSummary.deletedRuns
           }));
         }
@@ -324,6 +329,8 @@ export function formatVerboseCheckSummary(options: {
   crawlDepth?: number;
   crawlLimit?: number;
   retentionEnabled: boolean;
+  retentionDryRun: boolean;
+  retentionPlannedDeletedRuns: number;
   retentionDeletedRuns: number;
 }): string {
   const adapterLines = options.adapterRuns.map((run) => {
@@ -341,7 +348,9 @@ export function formatVerboseCheckSummary(options: {
     ? `enabled file=${options.ignoreFile} ignored=${options.ignoredIssues}`
     : "disabled";
   const retention = options.retentionEnabled
-    ? `enabled deletedRuns=${options.retentionDeletedRuns}`
+    ? options.retentionDryRun
+      ? `dry-run plannedDeletedRuns=${options.retentionPlannedDeletedRuns}`
+      : `enabled deletedRuns=${options.retentionDeletedRuns}`
     : "disabled";
 
   return [
@@ -628,8 +637,9 @@ function toPositiveInteger(value: string | undefined): number | undefined {
   return parsed;
 }
 
-function retentionRequested(options: Pick<CheckOptions, "retention" | "retentionMaxRuns" | "retentionMaxAgeDays">): boolean | undefined {
+function retentionRequested(options: Pick<CheckOptions, "retention" | "retentionMaxRuns" | "retentionMaxAgeDays" | "retentionDryRun">): boolean | undefined {
   if (options.retention === false) return false;
+  if (options.retentionDryRun) return true;
   if (options.retentionMaxRuns || options.retentionMaxAgeDays) return true;
   return undefined;
 }

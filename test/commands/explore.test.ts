@@ -28,7 +28,8 @@ test("formatVerboseExploreSummary renders exploration context", () => {
     safeModeBlockedRoles: [],
     safeModeBlockedUrls: ["*/checkout*"],
     safeModeBlockedSelectors: ["[data-danger]"],
-    retentionEnabled: true
+    retentionEnabled: true,
+    retentionDryRun: false
   });
 
   assert.match(output, /a11y-shiftleft explore/);
