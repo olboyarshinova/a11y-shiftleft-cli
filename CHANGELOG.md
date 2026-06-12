@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+No unreleased changes yet.
+
+## 0.5.0 - 2026-06-12
+
 ### Added
 
 - Post-release v0.4.0 consumer install verification notes.

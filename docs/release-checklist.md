@@ -107,6 +107,7 @@ scripts/post-a11y-comment.js
 scripts/verify-fixtures.js
 scripts/analyze-metrics.js
 scripts/collect-adoption-metrics.js
+scripts/collect-adoption-snapshot.js
 scripts/clean-dist.js
 examples/fixtures/
 data/
@@ -142,6 +143,7 @@ docs/research-paper-outline.md
 docs/roadmap.md
 docs/release-notes-v0.1.0.md
 docs/release-notes-v0.4.0.md
+docs/release-notes-v0.5.0.md
 docs/release-checklist.md
 docs/ide-integration.md
 packages/react/package.json

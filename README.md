@@ -989,4 +989,8 @@ node bin/cli.js check --dynamic --url http://localhost:3000 --out reports
 
 Latest release:
 
+- [v0.5.0](docs/release-notes-v0.5.0.md)
+
+Previous releases:
+
 - [v0.4.0](docs/release-notes-v0.4.0.md)
