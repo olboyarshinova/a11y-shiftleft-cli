@@ -2,11 +2,22 @@
 
 ## Unreleased
 
+## 0.5.2 - 2026-06-12
+
 ### Added
 
 - WCAG metadata and remediation hints for additional common axe findings,
   including document title, page language, ARIA validation, autocomplete
   purpose, input button names, select names, heading order, and list structure.
+- Manual GitHub Actions workflow for publishing a GitHub Packages mirror as
+  `@olboyarshinova/a11y-shiftleft-cli`.
+
+### Changed
+
+- Updated GitHub Actions workflows to use `actions/checkout@v6`,
+  `actions/setup-node@v6`, and Node.js 22.
+- Replaced older public documentation wording with clearer "works across web
+  frameworks" phrasing.
 
 ## 0.5.1 - 2026-06-12
 
