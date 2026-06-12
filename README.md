@@ -4,12 +4,12 @@
 [![Accessibility Shift-Left](https://github.com/olboyarshinova/a11y-shiftleft-cli/actions/workflows/a11y.yml/badge.svg)](https://github.com/olboyarshinova/a11y-shiftleft-cli/actions/workflows/a11y.yml)
 [![npm version](https://img.shields.io/npm/v/a11y-shiftleft-cli.svg)](https://www.npmjs.com/package/a11y-shiftleft-cli)
 
-Framework-agnostic CLI orchestrator for shift-left accessibility validation.
+Accessibility testing CLI for web apps, pull requests, and local reports.
 
-The CLI is designed to run inside any web project. It combines dynamic axe scans,
-static accessibility checks where supported, finding normalization,
-deduplication, severity triage, confidence scoring, issue categorization, and
-CI-friendly reporting.
+The CLI is designed to run inside any web project. It is framework-agnostic at
+runtime because dynamic checks scan the rendered page in a browser, and it can
+add framework-specific static checks when React, Vue, or Angular adapters are
+installed.
 
 Severity answers "how risky is this finding?" Confidence answers "how strong is
 the tooling evidence?" so teams can prioritize high-confidence critical findings
@@ -26,46 +26,15 @@ coordinates static and dynamic checks, normalizes findings into one schema,
 deduplicates overlapping warnings, applies a consistent severity policy, and
 exports reproducible metrics for CI, PR review, and empirical evaluation.
 
-## Architecture
+It produces several report surfaces from the same normalized findings:
 
-```txt
-Target Project
-  package.json
-  .a11y-shiftleft.json
-  running app URL
-
-CLI
-  init
-  check
-  explore
-  ci
-
-Adapters
-  eslintAdapter
-  axePlaywrightAdapter
-  explorePlaywrightAdapter
-
-Core Engine
-  normalize
-  wcagMap
-  severity
-  classification
-  dedupe
-
-Reporters
-  a11y-report.json
-  a11y-metrics.csv
-  a11y-comment.md
-  exploration.html
-  exploration-graph.json
-  screenshots/
-```
-
-## Source And Runtime
-
-The project source is written in TypeScript under `src/`. The npm CLI runs the
-compiled JavaScript and declaration files from `dist/`, while `bin/cli.js`
-remains a small executable entrypoint for package consumers.
+- terminal summaries for local development and CI logs
+- `a11y-comment.md` for pull request comments and human review
+- `a11y-report.json` for automation and debugging
+- `a11y-metrics.csv` for trend analysis and empirical validation
+- `a11y-manual-checklist.md` for semi-automated manual review
+- `exploration.html` with screenshots, checked states, and visual annotations
+- `dashboard` for historical trends across saved report runs
 
 ## Quick Start
 
@@ -92,19 +61,29 @@ npx a11y-shiftleft init --framework auto --gitignore
 npm run dev
 ```
 
-4. Check that the setup and URL are ready:
+4. Set the URL printed by your dev server. The examples below use `APP_URL`
+   so they work with any local port:
 
 ```bash
-npx a11y-shiftleft doctor --url http://localhost:3000
+export APP_URL=http://localhost:5173
 ```
 
-5. Run your first accessibility scan:
+Use whatever your app prints, such as `http://localhost:3000`,
+`http://localhost:4200`, or a preview URL.
+
+5. Check that the setup and URL are ready:
 
 ```bash
-npx a11y-shiftleft check --dynamic --url http://localhost:3000 --out reports
+npx a11y-shiftleft doctor --url $APP_URL
 ```
 
-6. Read the terminal summary, then open the generated report files:
+6. Run your first accessibility scan:
+
+```bash
+npx a11y-shiftleft check --dynamic --url $APP_URL --out reports
+```
+
+7. Read the terminal summary, then open the generated report files:
 
 ```txt
 reports/a11y-comment.md
@@ -121,14 +100,17 @@ script needs the stdout summary as JSON.
 
 ## Pick Your Setup
 
+Commands below use `APP_URL` as a placeholder for your running app or preview
+URL.
+
 | Goal | Command |
 |---|---|
-| Scan one running app URL | `npx a11y-shiftleft check --dynamic --url http://localhost:3000 --out reports` |
-| Scan several known pages | `npx a11y-shiftleft check --dynamic --url http://localhost:3000 http://localhost:3000/settings --out reports` |
-| Let the CLI discover safe same-origin pages | `npx a11y-shiftleft check --dynamic --url http://localhost:3000 --crawl --crawl-depth 1 --crawl-limit 10 --out reports` |
-| Create a visual state report with screenshots | `npx a11y-shiftleft explore --url http://localhost:3000 --depth 2 --out reports` |
+| Scan one running app URL | `npx a11y-shiftleft check --dynamic --url $APP_URL --out reports` |
+| Scan several known pages | `npx a11y-shiftleft check --dynamic --url $APP_URL $APP_URL/settings --out reports` |
+| Let the CLI discover safe same-origin pages | `npx a11y-shiftleft check --dynamic --url $APP_URL --crawl --crawl-depth 1 --crawl-limit 10 --out reports` |
+| Create a visual state report with screenshots | `npx a11y-shiftleft explore --url $APP_URL --depth 2 --out reports` |
 | View historical report trends | `npx a11y-shiftleft dashboard --reports reports` |
-| Add a fast PR workflow | `npx a11y-shiftleft ci --url http://localhost:3000 --start-command "npm run dev -- --host localhost --port 3000"` |
+| Add a fast PR workflow | `npx a11y-shiftleft ci --url $APP_URL --start-command "npm run dev -- --host localhost --port 5173"` |
 
 Dynamic scanning is the portable baseline: React, Vue, Angular, Svelte, Next.js,
 Nuxt, Astro, Rails, Django, static HTML, and other apps can be scanned if they
@@ -158,7 +140,7 @@ framework-specific adapter recommendation when optimized static checks are not
 installed yet:
 
 ```bash
-npx a11y-shiftleft doctor --url http://localhost:3000
+npx a11y-shiftleft doctor --url $APP_URL
 ```
 
 Then initialize the matching framework config:
@@ -176,14 +158,14 @@ npx a11y-shiftleft check --static --framework react --out reports
 Run static and dynamic checks together:
 
 ```bash
-npx a11y-shiftleft check --url http://localhost:3000 --out reports
+npx a11y-shiftleft check --url $APP_URL --out reports
 ```
 
 ## What Gets Created
 
 | Path | Purpose | Commit it? |
 |---|---|---|
-| `.a11y-shiftleft.json` | Project config for framework, WCAG target, URLs, and scan options | Yes |
+| `.a11y-shiftleft.json` | Project config for framework, WCAG target, URLs, and scan options | Usually yes, when it is shared team config |
 | `.a11y-baseline.json` | Accepted known findings for baseline mode | Yes, when using `--baseline` |
 | `a11y-ignore.json` | Temporary scoped ignores with reason, owner, and expiration | Yes, when intentionally used |
 | `reports/a11y-comment.md` | Human-readable report for local review or PR comments | Usually no |
@@ -194,6 +176,11 @@ npx a11y-shiftleft check --url http://localhost:3000 --out reports
 
 `npx a11y-shiftleft init --gitignore` adds common report directories such as
 `reports/` and `.a11y-reports/` to `.gitignore`.
+
+Commit `.a11y-shiftleft.json` when it defines shared project defaults that CI
+and teammates should reuse. Keep it local, use `.a11yrc.json`, or pass
+`--config <file>` when the config contains personal local URLs, temporary
+experiments, or machine-specific paths.
 
 Config discovery order:
 
@@ -211,7 +198,7 @@ places.
 Use `explore` when you do not want to list every route manually:
 
 ```bash
-npx a11y-shiftleft explore --url http://localhost:3000 --depth 2 --out reports
+npx a11y-shiftleft explore --url $APP_URL --depth 2 --out reports
 ```
 
 `explore` opens the start URL, scans it with axe, then safely follows
@@ -244,7 +231,7 @@ Triage Overview
 - Top rules: button-name score 4, page-has-heading-one score 2
 
 State state-1
-URL: http://localhost:3000/
+URL: $APP_URL/
 Issues: critical 0, warning 2, info 0
 
 [ screenshot preview ]
@@ -318,7 +305,7 @@ Enable retention from the command line:
 
 ```bash
 npx a11y-shiftleft explore \
-  --url http://localhost:3000 \
+  --url $APP_URL \
   --out reports/run-2026-06-11 \
   --retention-max-runs 5 \
   --retention-max-age-days 14
@@ -328,7 +315,7 @@ Preview cleanup without deleting old report runs:
 
 ```bash
 npx a11y-shiftleft explore \
-  --url http://localhost:3000 \
+  --url $APP_URL \
   --out reports/run-2026-06-11 \
   --retention-max-runs 5 \
   --retention-max-age-days 14 \
@@ -352,7 +339,7 @@ Screenshots are compressed by default as viewport JPEG files at quality `70` to
 keep reports small:
 
 ```bash
-npx a11y-shiftleft explore --url http://localhost:3000 --out reports
+npx a11y-shiftleft explore --url $APP_URL --out reports
 ```
 
 Use PNG or full-page screenshots only when the extra detail is worth the larger
@@ -360,7 +347,7 @@ artifact size:
 
 ```bash
 npx a11y-shiftleft explore \
-  --url http://localhost:3000 \
+  --url $APP_URL \
   --screenshot-format png \
   --screenshot-full-page \
   --out reports
@@ -375,14 +362,14 @@ For applications that may expose real personal data, login screens, payment
 details, or production customer records, disable screenshots entirely:
 
 ```bash
-npx a11y-shiftleft explore --url http://localhost:3000 --no-screenshots --out reports
+npx a11y-shiftleft explore --url $APP_URL --no-screenshots --out reports
 ```
 
 If you intentionally need raw local screenshots for debugging, disable masking:
 
 ```bash
 npx a11y-shiftleft explore \
-  --url http://localhost:3000 \
+  --url $APP_URL \
   --no-screenshot-redaction \
   --out reports
 ```
@@ -418,7 +405,7 @@ You can also add one-off rules from the command line:
 
 ```bash
 npx a11y-shiftleft explore \
-  --url http://localhost:3000 \
+  --url $APP_URL \
   --safe-block-text logout delete pay \
   --safe-block-url "*/checkout*" \
   --safe-block-selector "[data-danger]" \
@@ -429,7 +416,7 @@ Suppress `explore` progress logs and console summary while still writing report
 files:
 
 ```bash
-npx a11y-shiftleft explore --url http://localhost:3000 --quiet --out reports
+npx a11y-shiftleft explore --url $APP_URL --quiet --out reports
 ```
 
 Interactive local `explore` runs print compact progress lines and a readable
@@ -437,14 +424,14 @@ final summary with visited states, skipped actions, screenshots, top rules, and
 report paths. Ask for JSON when a script needs to parse stdout:
 
 ```bash
-npx a11y-shiftleft explore --url http://localhost:3000 --json-summary --out reports
+npx a11y-shiftleft explore --url $APP_URL --json-summary --out reports
 ```
 
 Print exploration limits, screenshot settings, safe-mode settings, and output
 formats before progress logs and the final summary:
 
 ```bash
-npx a11y-shiftleft explore --url http://localhost:3000 --verbose --out reports
+npx a11y-shiftleft explore --url $APP_URL --verbose --out reports
 ```
 
 Short setup recipes are available for common workflows:
@@ -464,7 +451,7 @@ Scan several known routes in one run:
 ```bash
 npx a11y-shiftleft check \
   --dynamic \
-  --url http://localhost:3000 http://localhost:3000/favorites http://localhost:3000/settings \
+  --url $APP_URL $APP_URL/favorites $APP_URL/settings \
   --out reports
 ```
 
@@ -473,7 +460,7 @@ You can also separate URLs with commas:
 ```bash
 npx a11y-shiftleft check \
   --dynamic \
-  --url http://localhost:3000,http://localhost:3000/favorites,http://localhost:3000/settings \
+  --url $APP_URL,$APP_URL/favorites,$APP_URL/settings \
   --out reports
 ```
 
@@ -484,13 +471,15 @@ For repeated project scans, store routes in `.a11y-shiftleft.json`:
   "dynamic": {
     "enabled": true,
     "urls": [
-      "http://localhost:3000",
-      "http://localhost:3000/favorites",
-      "http://localhost:3000/settings"
+      "http://localhost:5173",
+      "http://localhost:5173/favorites",
+      "http://localhost:5173/settings"
     ]
   }
 }
 ```
+
+Replace `http://localhost:5173` with the URL and port your app actually uses.
 
 Then run:
 
@@ -560,15 +549,15 @@ findings and are counted in the report summary.
 Use a custom ignore file or disable ignores for a run:
 
 ```bash
-npx a11y-shiftleft check --dynamic --url http://localhost:3000 --ignore-file config/a11y-ignore.json --out reports
-npx a11y-shiftleft check --dynamic --url http://localhost:3000 --no-ignore --out reports
+npx a11y-shiftleft check --dynamic --url $APP_URL --ignore-file config/a11y-ignore.json --out reports
+npx a11y-shiftleft check --dynamic --url $APP_URL --no-ignore --out reports
 ```
 
 If a scan fails because of Node, Playwright, Chromium, config, or app startup
 issues, run:
 
 ```bash
-npx a11y-shiftleft doctor --url http://localhost:3000
+npx a11y-shiftleft doctor --url $APP_URL
 ```
 
 Interactive local runs print a readable terminal summary. `check --crawl` also
@@ -577,21 +566,21 @@ same-origin scans do not look stuck. Ask for JSON when a script needs to parse
 stdout:
 
 ```bash
-npx a11y-shiftleft check --dynamic --url http://localhost:3000 --json-summary --out reports
+npx a11y-shiftleft check --dynamic --url $APP_URL --json-summary --out reports
 ```
 
 Suppress console output in CI while still writing report files and preserving
 the exit code:
 
 ```bash
-npx a11y-shiftleft check --dynamic --url http://localhost:3000 --quiet --out reports
+npx a11y-shiftleft check --dynamic --url $APP_URL --quiet --out reports
 ```
 
 Print scan modes, adapter timings, URL context, baseline settings, and output
 formats before the normal summary:
 
 ```bash
-npx a11y-shiftleft check --dynamic --url http://localhost:3000 --verbose --out reports
+npx a11y-shiftleft check --dynamic --url $APP_URL --verbose --out reports
 ```
 
 Discover and scan same-origin pages from a starting URL:
@@ -599,7 +588,7 @@ Discover and scan same-origin pages from a starting URL:
 ```bash
 npx a11y-shiftleft check \
   --dynamic \
-  --url http://localhost:3000 \
+  --url $APP_URL \
   --crawl \
   --crawl-depth 1 \
   --crawl-limit 10 \
@@ -611,7 +600,7 @@ Write specific report formats:
 ```bash
 npx a11y-shiftleft check \
   --dynamic \
-  --url http://localhost:3000 \
+  --url $APP_URL \
   --format json csv \
   --out reports
 ```
@@ -635,21 +624,21 @@ npx a11y-shiftleft check \
 Filter findings to criteria included in WCAG Level AA conformance:
 
 ```bash
-npx a11y-shiftleft check --url http://localhost:3000 --wcag-filter AA --out reports
+npx a11y-shiftleft check --url $APP_URL --wcag-filter AA --out reports
 ```
 
 Limit mapped findings to a specific WCAG version:
 
 ```bash
-npx a11y-shiftleft check --url http://localhost:3000 --wcag-version 2.0 --out reports
+npx a11y-shiftleft check --url $APP_URL --wcag-version 2.0 --out reports
 ```
 
 Use a WCAG-based compliance support preset:
 
 ```bash
-npx a11y-shiftleft check --url http://localhost:3000 --standard section508 --out reports
-npx a11y-shiftleft check --url http://localhost:3000 --standard ada-title-ii --out reports
-npx a11y-shiftleft check --url http://localhost:3000 --standard wcag22-aa --out reports
+npx a11y-shiftleft check --url $APP_URL --standard section508 --out reports
+npx a11y-shiftleft check --url $APP_URL --standard ada-title-ii --out reports
+npx a11y-shiftleft check --url $APP_URL --standard wcag22-aa --out reports
 ```
 
 The presets configure report metadata and WCAG filtering defaults. Mapped
@@ -665,7 +654,7 @@ unmapped best-practice findings remain visible in a separate report section.
 Generate a semi-automated manual review checklist alongside automated reports:
 
 ```bash
-npx a11y-shiftleft check --url http://localhost:3000 --semi-auto --out reports
+npx a11y-shiftleft check --url $APP_URL --semi-auto --out reports
 ```
 
 ## Scan A Different Directory
@@ -676,7 +665,7 @@ Useful for monorepos or local testing:
 npx a11y-shiftleft check \
   --cwd ./apps/web \
   --dynamic \
-  --url http://localhost:3000 \
+  --url $APP_URL \
   --out reports
 ```
 
@@ -686,8 +675,8 @@ Generate the default fast PR workflow:
 
 ```bash
 npx a11y-shiftleft ci \
-  --url http://localhost:3000 \
-  --start-command "npm run dev -- --host localhost --port 3000" \
+  --url $APP_URL \
+  --start-command "npm run dev -- --host localhost --port 5173" \
   --fail-on critical \
   --standard wcag22-aa
 ```
@@ -706,8 +695,8 @@ Generate separate workflows for quick PR checks and scheduled full-site checks:
 ```bash
 npx a11y-shiftleft ci \
   --profile split \
-  --url http://localhost:3000 \
-  --start-command "npm run dev -- --host localhost --port 3000" \
+  --url $APP_URL \
+  --start-command "npm run dev -- --host localhost --port 5173" \
   --fail-on critical \
   --full-fail-on none \
   --crawl-limit 10 \
@@ -1002,7 +991,8 @@ In another terminal:
 
 ```bash
 nvm use
-node bin/cli.js check --dynamic --url http://localhost:3000 --out reports
+export APP_URL=http://localhost:3000
+node bin/cli.js check --dynamic --url $APP_URL --out reports
 ```
 
 ## Release Notes
