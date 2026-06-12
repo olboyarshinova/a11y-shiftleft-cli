@@ -127,6 +127,7 @@ script needs the stdout summary as JSON.
 | Scan several known pages | `npx a11y-shiftleft check --dynamic --url http://localhost:3000 http://localhost:3000/settings --out reports` |
 | Let the CLI discover safe same-origin pages | `npx a11y-shiftleft check --dynamic --url http://localhost:3000 --crawl --crawl-depth 1 --crawl-limit 10 --out reports` |
 | Create a visual state report with screenshots | `npx a11y-shiftleft explore --url http://localhost:3000 --depth 2 --out reports` |
+| View historical report trends | `npx a11y-shiftleft dashboard --reports reports` |
 | Add a fast PR workflow | `npx a11y-shiftleft ci --url http://localhost:3000 --start-command "npm run dev -- --host localhost --port 3000"` |
 
 Dynamic scanning is the portable baseline: React, Vue, Angular, Svelte, Next.js,
@@ -266,6 +267,25 @@ The real HTML report renders this as a local dashboard with summary metrics,
 state cards, compressed screenshots, top findings, and navigation/action edges.
 Private screenshots are not committed to the repository; they are generated
 inside the selected report output directory.
+
+## Historical Dashboard
+
+Use `dashboard` after you have several `check` or `explore` runs saved in a
+report directory. It indexes nested `a11y-report.json` files and serves a local
+summary with trend, top rules, affected pages, and recent runs:
+
+```bash
+npx a11y-shiftleft dashboard --reports reports
+```
+
+For a static file that can be attached to internal docs or opened later:
+
+```bash
+npx a11y-shiftleft dashboard --reports reports --no-serve
+```
+
+The dashboard data uses paths relative to the selected reports directory rather
+than absolute local filesystem paths.
 
 Report lifecycle:
 

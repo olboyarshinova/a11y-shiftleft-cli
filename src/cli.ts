@@ -3,6 +3,7 @@ import { Command } from "commander";
 import { registerAdapterCommand } from "./commands/adapter.js";
 import { registerCheckCommand } from "./commands/check.js";
 import { registerCiCommand } from "./commands/ci.js";
+import { registerDashboardCommand } from "./commands/dashboard.js";
 import { registerDoctorCommand } from "./commands/doctor.js";
 import { registerExploreCommand } from "./commands/explore.js";
 import { registerInitCommand } from "./commands/init.js";
@@ -24,6 +25,7 @@ export function createProgram(): Command {
   registerDoctorCommand(program);
   registerAdapterCommand(program);
   registerExploreCommand(program);
+  registerDashboardCommand(program);
 
   return program;
 }

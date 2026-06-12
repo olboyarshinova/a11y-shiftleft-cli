@@ -55,9 +55,8 @@ for reproducible empirical validation.
 - Continue hardening screenshot annotations in `exploration.html`, including
   better selector matching, edge-case handling for full-page screenshots, and
   clearer overlay legends.
-- Add a local `dashboard` command that serves historical accessibility metrics
-  from generated reports, including trend charts, top rules, and page-level
-  comparisons across scans.
+- Continue hardening the local `dashboard` command with richer historical
+  metrics, better run filtering, and page-level comparisons across scans.
 - Create a documentation website with quick start guides, framework-specific
   setup pages, CI/compliance-support examples, troubleshooting, and sample
   reports so teams can adopt the CLI without reading the full README first.

@@ -2,7 +2,11 @@
 
 ## Unreleased
 
-No unreleased changes yet.
+### Added
+
+- Initial `dashboard` command for indexing generated `a11y-report.json` files
+  and serving a local historical summary with trends, top rules, affected
+  pages, and recent runs.
 
 ## 0.5.0 - 2026-06-12
 
