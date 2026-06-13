@@ -454,6 +454,7 @@ node bin/cli.js check --dynamic --url http://localhost:5173 --out reports
 
 ## More Documentation
 
+- [FAQ](docs/faq.md): Common questions about installing, running, and reading reports.
 - [Recipes](docs/recipes/index.md): React, Vue, Angular, Next.js, multiple URL
   scans, GitHub Actions, ADA Title II, and Section 508 setup guides.
 - [Configuration](docs/configuration.md): config files, `.gitignore`,
