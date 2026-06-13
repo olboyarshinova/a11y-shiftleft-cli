@@ -186,6 +186,15 @@ article img {
   margin: 0;
 }
 
+.modal-helper {
+  margin: 0;
+  padding: 12px;
+  border-left: 4px solid #2f5d50;
+  border-radius: 6px;
+  color: #34443f;
+  background: #eef6f1;
+}
+
 .modal-close {
   flex: 0 0 auto;
 }

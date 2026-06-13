@@ -75,6 +75,10 @@ function App() {
             <p className="muted">
               This dialog intentionally includes accessibility defects for demo scans.
             </p>
+            <p className="modal-helper">
+              Explore mode opens this modal so the CLI can scan UI that only appears
+              after user interaction.
+            </p>
             <input type="text" placeholder="Report name" />
             <button className="low-contrast-button" type="button">
               Preview report
