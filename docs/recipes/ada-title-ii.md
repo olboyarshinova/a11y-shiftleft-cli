@@ -29,13 +29,16 @@ npx a11y-shiftleft init --framework auto
 ## Run
 
 ```bash
-npx a11y-shiftleft doctor --url http://localhost:3000
+export APP_URL=http://localhost:5173
+npx a11y-shiftleft doctor --url $APP_URL
 npx a11y-shiftleft check \
-  --url http://localhost:3000 \
+  --url $APP_URL \
   --standard ada-title-ii \
   --semi-auto \
   --out reports
 ```
+
+Use the URL printed by your local dev server or preview environment.
 
 ## Example Evidence Files
 

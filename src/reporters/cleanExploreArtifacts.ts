@@ -7,7 +7,8 @@ const REPORT_FILES = [
   "a11y-comment.md",
   "a11y-manual-checklist.md",
   "exploration-graph.json",
-  "exploration.html"
+  "exploration.html",
+  "exploration.pdf"
 ];
 
 export interface CleanExploreArtifactsResult {

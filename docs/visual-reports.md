@@ -17,6 +17,7 @@ It saves:
 reports/a11y-report.json
 reports/a11y-comment.md
 reports/exploration.html
+reports/exploration.pdf       # only when --pdf is used
 reports/exploration-graph.json
 reports/screenshots/state-*.jpg
 ```
@@ -24,6 +25,25 @@ reports/screenshots/state-*.jpg
 `exploration.html` shows summary metrics, checked states, screenshots, top
 findings, recorded transitions, skipped actions, and reviewable overlays around
 affected elements when Playwright can resolve their bounds.
+
+## PDF Export
+
+Use `--pdf` when you need a portable copy of the visual report for a pull
+request, remediation ticket, or internal review:
+
+```bash
+npx a11y-shiftleft explore --url $APP_URL --depth 2 --pdf --out reports
+```
+
+This writes:
+
+```txt
+reports/exploration.pdf
+```
+
+The PDF is generated from `exploration.html` with Playwright/Chromium. It is an
+evidence-friendly report artifact, not a WCAG, ADA, or Section 508 compliance
+certification.
 
 ## Screenshot Privacy
 

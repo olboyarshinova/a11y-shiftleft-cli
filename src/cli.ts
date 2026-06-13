@@ -7,6 +7,7 @@ import { registerDashboardCommand } from "./commands/dashboard.js";
 import { registerDoctorCommand } from "./commands/doctor.js";
 import { registerExploreCommand } from "./commands/explore.js";
 import { registerInitCommand } from "./commands/init.js";
+import { registerTicketCommand } from "./commands/ticket.js";
 import { registerWatchCommand } from "./commands/watch.js";
 
 const require = createRequire(import.meta.url);
@@ -28,6 +29,7 @@ export function createProgram(): Command {
   registerExploreCommand(program);
   registerDashboardCommand(program);
   registerWatchCommand(program);
+  registerTicketCommand(program);
 
   return program;
 }

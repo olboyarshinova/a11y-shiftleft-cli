@@ -6,11 +6,14 @@ every PR wait for a full-site crawl.
 ## Generate Fast PR Workflow
 
 ```bash
+export APP_URL=http://localhost:5173
 npx a11y-shiftleft ci \
-  --url http://localhost:3000 \
-  --start-command "npm run dev -- --host localhost --port 3000" \
+  --url $APP_URL \
+  --start-command "npm run dev -- --host localhost --port 5173" \
   --fail-on warning
 ```
+
+Use the local or preview URL your app exposes in CI.
 
 The default workflow runs on `pull_request` and uses a bounded crawl
 (`--crawl-depth 1`, `--crawl-limit 10`) so feedback usually stays in the
@@ -19,10 +22,11 @@ The default workflow runs on `pull_request` and uses a bounded crawl
 ## Generate Split PR And Full-Site Workflows
 
 ```bash
+export APP_URL=http://localhost:5173
 npx a11y-shiftleft ci \
   --profile split \
-  --url http://localhost:3000 \
-  --start-command "npm run dev -- --host localhost --port 3000" \
+  --url $APP_URL \
+  --start-command "npm run dev -- --host localhost --port 5173" \
   --fail-on critical \
   --full-fail-on none \
   --crawl-limit 10 \

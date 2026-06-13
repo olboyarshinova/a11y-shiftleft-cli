@@ -15,16 +15,30 @@
   beginner-friendly tasks.
 - Expanded contributor onboarding with clone/install/test/PR instructions,
   structured issue forms, and a pull request template.
-- Seed script for creating seven beginner-friendly GitHub issues with
-  `good first issue` and `help wanted` labels.
+- Seed script for creating five beginner-friendly GitHub issues with
+  `good first issue`, `help wanted`, and `documentation` labels.
 - Contributor guide sections for the first-PR path, test commands by change
   type, review expectations, and maintainer issue seeding.
+- `explore --pdf` for generating `exploration.pdf` from the visual HTML report.
+- `dashboard --pdf` for generating a portable PDF copy of the local historical
+  dashboard.
+- `ticket export` for creating dry-run Jira, Linear, or generic ticket drafts
+  from `a11y-report.json` without connecting to external tracker APIs.
+- Dedicated ticket export documentation with Markdown, JSON, Jira, and Linear
+  dry-run examples.
+- Updated release checklist with v0.6 smoke tests for PDF export, ticket drafts,
+  dashboard PDF, and watch help.
+- Updated framework, CI, ADA Title II, and Section 508 recipes to use clearer
+  dev server URL examples and remind users to scan the URL printed by their own
+  app.
 
 ### Changed
 
 - Refactored `check` into a reusable `runCheck()` pipeline so future developer
   workflows can reuse the same normalization, triage, baseline, ignore, and
   reporting behavior without shelling out to the CLI.
+- `explore` cleanup and report retention now treat `exploration.pdf` as a
+  generated report artifact.
 
 ## 0.5.2 - 2026-06-12
 

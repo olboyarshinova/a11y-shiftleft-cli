@@ -1,6 +1,6 @@
 # Release Checklist
 
-Use this checklist before publishing a public MVP release.
+Use this checklist before publishing a public release.
 
 ## Local Verification
 
@@ -65,7 +65,7 @@ the comment from either `a11y-comment.md` or `a11y-report.json`.
 Terminal 1:
 
 ```bash
-npm run demo -- --port 3000
+npm run demo -- --port 5173
 ```
 
 Terminal 2:
@@ -73,7 +73,7 @@ Terminal 2:
 ```bash
 node bin/cli.js check \
   --dynamic \
-  --url http://localhost:3000 \
+  --url http://localhost:5173 \
   --out reports
 ```
 
@@ -90,9 +90,71 @@ For a non-failing smoke test:
 node bin/cli.js check \
   --static \
   --framework react \
-  --include "demo/react/src/**/*.{js,jsx,ts,tsx}" \
+  --include "examples/demo-react-vite/src/**/*.{js,jsx,ts,tsx}" \
   --out reports-static \
   --fail-on none
+```
+
+## v0.6 Workflow Smoke Tests
+
+Use a running demo app:
+
+```bash
+npm run demo -- --port 5173
+```
+
+In another terminal, verify PDF export:
+
+```bash
+node bin/cli.js explore \
+  --url http://localhost:5173 \
+  --depth 1 \
+  --limit 2 \
+  --actions-per-state 2 \
+  --pdf \
+  --no-screenshots \
+  --fail-on none \
+  --out reports-smoke
+```
+
+Expected files:
+
+```txt
+reports-smoke/exploration.html
+reports-smoke/exploration.pdf
+reports-smoke/a11y-report.json
+```
+
+Verify ticket drafts:
+
+```bash
+node bin/cli.js ticket export \
+  --report reports-smoke/a11y-report.json \
+  --tracker linear \
+  --out reports-smoke/a11y-tickets.md
+```
+
+Verify dashboard PDF:
+
+```bash
+node bin/cli.js dashboard \
+  --reports reports-smoke \
+  --pdf \
+  --out reports-smoke/dashboard.html
+```
+
+Expected files:
+
+```txt
+reports-smoke/a11y-tickets.md
+reports-smoke/dashboard.html
+reports-smoke/dashboard.pdf
+```
+
+Verify watch help:
+
+```bash
+node bin/cli.js watch --help
 ```
 
 ## Privacy Check
@@ -118,6 +180,7 @@ scripts/collect-adoption-metrics.js
 scripts/collect-adoption-snapshot.js
 scripts/clean-dist.js
 examples/fixtures/
+examples/demo-react-vite/
 data/
 docs/
 CHANGELOG.md
@@ -152,8 +215,10 @@ docs/roadmap.md
 docs/release-notes-v0.1.0.md
 docs/release-notes-v0.4.0.md
 docs/release-notes-v0.5.0.md
+docs/release-notes-v0.6.0.md
 docs/release-checklist.md
 docs/ide-integration.md
+docs/ticket-export.md
 packages/react/package.json
 packages/vue/package.json
 packages/angular/package.json
@@ -217,6 +282,8 @@ npx a11y-shiftleft adapter add react
 npm install --save-dev @a11y-shiftleft/react
 npx a11y-shiftleft --help
 npx a11y-shiftleft init --framework react
+npx a11y-shiftleft ticket --help
+npx a11y-shiftleft dashboard --help
 ```
 
 Create a minimal React file with an intentional issue:

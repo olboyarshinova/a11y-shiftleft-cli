@@ -17,9 +17,9 @@ npx a11y-shiftleft init --framework react
 ```json
 {
   "scripts": {
-    "start:a11y": "vite --host localhost --port 3000",
-    "test:a11y": "a11y-shiftleft check --url http://localhost:3000 --framework react --out reports",
-    "doctor:a11y": "a11y-shiftleft doctor --url http://localhost:3000"
+    "start:a11y": "vite --host localhost --port 5173",
+    "test:a11y": "a11y-shiftleft check --url http://localhost:5173 --framework react --out reports",
+    "doctor:a11y": "a11y-shiftleft doctor --url http://localhost:5173"
   }
 }
 ```
@@ -38,6 +38,9 @@ Run the scan in another terminal:
 npm run doctor:a11y
 npm run test:a11y
 ```
+
+If Vite prints a different local URL, use that URL in `test:a11y` and
+`doctor:a11y`.
 
 ## Example Finding
 
