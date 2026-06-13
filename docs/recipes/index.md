@@ -7,6 +7,7 @@ These recipes give teams short copy-paste paths for adding
 - [React/Vite](react-vite.md)
 - [Vue/Vite](vue-vite.md)
 - [Next.js](nextjs.md)
+- [Multiple URLs](multiple-urls.md)
 - [GitHub Actions](github-actions.md)
 - [ADA Title II](ada-title-ii.md)
 - [Section 508](section-508.md)

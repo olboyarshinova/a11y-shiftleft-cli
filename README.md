@@ -412,8 +412,8 @@ node bin/cli.js check --dynamic --url http://localhost:3000 --out reports
 
 ## More Documentation
 
-- [Recipes](docs/recipes/index.md): React, Vue, Angular, Next.js, GitHub
-  Actions, ADA Title II, and Section 508 setup guides.
+- [Recipes](docs/recipes/index.md): React, Vue, Angular, Next.js, multiple URL
+  scans, GitHub Actions, ADA Title II, and Section 508 setup guides.
 - [Configuration](docs/configuration.md): config files, `.gitignore`,
   baseline files, ignores, cleanup, and retention.
 - [Visual reports](docs/visual-reports.md): screenshot privacy, safe mode, and
