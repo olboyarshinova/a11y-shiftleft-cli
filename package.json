@@ -1,7 +1,7 @@
 {
   "name": "a11y-shiftleft-cli",
   "version": "0.6.0",
-  "description": "Accessibility testing CLI for web apps, pull requests, and local reports.",
+  "description": "Accessibility testing CLI for web apps, pull requests, visual reports, and dashboards.",
   "type": "module",
   "license": "MIT",
   "homepage": "https://github.com/olboyarshinova/a11y-shiftleft-cli#readme",
@@ -16,9 +16,11 @@
     "accessibility",
     "a11y",
     "wcag",
+    "wcag22",
     "axe",
     "playwright",
     "eslint",
+    "github-actions",
     "ci",
     "developer-tools"
   ],

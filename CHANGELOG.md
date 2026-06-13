@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+No unreleased changes yet.
+
+## 0.6.0 - 2026-06-13
+
 ### Added
 
 - Initial `watch` command for local development feedback. It watches common

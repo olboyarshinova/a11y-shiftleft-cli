@@ -4,9 +4,11 @@
 [![Accessibility Shift-Left](https://github.com/olboyarshinova/a11y-shiftleft-cli/actions/workflows/a11y.yml/badge.svg)](https://github.com/olboyarshinova/a11y-shiftleft-cli/actions/workflows/a11y.yml)
 [![npm version](https://img.shields.io/npm/v/a11y-shiftleft-cli.svg)](https://www.npmjs.com/package/a11y-shiftleft-cli)
 
-[npm package](https://www.npmjs.com/package/a11y-shiftleft-cli)
+[Install from npm](https://www.npmjs.com/package/a11y-shiftleft-cli):
+`npm install --save-dev a11y-shiftleft-cli`
 
-Accessibility checks for web apps, pull requests, and local reports.
+Accessibility checks for web apps, pull requests, visual reports, and local
+dashboards.
 
 `a11y-shiftleft-cli` helps teams find accessibility issues earlier, before they
 ship. It scans a running web app in a real browser, optionally adds
@@ -507,16 +509,13 @@ node bin/cli.js check --dynamic --url http://localhost:5173 --out reports
 
 ## Release Notes
 
-Upcoming release:
+Current release:
 
 - [v0.6.0](docs/release-notes-v0.6.0.md)
 
-Latest published release:
-
-- [v0.5.2](docs/release-notes-v0.5.2.md)
-
 Previous releases:
 
+- [v0.5.2](docs/release-notes-v0.5.2.md)
 - [v0.5.1](docs/release-notes-v0.5.1.md)
 - [v0.5.0](docs/release-notes-v0.5.0.md)
 - [v0.4.0](docs/release-notes-v0.4.0.md)

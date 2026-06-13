@@ -13,7 +13,7 @@ pull request flow.
 - running `doctor` before a scan
 - scanning a running Vite app with axe/Playwright
 - exploring a stateful modal with screenshots and `exploration.html`
-- generating reports in `reports/`
+- generating Markdown, JSON, CSV, and visual reports in `reports/`
 - running the same scan in GitHub Actions
 
 ## Run Locally
@@ -56,7 +56,8 @@ These are teaching examples, not production recommendations.
 1. Create PR 1 that adds this workflow and keeps the seeded issues.
 2. Capture the generated report from CI.
 3. Create PR 2 that fixes the findings.
-4. Compare `reports/a11y-summary.json` before and after.
+4. Compare `reports/a11y-report.json` and `reports/a11y-metrics.csv` before
+   and after.
 
 For the full playbook, see
 [`../../docs/demo-pr-playbook-v0.4.0.md`](../../docs/demo-pr-playbook-v0.4.0.md).
