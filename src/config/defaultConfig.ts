@@ -25,6 +25,7 @@ export const defaultConfig = {
     json: true
   },
   explore: {
+    waitMs: 250,
     safeMode: {
       enabled: true,
       blockedText: [],

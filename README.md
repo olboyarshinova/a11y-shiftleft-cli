@@ -198,9 +198,6 @@ npx a11y-shiftleft check --url $APP_URL --out reports
 
 ## Visual Exploration
 
-Use `explore` when you do not want to list every route manually or when you
-want screenshots of checked states.
-
 **Screenshot privacy:** `explore` captures screenshots of every page it visits.
 If the app you are scanning contains personal data, login screens, payment details,
 or production customer records, use `--no-screenshots` to skip them entirely.
@@ -211,6 +208,23 @@ want screenshots of checked states:
 
 ```bash
 npx a11y-shiftleft explore --url $APP_URL --depth 2 --out reports
+```
+
+For apps that render data after the first page load, add a short settle wait:
+
+```bash
+npx a11y-shiftleft explore --url $APP_URL --depth 2 --wait-ms 1000 --out reports
+```
+
+If your app exposes a stable loaded-state selector, wait for that instead of
+guessing a long timeout:
+
+```bash
+npx a11y-shiftleft explore \
+  --url $APP_URL \
+  --wait-for-selector "[data-page-ready]" \
+  --wait-ms 1000 \
+  --out reports
 ```
 
 It safely follows same-origin links and low-risk UI expansion controls such as

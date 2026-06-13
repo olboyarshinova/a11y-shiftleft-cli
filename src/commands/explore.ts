@@ -54,6 +54,8 @@ interface ExploreOptions {
   safeBlockSelector?: string[];
   safeAllowSelector?: string[];
   dismissDialogs?: boolean;
+  waitMs?: string;
+  waitForSelector?: string;
   semiAuto?: boolean;
   retention?: boolean;
   retentionMaxRuns?: string;
@@ -101,6 +103,8 @@ export function registerExploreCommand(program: Command): void {
     .option("--safe-block-selector <selectors...>", "Additional selectors to skip during exploration")
     .option("--safe-allow-selector <selectors...>", "Selectors allowed to override form-button safety blocks")
     .option("--no-dismiss-dialogs", "Do not auto-dismiss browser dialogs during exploration")
+    .option("--wait-ms <ms>", "Extra settle time before screenshots and scans")
+    .option("--wait-for-selector <selector>", "Wait for a selector before screenshots and scans")
     .option("--semi-auto", "Generate a Markdown manual review checklist alongside automated reports")
     .option("--retention-max-runs <count>", "Keep at most this many report run directories including the current output")
     .option("--retention-max-age-days <days>", "Remove report run directories older than this many days")
@@ -129,6 +133,8 @@ export function registerExploreCommand(program: Command): void {
           urls: [options.url]
         },
         explore: {
+          waitMs: toNonNegativeInteger(options.waitMs),
+          waitForSelector: options.waitForSelector,
           safeMode: {
             enabled: options.safeMode === false ? false : undefined,
             blockedText: toPatternList(options.safeBlockText),
@@ -164,6 +170,7 @@ export function registerExploreCommand(program: Command): void {
       const maxDepth = toPositiveInteger(options.depth);
       const maxStates = toPositiveInteger(options.limit);
       const maxActionsPerState = toPositiveInteger(options.actionsPerState);
+      const waitMs = toNonNegativeInteger(options.waitMs) ?? effectiveConfig.explore.waitMs;
       const screenshotFormat = toScreenshotFormat(options.screenshotFormat);
       const screenshotQuality = toScreenshotQuality(options.screenshotQuality);
       const formats = parseFormats(options.format);
@@ -186,6 +193,8 @@ export function registerExploreCommand(program: Command): void {
           screenshotQuality: screenshotQuality || 70,
           screenshotFullPage: Boolean(options.screenshotFullPage),
           screenshotRedaction: options.screenshotRedaction !== false,
+          waitMs,
+          waitForSelector: effectiveConfig.explore.waitForSelector,
           safeModeEnabled: effectiveConfig.explore.safeMode.enabled,
           safeModeDismissDialogs: effectiveConfig.explore.safeMode.dismissDialogs,
           safeModeBlockedText: effectiveConfig.explore.safeMode.blockedText,
@@ -208,6 +217,8 @@ export function registerExploreCommand(program: Command): void {
         screenshotQuality,
         screenshotFullPage: Boolean(options.screenshotFullPage),
         screenshotRedaction: options.screenshotRedaction,
+        waitMs,
+        waitForSelector: effectiveConfig.explore.waitForSelector,
         safeMode: effectiveConfig.explore.safeMode,
         onProgress: (event) => {
           if (!progressEnabled) return;
@@ -333,6 +344,15 @@ function toPositiveInteger(value: string | undefined): number | undefined {
   return parsed;
 }
 
+function toNonNegativeInteger(value: string | undefined): number | undefined {
+  if (value === undefined) return undefined;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new Error("Wait time must be a non-negative integer.");
+  }
+  return parsed;
+}
+
 function toScreenshotFormat(value: string | undefined): ScreenshotFormat {
   if (value === "jpeg" || value === "png") return value;
   throw new Error("Unsupported screenshot format. Use jpeg or png.");
@@ -362,6 +382,8 @@ export function formatVerboseExploreSummary(options: {
   screenshotQuality: number;
   screenshotFullPage: boolean;
   screenshotRedaction: boolean;
+  waitMs: number;
+  waitForSelector?: string;
   safeModeEnabled: boolean;
   safeModeDismissDialogs: boolean;
   safeModeBlockedText: string[];
@@ -387,6 +409,7 @@ export function formatVerboseExploreSummary(options: {
     `screenshots: ${options.screenshots ? `${options.screenshotFormat} quality=${options.screenshotQuality}` : "off"}`,
     `screenshotFullPage: ${options.screenshotFullPage ? "on" : "off"}`,
     `screenshotRedaction: ${options.screenshotRedaction ? "on" : "off"}`,
+    `wait: ${options.waitMs}ms${options.waitForSelector ? ` selector=${options.waitForSelector}` : ""}`,
     `safeMode: ${options.safeModeEnabled ? "on" : "off"}`,
     `safeModeDismissDialogs: ${options.safeModeDismissDialogs ? "on" : "off"}`,
     `safeModeBlockedText: ${formatPatternList(options.safeModeBlockedText)}`,

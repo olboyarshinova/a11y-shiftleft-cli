@@ -26,6 +26,37 @@ reports/screenshots/state-*.jpg
 findings, recorded transitions, skipped actions, and reviewable overlays around
 affected elements when Playwright can resolve their bounds.
 
+## Waiting For Async UI
+
+Some apps render the shell first and load cards, charts, or authenticated data
+after a short delay. `explore` waits for network idle and a small settle delay by
+default before taking screenshots and running axe.
+
+Use `--wait-ms` when screenshots are captured before the UI finishes rendering:
+
+```bash
+npx a11y-shiftleft explore \
+  --url $APP_URL \
+  --depth 2 \
+  --wait-ms 1000 \
+  --out reports
+```
+
+Use `--wait-for-selector` when the app has a stable "ready" element. This keeps
+the scan more deterministic than adding a long fixed delay:
+
+```bash
+npx a11y-shiftleft explore \
+  --url $APP_URL \
+  --wait-for-selector "[data-page-ready]" \
+  --wait-ms 1000 \
+  --out reports
+```
+
+Keep waits small for pull requests. A good starting point is `500-1000ms`; use a
+larger wait only for scheduled full-site scans or pages with known slow data
+loading.
+
 ## PDF Export
 
 Use `--pdf` when you need a portable copy of the visual report for a pull

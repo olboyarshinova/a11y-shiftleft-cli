@@ -110,6 +110,8 @@ export interface ExploreSafeModeConfig {
 
 export interface ExploreConfig {
   safeMode: ExploreSafeModeConfig;
+  waitMs: number;
+  waitForSelector?: string;
 }
 
 export interface RetentionConfig {

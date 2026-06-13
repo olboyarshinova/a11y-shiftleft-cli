@@ -89,6 +89,7 @@ interface ExplorePlaywrightOptions {
   screenshotRedaction?: boolean;
   safeMode?: ExploreSafeModeConfig;
   waitMs?: number;
+  waitForSelector?: string;
   onProgress?: (event: ExploreProgressEvent) => void;
 }
 
@@ -148,7 +149,8 @@ export async function runExplorePlaywrightAdapter(
   const screenshotQuality = normalizeScreenshotQuality(options.screenshotQuality);
   const screenshotRedaction = options.screenshotRedaction ?? true;
   const safeMode = normalizeSafeMode(options.safeMode || config.explore.safeMode);
-  const waitMs = positiveOrDefault(options.waitMs, DEFAULT_WAIT_MS);
+  const waitMs = nonNegativeOrDefault(options.waitMs, DEFAULT_WAIT_MS);
+  const waitForSelector = options.waitForSelector;
   let actionsTried = 0;
   let screenshotsSaved = 0;
 
@@ -168,7 +170,10 @@ export async function runExplorePlaywrightAdapter(
       if (!current) continue;
 
       try {
-        await replayPath(page, options.url, current.path, waitMs);
+        await replayPath(page, options.url, current.path, {
+          waitMs,
+          waitForSelector
+        });
       } catch (error) {
         issues.push(createExploreErrorIssue(config, options.url, error, current.via));
         continue;
@@ -400,13 +405,13 @@ async function replayPath(
   page: Page,
   startUrl: string,
   actions: ExploreAction[],
-  waitMs: number
+  wait: ExploreWaitOptions
 ): Promise<void> {
-  await gotoAndSettle(page, startUrl, waitMs);
+  await gotoAndSettle(page, startUrl, wait);
 
   for (const action of actions) {
     if (action.type === "navigate" && action.url) {
-      await gotoAndSettle(page, action.url, waitMs);
+      await gotoAndSettle(page, action.url, wait);
       continue;
     }
 
@@ -415,21 +420,34 @@ async function replayPath(
     await page.locator(action.selector).first().click({
       timeout: 1500
     });
-    await settle(page, waitMs);
+    await settle(page, wait);
   }
 }
 
-async function gotoAndSettle(page: Page, url: string, waitMs: number): Promise<void> {
+interface ExploreWaitOptions {
+  waitMs: number;
+  waitForSelector?: string;
+}
+
+async function gotoAndSettle(page: Page, url: string, wait: ExploreWaitOptions): Promise<void> {
   await page.goto(url, {
     waitUntil: "domcontentloaded",
     timeout: 15000
   });
-  await settle(page, waitMs);
+  await settle(page, wait);
 }
 
-async function settle(page: Page, waitMs: number): Promise<void> {
+async function settle(page: Page, wait: ExploreWaitOptions): Promise<void> {
   await page.waitForLoadState("networkidle", { timeout: 3000 }).catch(() => undefined);
-  await page.waitForTimeout(waitMs);
+  if (wait.waitForSelector) {
+    await page.waitForSelector(wait.waitForSelector, {
+      state: "visible",
+      timeout: Math.max(wait.waitMs, 1000)
+    }).catch(() => undefined);
+  }
+  if (wait.waitMs > 0) {
+    await page.waitForTimeout(wait.waitMs);
+  }
 }
 
 async function fingerprintPage(page: Page): Promise<PageFingerprint> {
@@ -911,6 +929,10 @@ function createExploreErrorIssue(
 
 function positiveOrDefault(value: number | undefined, fallback: number): number {
   return Number.isInteger(value) && Number(value) > 0 ? Number(value) : fallback;
+}
+
+function nonNegativeOrDefault(value: number | undefined, fallback: number): number {
+  return Number.isInteger(value) && Number(value) >= 0 ? Number(value) : fallback;
 }
 
 function normalizeScreenshotQuality(value: number | undefined): number {

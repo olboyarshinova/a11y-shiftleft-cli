@@ -23,6 +23,8 @@ test("formatVerboseExploreSummary renders exploration context", () => {
     screenshotQuality: 70,
     screenshotFullPage: false,
     screenshotRedaction: true,
+    waitMs: 1000,
+    waitForSelector: "[data-loaded]",
     safeModeEnabled: true,
     safeModeDismissDialogs: true,
     safeModeBlockedText: ["logout", "delete"],
@@ -40,6 +42,7 @@ test("formatVerboseExploreSummary renders exploration context", () => {
   assert.match(output, /pdf: on/);
   assert.match(output, /screenshots: jpeg quality=70/);
   assert.match(output, /screenshotRedaction: on/);
+  assert.match(output, /wait: 1000ms selector=\[data-loaded\]/);
   assert.match(output, /safeMode: on/);
   assert.match(output, /safeModeBlockedText: logout, delete/);
   assert.match(output, /safeModeBlockedRoles: none/);

@@ -36,6 +36,23 @@ Keep local-only URLs, experiments, credentials, private preview links, and
 machine-specific paths out of git. Use a local config file with `--config` for
 those cases.
 
+## Explore Timing
+
+Use `explore.waitMs` when screenshots or axe scans happen before a dynamic page
+has finished rendering:
+
+```json
+{
+  "explore": {
+    "waitMs": 1000,
+    "waitForSelector": "[data-page-ready]"
+  }
+}
+```
+
+Keep shared waits small for pull requests. Prefer a stable `waitForSelector`
+over large fixed delays when the app can expose a loaded-state marker.
+
 ## Gitignore
 
 Generated reports should normally stay out of git:

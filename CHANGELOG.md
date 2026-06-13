@@ -26,6 +26,8 @@
   from `a11y-report.json` without connecting to external tracker APIs.
 - Dedicated ticket export documentation with Markdown, JSON, Jira, and Linear
   dry-run examples.
+- `explore --wait-ms` and `explore --wait-for-selector` for dynamic pages that
+  need a short stabilization period before screenshots and axe scans.
 - Updated release checklist with v0.6 smoke tests for PDF export, ticket drafts,
   dashboard PDF, and watch help.
 - Updated framework, CI, ADA Title II, and Section 508 recipes to use clearer
