@@ -49,6 +49,11 @@
 - `exploration.html` now renders larger screenshots and provides an annotated
   screenshot view so issue frames remain visible when inspecting a screenshot.
 
+### Fixed
+
+- PR accessibility workflow no longer fails when GitHub blocks report comments
+  for forked pull requests; the report artifact is still uploaded.
+
 ## 0.5.2 - 2026-06-12
 
 ### Added

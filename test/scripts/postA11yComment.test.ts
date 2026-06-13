@@ -118,15 +118,43 @@ test("postA11yComment can be tested with an injected client", async () => {
   });
 
   assert.deepEqual(result, { skipped: false });
-	  assert.deepEqual(calls, [
-	    {
-	      owner: "owner",
-	      repo: "repo",
-	      issue_number: 3,
-	      body: "<!-- a11y-shiftleft-report -->\nbody"
-	    }
-	  ]);
-	});
+  assert.deepEqual(calls, [
+    {
+      owner: "owner",
+      repo: "repo",
+      issue_number: 3,
+      body: "<!-- a11y-shiftleft-report -->\nbody"
+    }
+  ]);
+});
+
+test("postA11yComment skips when GitHub token cannot write PR comments", async () => {
+  const reportDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-comment-forbidden-"));
+  await fs.writeFile(path.join(reportDir, "a11y-comment.md"), "body");
+
+  const forbidden = new Error("Resource not accessible by integration") as Error & {
+    status: number;
+  };
+  forbidden.status = 403;
+
+  const result = await postA11yComment({
+    reportDir,
+    env: {
+      GITHUB_TOKEN: "token",
+      GITHUB_REPOSITORY: "owner/repo",
+      PR_NUMBER: "3"
+    },
+    octokit: {
+      issues: {
+        createComment: async () => {
+          throw forbidden;
+        }
+      }
+    }
+  });
+
+  assert.deepEqual(result, { skipped: true });
+});
 
 test("postA11yComment updates an existing report comment", async () => {
   const reportDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-comment-update-"));

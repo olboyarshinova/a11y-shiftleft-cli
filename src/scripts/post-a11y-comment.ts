@@ -116,27 +116,37 @@ export async function postA11yComment({
 
   const client = octokit ?? new Octokit({ auth: context.token });
   const markedBody = withCommentMarker(body);
-  const existingComment = await findExistingComment(client, context);
 
-  if (existingComment && client.issues.updateComment) {
-    await client.issues.updateComment({
+  try {
+    const existingComment = await findExistingComment(client, context);
+
+    if (existingComment && client.issues.updateComment) {
+      await client.issues.updateComment({
+        owner: context.owner,
+        repo: context.repo,
+        comment_id: existingComment.id,
+        body: markedBody
+      });
+
+      return { skipped: false };
+    }
+
+    await client.issues.createComment({
       owner: context.owner,
       repo: context.repo,
-      comment_id: existingComment.id,
+      issue_number: context.issue_number,
       body: markedBody
     });
 
     return { skipped: false };
+  } catch (error) {
+    if (isGitHubCommentPermissionError(error)) {
+      console.log("GitHub token cannot write PR comments for this run. Skipping accessibility comment.");
+      return { skipped: true };
+    }
+
+    throw error;
   }
-
-  await client.issues.createComment({
-    owner: context.owner,
-    repo: context.repo,
-    issue_number: context.issue_number,
-    body: markedBody
-  });
-
-  return { skipped: false };
 }
 
 export async function main(): Promise<void> {
@@ -153,6 +163,14 @@ function isMissingFileError(error: unknown): boolean {
 function withCommentMarker(body: string): string {
   if (body.includes(COMMENT_MARKER)) return body;
   return `${COMMENT_MARKER}\n${body}`;
+}
+
+function isGitHubCommentPermissionError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  if (!("status" in error)) return false;
+
+  const status = Number(error.status);
+  return status === 403 || status === 404;
 }
 
 async function findExistingComment(
