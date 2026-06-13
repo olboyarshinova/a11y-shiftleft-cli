@@ -186,6 +186,14 @@ npx a11y-shiftleft check --url $APP_URL --out reports
 ## Visual Exploration
 
 Use `explore` when you do not want to list every route manually or when you
+want screenshots of checked states.
+
+**Screenshot privacy:** `explore` captures screenshots of every page it visits.
+If the app you are scanning contains personal data, login screens, payment details,
+or production customer records, use `--no-screenshots` to skip them entirely.
+See [Visual reports](docs/visual-reports.md) for privacy and safe-mode details.
+
+Use `explore` when you do not want to list every route manually or when you
 want screenshots of checked states:
 
 ```bash
