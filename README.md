@@ -116,6 +116,7 @@ hints.
 | `reports/a11y-report.json` | Automation, debugging, integrations | Usually no |
 | `reports/a11y-metrics.csv` | Trends and empirical validation | Usually no |
 | `reports/exploration.html` | Visual review of explored UI states | Usually no |
+| `reports/exploration.pdf` | Portable visual report artifact when `--pdf` is used | Usually no |
 | `reports/screenshots/` | Screenshots from visual exploration | No |
 | `.a11y-shiftleft.json` | Shared project config | Usually yes |
 | `.a11y-baseline.json` | Accepted known findings | Yes, when using baseline mode |
@@ -196,6 +197,7 @@ It creates:
 
 ```txt
 reports/exploration.html
+reports/exploration.pdf       # only when --pdf is used
 reports/exploration-graph.json
 reports/screenshots/state-*.jpg
 ```
@@ -206,6 +208,13 @@ details, or production records:
 
 ```bash
 npx a11y-shiftleft explore --url $APP_URL --depth 2 --no-screenshots --out reports
+```
+
+Add `--pdf` when you need a portable copy of the visual report for a PR,
+ticket, or internal review:
+
+```bash
+npx a11y-shiftleft explore --url $APP_URL --depth 2 --pdf --out reports
 ```
 
 See [Visual reports](docs/visual-reports.md) for privacy and safe-mode details.
@@ -334,7 +343,30 @@ Or write a static dashboard file:
 npx a11y-shiftleft dashboard --reports reports --no-serve
 ```
 
+Add `--pdf` when the dashboard should be attached to a ticket, review, or
+internal report:
+
+```bash
+npx a11y-shiftleft dashboard --reports reports --pdf
+```
+
 The dashboard summarizes trends, top rules, affected pages, and recent runs.
+
+## Ticket Drafts
+
+Create dry-run Jira, Linear, or generic ticket drafts from an existing
+`a11y-report.json`:
+
+```bash
+npx a11y-shiftleft ticket export \
+  --report reports/a11y-report.json \
+  --tracker linear \
+  --out reports/a11y-tickets.md
+```
+
+The export groups findings by severity, rule, page, and target. It does not
+connect to Jira or Linear yet, so teams can review the draft before creating
+real tickets.
 
 ## Manual Review Checklist
 
@@ -400,14 +432,14 @@ defects.
 ```bash
 nvm use
 npm install
-npm run demo -- --port 3000
+npm run demo -- --port 5173
 ```
 
 In another terminal:
 
 ```bash
 nvm use
-node bin/cli.js check --dynamic --url http://localhost:3000 --out reports
+node bin/cli.js check --dynamic --url http://localhost:5173 --out reports
 ```
 
 ## More Documentation
@@ -420,14 +452,16 @@ node bin/cli.js check --dynamic --url http://localhost:3000 --out reports
   advanced `explore` options.
 - [Watch mode](docs/watch-mode.md): local development feedback after file
   changes.
+- [Ticket export](docs/ticket-export.md): dry-run Jira, Linear, or generic
+  ticket drafts from `a11y-report.json`.
 - [Evidence methodology](docs/evidence-methodology.md): confidence scoring,
   issue categories, false-positive review, and metrics definitions.
 - [Empirical validation](docs/empirical-validation.md): baseline vs
   intervention study design and analysis commands.
 - [Adoption strategy](docs/adoption-strategy.md): npm scripts, generated CI,
   future GitHub Action wrapper, docs-site plan, and outreach ideas.
-- [Roadmap](docs/roadmap.md): planned PDF export, Jira/Linear export,
-  Lighthouse comparison, browser overlay, and dashboard improvements.
+- [Roadmap](docs/roadmap.md): Lighthouse comparison, browser overlay,
+  dashboard improvements, and future tracker integrations.
 - [Contributing](CONTRIBUTING.md): first PR path, local setup, testing, issue
   templates, and pull request checklist.
 - [GitHub About setup](docs/github-about.md): recommended repository
@@ -435,7 +469,11 @@ node bin/cli.js check --dynamic --url http://localhost:3000 --out reports
 
 ## Release Notes
 
-Latest release:
+Upcoming release:
+
+- [v0.6.0](docs/release-notes-v0.6.0.md)
+
+Latest published release:
 
 - [v0.5.2](docs/release-notes-v0.5.2.md)
 

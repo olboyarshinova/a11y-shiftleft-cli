@@ -9,6 +9,7 @@ import { resolveStandard } from "../core/standards.js";
 import { applyReportRetention } from "../core/reportRetention.js";
 import { cleanExploreArtifacts } from "../reporters/cleanExploreArtifacts.js";
 import { writeExplorationHtml } from "../reporters/writeExplorationHtml.js";
+import { writeExplorationPdf } from "../reporters/writeExplorationPdf.js";
 import { writeReports } from "../reporters/writeReports.js";
 import type { ReportRetentionSummary } from "../core/reportRetention.js";
 import type {
@@ -40,6 +41,7 @@ interface ExploreOptions {
   format?: string[];
   clean?: boolean;
   html?: boolean;
+  pdf?: boolean;
   screenshots?: boolean;
   screenshotFormat?: string;
   screenshotQuality?: string;
@@ -86,6 +88,7 @@ export function registerExploreCommand(program: Command): void {
     .option("--format <formats...>", "Report formats: json, csv, markdown, or all")
     .option("--no-clean", "Keep previous generated report artifacts in the output directory")
     .option("--no-html", "Do not generate exploration.html")
+    .option("--pdf", "Generate exploration.pdf from the visual HTML report")
     .option("--no-screenshots", "Do not save state screenshots")
     .option("--screenshot-format <format>", "Screenshot format: jpeg or png", "jpeg")
     .option("--screenshot-quality <quality>", "JPEG screenshot quality from 1 to 100", "70")
@@ -108,6 +111,10 @@ export function registerExploreCommand(program: Command): void {
     .option("--json-summary", "Print the machine-readable JSON summary to stdout")
     .action(async (options: ExploreOptions) => {
       const startedAt = Date.now();
+      if (options.pdf && options.html === false) {
+        throw new Error("PDF export requires exploration.html. Remove --no-html or omit --pdf.");
+      }
+
       const config = await loadConfig({
         cwd: options.cwd,
         config: options.config
@@ -173,6 +180,7 @@ export function registerExploreCommand(program: Command): void {
           maxActionsPerState: maxActionsPerState || 8,
           formats,
           html: options.html !== false,
+          pdf: Boolean(options.pdf),
           screenshots: options.screenshots !== false,
           screenshotFormat,
           screenshotQuality: screenshotQuality || 70,
@@ -258,6 +266,9 @@ export function registerExploreCommand(program: Command): void {
       if (options.html !== false) {
         await writeExplorationHtml(effectiveConfig.outputDir, exploration.graph, report.issues);
       }
+      if (options.pdf) {
+        await writeExplorationPdf(effectiveConfig.outputDir);
+      }
 
       if (!options.quiet) {
         const summary: ExploreSummaryOutput = {
@@ -271,6 +282,7 @@ export function registerExploreCommand(program: Command): void {
             outputDir: effectiveConfig.outputDir,
             formats,
             html: options.html !== false,
+            pdf: Boolean(options.pdf),
             screenshots: options.screenshots !== false,
             retention: retentionSummary.enabled ? retentionSummary : undefined
           });
@@ -344,6 +356,7 @@ export function formatVerboseExploreSummary(options: {
   maxActionsPerState: number;
   formats: string[];
   html: boolean;
+  pdf: boolean;
   screenshots: boolean;
   screenshotFormat: ScreenshotFormat;
   screenshotQuality: number;
@@ -370,6 +383,7 @@ export function formatVerboseExploreSummary(options: {
     `output: ${options.outputDir}`,
     `formats: ${options.formats.join(", ")}`,
     `html: ${options.html ? "on" : "off"}`,
+    `pdf: ${options.pdf ? "on" : "off"}`,
     `screenshots: ${options.screenshots ? `${options.screenshotFormat} quality=${options.screenshotQuality}` : "off"}`,
     `screenshotFullPage: ${options.screenshotFullPage ? "on" : "off"}`,
     `screenshotRedaction: ${options.screenshotRedaction ? "on" : "off"}`,
@@ -412,6 +426,7 @@ export function formatExploreConsoleSummary(
     outputDir: string;
     formats: ReportFormat[];
     html: boolean;
+    pdf: boolean;
     screenshots: boolean;
     retention?: ReportRetentionSummary;
   }
@@ -422,6 +437,7 @@ export function formatExploreConsoleSummary(
     : "Accessibility findings detected";
   const files = explorationReportFiles(options.outputDir, options.formats, {
     html: options.html,
+    pdf: options.pdf,
     screenshots: options.screenshots
   });
   const topRules = topRuleCounts(report, 5);
@@ -458,6 +474,9 @@ export function formatExploreConsoleSummary(
     options.html
       ? `  - Open ${joinOutputPath(options.outputDir, "exploration.html")} for the visual state report.`
       : `  - Open ${primaryReportPath(options.outputDir, options.formats)} for the generated report.`,
+    options.pdf
+      ? `  - Attach ${joinOutputPath(options.outputDir, "exploration.pdf")} when a portable evidence artifact is needed.`
+      : "  - Add --pdf when a portable visual report artifact is needed.",
     "  - Use --no-screenshots for sensitive pages or CI runs that must not store images.",
     "  - Use --json-summary when a script needs the stdout summary as JSON."
   ].join("\n");
@@ -476,12 +495,14 @@ function explorationReportFiles(
   formats: ReportFormat[],
   options: {
     html: boolean;
+    pdf: boolean;
     screenshots: boolean;
   }
 ): string[] {
   const files = [];
 
   if (options.html) files.push(joinOutputPath(outputDir, "exploration.html"));
+  if (options.pdf) files.push(joinOutputPath(outputDir, "exploration.pdf"));
   files.push(joinOutputPath(outputDir, "exploration-graph.json"));
   if (formats.includes("markdown")) files.push(joinOutputPath(outputDir, "a11y-comment.md"));
   if (formats.includes("json")) files.push(joinOutputPath(outputDir, "a11y-report.json"));

@@ -10,15 +10,15 @@ remain suitable for reproducible empirical validation.
 
 - Release the initial `watch` command so developers can keep accessibility
   reports refreshed while they code.
-- Add PDF export for generated HTML reports, starting with `exploration.html`
-  and later the historical dashboard. Treat PDF as an evidence-friendly,
+- Ship PDF export for `exploration.html` via `explore --pdf` and for the
+  historical dashboard via `dashboard --pdf`. Treat PDF as an evidence-friendly,
   shareable audit artifact, not as legal certification.
 - Keep PDF export local-first and dependency-light by reusing Playwright's
   browser rendering path where possible instead of adding a heavy PDF stack.
-- Prototype issue-tracker export for Jira and Linear after `watch` is stable:
-  read `a11y-report.json`, group findings by rule/page/severity, support
-  dry-run output first, then create or update issues only when explicit tokens
-  are provided.
+- Prototype issue-tracker export for Jira and Linear after `watch` is stable.
+  The first step is `ticket export`: read `a11y-report.json`, group findings by
+  rule/page/severity, and write dry-run Markdown/JSON ticket drafts. Later
+  versions can create or update issues only when explicit tokens are provided.
 - Keep Jira and Linear integrations optional so the core CLI stays useful
   without account setup, SaaS authorization, or extra installation weight.
 
@@ -83,8 +83,6 @@ remain suitable for reproducible empirical validation.
 - Continue expanding `exploration.html` from a static triage overview into a
   richer dashboard that can visualize checked pages/states, screenshots, and
   accessibility findings while the scan is running.
-- Add PDF export for generated visual reports so teams can attach portable
-  evidence artifacts to pull requests, internal audits, and remediation tickets.
 - Continue hardening screenshot annotations in `exploration.html`, including
   better selector matching, edge-case handling for full-page screenshots, and
   clearer overlay legends.

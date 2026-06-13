@@ -8,6 +8,7 @@ These recipes give teams short copy-paste paths for adding
 - [Vue/Vite](vue-vite.md)
 - [Next.js](nextjs.md)
 - [GitHub Actions](github-actions.md)
+- [Ticket export](../ticket-export.md)
 - [ADA Title II](ada-title-ii.md)
 - [Section 508](section-508.md)
 

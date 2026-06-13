@@ -17,6 +17,7 @@ test("formatVerboseExploreSummary renders exploration context", () => {
     maxActionsPerState: 8,
     formats: ["json", "markdown"],
     html: true,
+    pdf: true,
     screenshots: true,
     screenshotFormat: "jpeg",
     screenshotQuality: 70,
@@ -36,6 +37,7 @@ test("formatVerboseExploreSummary renders exploration context", () => {
   assert.match(output, /url: http:\/\/localhost:3000/);
   assert.match(output, /framework: react/);
   assert.match(output, /limits: depth=2, states=20, actionsPerState=8/);
+  assert.match(output, /pdf: on/);
   assert.match(output, /screenshots: jpeg quality=70/);
   assert.match(output, /screenshotRedaction: on/);
   assert.match(output, /safeMode: on/);
@@ -196,6 +198,7 @@ test("formatExploreConsoleSummary renders a readable visual scan summary", () =>
     outputDir: "reports",
     formats: ["json", "markdown"],
     html: true,
+    pdf: true,
     screenshots: true
   });
 
@@ -204,6 +207,8 @@ test("formatExploreConsoleSummary renders a readable visual scan summary", () =>
   assert.match(output, /color-contrast: 1/);
   assert.match(output, /state-1: 2 findings/);
   assert.match(output, /reports\/exploration.html/);
+  assert.match(output, /reports\/exploration.pdf/);
   assert.match(output, /reports\/screenshots\//);
+  assert.match(output, /portable evidence artifact/);
   assert.match(output, /--json-summary/);
 });

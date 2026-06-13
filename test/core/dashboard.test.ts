@@ -99,13 +99,15 @@ test("formatDashboardSummary renders local output target", async () => {
 
   const output = formatDashboardSummary(await collectDashboardData(root), {
     mode: "file",
-    outputPath: "reports/dashboard.html"
+    outputPath: "reports/dashboard.html",
+    pdfPath: "reports/dashboard.pdf"
   });
 
   assert.match(output, /Runs indexed: 1/);
   assert.match(output, /Latest run: run-1 total=1 critical=1 warning=0 info=0/);
   assert.match(output, /Top rule: button-name \(1\)/);
   assert.match(output, /reports\/dashboard\.html/);
+  assert.match(output, /PDF: reports\/dashboard\.pdf/);
 });
 
 interface ReportInput {

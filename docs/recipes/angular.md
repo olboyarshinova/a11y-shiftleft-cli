@@ -39,6 +39,9 @@ npm run doctor:a11y
 npm run test:a11y
 ```
 
+If Angular runs on a different port, use that URL in `test:a11y` and
+`doctor:a11y`.
+
 ## Example Finding
 
 ```json
