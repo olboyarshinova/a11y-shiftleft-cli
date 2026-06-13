@@ -53,6 +53,25 @@ has finished rendering:
 Keep shared waits small for pull requests. Prefer a stable `waitForSelector`
 over large fixed delays when the app can expose a loaded-state marker.
 
+## Explore Safety
+
+`explore.safeMode.isolateCookies` is enabled by default. It clears browser
+cookies between replayed states so one explored action cannot silently change
+later states:
+
+```json
+{
+  "explore": {
+    "safeMode": {
+      "isolateCookies": true
+    }
+  }
+}
+```
+
+Leave it enabled for CI and pull requests. Disable it only for local debugging
+when you intentionally need cookies to persist across explored states.
+
 ## Gitignore
 
 Generated reports should normally stay out of git:

@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { AxeBuilder } from "@axe-core/playwright";
-import { chromium, type Page } from "playwright";
+import { chromium, type BrowserContext, type Page } from "playwright";
 import type {
   A11yConfig,
   ExplorationGraph,
@@ -33,7 +33,38 @@ const DEFAULT_WAIT_MS = 250;
 const DEFAULT_SCREENSHOT_FORMAT = "jpeg";
 const DEFAULT_SCREENSHOT_QUALITY = 70;
 const SCREENSHOT_REDACTION_COLOR = "#111827";
-const DANGEROUS_ACTION_PATTERN = /\b(delete|remove|destroy|logout|log out|sign out|submit|save|create|update|send|pay|payment|purchase|buy|checkout|confirm|удалить|выйти|отправить|сохранить|создать|обновить|купить|оплатить|оформить|подтвердить)\b/i;
+
+const ALWAYS_BLOCKED_ACTION_PATTERNS = [
+  /\b(log\s*out|logout|sign\s*out|signoff|disconnect|end\s*session)\b/i,
+  /\b(login|log\s*in|sign\s*in|sign\s*up|register|create\s*account|authenticate)\b/i,
+  /\b(pay|payment|purchase|buy|checkout|order\s*now|subscribe|donate|billing)\b/i,
+  /\b(accept\s*(all)?\s*cookies?|reject\s*(all)?\s*cookies?|cookie\s*(settings|preferences|consent)?|privacy\s*preferences|allow\s*all|agree)\b/i,
+  /\b(camera|webcam|photo|picture|take\s*(a\s*)?(photo|picture)|snapshot|scan\s*document|qr\s*scan)\b/i,
+  /\b(microphone|mic|voice\s*input|record\s*(audio|voice)?|audio\s*recording)\b/i,
+  /\b(location|geolocation|share\s*location|use\s*my\s*location|enable\s*notifications?|push\s*notifications?)\b/i,
+  /\b(upload|choose\s*file|select\s*file|attach\s*file|share\s*(screen|camera|microphone|location)?)\b/i,
+  /(выйти|выход|завершить\s*сеанс|войти|авторизоваться|зарегистрироваться|создать\s*аккаунт)/i,
+  /(оплатить|платеж|платёж|купить|оформить\s*заказ|заказать|подписаться|пожертвовать|биллинг)/i,
+  /(cookie|cookies|куки|файлы\s*cookie|принять\s*все|отклонить\s*все|согласен|согласиться|настройки\s*конфиденциальности)/i,
+  /(камера|веб-камера|фото|фотография|снимок|сфотографировать|сканировать\s*документ|qr)/i,
+  /(микрофон|голосовой\s*ввод|записать\s*(звук|голос)|аудиозапись)/i,
+  /(геолокация|местоположение|поделиться\s*местоположением|уведомления)/i,
+  /(загрузить|выбрать\s*файл|прикрепить\s*файл|поделиться\s*(экраном|камерой|микрофоном))/i,
+  /(cerrar\s*sesión|iniciar\s*sesión|registrarse|pagar|pago|comprar|cámara|foto|micrófono|ubicación|notificaciones|cookies?)/i,
+  /(déconnexion|connexion|inscription|payer|paiement|acheter|caméra|photo|micro|emplacement|notifications|cookies?)/i,
+  /(abmelden|anmelden|registrieren|bezahlen|zahlung|kaufen|kamera|foto|mikrofon|standort|benachrichtigungen|cookies?)/i,
+  /(disconnetti|accedi|registrati|pagare|pagamento|comprare|fotocamera|foto|microfono|posizione|notifiche|cookies?)/i,
+  /(sair|entrar|registrar|pagar|pagamento|comprar|câmera|camera|foto|microfone|localização|notificações|cookies?)/i,
+  /(wyloguj|zaloguj|zarejestruj|zapłać|płatność|kup|kamera|zdjęcie|mikrofon|lokalizacja|powiadomienia|cookies?)/i,
+  /(вийти|увійти|зареєструватися|оплатити|платіж|купити|камера|фото|мікрофон|місцезнаходження|сповіщення|cookies?)/i,
+  /(退出|登录|登入|注册|支付|付款|购买|结账|摄像头|相机|照片|麦克风|位置|通知|Cookie|同意)/i,
+  /(ログアウト|ログイン|登録|支払い|購入|チェックアウト|カメラ|写真|マイク|位置情報|通知|クッキー|同意)/i,
+  /(로그아웃|로그인|가입|결제|구매|체크아웃|카메라|사진|마이크|위치|알림|쿠키|동의)/i,
+  /(تسجيل\s*الخروج|تسجيل\s*الدخول|دفع|شراء|كاميرا|صورة|ميكروفون|موقع|إشعارات|ملفات\s*تعريف\s*الارتباط)/i,
+  /(लॉग\s*आउट|लॉग\s*इन|भुगतान|खरीद|कैमरा|फोटो|माइक्रोफोन|स्थान|सूचनाएं|कुकी)/i
+];
+
+const DANGEROUS_ACTION_PATTERN = /\b(delete|remove|destroy|submit|save|create|update|send|confirm|удалить|отправить|сохранить|создать|обновить|подтвердить)\b/i;
 
 export const SENSITIVE_SCREENSHOT_SELECTOR = [
   "[data-a11y-sensitive]",
@@ -170,6 +201,9 @@ export async function runExplorePlaywrightAdapter(
       if (!current) continue;
 
       try {
+        if (safeMode.isolateCookies) {
+          await clearContextCookies(context);
+        }
         await replayPath(page, options.url, current.path, {
           waitMs,
           waitForSelector
@@ -296,6 +330,10 @@ export async function runExplorePlaywrightAdapter(
   };
 }
 
+async function clearContextCookies(context: BrowserContext): Promise<void> {
+  await context.clearCookies().catch(() => undefined);
+}
+
 export async function writeExplorationGraph(
   outputDir: string,
   graph: ExplorationGraph
@@ -348,8 +386,16 @@ export function getExploreActionSafety(
     action.label,
     action.text,
     action.role,
-    action.url
+    action.url,
+    action.selector
   ].filter(Boolean).join(" ");
+
+  if (matchesAlwaysBlockedAction(searchable)) {
+    return {
+      safe: false,
+      reason: "Matched built-in high-risk action pattern for account, payment, cookies, media, permissions, upload, or sharing controls."
+    };
+  }
 
   if (safeMode.enabled) {
     if (DANGEROUS_ACTION_PATTERN.test(searchable)) {
@@ -399,6 +445,10 @@ export function getExploreActionSafety(
       safe: false,
       reason: "Click action has no stable selector."
     };
+}
+
+function matchesAlwaysBlockedAction(value: string): boolean {
+  return ALWAYS_BLOCKED_ACTION_PATTERNS.some((pattern) => pattern.test(value));
 }
 
 async function replayPath(
@@ -952,7 +1002,8 @@ function normalizeSafeMode(safeMode: ExploreSafeModeConfig | undefined): Explore
     allowedSelectors: normalizePatterns(safeMode?.allowedSelectors).length > 0
       ? normalizePatterns(safeMode?.allowedSelectors)
       : fallback.allowedSelectors,
-    dismissDialogs: safeMode?.dismissDialogs ?? fallback.dismissDialogs
+    dismissDialogs: safeMode?.dismissDialogs ?? fallback.dismissDialogs,
+    isolateCookies: safeMode?.isolateCookies ?? fallback.isolateCookies
   };
 }
 
@@ -964,7 +1015,8 @@ function defaultSafeMode(): ExploreSafeModeConfig {
     blockedUrls: [],
     blockedSelectors: [],
     allowedSelectors: ["[data-a11y-explore]"],
-    dismissDialogs: true
+    dismissDialogs: true,
+    isolateCookies: true
   };
 }
 

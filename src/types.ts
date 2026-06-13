@@ -106,6 +106,7 @@ export interface ExploreSafeModeConfig {
   blockedSelectors: string[];
   allowedSelectors: string[];
   dismissDialogs: boolean;
+  isolateCookies: boolean;
 }
 
 export interface ExploreConfig {

@@ -33,7 +33,8 @@ export const defaultConfig = {
       blockedUrls: [],
       blockedSelectors: [],
       allowedSelectors: ["[data-a11y-explore]"],
-      dismissDialogs: true
+      dismissDialogs: true,
+      isolateCookies: true
     }
   },
   retention: {

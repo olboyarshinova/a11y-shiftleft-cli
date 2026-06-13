@@ -72,6 +72,33 @@ test("isSafeExploreAction blocks dangerous or external actions", () => {
   }, "http://localhost:3000/"), false);
 });
 
+test("isSafeExploreAction blocks high-risk actions across common languages", () => {
+  const unsafeActions = [
+    ["logout", "Click: Log out"],
+    ["pay", "Click: Pay now"],
+    ["cookies", "Click: Accept all cookies"],
+    ["camera", "Click: Take photo"],
+    ["microphone", "Click: Enable microphone"],
+    ["location", "Click: Share location"],
+    ["russian-pay", "Click: Оплатить заказ"],
+    ["spanish-camera", "Click: Activar cámara"],
+    ["french-mic", "Click: Activer le micro"],
+    ["chinese-cookie", "Click: 同意 Cookie"],
+    ["japanese-photo", "Click: 写真を撮る"]
+  ] as const;
+
+  for (const [id, label] of unsafeActions) {
+    assert.equal(isSafeExploreAction({
+      id,
+      type: "click",
+      selector: `#${id}`,
+      label,
+      text: label.replace("Click: ", ""),
+      role: "button"
+    }, "http://localhost:3000/"), false, label);
+  }
+});
+
 test("isSafeExploreActionWithConfig applies custom safe-mode patterns", () => {
   const safeMode = {
     enabled: true,
@@ -80,7 +107,8 @@ test("isSafeExploreActionWithConfig applies custom safe-mode patterns", () => {
     blockedUrls: ["*/account/*"],
     blockedSelectors: ["[data-danger]"],
     allowedSelectors: ["[data-a11y-explore]"],
-    dismissDialogs: true
+    dismissDialogs: true,
+    isolateCookies: true
   };
 
   assert.equal(isSafeExploreActionWithConfig({
@@ -135,14 +163,15 @@ test("getExploreActionSafety returns reviewable skip reasons", () => {
     blockedUrls: [],
     blockedSelectors: [],
     allowedSelectors: ["[data-a11y-explore]"],
-    dismissDialogs: true
+    dismissDialogs: true,
+    isolateCookies: true
   });
 
   assert.equal(safety.safe, false);
-  assert.match(safety.reason || "", /destructive or transactional/);
+  assert.match(safety.reason || "", /high-risk action/);
 });
 
-test("isSafeExploreActionWithConfig still blocks external URLs when safe mode is disabled", () => {
+test("isSafeExploreActionWithConfig keeps hard blocks when safe mode is disabled", () => {
   const safeMode = {
     enabled: false,
     blockedText: [],
@@ -150,7 +179,8 @@ test("isSafeExploreActionWithConfig still blocks external URLs when safe mode is
     blockedUrls: [],
     blockedSelectors: [],
     allowedSelectors: ["[data-a11y-explore]"],
-    dismissDialogs: false
+    dismissDialogs: false,
+    isolateCookies: false
   };
 
   assert.equal(isSafeExploreActionWithConfig({
@@ -161,6 +191,15 @@ test("isSafeExploreActionWithConfig still blocks external URLs when safe mode is
     text: "Delete account",
     role: "button"
   }, "http://localhost:3000/", safeMode), true);
+
+  assert.equal(isSafeExploreActionWithConfig({
+    id: "pay",
+    type: "click",
+    selector: "button:nth-of-type(3)",
+    label: "Click: Pay now",
+    text: "Pay now",
+    role: "button"
+  }, "http://localhost:3000/", safeMode), false);
 
   assert.equal(isSafeExploreActionWithConfig({
     id: "external",

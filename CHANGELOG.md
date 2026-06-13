@@ -28,6 +28,9 @@
   dry-run examples.
 - `explore --wait-ms` and `explore --wait-for-selector` for dynamic pages that
   need a short stabilization period before screenshots and axe scans.
+- Built-in high-risk action blocking for account/session, payment, cookie
+  consent, camera/photo, microphone, location, notification, upload, and sharing
+  controls, with cookie isolation between explored states.
 - Updated release checklist with v0.6 smoke tests for PDF export, ticket drafts,
   dashboard PDF, and watch help.
 - Updated framework, CI, ADA Title II, and Section 508 recipes to use clearer

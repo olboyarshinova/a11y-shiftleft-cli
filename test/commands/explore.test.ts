@@ -27,6 +27,7 @@ test("formatVerboseExploreSummary renders exploration context", () => {
     waitForSelector: "[data-loaded]",
     safeModeEnabled: true,
     safeModeDismissDialogs: true,
+    safeModeIsolateCookies: true,
     safeModeBlockedText: ["logout", "delete"],
     safeModeBlockedRoles: [],
     safeModeBlockedUrls: ["*/checkout*"],
@@ -45,6 +46,7 @@ test("formatVerboseExploreSummary renders exploration context", () => {
   assert.match(output, /wait: 1000ms selector=\[data-loaded\]/);
   assert.match(output, /safeMode: on/);
   assert.match(output, /safeModeBlockedText: logout, delete/);
+  assert.match(output, /safeModeIsolateCookies: on/);
   assert.match(output, /safeModeBlockedRoles: none/);
   assert.match(output, /safeModeBlockedUrls: \*\/checkout\*/);
   assert.match(output, /safeModeBlockedSelectors: \[data-danger\]/);

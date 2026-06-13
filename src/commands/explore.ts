@@ -54,6 +54,7 @@ interface ExploreOptions {
   safeBlockSelector?: string[];
   safeAllowSelector?: string[];
   dismissDialogs?: boolean;
+  isolateCookies?: boolean;
   waitMs?: string;
   waitForSelector?: string;
   semiAuto?: boolean;
@@ -103,6 +104,7 @@ export function registerExploreCommand(program: Command): void {
     .option("--safe-block-selector <selectors...>", "Additional selectors to skip during exploration")
     .option("--safe-allow-selector <selectors...>", "Selectors allowed to override form-button safety blocks")
     .option("--no-dismiss-dialogs", "Do not auto-dismiss browser dialogs during exploration")
+    .option("--no-isolate-cookies", "Allow cookies to persist between explored states")
     .option("--wait-ms <ms>", "Extra settle time before screenshots and scans")
     .option("--wait-for-selector <selector>", "Wait for a selector before screenshots and scans")
     .option("--semi-auto", "Generate a Markdown manual review checklist alongside automated reports")
@@ -142,7 +144,8 @@ export function registerExploreCommand(program: Command): void {
             blockedUrls: toPatternList(options.safeBlockUrl),
             blockedSelectors: toPatternList(options.safeBlockSelector),
             allowedSelectors: toPatternList(options.safeAllowSelector),
-            dismissDialogs: options.dismissDialogs === false ? false : undefined
+            dismissDialogs: options.dismissDialogs === false ? false : undefined,
+            isolateCookies: options.isolateCookies === false ? false : undefined
           }
         },
         retention: {
@@ -197,6 +200,7 @@ export function registerExploreCommand(program: Command): void {
           waitForSelector: effectiveConfig.explore.waitForSelector,
           safeModeEnabled: effectiveConfig.explore.safeMode.enabled,
           safeModeDismissDialogs: effectiveConfig.explore.safeMode.dismissDialogs,
+          safeModeIsolateCookies: effectiveConfig.explore.safeMode.isolateCookies,
           safeModeBlockedText: effectiveConfig.explore.safeMode.blockedText,
           safeModeBlockedRoles: effectiveConfig.explore.safeMode.blockedRoles,
           safeModeBlockedUrls: effectiveConfig.explore.safeMode.blockedUrls,
@@ -386,6 +390,7 @@ export function formatVerboseExploreSummary(options: {
   waitForSelector?: string;
   safeModeEnabled: boolean;
   safeModeDismissDialogs: boolean;
+  safeModeIsolateCookies: boolean;
   safeModeBlockedText: string[];
   safeModeBlockedRoles: string[];
   safeModeBlockedUrls: string[];
@@ -412,6 +417,7 @@ export function formatVerboseExploreSummary(options: {
     `wait: ${options.waitMs}ms${options.waitForSelector ? ` selector=${options.waitForSelector}` : ""}`,
     `safeMode: ${options.safeModeEnabled ? "on" : "off"}`,
     `safeModeDismissDialogs: ${options.safeModeDismissDialogs ? "on" : "off"}`,
+    `safeModeIsolateCookies: ${options.safeModeIsolateCookies ? "on" : "off"}`,
     `safeModeBlockedText: ${formatPatternList(options.safeModeBlockedText)}`,
     `safeModeBlockedRoles: ${formatPatternList(options.safeModeBlockedRoles)}`,
     `safeModeBlockedUrls: ${formatPatternList(options.safeModeBlockedUrls)}`,

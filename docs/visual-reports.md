@@ -120,8 +120,20 @@ npx a11y-shiftleft explore \
 ## Safe Mode
 
 Safe mode skips submit/reset buttons, form buttons without an explicit safe
-marker, external links, and actions whose labels look destructive or
-transactional, such as delete, logout, save, checkout, or payment.
+marker, external links, and actions whose labels look destructive,
+transactional, privacy-sensitive, or permission-changing.
+
+Some actions are hard-blocked even when `--no-safe-mode` is used. The built-in
+multilingual blocklist covers common labels for account/session actions,
+payments, cookie consent, camera/photo, microphone/audio recording, location,
+notifications, file upload, and sharing controls. This is a safety layer, not a
+complete translation system; add project-specific patterns when your product
+uses custom wording.
+
+Cookies are isolated between explored states by default, so a cookie-setting
+click in one state does not change later replay attempts. Use
+`--no-isolate-cookies` only when you intentionally need cookie persistence
+during local debugging.
 
 Add `data-a11y-skip` to any element that should never be clicked during
 automated exploration. Add `data-a11y-explore` only when a form button or custom
@@ -138,7 +150,8 @@ Project-specific rules can live in `.a11y-shiftleft.json`:
       "blockedUrls": ["*/checkout*", "*/account/billing*"],
       "blockedSelectors": ["[data-danger]", "[data-payment]"],
       "allowedSelectors": ["[data-a11y-explore]"],
-      "dismissDialogs": true
+      "dismissDialogs": true,
+      "isolateCookies": true
     }
   }
 }
