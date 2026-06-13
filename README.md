@@ -430,6 +430,8 @@ node bin/cli.js check --dynamic --url http://localhost:3000 --out reports
   Lighthouse comparison, browser overlay, and dashboard improvements.
 - [Contributing](CONTRIBUTING.md): first PR path, local setup, testing, issue
   templates, and pull request checklist.
+- [GitHub About setup](docs/github-about.md): recommended repository
+  description, website, and topics.
 
 ## Release Notes
 
