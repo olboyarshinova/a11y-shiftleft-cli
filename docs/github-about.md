@@ -6,3 +6,25 @@ Use the repository About section to make the project easier to discover and unde
 
 ```txt
 Accessibility checks for web apps, pull requests, visual reports, and CI workflows.
+```
+
+## Website
+
+```txt
+https://www.npmjs.com/package/a11y-shiftleft-cli
+```
+
+## Topics
+
+```txt
+accessibility
+a11y
+wcag
+axe-core
+playwright
+eslint
+cli
+developer-tools
+```
+
+Keep the topic list short so the repository stays focused and easy to understand.
