@@ -53,6 +53,19 @@ npx playwright install chromium
 npm run dev
 ```
 
+Common dev server URLs by framework or tool:
+
+| Framework / Tool | Default URL |
+|---|---|
+| Vite (React, Vue, Svelte) | `http://localhost:5173` |
+| Next.js | `http://localhost:3000` |
+| Create React App | `http://localhost:3000` |
+| Angular CLI | `http://localhost:4200` |
+| Astro | `http://localhost:4321` |
+| Webpack Dev Server | `http://localhost:8080` |
+
+When in doubt, use the URL your terminal prints after `npm run dev`.
+
 3. Run your first scan. Replace the URL with the URL printed by your dev server:
 
 ```bash
