@@ -228,38 +228,38 @@ export function renderExplorationHtml(
     .badges {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
+      gap: 4px 10px;
     }
 
     .badge {
-      border: 1px solid var(--line);
-      border-radius: 999px;
       color: var(--muted);
       display: inline-flex;
       font-size: 12px;
-      gap: 4px;
-      line-height: 1;
-      padding: 5px 7px;
+      font-weight: 600;
+      line-height: 1.35;
       white-space: nowrap;
     }
 
+    .badge + .badge::before {
+      color: var(--muted);
+      content: "•";
+      font-weight: 400;
+      margin-right: 10px;
+    }
+
     .badge-critical {
-      border-color: #fecdca;
       color: var(--critical);
     }
 
     .badge-warning {
-      border-color: #fedf89;
       color: var(--warning);
     }
 
     .badge-info {
-      border-color: #b2ddff;
       color: var(--info);
     }
 
     .badge-ok {
-      border-color: #abefc6;
       color: var(--ok);
     }
 
