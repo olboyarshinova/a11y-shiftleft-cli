@@ -34,6 +34,6 @@ export function createProgram(): Command {
   return program;
 }
 
-export function main(argv = process.argv): void {
-  createProgram().parse(argv);
+export async function main(argv = process.argv): Promise<void> {
+  await createProgram().parseAsync(argv);
 }
