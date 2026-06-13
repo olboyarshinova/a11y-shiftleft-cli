@@ -4,7 +4,7 @@
 [![Accessibility Shift-Left](https://github.com/olboyarshinova/a11y-shiftleft-cli/actions/workflows/a11y.yml/badge.svg)](https://github.com/olboyarshinova/a11y-shiftleft-cli/actions/workflows/a11y.yml)
 [![npm version](https://img.shields.io/npm/v/a11y-shiftleft-cli.svg)](https://www.npmjs.com/package/a11y-shiftleft-cli)
 
-[npm package](https://www.npmjs.com/package/a11y-shiftleft-cli) |
+[npm package](https://www.npmjs.com/package/a11y-shiftleft-cli)
 
 Accessibility checks for web apps, pull requests, and local reports.
 
