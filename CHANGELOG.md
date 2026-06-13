@@ -41,6 +41,8 @@
   reporting behavior without shelling out to the CLI.
 - `explore` cleanup and report retention now treat `exploration.pdf` as a
   generated report artifact.
+- `exploration.html` now keeps state transitions and skipped actions in a
+  compact details section so the report focuses first on actionable findings.
 
 ## 0.5.2 - 2026-06-12
 

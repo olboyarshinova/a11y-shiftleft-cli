@@ -286,6 +286,26 @@ export function renderExplorationHtml(
       word-break: break-word;
     }
 
+    details {
+      border-top: 1px solid var(--line);
+      padding-top: 10px;
+    }
+
+    details + details {
+      margin-top: 12px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: 700;
+      list-style-position: outside;
+    }
+
+    summary + .muted,
+    summary + .edge-list {
+      margin-top: 10px;
+    }
+
     .url {
       color: var(--muted);
       font-size: 12px;
@@ -339,13 +359,10 @@ export function renderExplorationHtml(
       ${states.map(renderState).join("\n")}
     </section>
 
-    <section class="panel" aria-label="Exploration edges">
-      <h2>State Graph</h2>
+    <section class="panel" aria-label="Exploration details">
+      <h2>Exploration Details</h2>
+      <p class="muted">Use this section for debugging how the page was explored. Start with Triage Overview and Checked States when deciding what to fix.</p>
       ${renderEdges(graph)}
-    </section>
-
-    <section class="panel" aria-label="Skipped actions">
-      <h2>Skipped Actions</h2>
       ${renderSkippedActions(graph)}
     </section>
 
@@ -516,33 +533,55 @@ function renderIssues(issues: DedupedIssue[]): string {
 
 function renderEdges(graph: ExplorationGraph): string {
   if (graph.edges.length === 0) {
-    return `<p class="muted">No state transitions were recorded.</p>`;
+    return `<details>
+      <summary>State transitions: 0</summary>
+      <p class="muted">No state transitions were recorded.</p>
+    </details>`;
   }
 
-  return `<ul class="edge-list">
-    ${graph.edges.map((edge) => `<li class="edge">
+  const visibleEdges = graph.edges.slice(0, 12);
+  const hiddenCount = graph.edges.length - visibleEdges.length;
+
+  return `<details>
+    <summary>State transitions: ${graph.edges.length}</summary>
+    <p class="muted">Transition details are mainly useful for debugging crawl coverage. Full data is available in <code>exploration-graph.json</code>.</p>
+    <ul class="edge-list">
+    ${visibleEdges.map((edge) => `<li class="edge">
       <div><a href="#${escapeAttribute(edge.from)}">${escapeHtml(edge.from)}</a> -> <a href="#${escapeAttribute(edge.to)}">${escapeHtml(edge.to)}</a></div>
       <div class="muted">${escapeHtml(edge.action.label)}</div>
       ${edge.action.selector ? `<div><code>${escapeHtml(edge.action.selector)}</code></div>` : ""}
     </li>`).join("\n")}
-  </ul>`;
+  </ul>
+  ${hiddenCount > 0 ? `<p class="muted">${hiddenCount} more transitions are available in <code>exploration-graph.json</code>.</p>` : ""}
+  </details>`;
 }
 
 function renderSkippedActions(graph: ExplorationGraph): string {
   const skippedActions = graph.skippedActions || [];
 
   if (skippedActions.length === 0) {
-    return `<p class="muted">No skipped actions were recorded.</p>`;
+    return `<details>
+      <summary>Skipped actions: 0</summary>
+      <p class="muted">No skipped actions were recorded.</p>
+    </details>`;
   }
 
-  return `<ul class="edge-list">
-    ${skippedActions.slice(0, 30).map((action) => `<li class="edge">
+  const visibleActions = skippedActions.slice(0, 20);
+  const hiddenCount = skippedActions.length - visibleActions.length;
+
+  return `<details>
+    <summary>Skipped actions: ${skippedActions.length}</summary>
+    <p class="muted">Skipped actions are usually safety decisions, such as avoiding submit, payment, logout, or destructive controls.</p>
+    <ul class="edge-list">
+    ${visibleActions.map((action) => `<li class="edge">
       <div><a href="#${escapeAttribute(action.stateId)}">${escapeHtml(action.stateId)}</a>: ${escapeHtml(action.label)}</div>
       <div class="muted">${escapeHtml(action.reason)}</div>
       ${action.selector ? `<div><code>${escapeHtml(action.selector)}</code></div>` : ""}
       ${action.url ? `<div class="url">${escapeHtml(action.url)}</div>` : ""}
     </li>`).join("\n")}
-  </ul>`;
+  </ul>
+  ${hiddenCount > 0 ? `<p class="muted">${hiddenCount} more skipped actions are available in <code>exploration-graph.json</code>.</p>` : ""}
+  </details>`;
 }
 
 function metric(label: string, value: number, severity?: Severity): string {

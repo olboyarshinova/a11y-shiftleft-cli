@@ -119,8 +119,11 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /WCAG 4\.1\.2 Name, Role, Value, Level A/);
   assert.match(html, /annotation annotation-critical/);
   assert.match(html, /left: 10%; top: 20%; width: 30%; height: 12%/);
+  assert.match(html, /Exploration Details/);
+  assert.match(html, /Start with Triage Overview and Checked States/);
+  assert.match(html, /State transitions: 1/);
   assert.match(html, /state-1.*->.*state-2/s);
-  assert.match(html, /Skipped Actions/);
+  assert.match(html, /Skipped actions: 1/);
   assert.match(html, /Submit\/reset controls are blocked by safe mode/);
   assert.match(html, /Coverage Note/);
 });
