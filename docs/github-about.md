@@ -27,4 +27,4 @@ cli
 developer-tools
 ```
 
-Keep the topic list short so the repository stays focused and easy to understand.
+Keep the topic list short so the repository stays focused and easy for new users to understand.
