@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+### Added
+
+- Initial `watch` command for local development feedback. It watches common
+  source folders, reruns the existing accessibility check pipeline after file
+  changes, refreshes reports, and prints fixed/new/remaining finding counts.
+- Dedicated `watch` documentation with quick start, custom source paths,
+  static-only mode, dynamic URL mode, baseline usage, and current limits.
+- Beginner-focused README rewrite with clearer project value, a 2-minute quick
+  start, and copy-paste usage recipes.
+- GitHub "Good first issue" template and contributor guidance for
+  beginner-friendly tasks.
+- Expanded contributor onboarding with clone/install/test/PR instructions,
+  structured issue forms, and a pull request template.
+- Seed script for creating seven beginner-friendly GitHub issues with
+  `good first issue` and `help wanted` labels.
+- Contributor guide sections for the first-PR path, test commands by change
+  type, review expectations, and maintainer issue seeding.
+
+### Changed
+
+- Refactored `check` into a reusable `runCheck()` pipeline so future developer
+  workflows can reuse the same normalization, triage, baseline, ignore, and
+  reporting behavior without shelling out to the CLI.
+
 ## 0.5.2 - 2026-06-12
 
 ### Added

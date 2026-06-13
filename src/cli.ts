@@ -7,6 +7,7 @@ import { registerDashboardCommand } from "./commands/dashboard.js";
 import { registerDoctorCommand } from "./commands/doctor.js";
 import { registerExploreCommand } from "./commands/explore.js";
 import { registerInitCommand } from "./commands/init.js";
+import { registerWatchCommand } from "./commands/watch.js";
 
 const require = createRequire(import.meta.url);
 const { version } = require("../package.json") as { version: string };
@@ -26,6 +27,7 @@ export function createProgram(): Command {
   registerAdapterCommand(program);
   registerExploreCommand(program);
   registerDashboardCommand(program);
+  registerWatchCommand(program);
 
   return program;
 }

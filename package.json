@@ -66,6 +66,7 @@
     "ci": "node bin/cli.js ci",
     "doctor": "node bin/cli.js doctor",
     "dashboard": "node bin/cli.js dashboard",
+    "watch": "node bin/cli.js watch",
     "post-a11y-comment": "node scripts/post-a11y-comment.js"
   },
   "dependencies": {
