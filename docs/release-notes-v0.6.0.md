@@ -16,11 +16,23 @@ artifacts, and easier open-source contribution.
   drafts from `a11y-report.json` without connecting to external tracker APIs.
 - Added dedicated ticket export documentation with Markdown, JSON, Jira, and
   Linear examples.
+- Added `explore --wait-ms` and `explore --wait-for-selector` so dynamic pages
+  can finish rendering before screenshots and axe scans run.
+- Hardened `explore` safe mode with built-in high-risk action blocking for
+  account/session actions, payments, cookie consent, camera/photo, microphone,
+  location, notifications, uploads, and sharing controls.
+- Added cookie isolation between explored states so one replayed action does
+  not silently change later exploration states.
+- Improved `exploration.html` with larger screenshots, compact exploration
+  details, and an annotated screenshot view that keeps issue frames visible
+  while inspecting a larger screenshot.
 - Improved contributor onboarding with issue templates, a pull request
   template, clearer `CONTRIBUTING.md`, and a seed script for five
   beginner-friendly `good first issue` tasks.
 - Updated framework, CI, ADA Title II, and Section 508 recipes with clearer
   dev server URL guidance.
+- Made PR report comments optional when GitHub blocks comment permissions for
+  forked pull requests; the report artifact still uploads.
 
 ## Install
 
@@ -60,6 +72,22 @@ npx a11y-shiftleft dashboard --reports reports --pdf
 
 PDF files are portable evidence artifacts for reviews, tickets, and internal
 follow-up. They do not certify WCAG, ADA, or Section 508 compliance.
+
+## Safer Visual Exploration
+
+Wait for async UI before taking screenshots:
+
+```bash
+npx a11y-shiftleft explore \
+  --url http://localhost:5173 \
+  --wait-for-selector "[data-page-ready]" \
+  --wait-ms 1000 \
+  --out reports
+```
+
+Use safe mode defaults for CI and pull requests. `explore` now blocks
+high-risk actions across common languages and isolates cookies between replayed
+states by default.
 
 ## Ticket Drafts
 

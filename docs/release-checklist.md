@@ -157,6 +157,35 @@ Verify watch help:
 node bin/cli.js watch --help
 ```
 
+Verify dynamic UI wait options and annotated screenshots:
+
+```bash
+node bin/cli.js explore \
+  --url http://localhost:5173 \
+  --depth 1 \
+  --limit 2 \
+  --actions-per-state 2 \
+  --wait-ms 500 \
+  --fail-on none \
+  --out reports-visual-smoke
+```
+
+Expected checks:
+
+```txt
+reports-visual-smoke/exploration.html exists
+exploration.html contains "Open annotated screenshot"
+exploration.html contains "Exploration Details"
+```
+
+Verify safe-mode and PR-comment behavior:
+
+```bash
+node --test \
+  dist-test/adapters/explorePlaywrightAdapter.test.js \
+  dist-test/scripts/postA11yComment.test.js
+```
+
 ## Privacy Check
 
 ```bash
