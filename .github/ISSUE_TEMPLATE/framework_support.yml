@@ -2,7 +2,7 @@ name: Framework support request
 description: Request or improve support for a frontend framework or setup.
 title: "[Framework]: "
 labels:
-  - framework-support
+  - enhancement
 body:
   - type: input
     id: framework
@@ -19,6 +19,16 @@ body:
     validations:
       required: true
   - type: textarea
+    id: commands
+    attributes:
+      label: Commands
+      description: Paste the package scripts or shell commands for install, build, start, and test.
+      render: bash
+      placeholder: |
+        npm install
+        npm run build
+        npm run dev -- --host localhost --port 5173
+  - type: textarea
     id: desired_result
     attributes:
       label: Desired accessibility workflow
@@ -26,7 +36,18 @@ body:
     validations:
       required: true
   - type: textarea
+    id: current_output
+    attributes:
+      label: Current CLI output
+      description: Paste current `doctor`, `check`, or `explore` output if you tried the CLI already.
+      render: txt
+  - type: textarea
     id: links
     attributes:
       label: Example repositories or docs
       description: Link to public examples if available.
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+      description: Mention CI, authentication, privacy, browser, or package-size constraints.

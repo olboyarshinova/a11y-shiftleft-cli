@@ -1,0 +1,58 @@
+name: Feature request
+description: Suggest a new workflow, report, integration, or CLI option.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement. Please describe the user workflow first, then the implementation idea if you have one.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is hard, slow, confusing, or missing today?
+      placeholder: "Developers need a PDF version of the visual report to attach to internal audit tickets."
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed solution
+      description: What should the CLI do?
+      placeholder: "Add `a11y-shiftleft report --pdf reports/exploration.html`."
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - CLI command
+        - Reports
+        - Visual exploration
+        - CI and pull requests
+        - Framework support
+        - Integrations
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What workarounds or existing tools did you try?
+  - type: textarea
+    id: examples
+    attributes:
+      label: Example usage
+      description: Add the command, config, output, or workflow you would expect.
+      render: bash
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+      description: Mention privacy, CI, framework, runtime, or dependency constraints.
+      placeholder: "Should work without uploading reports to a SaaS service."

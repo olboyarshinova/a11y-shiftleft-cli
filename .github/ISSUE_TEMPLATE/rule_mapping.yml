@@ -2,7 +2,7 @@ name: Accessibility rule mapping request
 description: Request WCAG metadata or remediation guidance for a rule.
 title: "[Rule mapping]: "
 labels:
-  - rule-mapping
+  - enhancement
 body:
   - type: input
     id: rule

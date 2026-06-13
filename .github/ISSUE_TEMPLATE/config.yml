@@ -1,5 +1,8 @@
-blank_issues_enabled: true
+blank_issues_enabled: false
 contact_links:
+  - name: Contributing guide
+    url: https://github.com/olboyarshinova/a11y-shiftleft-cli/blob/main/CONTRIBUTING.md
+    about: Read setup, testing, and pull request instructions before contributing.
   - name: Documentation and recipes
     url: https://github.com/olboyarshinova/a11y-shiftleft-cli/tree/main/docs
     about: Start with the README and recipe docs before opening an issue.

@@ -13,7 +13,22 @@ body:
     attributes:
       label: CLI version
       description: Run `npx a11y-shiftleft --version`.
-      placeholder: "0.3.0"
+      placeholder: "0.5.2"
+    validations:
+      required: true
+  - type: input
+    id: node
+    attributes:
+      label: Node and npm versions
+      description: Run `node --version && npm --version`.
+      placeholder: "node v22.22.2, npm 10.9.7"
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "macOS 15, Ubuntu 24.04, Windows 11"
     validations:
       required: true
   - type: dropdown
@@ -37,10 +52,27 @@ body:
     validations:
       required: true
   - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: List the smallest steps someone else can follow.
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
     id: doctor
     attributes:
       label: Doctor output
-      description: Run `npx a11y-shiftleft doctor --no-fail` and paste the output.
+      description: Run `npx a11y-shiftleft doctor --url <your-url>` and paste the output.
+      render: txt
+  - type: textarea
+    id: report_excerpt
+    attributes:
+      label: Report excerpt
+      description: Paste a redacted excerpt from `reports/a11y-comment.md` or `reports/a11y-report.json` if relevant.
       render: txt
   - type: textarea
     id: expected
