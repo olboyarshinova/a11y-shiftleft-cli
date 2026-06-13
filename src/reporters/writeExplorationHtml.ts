@@ -159,14 +159,14 @@ export function renderExplorationHtml(
 
     .states {
       display: grid;
-      gap: 14px;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
     }
 
     .state {
       display: grid;
       grid-template-rows: auto 1fr;
-      min-height: 260px;
+      min-height: 340px;
       overflow: hidden;
     }
 
@@ -174,7 +174,7 @@ export function renderExplorationHtml(
       aspect-ratio: 16 / 10;
       background: #eef1f5;
       display: block;
-      object-fit: cover;
+      object-fit: contain;
       width: 100%;
     }
 
@@ -182,6 +182,69 @@ export function renderExplorationHtml(
       background: #eef1f5;
       border-bottom: 1px solid var(--line);
       position: relative;
+    }
+
+    .screenshot-open {
+      background: rgb(255 255 255 / 92%);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      bottom: 8px;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 7px;
+      position: absolute;
+      right: 8px;
+      text-decoration: none;
+    }
+
+    .screenshot-lightbox {
+      align-items: center;
+      background: rgb(30 36 48 / 82%);
+      display: none;
+      inset: 0;
+      padding: 24px;
+      position: fixed;
+      z-index: 20;
+    }
+
+    .screenshot-lightbox:target {
+      display: grid;
+    }
+
+    .screenshot-lightbox-inner {
+      background: var(--panel);
+      border-radius: 8px;
+      display: grid;
+      gap: 12px;
+      margin: 0 auto;
+      max-height: calc(100vh - 48px);
+      max-width: min(1200px, 100%);
+      overflow: auto;
+      padding: 14px;
+      width: 100%;
+    }
+
+    .screenshot-lightbox-frame {
+      background: #eef1f5;
+      position: relative;
+    }
+
+    .screenshot-lightbox-frame img {
+      max-height: calc(100vh - 150px);
+      object-fit: contain;
+    }
+
+    .lightbox-header {
+      align-items: start;
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+    }
+
+    .lightbox-close {
+      color: var(--ink);
+      font-weight: 700;
     }
 
     .annotation {
@@ -415,10 +478,37 @@ function renderStateScreenshot(state: StateViewModel): string {
     .slice(0, 12)
     .map((issue, index) => renderAnnotation(issue, index + 1))
     .join("\n");
+  const screenshotTargetId = `screenshot-${state.id}`;
 
   return `<div class="screenshot-frame">
     <img src="${escapeAttribute(state.screenshot)}" alt="Screenshot for ${escapeAttribute(state.id)}">
     ${annotations}
+    <a class="screenshot-open" href="#${escapeAttribute(screenshotTargetId)}">Open annotated screenshot</a>
+  </div>
+  ${renderAnnotatedScreenshotView(state, annotations, screenshotTargetId)}`;
+}
+
+function renderAnnotatedScreenshotView(
+  state: StateViewModel,
+  annotations: string,
+  screenshotTargetId: string
+): string {
+  if (!state.screenshot) return "";
+
+  return `<div class="screenshot-lightbox" id="${escapeAttribute(screenshotTargetId)}" role="dialog" aria-label="Annotated screenshot for ${escapeAttribute(state.id)}">
+    <div class="screenshot-lightbox-inner">
+      <div class="lightbox-header">
+        <div>
+          <h2>${escapeHtml(state.id)}: ${escapeHtml(state.actionLabel)}</h2>
+          <div class="url">${escapeHtml(state.url)}</div>
+        </div>
+        <a class="lightbox-close" href="#${escapeAttribute(state.id)}">Close</a>
+      </div>
+      <div class="screenshot-lightbox-frame">
+        <img src="${escapeAttribute(state.screenshot)}" alt="Annotated screenshot for ${escapeAttribute(state.id)}">
+        ${annotations}
+      </div>
+    </div>
   </div>`;
 }
 
