@@ -15,7 +15,7 @@ import { applyIgnores, DEFAULT_IGNORE_FILE } from "../core/ignore.js";
 import { applyReportRetention } from "../core/reportRetention.js";
 import type { A11yReport, ComplianceStandard, Framework, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel, WcagVersion } from "../types.js";
 
-interface CheckOptions {
+export interface CheckOptions {
   cwd?: string;
   config?: string;
   framework?: string;
@@ -54,6 +54,11 @@ interface CheckModeOptions {
   configDynamicEnabled?: boolean;
 }
 
+export interface CheckResult {
+  report: A11yReport;
+  failed: boolean;
+}
+
 export function registerCheckCommand(program: Command): void {
   program
     .command("check")
@@ -88,191 +93,197 @@ export function registerCheckCommand(program: Command): void {
     .option("--verbose", "Print scan mode, adapter timing, and report context before the summary")
     .option("--json-summary", "Print the machine-readable JSON summary to stdout")
     .action(async (options: CheckOptions) => {
-      const startedAt = Date.now();
-      const urls = parseUrls(options.url);
-      const staticOnly = Boolean(options.static && !options.dynamic);
-      const config = await loadConfig({
-        cwd: options.cwd,
-        config: options.config
-      }, {
-        framework: toFramework(options.framework),
-        outputDir: options.out,
-        standard: toComplianceStandard(options.standard),
-        wcagVersion: toWcagVersion(options.wcagVersion),
-        failOn: options.failOn,
-        static: {
-          include: options.include
-        },
-        dynamic: {
-          enabled: !staticOnly && (options.dynamic || urls.length > 0 || options.crawl) ? true : undefined,
-          urls: urls.length > 0 ? urls : undefined,
-          crawl: options.crawl ? true : undefined,
-          crawlDepth: toPositiveInteger(options.crawlDepth),
-          crawlLimit: toPositiveInteger(options.crawlLimit)
-        },
-        retention: {
-          enabled: retentionRequested(options),
-          maxRuns: toPositiveInteger(options.retentionMaxRuns),
-          maxAgeDays: toPositiveInteger(options.retentionMaxAgeDays),
-          dryRun: options.retentionDryRun ? true : undefined
-        }
-      });
+      const result = await runCheck(options);
+      if (result.failed) process.exitCode = 1;
+    });
+}
 
-      const { runStatic, runDynamic } = resolveCheckModes({
-        staticRequested: Boolean(options.static),
-        dynamicRequested: Boolean(options.dynamic),
-        hasDynamicInput: urls.length > 0 || Boolean(options.crawl),
-        configDynamicEnabled: config.dynamic.enabled
-      });
-      const standard = resolveStandard(config.standard);
-      const framework = config.framework === "auto"
-        ? await detectFramework(config.cwd)
-        : config.framework;
-      const effectiveConfig = {
-        ...config,
-        framework,
-        wcagVersion: options.wcagVersion ? config.wcagVersion : standard.wcagVersion,
-        wcagLevel: standard.wcagLevel
-      };
+export async function runCheck(options: CheckOptions = {}): Promise<CheckResult> {
+  const startedAt = Date.now();
+  const urls = parseUrls(options.url);
+  const staticOnly = Boolean(options.static && !options.dynamic);
+  const config = await loadConfig({
+    cwd: options.cwd,
+    config: options.config
+  }, {
+    framework: toFramework(options.framework),
+    outputDir: options.out,
+    standard: toComplianceStandard(options.standard),
+    wcagVersion: toWcagVersion(options.wcagVersion),
+    failOn: options.failOn,
+    static: {
+      include: options.include
+    },
+    dynamic: {
+      enabled: !staticOnly && (options.dynamic || urls.length > 0 || options.crawl) ? true : undefined,
+      urls: urls.length > 0 ? urls : undefined,
+      crawl: options.crawl ? true : undefined,
+      crawlDepth: toPositiveInteger(options.crawlDepth),
+      crawlLimit: toPositiveInteger(options.crawlLimit)
+    },
+    retention: {
+      enabled: retentionRequested(options),
+      maxRuns: toPositiveInteger(options.retentionMaxRuns),
+      maxAgeDays: toPositiveInteger(options.retentionMaxAgeDays),
+      dryRun: options.retentionDryRun ? true : undefined
+    }
+  });
 
-      const rawIssues = [];
-      const adapterRuns: AdapterRunSummary[] = [];
-      const progressEnabled = shouldPrintCheckProgress(options);
+  const { runStatic, runDynamic } = resolveCheckModes({
+    staticRequested: Boolean(options.static),
+    dynamicRequested: Boolean(options.dynamic),
+    hasDynamicInput: urls.length > 0 || Boolean(options.crawl),
+    configDynamicEnabled: config.dynamic.enabled
+  });
+  const standard = resolveStandard(config.standard);
+  const framework = config.framework === "auto"
+    ? await detectFramework(config.cwd)
+    : config.framework;
+  const effectiveConfig = {
+    ...config,
+    framework,
+    wcagVersion: options.wcagVersion ? config.wcagVersion : standard.wcagVersion,
+    wcagLevel: standard.wcagLevel
+  };
 
-      if (runStatic && effectiveConfig.static.enabled) {
-        const adapterStartedAt = Date.now();
-        const issues = await runEslintAdapter(effectiveConfig);
-        adapterRuns.push({
-          name: "static",
-          enabled: true,
-          issueCount: issues.length,
-          durationMs: Date.now() - adapterStartedAt
-        });
-        rawIssues.push(...issues);
-      } else {
-        adapterRuns.push({
-          name: "static",
-          enabled: false,
-          issueCount: 0,
-          durationMs: 0
-        });
-      }
+  const rawIssues = [];
+  const adapterRuns: AdapterRunSummary[] = [];
+  const progressEnabled = shouldPrintCheckProgress(options);
 
-      if (runDynamic && effectiveConfig.dynamic.enabled !== false) {
-        const adapterStartedAt = Date.now();
-        const issues = await runAxePlaywrightAdapter(effectiveConfig, {
-          onProgress: (event) => {
-            if (!progressEnabled) return;
-            console.log(formatCheckProgressMessage(event));
-          }
-        });
-        adapterRuns.push({
-          name: "dynamic",
-          enabled: true,
-          issueCount: issues.length,
-          durationMs: Date.now() - adapterStartedAt
-        });
-        rawIssues.push(...issues);
-      } else {
-        adapterRuns.push({
-          name: "dynamic",
-          enabled: false,
-          issueCount: 0,
-          durationMs: 0
-        });
-      }
+  if (runStatic && effectiveConfig.static.enabled) {
+    const adapterStartedAt = Date.now();
+    const issues = await runEslintAdapter(effectiveConfig);
+    adapterRuns.push({
+      name: "static",
+      enabled: true,
+      issueCount: issues.length,
+      durationMs: Date.now() - adapterStartedAt
+    });
+    rawIssues.push(...issues);
+  } else {
+    adapterRuns.push({
+      name: "static",
+      enabled: false,
+      issueCount: 0,
+      durationMs: 0
+    });
+  }
 
-      const normalized = rawIssues.map(normalizeIssue);
-      const triaged = triageIssues(normalized);
-      const explicitWcagFilter = toWcagLevel(options.wcagFilter);
-      const filtered = filterByWcagConformance(triaged, {
-        level: explicitWcagFilter || effectiveConfig.wcagLevel,
-        version: effectiveConfig.wcagVersion,
-        includeUnmapped: !explicitWcagFilter
-      });
-      const uniqueIssues = dedupeIssues(filtered);
-      const ignoreResult = await applyIgnores(uniqueIssues, {
-        cwd: effectiveConfig.cwd,
-        enabled: options.ignore !== false,
-        ignoreFile: options.ignoreFile
-      });
-      const baselineEnabled = Boolean(options.baseline || options.updateBaseline);
-      const baselineResult = baselineEnabled
-        ? await applyBaseline(ignoreResult.issues, {
-          cwd: effectiveConfig.cwd,
-          baselineFile: options.baselineFile,
-          update: Boolean(options.updateBaseline)
-        })
-        : undefined;
-      const reportIssues = baselineResult?.issues || ignoreResult.issues;
-      const formats = parseFormats(options.format);
-      const retentionSummary = await applyReportRetention(effectiveConfig.outputDir, effectiveConfig.retention);
-      const report = await writeReports(effectiveConfig.outputDir, reportIssues, {
-        framework,
-        cwd: effectiveConfig.cwd,
-        urls: runDynamic ? effectiveConfig.dynamic.urls : [],
-        standard: {
-          ...standard,
-          wcagVersion: effectiveConfig.wcagVersion,
-          wcagLevel: effectiveConfig.wcagLevel
-        },
-        baseline: baselineResult?.summary,
-        ignore: ignoreResult.summary,
-        retention: retentionSummary.enabled ? retentionSummary : undefined,
-        scanDurationMs: Date.now() - startedAt,
-        rawCount: rawIssues.length,
-        uniqueCount: ignoreResult.issues.length,
-        duplicateCount: filtered.length - uniqueIssues.length
-      }, {
-        formats,
-        semiAuto: Boolean(options.semiAuto)
-      });
-
-      if (!options.quiet) {
-        if (options.verbose) {
-          console.log(formatVerboseCheckSummary({
-            framework,
-            runStatic,
-            runDynamic,
-            adapterRuns,
-            urls: runDynamic ? effectiveConfig.dynamic.urls : [],
-            outputDir: effectiveConfig.outputDir,
-            formats,
-            baselineEnabled,
-            baselineFile: options.baselineFile || ".a11y-baseline.json",
-            ignoreEnabled: Boolean(ignoreResult.summary?.enabled),
-            ignoreFile: options.ignoreFile || DEFAULT_IGNORE_FILE,
-            ignoredIssues: ignoreResult.summary?.ignoredIssues || 0,
-            updateBaseline: Boolean(options.updateBaseline),
-            standard: effectiveConfig.standard,
-            wcagVersion: effectiveConfig.wcagVersion,
-            wcagLevel: effectiveConfig.wcagLevel,
-            crawl: Boolean(effectiveConfig.dynamic.crawl),
-            crawlDepth: effectiveConfig.dynamic.crawlDepth,
-            crawlLimit: effectiveConfig.dynamic.crawlLimit,
-            retentionEnabled: retentionSummary.enabled,
-            retentionDryRun: retentionSummary.dryRun,
-            retentionPlannedDeletedRuns: retentionSummary.plannedDeletedRuns,
-            retentionDeletedRuns: retentionSummary.deletedRuns
-          }));
-        }
-
-        const summaryOutput = shouldPrintJsonSummary(options)
-          ? JSON.stringify(report.summary, null, 2)
-          : formatCheckConsoleSummary(report, {
-            outputDir: effectiveConfig.outputDir,
-            formats,
-            semiAuto: Boolean(options.semiAuto),
-            color: Boolean(process.stdout.isTTY && !process.env.NO_COLOR)
-          });
-
-        console.log(summaryOutput);
-      }
-
-      if (shouldFail(report.summary, config.failOn)) {
-        process.exitCode = 1;
+  if (runDynamic && effectiveConfig.dynamic.enabled !== false) {
+    const adapterStartedAt = Date.now();
+    const issues = await runAxePlaywrightAdapter(effectiveConfig, {
+      onProgress: (event) => {
+        if (!progressEnabled) return;
+        console.log(formatCheckProgressMessage(event));
       }
     });
+    adapterRuns.push({
+      name: "dynamic",
+      enabled: true,
+      issueCount: issues.length,
+      durationMs: Date.now() - adapterStartedAt
+    });
+    rawIssues.push(...issues);
+  } else {
+    adapterRuns.push({
+      name: "dynamic",
+      enabled: false,
+      issueCount: 0,
+      durationMs: 0
+    });
+  }
+
+  const normalized = rawIssues.map(normalizeIssue);
+  const triaged = triageIssues(normalized);
+  const explicitWcagFilter = toWcagLevel(options.wcagFilter);
+  const filtered = filterByWcagConformance(triaged, {
+    level: explicitWcagFilter || effectiveConfig.wcagLevel,
+    version: effectiveConfig.wcagVersion,
+    includeUnmapped: !explicitWcagFilter
+  });
+  const uniqueIssues = dedupeIssues(filtered);
+  const ignoreResult = await applyIgnores(uniqueIssues, {
+    cwd: effectiveConfig.cwd,
+    enabled: options.ignore !== false,
+    ignoreFile: options.ignoreFile
+  });
+  const baselineEnabled = Boolean(options.baseline || options.updateBaseline);
+  const baselineResult = baselineEnabled
+    ? await applyBaseline(ignoreResult.issues, {
+      cwd: effectiveConfig.cwd,
+      baselineFile: options.baselineFile,
+      update: Boolean(options.updateBaseline)
+    })
+    : undefined;
+  const reportIssues = baselineResult?.issues || ignoreResult.issues;
+  const formats = parseFormats(options.format);
+  const retentionSummary = await applyReportRetention(effectiveConfig.outputDir, effectiveConfig.retention);
+  const report = await writeReports(effectiveConfig.outputDir, reportIssues, {
+    framework,
+    cwd: effectiveConfig.cwd,
+    urls: runDynamic ? effectiveConfig.dynamic.urls : [],
+    standard: {
+      ...standard,
+      wcagVersion: effectiveConfig.wcagVersion,
+      wcagLevel: effectiveConfig.wcagLevel
+    },
+    baseline: baselineResult?.summary,
+    ignore: ignoreResult.summary,
+    retention: retentionSummary.enabled ? retentionSummary : undefined,
+    scanDurationMs: Date.now() - startedAt,
+    rawCount: rawIssues.length,
+    uniqueCount: ignoreResult.issues.length,
+    duplicateCount: filtered.length - uniqueIssues.length
+  }, {
+    formats,
+    semiAuto: Boolean(options.semiAuto)
+  });
+
+  if (!options.quiet) {
+    if (options.verbose) {
+      console.log(formatVerboseCheckSummary({
+        framework,
+        runStatic,
+        runDynamic,
+        adapterRuns,
+        urls: runDynamic ? effectiveConfig.dynamic.urls : [],
+        outputDir: effectiveConfig.outputDir,
+        formats,
+        baselineEnabled,
+        baselineFile: options.baselineFile || ".a11y-baseline.json",
+        ignoreEnabled: Boolean(ignoreResult.summary?.enabled),
+        ignoreFile: options.ignoreFile || DEFAULT_IGNORE_FILE,
+        ignoredIssues: ignoreResult.summary?.ignoredIssues || 0,
+        updateBaseline: Boolean(options.updateBaseline),
+        standard: effectiveConfig.standard,
+        wcagVersion: effectiveConfig.wcagVersion,
+        wcagLevel: effectiveConfig.wcagLevel,
+        crawl: Boolean(effectiveConfig.dynamic.crawl),
+        crawlDepth: effectiveConfig.dynamic.crawlDepth,
+        crawlLimit: effectiveConfig.dynamic.crawlLimit,
+        retentionEnabled: retentionSummary.enabled,
+        retentionDryRun: retentionSummary.dryRun,
+        retentionPlannedDeletedRuns: retentionSummary.plannedDeletedRuns,
+        retentionDeletedRuns: retentionSummary.deletedRuns
+      }));
+    }
+
+    const summaryOutput = shouldPrintJsonSummary(options)
+      ? JSON.stringify(report.summary, null, 2)
+      : formatCheckConsoleSummary(report, {
+        outputDir: effectiveConfig.outputDir,
+        formats,
+        semiAuto: Boolean(options.semiAuto),
+        color: Boolean(process.stdout.isTTY && !process.env.NO_COLOR)
+      });
+
+    console.log(summaryOutput);
+  }
+
+  return {
+    report,
+    failed: shouldFail(report.summary, config.failOn)
+  };
 }
 
 export function resolveCheckModes({

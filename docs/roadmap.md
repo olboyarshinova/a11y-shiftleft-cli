@@ -4,6 +4,34 @@ This roadmap keeps the project focused on practical shift-left accessibility
 orchestration. The CLI should work across web frameworks, stay npm-first, and
 remain suitable for reproducible empirical validation.
 
+## Version Targets
+
+### 0.6.x Developer Workflow And Evidence Export
+
+- Release the initial `watch` command so developers can keep accessibility
+  reports refreshed while they code.
+- Add PDF export for generated HTML reports, starting with `exploration.html`
+  and later the historical dashboard. Treat PDF as an evidence-friendly,
+  shareable audit artifact, not as legal certification.
+- Keep PDF export local-first and dependency-light by reusing Playwright's
+  browser rendering path where possible instead of adding a heavy PDF stack.
+- Prototype issue-tracker export for Jira and Linear after `watch` is stable:
+  read `a11y-report.json`, group findings by rule/page/severity, support
+  dry-run output first, then create or update issues only when explicit tokens
+  are provided.
+- Keep Jira and Linear integrations optional so the core CLI stays useful
+  without account setup, SaaS authorization, or extra installation weight.
+
+### 0.8.x Comparative Scoring
+
+- Add an optional Lighthouse integration, such as `check --with-lighthouse`,
+  that records Lighthouse accessibility scores, audit details, documentation
+  links, and relevant performance/accessibility recommendations in the same
+  report pipeline.
+- Compare axe and Lighthouse disagreements in a separate report section,
+  include Lighthouse suggested fixes where useful, and surface the comparison in
+  `exploration.html` and the local dashboard.
+
 ## Near Term
 
 - Expand WCAG metadata for every rule currently emitted by the static and
@@ -30,6 +58,9 @@ remain suitable for reproducible empirical validation.
   `check --crawl` progress, and `explore` progress output, especially for
   watch and dashboard indexing while preserving plain output for CI and report
   files.
+- Harden the initial `watch` command with clearer run-to-run deltas, better
+  changed-file grouping, and guidance for mapping changed files to dynamic
+  smoke-test URLs.
 - Improve framework autodetection messaging so React, Vue, and Angular projects
   receive clear adapter install recommendations when optimized static checks are
   not available yet.
@@ -52,6 +83,8 @@ remain suitable for reproducible empirical validation.
 - Continue expanding `exploration.html` from a static triage overview into a
   richer dashboard that can visualize checked pages/states, screenshots, and
   accessibility findings while the scan is running.
+- Add PDF export for generated visual reports so teams can attach portable
+  evidence artifacts to pull requests, internal audits, and remediation tickets.
 - Continue hardening screenshot annotations in `exploration.html`, including
   better selector matching, edge-case handling for full-page screenshots, and
   clearer overlay legends.
@@ -83,12 +116,11 @@ remain suitable for reproducible empirical validation.
 - Add incremental scan support for pull requests by prioritizing changed static
   files and a small configured set of dynamic smoke-test URLs before running
   broader scheduled scans.
-- Add a `watch` command for real-time development feedback: debounce file
-  changes, rerun static checks for changed files, rescan configured URLs, and
-  update lightweight live report artifacts.
-- Make `watch` compute run-to-run deltas so local terminal feedback can show
-  fixed findings, new findings, and remaining findings after each debounced
-  scan while refreshing `exploration.html` or a lightweight live report.
+- Continue hardening `watch` for real-time development feedback: debounce file
+  changes, rerun checks for changed files, rescan configured URLs, and update
+  lightweight live report artifacts.
+- Extend `watch` with affected-route hints so local terminal feedback can map
+  changed files to a small dynamic smoke-test URL set before broader scans.
 - Prototype a browser overlay mode after `watch` is stable, so local dev pages
   can highlight affected elements from accessibility findings without requiring
   a full browser extension.
@@ -98,16 +130,13 @@ remain suitable for reproducible empirical validation.
 - Add progress output for long-running watch and dashboard indexing workflows,
   building on the initial `check --crawl` and `explore` progress summaries
   while keeping non-animated output available for CI.
+- Add optional Jira and Linear export commands after the report schema is
+  stable enough for external ticket sync. The first version should support
+  dry-run previews, explicit credentials, duplicate detection, and redaction of
+  sensitive report fields.
 
 ## Later
 
-- Add an optional Lighthouse integration, such as `check --with-lighthouse`,
-  that records Lighthouse accessibility scores, audit details, documentation
-  links, and relevant performance/accessibility recommendations in the same
-  report pipeline.
-- Compare axe and Lighthouse disagreements in a separate report section,
-  include Lighthouse suggested fixes where useful, and surface the comparison in
-  `exploration.html` and the local dashboard.
 - Introduce optional AI-assisted remediation through a separate
   `@a11y-shiftleft/ai` package, following the privacy and safety rules in
   [ai-suggestions.md](ai-suggestions.md).
