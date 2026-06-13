@@ -2,7 +2,7 @@ name: Adoption story
 description: Share how your project uses a11y-shiftleft-cli.
 title: "[Adoption]: "
 labels:
-  - adoption
+  - documentation
 body:
   - type: markdown
     attributes:

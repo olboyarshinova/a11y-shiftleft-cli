@@ -1,0 +1,69 @@
+name: Good first issue
+description: Suggest a small, well-scoped task for new contributors.
+title: "[Good first issue]: "
+labels:
+  - good first issue
+  - help wanted
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for tasks that a new contributor can complete without deep project context.
+        Good first issues should be small, reproducible, and have clear acceptance criteria.
+  - type: textarea
+    id: task
+    attributes:
+      label: Task
+      description: Describe the exact change.
+      placeholder: "Add WCAG metadata for the axe rule `label-title-only`."
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why this helps
+      description: Explain the user or maintainer benefit in one or two sentences.
+      placeholder: "This improves report clarity for form-label findings."
+    validations:
+      required: true
+  - type: textarea
+    id: files
+    attributes:
+      label: Likely files
+      description: List the files or folders a contributor should start with.
+      placeholder: |
+        src/core/wcagMap.ts
+        src/core/remediation.ts
+        test/core/wcagMap.test.ts
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Use checkboxes so a new contributor knows when the task is done.
+      value: |
+        - [ ] The change is covered by a focused test or documentation update.
+        - [ ] `npm test` passes.
+        - [ ] The README or docs are updated if user-facing behavior changes.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Documentation
+        - WCAG metadata
+        - Remediation hints
+        - Tests and fixtures
+        - Reports
+        - CI
+        - Developer experience
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes for contributors
+      description: Add any helpful context, links, or examples.
