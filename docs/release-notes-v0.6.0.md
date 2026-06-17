@@ -18,6 +18,9 @@ artifacts, and easier open-source contribution.
   Linear examples.
 - Added `explore --wait-ms` and `explore --wait-for-selector` so dynamic pages
   can finish rendering before screenshots and axe scans run.
+- Added bounded auto-scroll before dynamic and visual scans so lazy-loaded
+  below-the-fold content can appear before axe runs. Use `--no-scroll` for
+  unusual pages where scrolling itself triggers unwanted behavior.
 - Hardened `explore` safe mode with built-in high-risk action blocking for
   account/session actions, payments, cookie consent, camera/photo, microphone,
   location, notifications, uploads, and sharing controls.

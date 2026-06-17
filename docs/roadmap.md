@@ -22,6 +22,30 @@ remain suitable for reproducible empirical validation.
 - Keep Jira and Linear integrations optional so the core CLI stays useful
   without account setup, SaaS authorization, or extra installation weight.
 
+### 0.7.x Keyboard Audit Mode
+
+- Add a dedicated keyboard-only audit workflow, such as
+  `a11y-shiftleft keyboard --url <url>`, that verifies whether key user
+  interface states can be reached and operated without a mouse.
+- Record a focus path by sending `Tab` and `Shift+Tab`, collecting the focused
+  element selector, accessible name, role, visibility, bounding box, and page
+  state after each step.
+- Detect common keyboard blockers: invisible focus, focus loss to `body`,
+  repeated focus loops, unreachable interactive controls, positive tabindex
+  risks, and focus traps that do not expose an escape path.
+- Exercise basic keyboard activation on safe controls with `Enter`, `Space`,
+  `Escape`, and arrow keys where the role implies expected keyboard behavior,
+  while reusing `explore` safe-mode blocks for destructive actions such as
+  logout, delete, pay, upload, camera, microphone, and cookie changes.
+- Write keyboard-specific artifacts, for example
+  `keyboard-report.json`, `keyboard-path.md`, and optional annotated
+  screenshots that show the focused element at each step.
+- Surface keyboard findings in the same severity, WCAG, confidence, baseline,
+  ignore, dashboard, and PR-report pipeline used by `check` and `explore`.
+- Keep the first version bounded and predictable for pull requests: limit max
+  tab steps, max states, and activation attempts, then recommend broader manual
+  keyboard walkthroughs through `--semi-auto`.
+
 ### 0.8.x Comparative Scoring
 
 - Add an optional Lighthouse integration, such as `check --with-lighthouse`,

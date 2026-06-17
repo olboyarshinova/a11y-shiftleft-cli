@@ -17,7 +17,13 @@ export const defaultConfig = {
     browser: "chromium",
     crawl: false,
     crawlDepth: 1,
-    crawlLimit: 10
+    crawlLimit: 10,
+    scroll: {
+      enabled: true,
+      stepPx: 800,
+      maxSteps: 25,
+      waitMs: 100
+    }
   },
   metrics: {
     enabled: true,
@@ -26,6 +32,12 @@ export const defaultConfig = {
   },
   explore: {
     waitMs: 250,
+    scroll: {
+      enabled: true,
+      stepPx: 800,
+      maxSteps: 25,
+      waitMs: 100
+    },
     safeMode: {
       enabled: true,
       blockedText: [],

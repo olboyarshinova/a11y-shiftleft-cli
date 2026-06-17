@@ -57,6 +57,10 @@ interface ExploreOptions {
   isolateCookies?: boolean;
   waitMs?: string;
   waitForSelector?: string;
+  scroll?: boolean;
+  scrollStep?: string;
+  scrollMaxSteps?: string;
+  scrollWaitMs?: string;
   semiAuto?: boolean;
   retention?: boolean;
   retentionMaxRuns?: string;
@@ -107,6 +111,10 @@ export function registerExploreCommand(program: Command): void {
     .option("--no-isolate-cookies", "Allow cookies to persist between explored states")
     .option("--wait-ms <ms>", "Extra settle time before screenshots and scans")
     .option("--wait-for-selector <selector>", "Wait for a selector before screenshots and scans")
+    .option("--no-scroll", "Do not auto-scroll each explored state before screenshots and scans")
+    .option("--scroll-step <px>", "Pixels per auto-scroll step before scanning a state")
+    .option("--scroll-max-steps <count>", "Maximum auto-scroll steps per explored state")
+    .option("--scroll-wait-ms <ms>", "Wait after each auto-scroll step")
     .option("--semi-auto", "Generate a Markdown manual review checklist alongside automated reports")
     .option("--retention-max-runs <count>", "Keep at most this many report run directories including the current output")
     .option("--retention-max-age-days <days>", "Remove report run directories older than this many days")
@@ -137,6 +145,12 @@ export function registerExploreCommand(program: Command): void {
         explore: {
           waitMs: toNonNegativeInteger(options.waitMs),
           waitForSelector: options.waitForSelector,
+          scroll: {
+            enabled: options.scroll === false ? false : undefined,
+            stepPx: toPositiveInteger(options.scrollStep),
+            maxSteps: toPositiveInteger(options.scrollMaxSteps),
+            waitMs: parseNonNegativeInteger(options.scrollWaitMs, "Scroll wait time must be a non-negative integer.")
+          },
           safeMode: {
             enabled: options.safeMode === false ? false : undefined,
             blockedText: toPatternList(options.safeBlockText),
@@ -198,6 +212,10 @@ export function registerExploreCommand(program: Command): void {
           screenshotRedaction: options.screenshotRedaction !== false,
           waitMs,
           waitForSelector: effectiveConfig.explore.waitForSelector,
+          scrollEnabled: effectiveConfig.explore.scroll.enabled,
+          scrollStepPx: effectiveConfig.explore.scroll.stepPx,
+          scrollMaxSteps: effectiveConfig.explore.scroll.maxSteps,
+          scrollWaitMs: effectiveConfig.explore.scroll.waitMs,
           safeModeEnabled: effectiveConfig.explore.safeMode.enabled,
           safeModeDismissDialogs: effectiveConfig.explore.safeMode.dismissDialogs,
           safeModeIsolateCookies: effectiveConfig.explore.safeMode.isolateCookies,
@@ -223,6 +241,7 @@ export function registerExploreCommand(program: Command): void {
         screenshotRedaction: options.screenshotRedaction,
         waitMs,
         waitForSelector: effectiveConfig.explore.waitForSelector,
+        scroll: effectiveConfig.explore.scroll,
         safeMode: effectiveConfig.explore.safeMode,
         onProgress: (event) => {
           if (!progressEnabled) return;
@@ -349,10 +368,14 @@ function toPositiveInteger(value: string | undefined): number | undefined {
 }
 
 function toNonNegativeInteger(value: string | undefined): number | undefined {
+  return parseNonNegativeInteger(value, "Wait time must be a non-negative integer.");
+}
+
+function parseNonNegativeInteger(value: string | undefined, message: string): number | undefined {
   if (value === undefined) return undefined;
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 0) {
-    throw new Error("Wait time must be a non-negative integer.");
+    throw new Error(message);
   }
   return parsed;
 }
@@ -388,6 +411,10 @@ export function formatVerboseExploreSummary(options: {
   screenshotRedaction: boolean;
   waitMs: number;
   waitForSelector?: string;
+  scrollEnabled: boolean;
+  scrollStepPx: number;
+  scrollMaxSteps: number;
+  scrollWaitMs: number;
   safeModeEnabled: boolean;
   safeModeDismissDialogs: boolean;
   safeModeIsolateCookies: boolean;
@@ -415,6 +442,7 @@ export function formatVerboseExploreSummary(options: {
     `screenshotFullPage: ${options.screenshotFullPage ? "on" : "off"}`,
     `screenshotRedaction: ${options.screenshotRedaction ? "on" : "off"}`,
     `wait: ${options.waitMs}ms${options.waitForSelector ? ` selector=${options.waitForSelector}` : ""}`,
+    `scroll: ${options.scrollEnabled ? `on step=${options.scrollStepPx}px maxSteps=${options.scrollMaxSteps} wait=${options.scrollWaitMs}ms` : "off"}`,
     `safeMode: ${options.safeModeEnabled ? "on" : "off"}`,
     `safeModeDismissDialogs: ${options.safeModeDismissDialogs ? "on" : "off"}`,
     `safeModeIsolateCookies: ${options.safeModeIsolateCookies ? "on" : "off"}`,

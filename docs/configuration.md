@@ -53,6 +53,36 @@ has finished rendering:
 Keep shared waits small for pull requests. Prefer a stable `waitForSelector`
 over large fixed delays when the app can expose a loaded-state marker.
 
+## Auto-Scroll Before Scans
+
+Dynamic browser scans and visual exploration scroll each page before running
+axe. This helps trigger lazy-loaded content below the first viewport:
+
+```json
+{
+  "dynamic": {
+    "scroll": {
+      "enabled": true,
+      "stepPx": 800,
+      "maxSteps": 25,
+      "waitMs": 100
+    }
+  },
+  "explore": {
+    "scroll": {
+      "enabled": true,
+      "stepPx": 800,
+      "maxSteps": 25,
+      "waitMs": 100
+    }
+  }
+}
+```
+
+Use `--no-scroll` only when scrolling triggers project-specific side effects.
+For long pages, scheduled full-site scans can increase `--scroll-max-steps`;
+pull request checks should keep the limit bounded.
+
 ## Explore Safety
 
 `explore.safeMode.isolateCookies` is enabled by default. It clears browser

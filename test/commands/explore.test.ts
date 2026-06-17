@@ -25,6 +25,10 @@ test("formatVerboseExploreSummary renders exploration context", () => {
     screenshotRedaction: true,
     waitMs: 1000,
     waitForSelector: "[data-loaded]",
+    scrollEnabled: true,
+    scrollStepPx: 800,
+    scrollMaxSteps: 25,
+    scrollWaitMs: 100,
     safeModeEnabled: true,
     safeModeDismissDialogs: true,
     safeModeIsolateCookies: true,
@@ -44,6 +48,7 @@ test("formatVerboseExploreSummary renders exploration context", () => {
   assert.match(output, /screenshots: jpeg quality=70/);
   assert.match(output, /screenshotRedaction: on/);
   assert.match(output, /wait: 1000ms selector=\[data-loaded\]/);
+  assert.match(output, /scroll: on step=800px maxSteps=25 wait=100ms/);
   assert.match(output, /safeMode: on/);
   assert.match(output, /safeModeBlockedText: logout, delete/);
   assert.match(output, /safeModeIsolateCookies: on/);

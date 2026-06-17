@@ -116,7 +116,9 @@ npx a11y-shiftleft check --dynamic --url http://localhost:4200 --out reports
 | Scan one running app URL | `npx a11y-shiftleft check --dynamic --url http://localhost:5173 --out reports` |
 | Scan several known pages | `npx a11y-shiftleft check --dynamic --url $APP_URL $APP_URL/settings $APP_URL/checkout --out reports` |
 | Let the CLI discover same-origin pages | `npx a11y-shiftleft check --dynamic --url $APP_URL --crawl --crawl-depth 1 --crawl-limit 10 --out reports` |
+| Trigger lazy-loaded below-the-fold content | `npx a11y-shiftleft check --dynamic --url $APP_URL --scroll-step 800 --scroll-max-steps 25 --out reports` |
 | Create a visual state report | `npx a11y-shiftleft explore --url $APP_URL --depth 2 --out reports` |
+| Create a full-page visual report | `npx a11y-shiftleft explore --url $APP_URL --depth 2 --screenshot-full-page --out reports` |
 | Keep reports refreshed while coding | `npx a11y-shiftleft watch --url $APP_URL --out reports/watch` |
 | Generate a fast PR workflow | `npx a11y-shiftleft ci --url $APP_URL --start-command "npm run dev -- --host localhost --port 5173"` |
 | View historical trends | `npx a11y-shiftleft dashboard --reports reports` |
@@ -210,6 +212,22 @@ want screenshots of checked states:
 
 ```bash
 npx a11y-shiftleft explore --url $APP_URL --depth 2 --out reports
+```
+
+Dynamic scans and visual exploration auto-scroll pages before running axe. This
+helps trigger lazy-loaded sections below the first viewport. The scan still
+stays bounded for CI with a default maximum of 25 scroll steps per page. Use
+`--no-scroll` only when a project needs to avoid scroll-triggered behavior.
+
+Viewport screenshots stay compressed by default. Add `--screenshot-full-page`
+when the visual report should show the whole loaded page:
+
+```bash
+npx a11y-shiftleft explore \
+  --url $APP_URL \
+  --depth 2 \
+  --screenshot-full-page \
+  --out reports
 ```
 
 For apps that render data after the first page load, add a short settle wait:

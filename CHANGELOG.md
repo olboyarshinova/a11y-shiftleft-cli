@@ -32,6 +32,8 @@ No unreleased changes yet.
   dry-run examples.
 - `explore --wait-ms` and `explore --wait-for-selector` for dynamic pages that
   need a short stabilization period before screenshots and axe scans.
+- Bounded auto-scroll before dynamic and visual axe scans so lazy-loaded
+  below-the-fold content can be checked without manually scrolling the page.
 - Built-in high-risk action blocking for account/session, payment, cookie
   consent, camera/photo, microphone, location, notification, upload, and sharing
   controls, with cookie isolation between explored states.

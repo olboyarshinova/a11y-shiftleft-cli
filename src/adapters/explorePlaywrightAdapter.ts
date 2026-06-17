@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { AxeBuilder } from "@axe-core/playwright";
 import { chromium, type BrowserContext, type Page } from "playwright";
+import { normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig } from "../core/pageScroll.js";
 import type {
   A11yConfig,
   ExplorationGraph,
@@ -121,6 +122,7 @@ interface ExplorePlaywrightOptions {
   safeMode?: ExploreSafeModeConfig;
   waitMs?: number;
   waitForSelector?: string;
+  scroll?: Partial<PageScrollConfig>;
   onProgress?: (event: ExploreProgressEvent) => void;
 }
 
@@ -182,6 +184,7 @@ export async function runExplorePlaywrightAdapter(
   const safeMode = normalizeSafeMode(options.safeMode || config.explore.safeMode);
   const waitMs = nonNegativeOrDefault(options.waitMs, DEFAULT_WAIT_MS);
   const waitForSelector = options.waitForSelector;
+  const scroll = normalizePageScrollConfig(options.scroll || config.explore.scroll);
   let actionsTried = 0;
   let screenshotsSaved = 0;
 
@@ -208,6 +211,7 @@ export async function runExplorePlaywrightAdapter(
           waitMs,
           waitForSelector
         });
+        await scrollPageForLazyContent(page, scroll);
       } catch (error) {
         issues.push(createExploreErrorIssue(config, options.url, error, current.via));
         continue;

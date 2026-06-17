@@ -1,5 +1,6 @@
 import { chromium } from "playwright";
 import { AxeBuilder } from "@axe-core/playwright";
+import { normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig, type ScrollablePage } from "../core/pageScroll.js";
 import type { A11yConfig, Issue } from "../types.js";
 
 interface CrawlQueueItem {
@@ -51,10 +52,12 @@ export async function runAxePlaywrightAdapter(
   try {
     const context = await browser.newContext();
     const page = await context.newPage();
+    const scroll = normalizePageScrollConfig(config.dynamic.scroll);
     const scanUrls = config.dynamic.crawl
       ? await crawlSameOriginUrls(page, config.dynamic.urls, {
         maxDepth: config.dynamic.crawlDepth,
         maxUrls: config.dynamic.crawlLimit,
+        scroll,
         onProgress: options.onProgress
       })
       : uniqueUrls(config.dynamic.urls);
@@ -72,6 +75,7 @@ export async function runAxePlaywrightAdapter(
           totalUrls: scanUrls.length
         });
         await page.goto(url, { waitUntil: "networkidle" });
+        await scrollPageForLazyContent(page, scroll);
         const results = await new AxeBuilder({ page }).analyze();
         let issueCount = 0;
 
@@ -120,11 +124,14 @@ export async function crawlSameOriginUrls(
   page: {
     goto: (url: string, options: { waitUntil: "networkidle" }) => Promise<unknown>;
     $$eval: <T>(selector: string, pageFunction: (elements: HTMLAnchorElement[]) => T) => Promise<T>;
+    evaluate?: unknown;
+    waitForTimeout?: unknown;
   },
   startUrls: string[],
   options: {
     maxDepth: number;
     maxUrls: number;
+    scroll?: PageScrollConfig;
     onProgress?: (event: AxeProgressEvent) => void;
   }
 ): Promise<string[]> {
@@ -156,6 +163,9 @@ export async function crawlSameOriginUrls(
 
     try {
       await page.goto(current.url, { waitUntil: "networkidle" });
+      if (options.scroll && isScrollablePage(page)) {
+        await scrollPageForLazyContent(page, options.scroll);
+      }
       links = await page.$$eval("a[href]", (anchors) => anchors.map((anchor) => anchor.href));
     } catch {
       continue;
@@ -175,6 +185,13 @@ export async function crawlSameOriginUrls(
   }
 
   return discovered;
+}
+
+function isScrollablePage(page: {
+  evaluate?: unknown;
+  waitForTimeout?: unknown;
+}): page is ScrollablePage {
+  return typeof page.evaluate === "function" && typeof page.waitForTimeout === "function";
 }
 
 export function normalizeSameOriginUrl(candidate: string, baseUrl: string): string | null {

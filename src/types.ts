@@ -90,6 +90,7 @@ export interface DynamicConfig {
   crawl: boolean;
   crawlDepth: number;
   crawlLimit: number;
+  scroll: PageScrollConfig;
 }
 
 export interface MetricsConfig {
@@ -113,6 +114,14 @@ export interface ExploreConfig {
   safeMode: ExploreSafeModeConfig;
   waitMs: number;
   waitForSelector?: string;
+  scroll: PageScrollConfig;
+}
+
+export interface PageScrollConfig {
+  enabled: boolean;
+  stepPx: number;
+  maxSteps: number;
+  waitMs: number;
 }
 
 export interface RetentionConfig {
@@ -140,10 +149,13 @@ export interface A11yConfig {
 
 export type ConfigOverrides = Partial<Omit<A11yConfig, "static" | "dynamic" | "metrics" | "explore" | "retention">> & {
   static?: Partial<StaticConfig>;
-  dynamic?: Partial<DynamicConfig>;
+  dynamic?: Partial<Omit<DynamicConfig, "scroll">> & {
+    scroll?: Partial<PageScrollConfig>;
+  };
   metrics?: Partial<MetricsConfig>;
-  explore?: Partial<Omit<ExploreConfig, "safeMode">> & {
+  explore?: Partial<Omit<ExploreConfig, "safeMode" | "scroll">> & {
     safeMode?: Partial<ExploreSafeModeConfig>;
+    scroll?: Partial<PageScrollConfig>;
   };
   retention?: Partial<RetentionConfig>;
 };

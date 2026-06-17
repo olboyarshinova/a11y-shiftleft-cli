@@ -32,6 +32,11 @@ Some apps render the shell first and load cards, charts, or authenticated data
 after a short delay. `explore` waits for network idle and a small settle delay by
 default before taking screenshots and running axe.
 
+`explore` also auto-scrolls each state before scanning. This is separate from
+the screenshot setting: auto-scroll helps load below-the-fold content, while
+`--screenshot-full-page` controls whether the saved image shows the whole page
+or only the viewport.
+
 Use `--wait-ms` when screenshots are captured before the UI finishes rendering:
 
 ```bash
@@ -116,6 +121,9 @@ npx a11y-shiftleft explore \
   --screenshot-full-page \
   --out reports
 ```
+
+Full-page screenshots are most useful when checking long pages where issues are
+below the first viewport. Keep `--no-screenshots` for sensitive pages.
 
 ## Safe Mode
 

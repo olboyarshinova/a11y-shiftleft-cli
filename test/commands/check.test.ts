@@ -149,6 +149,10 @@ test("formatVerboseCheckSummary renders scan context without JSON parsing requir
     crawl: true,
     crawlDepth: 1,
     crawlLimit: 10,
+    scrollEnabled: true,
+    scrollStepPx: 800,
+    scrollMaxSteps: 25,
+    scrollWaitMs: 100,
     retentionEnabled: true,
     retentionDryRun: false,
     retentionPlannedDeletedRuns: 2,
@@ -159,6 +163,7 @@ test("formatVerboseCheckSummary renders scan context without JSON parsing requir
   assert.match(output, /modes: static=on, dynamic=on/);
   assert.match(output, /urls: http:\/\/localhost:3000/);
   assert.match(output, /crawl: enabled depth=1 limit=10/);
+  assert.match(output, /scroll: enabled step=800px maxSteps=25 wait=100ms/);
   assert.match(output, /baseline: enabled file=.a11y-baseline.json/);
   assert.match(output, /ignore: enabled file=a11y-ignore.json ignored=2/);
   assert.match(output, /retention: enabled deletedRuns=2/);

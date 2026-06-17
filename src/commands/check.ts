@@ -25,6 +25,10 @@ export interface CheckOptions {
   crawl?: boolean;
   crawlDepth?: string;
   crawlLimit?: string;
+  scroll?: boolean;
+  scrollStep?: string;
+  scrollMaxSteps?: string;
+  scrollWaitMs?: string;
   include?: string[];
   format?: string[];
   out?: string;
@@ -72,6 +76,10 @@ export function registerCheckCommand(program: Command): void {
     .option("--crawl", "Discover and scan same-origin links from dynamic URLs")
     .option("--crawl-depth <depth>", "Maximum same-origin crawl depth", "1")
     .option("--crawl-limit <limit>", "Maximum discovered URLs to scan", "10")
+    .option("--no-scroll", "Do not auto-scroll pages before dynamic scans")
+    .option("--scroll-step <px>", "Pixels per auto-scroll step before dynamic scans")
+    .option("--scroll-max-steps <count>", "Maximum auto-scroll steps per page")
+    .option("--scroll-wait-ms <ms>", "Wait after each auto-scroll step")
     .option("--include <patterns...>", "Static file globs to scan")
     .option("--format <formats...>", "Report formats: json, csv, markdown, or all")
     .option("--out <dir>", "Output directory")
@@ -119,7 +127,13 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
       urls: urls.length > 0 ? urls : undefined,
       crawl: options.crawl ? true : undefined,
       crawlDepth: toPositiveInteger(options.crawlDepth),
-      crawlLimit: toPositiveInteger(options.crawlLimit)
+      crawlLimit: toPositiveInteger(options.crawlLimit),
+      scroll: {
+        enabled: options.scroll === false ? false : undefined,
+        stepPx: toPositiveInteger(options.scrollStep),
+        maxSteps: toPositiveInteger(options.scrollMaxSteps),
+        waitMs: toNonNegativeInteger(options.scrollWaitMs)
+      }
     },
     retention: {
       enabled: retentionRequested(options),
@@ -261,6 +275,10 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
         crawl: Boolean(effectiveConfig.dynamic.crawl),
         crawlDepth: effectiveConfig.dynamic.crawlDepth,
         crawlLimit: effectiveConfig.dynamic.crawlLimit,
+        scrollEnabled: effectiveConfig.dynamic.scroll.enabled,
+        scrollStepPx: effectiveConfig.dynamic.scroll.stepPx,
+        scrollMaxSteps: effectiveConfig.dynamic.scroll.maxSteps,
+        scrollWaitMs: effectiveConfig.dynamic.scroll.waitMs,
         retentionEnabled: retentionSummary.enabled,
         retentionDryRun: retentionSummary.dryRun,
         retentionPlannedDeletedRuns: retentionSummary.plannedDeletedRuns,
@@ -339,6 +357,10 @@ export function formatVerboseCheckSummary(options: {
   crawl?: boolean;
   crawlDepth?: number;
   crawlLimit?: number;
+  scrollEnabled?: boolean;
+  scrollStepPx?: number;
+  scrollMaxSteps?: number;
+  scrollWaitMs?: number;
   retentionEnabled: boolean;
   retentionDryRun: boolean;
   retentionPlannedDeletedRuns: number;
@@ -351,6 +373,9 @@ export function formatVerboseCheckSummary(options: {
   const urls = options.urls.length > 0 ? options.urls.join(", ") : "none";
   const crawl = options.crawl
     ? `enabled depth=${options.crawlDepth || 1} limit=${options.crawlLimit || 10}`
+    : "disabled";
+  const scroll = options.scrollEnabled
+    ? `enabled step=${options.scrollStepPx}px maxSteps=${options.scrollMaxSteps} wait=${options.scrollWaitMs}ms`
     : "disabled";
   const baseline = options.baselineEnabled
     ? `enabled file=${options.baselineFile}${options.updateBaseline ? " update=true" : ""}`
@@ -370,6 +395,7 @@ export function formatVerboseCheckSummary(options: {
     `modes: static=${options.runStatic ? "on" : "off"}, dynamic=${options.runDynamic ? "on" : "off"}`,
     `urls: ${urls}`,
     `crawl: ${crawl}`,
+    `scroll: ${scroll}`,
     `standard: ${options.standard}`,
     `wcag: ${options.wcagVersion} ${options.wcagLevel}`,
     `baseline: ${baseline}`,
@@ -645,6 +671,15 @@ function toPositiveInteger(value: string | undefined): number | undefined {
   if (!value) return undefined;
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 1) return undefined;
+  return parsed;
+}
+
+function toNonNegativeInteger(value: string | undefined): number | undefined {
+  if (value === undefined) return undefined;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new Error("Scroll wait time must be a non-negative integer.");
+  }
   return parsed;
 }
 
