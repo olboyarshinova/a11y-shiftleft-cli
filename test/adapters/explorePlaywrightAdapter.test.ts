@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  createEvidenceClips,
   getExploreActionSafety,
   isCookieConsentContext,
   isSafeExploreAction,
@@ -233,7 +234,27 @@ test("SENSITIVE_SCREENSHOT_SELECTOR covers common private form fields", () => {
 test("shouldCaptureFullPageScreenshot captures finding states automatically", () => {
   assert.equal(shouldCaptureFullPageScreenshot(false, 0), false);
   assert.equal(shouldCaptureFullPageScreenshot(false, 1), true);
+  assert.equal(shouldCaptureFullPageScreenshot(false, 1, 5000), false);
   assert.equal(shouldCaptureFullPageScreenshot(true, 0), true);
+});
+
+test("createEvidenceClips groups nearby errors and separates distant regions", () => {
+  const clips = createEvidenceClips([
+    { issueIndex: 0, rect: { x: 100, y: 400, width: 200, height: 40 } },
+    { issueIndex: 1, rect: { x: 120, y: 560, width: 180, height: 40 } },
+    { issueIndex: 2, rect: { x: 80, y: 3600, width: 240, height: 50 } }
+  ], {
+    documentWidth: 1280,
+    documentHeight: 6000,
+    viewportWidth: 1280,
+    viewportHeight: 720
+  });
+
+  assert.equal(clips.length, 2);
+  assert.deepEqual(clips[0].issueIndexes, [0, 1]);
+  assert.deepEqual(clips[1].issueIndexes, [2]);
+  assert.ok(clips.every((clip) => clip.height <= 900));
+  assert.ok(clips.every((clip) => clip.width <= 1600));
 });
 
 test("isThemeAction recognizes common theme toggles", () => {

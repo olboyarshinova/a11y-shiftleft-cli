@@ -118,7 +118,7 @@ npx a11y-shiftleft check --dynamic --url http://localhost:4200 --out reports
 | Let the CLI discover same-origin pages | `npx a11y-shiftleft check --dynamic --url $APP_URL --crawl --crawl-depth 1 --crawl-limit 10 --out reports` |
 | Trigger lazy-loaded below-the-fold content | `npx a11y-shiftleft check --dynamic --url $APP_URL --scroll-step 800 --scroll-max-steps 25 --out reports` |
 | Create a visual state report | `npx a11y-shiftleft explore --url $APP_URL --depth 2 --out reports` |
-| Use smaller screenshots for clean states | `npx a11y-shiftleft explore --url $APP_URL --depth 2 --compact-screenshots --out reports` |
+| Force complete page screenshots | `npx a11y-shiftleft explore --url $APP_URL --depth 2 --screenshot-full-page --out reports` |
 | Keep reports refreshed while coding | `npx a11y-shiftleft watch --url $APP_URL --out reports/watch` |
 | Generate a fast PR workflow | `npx a11y-shiftleft ci --url $APP_URL --start-command "npm run dev -- --host localhost --port 5173"` |
 | View historical trends | `npx a11y-shiftleft dashboard --reports reports` |
@@ -251,16 +251,17 @@ color schemes when the page actually changes between them. Findings and visual
 states are labeled by color scheme in the reports. Pages that render identically
 are scanned once, so no theme option or second command is needed.
 
-Every explored state is captured as a compressed full-page screenshot, so the
-main visual report includes evidence below the first viewport. Full-page images
-are fitted into each report preview instead of being cropped. Use
-`--compact-screenshots` when clean states only need a smaller viewport image:
+Screenshots are compact by default. Short affected pages can be captured in
+full, while long pages are automatically split into focused crops around
+nearby errors. This keeps below-the-fold evidence without storing thousands of
+unrelated pixels. Force complete pages only when an audit specifically needs
+that context:
 
 ```bash
 npx a11y-shiftleft explore \
   --url $APP_URL \
   --depth 2 \
-  --compact-screenshots \
+  --screenshot-full-page \
   --out reports
 ```
 
@@ -299,6 +300,7 @@ reports/exploration.html
 reports/exploration.pdf       # only when --pdf is used
 reports/exploration-graph.json
 reports/screenshots/state-*.jpg
+reports/screenshots/state-*-error-*.jpg   # focused crops on long pages
 ```
 
 Screenshots are compressed, and sensitive form fields are masked by default.

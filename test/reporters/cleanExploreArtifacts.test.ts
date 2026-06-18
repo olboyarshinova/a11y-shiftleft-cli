@@ -18,13 +18,14 @@ test("cleanExploreArtifacts removes generated reports and stale state screenshot
   await fs.writeFile(path.join(screenshotsDir, "state-1.png"), "old screenshot");
   await fs.writeFile(path.join(screenshotsDir, "state-2.jpg"), "old screenshot");
   await fs.writeFile(path.join(screenshotsDir, "state-12.jpeg"), "old screenshot");
+  await fs.writeFile(path.join(screenshotsDir, "state-12-error-1.jpg"), "old crop");
   await fs.writeFile(path.join(screenshotsDir, "custom.png"), "keep me");
 
   const result = await cleanExploreArtifacts(outputDir);
 
   assert.deepEqual(result, {
     filesRemoved: 4,
-    screenshotsRemoved: 3
+    screenshotsRemoved: 4
   });
   assert.equal(await exists(path.join(outputDir, "a11y-report.json")), false);
   assert.equal(await exists(path.join(outputDir, "exploration-visual-check.html")), false);
@@ -34,6 +35,7 @@ test("cleanExploreArtifacts removes generated reports and stale state screenshot
   assert.equal(await exists(path.join(screenshotsDir, "state-1.png")), false);
   assert.equal(await exists(path.join(screenshotsDir, "state-2.jpg")), false);
   assert.equal(await exists(path.join(screenshotsDir, "state-12.jpeg")), false);
+  assert.equal(await exists(path.join(screenshotsDir, "state-12-error-1.jpg")), false);
   assert.equal(await exists(path.join(screenshotsDir, "custom.png")), true);
 });
 

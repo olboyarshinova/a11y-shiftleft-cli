@@ -221,6 +221,49 @@ test("renderExplorationHtml renders color contrast evidence and suggestions", ()
   assert.match(html, /background-color: #767676/);
 });
 
+test("renderExplorationHtml renders focused evidence crops for long pages", () => {
+  const focusedGraph = {
+    ...graph,
+    states: [{
+      ...graph.states[0],
+      screenshot: "screenshots/state-1-error-1.jpg",
+      screenshotFullPage: false,
+      screenshotEvidence: [
+        {
+          path: "screenshots/state-1-error-1.jpg",
+          kind: "error-crop",
+          issueCount: 1
+        },
+        {
+          path: "screenshots/state-1-error-2.jpg",
+          kind: "error-crop",
+          issueCount: 1
+        }
+      ]
+    }]
+  };
+  const focusedIssues = [
+    {
+      ...issues[0],
+      screenshot: "screenshots/state-1-error-1.jpg"
+    },
+    {
+      ...issues[0],
+      ruleId: "link-name",
+      fingerprint: "link-name::state-1",
+      screenshot: "screenshots/state-1-error-2.jpg"
+    }
+  ];
+  const html = renderExplorationHtml(focusedGraph, focusedIssues);
+
+  assert.match(html, /2 focused evidence captures/);
+  assert.match(html, /state-1-error-1\.jpg/);
+  assert.match(html, /state-1-error-2\.jpg/);
+  assert.match(html, /Open error evidence 1/);
+  assert.match(html, /Open error evidence 2/);
+  assert.match(html, /id="screenshot-state-1-2"/);
+});
+
 test("renderExplorationHtml labels best practices separately from WCAG findings", () => {
   const html = renderExplorationHtml(graph, [{
     ...issues[0],

@@ -449,10 +449,17 @@ export interface ExplorationState {
   actionLabel: string;
   colorScheme?: ColorScheme;
   screenshot?: string;
+  screenshotEvidence?: ExplorationScreenshotEvidence[];
   screenshotFullPage?: boolean;
   visualDuplicateOf?: string;
   issueCount: number;
   actionCount: number;
+}
+
+export interface ExplorationScreenshotEvidence {
+  path: string;
+  kind: "full-page" | "viewport" | "error-crop";
+  issueCount: number;
 }
 
 export interface ExplorationEdge {

@@ -47,7 +47,7 @@ test("formatVerboseExploreSummary renders exploration context", () => {
   assert.match(output, /limits: depth=2, states=20, actionsPerState=8/);
   assert.match(output, /pdf: on/);
   assert.match(output, /screenshots: jpeg quality=70/);
-  assert.match(output, /fullPageScreenshots: finding states/);
+  assert.match(output, /screenshotCapture: automatic error regions/);
   assert.match(output, /screenshotRedaction: on/);
   assert.match(output, /wait: 1000ms selector=\[data-loaded\]/);
   assert.match(output, /scroll: on step=800px maxSteps=25 wait=100ms/);
@@ -60,13 +60,16 @@ test("formatVerboseExploreSummary renders exploration context", () => {
   assert.match(output, /retention: on/);
 });
 
-test("resolveFullPageScreenshots uses complete pages by default", () => {
-  assert.equal(resolveFullPageScreenshots({}), true);
+test("resolveFullPageScreenshots uses automatic evidence crops by default", () => {
+  assert.equal(resolveFullPageScreenshots({}), false);
   assert.equal(resolveFullPageScreenshots({ compactScreenshots: true }), false);
+  assert.equal(resolveFullPageScreenshots({
+    screenshotFullPage: true
+  }), true);
   assert.equal(resolveFullPageScreenshots({
     compactScreenshots: true,
     screenshotFullPage: true
-  }), true);
+  }), false);
 });
 
 test("formatExploreProgressMessage renders compact progress lines", () => {

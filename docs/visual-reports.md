@@ -26,6 +26,7 @@ reports/exploration.html
 reports/exploration.pdf       # only when --pdf is used
 reports/exploration-graph.json
 reports/screenshots/state-*.jpg
+reports/screenshots/state-*-error-*.jpg   # focused crops on long pages
 ```
 
 `exploration.html` shows summary metrics, checked states, screenshots, top
@@ -56,9 +57,9 @@ after a short delay. `explore` waits for network idle and a small settle delay b
 default before taking screenshots and running axe.
 
 `explore` also auto-scrolls each state before scanning. Auto-scroll helps load
-below-the-fold content. Every state uses a full-page screenshot by default so
-the report can show the complete checked page, including clean states. Use
-`--compact-screenshots` when clean states only need viewport evidence.
+below-the-fold content. Short affected pages can use one complete screenshot;
+long pages are automatically split into focused crops around nearby findings.
+Clean long states use compact viewport evidence.
 
 Use `--wait-ms` when screenshots are captured before the UI finishes rendering:
 
@@ -106,9 +107,9 @@ certification.
 
 ## Screenshot Privacy
 
-Screenshots are compressed by default as JPEG files at quality `70`. Every state
-uses full-page evidence, and the HTML preview fits the complete page into the
-available frame instead of cropping it:
+Screenshots are compressed by default as JPEG files at quality `70`. On long
+pages, the CLI stores only focused regions around resolved error elements and
+shows them as a small evidence gallery:
 
 ```bash
 npx a11y-shiftleft explore --url $APP_URL --out reports
@@ -140,19 +141,19 @@ npx a11y-shiftleft explore \
   --out reports
 ```
 
-Use PNG only when the extra detail is worth the larger artifact size. Add
-`--compact-screenshots` when smaller clean-state evidence is preferable:
+Use PNG only when the extra detail is worth the larger artifact size. Force
+full-page evidence only when the complete surrounding page is required:
 
 ```bash
 npx a11y-shiftleft explore \
   --url $APP_URL \
   --screenshot-format png \
-  --compact-screenshots \
+  --screenshot-full-page \
   --out reports
 ```
 
-Finding states remain full-page in compact mode. Keep `--no-screenshots` for
-sensitive pages.
+Automatic crops retain context padding, issue annotations, and sensitive-field
+masking. Keep `--no-screenshots` for sensitive pages.
 
 ## Safe Mode
 

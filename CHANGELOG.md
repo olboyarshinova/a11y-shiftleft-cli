@@ -20,9 +20,10 @@
   framework examples; unknown rules receive conservative fallback guidance.
 - Dynamic axe adapters preserve each violation's rule-specific `helpUrl` in
   JSON and use it in remediation links.
-- Visual exploration now captures full-page screenshots for every state by
-  default and fits complete images into report previews. Use
-  `--compact-screenshots` to keep viewport images for clean states.
+- Visual exploration now keeps short-page context but automatically replaces
+  very tall screenshots with focused evidence crops around nearby findings.
+  `--screenshot-full-page` remains available when complete-page evidence is
+  explicitly required.
 - `exploration.html` now includes overflow findings, root causes, transitions,
   and skipped actions in collapsed sections instead of requiring a second
   user-facing report.

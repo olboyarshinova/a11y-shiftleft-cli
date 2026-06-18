@@ -220,6 +220,17 @@ export function renderExplorationHtml(
       position: relative;
     }
 
+    .screenshot-evidence-grid {
+      background: #eef1f5;
+      display: grid;
+      gap: 1px;
+      grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+    }
+
+    .screenshot-evidence-grid .screenshot-frame {
+      border: 0;
+    }
+
     .screenshot-stage {
       line-height: 0;
       position: relative;
@@ -639,6 +650,9 @@ function renderState(state: StateViewModel): string {
       ${issueBadges}
       ${state.colorScheme ? `<span class="badge">${escapeHtml(state.colorScheme)} color scheme</span>` : ""}
       ${state.screenshotFullPage ? `<span class="badge">full-page evidence</span>` : ""}
+      ${state.screenshotEvidence?.some((evidence) => evidence.kind === "error-crop")
+        ? `<span class="badge">${state.screenshotEvidence.length} focused evidence capture${state.screenshotEvidence.length === 1 ? "" : "s"}</span>`
+        : ""}
       ${state.visualDuplicateOf ? `<span class="badge">visual reused from ${escapeHtml(state.visualDuplicateOf)}</span>` : ""}
       <span class="badge">${state.actionCount} actions queued</span>
     </div>
@@ -652,50 +666,81 @@ function renderStateScreenshot(state: StateViewModel): string {
     return `<div class="placeholder">No screenshot</div>`;
   }
 
-  const annotations = state.issues
+  const evidence = state.screenshotEvidence?.length
+    ? state.screenshotEvidence
+    : [{
+      path: state.screenshot,
+      kind: state.screenshotFullPage ? "full-page" as const : "viewport" as const,
+      issueCount: state.issues.length
+    }];
+  const firstTargetId = `screenshot-${state.id}`;
+
+  if (state.visualDuplicateOf && evidence.length === 1) {
+    const annotations = annotationsForEvidence(state, evidence[0].path);
+    return `<div class="screenshot-reference">
+      <strong>Duplicate visual not stored again</strong>
+      <span>Same pixels as <a href="#${escapeAttribute(state.visualDuplicateOf)}">${escapeHtml(state.visualDuplicateOf)}</a>.</span>
+      <a href="#${escapeAttribute(firstTargetId)}">Open this state's annotated evidence</a>
+    </div>
+    ${renderAnnotatedScreenshotView(state, evidence[0].path, annotations, firstTargetId)}`;
+  }
+
+  return `<div class="screenshot-evidence-grid">
+    ${evidence.map((item, index) => renderEvidenceFrame(state, item, index)).join("\n")}
+  </div>`;
+}
+
+function renderEvidenceFrame(
+  state: StateViewModel,
+  evidence: NonNullable<ExplorationState["screenshotEvidence"]>[number],
+  index: number
+): string {
+  const annotations = annotationsForEvidence(state, evidence.path);
+  const targetId = index === 0
+    ? `screenshot-${state.id}`
+    : `screenshot-${state.id}-${index + 1}`;
+  const fullPage = evidence.kind === "full-page";
+  const frameClass = fullPage
+    ? "screenshot-frame screenshot-frame-full"
+    : "screenshot-frame";
+  const openLabel = fullPage
+    ? "Open full-page evidence"
+    : evidence.kind === "error-crop"
+      ? `Open error evidence ${index + 1}`
+      : "Open annotated screenshot";
+  const screenshotAlt = fullPage
+    ? `Full-page evidence for ${state.id}`
+    : evidence.kind === "error-crop"
+      ? `Focused error evidence ${index + 1} for ${state.id}`
+      : `Screenshot for ${state.id}`;
+
+  return `<div class="${frameClass}">
+    <div class="screenshot-stage">
+      <img src="${escapeAttribute(evidence.path)}" alt="${escapeAttribute(screenshotAlt)}">
+      ${renderAnnotationLayer(fullPage ? "" : annotations)}
+    </div>
+    <a class="screenshot-open" href="#${escapeAttribute(targetId)}">${openLabel}</a>
+  </div>
+  ${renderAnnotatedScreenshotView(state, evidence.path, annotations, targetId)}`;
+}
+
+function annotationsForEvidence(state: StateViewModel, screenshot: string): string {
+  const matchingIssues = state.issues.filter((issue) => issue.screenshot === screenshot);
+  const issues = matchingIssues.length > 0 ? matchingIssues : state.issues;
+
+  return issues
     .filter((issue) => issue.elementBounds)
     .slice(0, 12)
     .map((issue, index) => renderAnnotation(issue, index + 1))
     .join("\n");
-  const screenshotTargetId = `screenshot-${state.id}`;
-
-  if (state.visualDuplicateOf) {
-    return `<div class="screenshot-reference">
-      <strong>Duplicate visual not stored again</strong>
-      <span>Same pixels as <a href="#${escapeAttribute(state.visualDuplicateOf)}">${escapeHtml(state.visualDuplicateOf)}</a>.</span>
-      <a href="#${escapeAttribute(screenshotTargetId)}">Open this state's annotated evidence</a>
-    </div>
-    ${renderAnnotatedScreenshotView(state, annotations, screenshotTargetId)}`;
-  }
-
-  const previewAnnotations = state.screenshotFullPage ? "" : annotations;
-  const frameClass = state.screenshotFullPage
-    ? "screenshot-frame screenshot-frame-full"
-    : "screenshot-frame";
-  const openLabel = state.screenshotFullPage
-    ? "Open full-page evidence"
-    : "Open annotated screenshot";
-  const screenshotAlt = state.screenshotFullPage
-    ? `Full-page evidence for ${state.id}`
-    : `Screenshot for ${state.id}`;
-
-  return `<div class="${frameClass}">
-    <div class="screenshot-stage">
-      <img src="${escapeAttribute(state.screenshot)}" alt="${escapeAttribute(screenshotAlt)}">
-      ${renderAnnotationLayer(previewAnnotations)}
-    </div>
-    <a class="screenshot-open" href="#${escapeAttribute(screenshotTargetId)}">${openLabel}</a>
-  </div>
-  ${renderAnnotatedScreenshotView(state, annotations, screenshotTargetId)}`;
 }
 
 function renderAnnotatedScreenshotView(
   state: StateViewModel,
+  screenshot: string,
   annotations: string,
   screenshotTargetId: string
 ): string {
-  if (!state.screenshot) return "";
-
   return `<div class="screenshot-lightbox" id="${escapeAttribute(screenshotTargetId)}" role="dialog" aria-label="Annotated screenshot for ${escapeAttribute(state.id)}">
     <div class="screenshot-lightbox-inner">
       <div class="lightbox-header">
@@ -707,7 +752,7 @@ function renderAnnotatedScreenshotView(
       </div>
       <div class="screenshot-lightbox-frame">
         <div class="screenshot-stage">
-          <img src="${escapeAttribute(state.screenshot)}" alt="Annotated screenshot for ${escapeAttribute(state.id)}">
+          <img src="${escapeAttribute(screenshot)}" alt="Annotated screenshot for ${escapeAttribute(state.id)}">
           ${renderAnnotationLayer(annotations)}
         </div>
       </div>

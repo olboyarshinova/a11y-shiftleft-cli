@@ -35,6 +35,11 @@ const DEFAULT_WAIT_MS = 250;
 const DEFAULT_SCREENSHOT_FORMAT = "jpeg";
 const DEFAULT_SCREENSHOT_QUALITY = 70;
 const SCREENSHOT_REDACTION_COLOR = "#111827";
+const MAX_AUTO_FULL_PAGE_HEIGHT = 2400;
+const ERROR_CROP_PADDING_Y = 120;
+const MAX_ERROR_CROP_HEIGHT = 900;
+const ERROR_CROP_PADDING_X = 80;
+const MAX_ERROR_CROP_WIDTH = 1600;
 
 const COOKIE_CONSENT_CONTEXT_PATTERNS = [
   /\b(cookie|cookies|cookiebot|onetrust|consent|tracking|privacy\s*(choices|preferences|settings))\b/i,
@@ -161,6 +166,36 @@ interface PageFingerprint {
 interface CapturedScreenshot {
   path: string;
   fingerprint: string;
+  kind: "full-page" | "viewport" | "error-crop";
+  issueIndexes: number[];
+}
+
+export interface DocumentRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface PageCaptureMetrics {
+  documentWidth: number;
+  documentHeight: number;
+  viewportWidth: number;
+  viewportHeight: number;
+}
+
+export interface EvidenceClip {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  issueIndexes: number[];
+}
+
+interface PreparedStateVisualEvidence {
+  issues: Issue[];
+  captures: CapturedScreenshot[];
+  fullPage: boolean;
 }
 
 type RawExploreAction = Omit<ExploreAction, "id">;
@@ -267,37 +302,36 @@ export async function runExplorePlaywrightAdapter(
           stateLabel: actionLabel,
           colorScheme: reportedColorScheme
         });
-        const screenshotFullPage = shouldCaptureFullPageScreenshot(
-          Boolean(options.screenshotFullPage),
-          scannedIssues.length
-        );
-        const boundedIssues = screenshots
-          ? await prepareStateVisualEvidence(page, scannedIssues, {
-            fullPage: screenshotFullPage
-          })
-          : scannedIssues;
-        const capturedScreenshot = screenshots
-          ? await captureStateScreenshot(page, {
+        const visualEvidence = screenshots
+          ? await captureStateVisualEvidence(page, scannedIssues, {
             outputDir: options.outputDir,
             stateId,
             format: screenshotFormat,
             quality: screenshotQuality,
-            fullPage: screenshotFullPage,
+            forceFullPage: Boolean(options.screenshotFullPage),
             redactSensitiveFields: screenshotRedaction
           })
-          : undefined;
-        let screenshot = capturedScreenshot?.path;
+          : {
+            issues: scannedIssues,
+            captures: [],
+            fullPage: false
+          };
+        const screenshotPathReplacements = new Map<string, string>();
+        const screenshotEvidence: NonNullable<ExplorationState["screenshotEvidence"]> = [];
         let visualDuplicateOf: string | undefined;
 
-        if (capturedScreenshot) {
+        for (const capturedScreenshot of visualEvidence.captures) {
           const existingEvidence = screenshotFingerprintToEvidence.get(
             capturedScreenshot.fingerprint
           );
+          let finalPath = capturedScreenshot.path;
 
           if (existingEvidence) {
             await removeDuplicateScreenshot(options.outputDir, capturedScreenshot.path);
-            screenshot = existingEvidence.path;
-            visualDuplicateOf = existingEvidence.stateId;
+            finalPath = existingEvidence.path;
+            if (visualEvidence.captures.length === 1) {
+              visualDuplicateOf = existingEvidence.stateId;
+            }
           } else {
             screenshotFingerprintToEvidence.set(capturedScreenshot.fingerprint, {
               stateId,
@@ -305,11 +339,29 @@ export async function runExplorePlaywrightAdapter(
             });
             screenshotsSaved += 1;
           }
+
+          screenshotPathReplacements.set(capturedScreenshot.path, finalPath);
+          const existingScreenshot = screenshotEvidence.find((item) => (
+            item.path === finalPath && item.kind === capturedScreenshot.kind
+          ));
+          if (existingScreenshot) {
+            existingScreenshot.issueCount += capturedScreenshot.issueIndexes.length;
+          } else {
+            screenshotEvidence.push({
+              path: finalPath,
+              kind: capturedScreenshot.kind,
+              issueCount: capturedScreenshot.issueIndexes.length
+            });
+          }
         }
 
-        const stateIssues = screenshot
-          ? boundedIssues.map((issue) => ({ ...issue, screenshot }))
-          : scannedIssues;
+        const stateIssues = visualEvidence.issues.map((issue) => ({
+          ...issue,
+          screenshot: issue.screenshot
+            ? screenshotPathReplacements.get(issue.screenshot) || issue.screenshot
+            : undefined
+        }));
+        const screenshot = screenshotEvidence[0]?.path;
         issues.push(...stateIssues);
 
         const state: ExplorationState = {
@@ -321,7 +373,8 @@ export async function runExplorePlaywrightAdapter(
           actionLabel,
           colorScheme: reportedColorScheme,
           screenshot,
-          screenshotFullPage: screenshot ? screenshotFullPage : undefined,
+          screenshotEvidence: screenshotEvidence.length > 0 ? screenshotEvidence : undefined,
+          screenshotFullPage: screenshot ? visualEvidence.fullPage : undefined,
           visualDuplicateOf,
           issueCount: stateIssues.length,
           actionCount: actions.length
@@ -654,35 +707,245 @@ async function scanState(
 
 export function shouldCaptureFullPageScreenshot(
   forceFullPage: boolean,
-  issueCount: number
+  issueCount: number,
+  documentHeight = 0
 ): boolean {
-  return forceFullPage || issueCount > 0;
+  return forceFullPage || (
+    issueCount > 0 && documentHeight <= MAX_AUTO_FULL_PAGE_HEIGHT
+  );
 }
 
-async function prepareStateVisualEvidence(
+async function captureStateVisualEvidence(
   page: Page,
   issues: Issue[],
   options: {
-    fullPage: boolean;
+    outputDir: string;
+    stateId: string;
+    format: ScreenshotFormat;
+    quality: number;
+    forceFullPage: boolean;
+    redactSensitiveFields: boolean;
   }
-): Promise<Issue[]> {
+): Promise<PreparedStateVisualEvidence> {
   await stabilizePageForVisualEvidence(page);
-  const enriched: Issue[] = [];
+  const metrics = await readPageCaptureMetrics(page);
+  const issueRects = await Promise.all(issues.map(async (issue, issueIndex) => ({
+    issueIndex,
+    rect: issue.selector
+      ? await getIssueDocumentRect(page, issue.selector)
+      : undefined
+  })));
+  const resolvedRects = issueRects.filter((item): item is {
+    issueIndex: number;
+    rect: DocumentRect;
+  } => Boolean(item.rect));
+  const fullPage = shouldCaptureFullPageScreenshot(
+    options.forceFullPage,
+    issues.length,
+    metrics.documentHeight
+  );
 
-  for (const issue of issues) {
-    const elementBounds = issue.selector
-      ? await getElementBounds(page, issue.selector, {
-        fullPage: options.fullPage
-      })
-      : undefined;
-
-    enriched.push({
-      ...issue,
-      elementBounds
+  if (fullPage) {
+    const captured = await captureStateScreenshot(page, {
+      ...options,
+      fullPage: true,
+      kind: "full-page",
+      issueIndexes: issues.map((_, index) => index)
     });
+
+    return {
+      fullPage: true,
+      captures: captured ? [captured] : [],
+      issues: issues.map((issue, index) => ({
+        ...issue,
+        screenshot: captured?.path,
+        elementBounds: toDocumentPercentBounds(resolvedRects, index, metrics)
+      }))
+    };
   }
 
-  return enriched;
+  const clips = createEvidenceClips(resolvedRects, metrics);
+
+  if (clips.length > 0) {
+    const captures: CapturedScreenshot[] = [];
+    const preparedIssues = issues.map((issue) => ({ ...issue }));
+
+    for (const [clipIndex, clip] of clips.entries()) {
+      const captured = await captureStateScreenshot(page, {
+        ...options,
+        fullPage: false,
+        kind: "error-crop",
+        issueIndexes: clip.issueIndexes,
+        filenameSuffix: `-error-${clipIndex + 1}`,
+        clip
+      });
+      if (!captured) continue;
+      captures.push(captured);
+
+      for (const issueIndex of clip.issueIndexes) {
+        const rect = resolvedRects.find((item) => item.issueIndex === issueIndex)?.rect;
+        preparedIssues[issueIndex] = {
+          ...preparedIssues[issueIndex],
+          screenshot: captured.path,
+          elementBounds: rect
+            ? toPercentBounds({
+              x: rect.x - clip.x,
+              y: rect.y - clip.y,
+              width: rect.width,
+              height: rect.height,
+              containerWidth: clip.width,
+              containerHeight: clip.height
+            }, "viewport")
+            : undefined
+        };
+      }
+    }
+
+    const fallbackScreenshot = captures[0]?.path;
+    return {
+      fullPage: false,
+      captures,
+      issues: preparedIssues.map((issue) => issue.screenshot || !fallbackScreenshot
+        ? issue
+        : { ...issue, screenshot: fallbackScreenshot })
+    };
+  }
+
+  const captured = await captureStateScreenshot(page, {
+    ...options,
+    fullPage: false,
+    kind: "viewport",
+    issueIndexes: issues.map((_, index) => index)
+  });
+
+  return {
+    fullPage: false,
+    captures: captured ? [captured] : [],
+    issues: issues.map((issue) => ({
+      ...issue,
+      screenshot: captured?.path
+    }))
+  };
+}
+
+function toDocumentPercentBounds(
+  resolvedRects: Array<{ issueIndex: number; rect: DocumentRect }>,
+  issueIndex: number,
+  metrics: PageCaptureMetrics
+): ElementBounds | undefined {
+  const rect = resolvedRects.find((item) => item.issueIndex === issueIndex)?.rect;
+  return rect
+    ? toPercentBounds({
+      ...rect,
+      containerWidth: metrics.documentWidth,
+      containerHeight: metrics.documentHeight
+    }, "document")
+    : undefined;
+}
+
+export function createEvidenceClips(
+  resolvedRects: Array<{ issueIndex: number; rect: DocumentRect }>,
+  metrics: PageCaptureMetrics
+): EvidenceClip[] {
+  const sorted = [...resolvedRects].sort((left, right) => left.rect.y - right.rect.y);
+  const groups: typeof sorted[] = [];
+
+  for (const item of sorted) {
+    const current = groups.at(-1);
+    if (!current) {
+      groups.push([item]);
+      continue;
+    }
+
+    const proposedTop = Math.min(...current.map((entry) => entry.rect.y), item.rect.y);
+    const proposedBottom = Math.max(
+      ...current.map((entry) => entry.rect.y + entry.rect.height),
+      item.rect.y + item.rect.height
+    );
+    const proposedLeft = Math.min(...current.map((entry) => entry.rect.x), item.rect.x);
+    const proposedRight = Math.max(
+      ...current.map((entry) => entry.rect.x + entry.rect.width),
+      item.rect.x + item.rect.width
+    );
+
+    if (
+      proposedBottom - proposedTop + ERROR_CROP_PADDING_Y * 2 > MAX_ERROR_CROP_HEIGHT ||
+      proposedRight - proposedLeft + ERROR_CROP_PADDING_X * 2 > MAX_ERROR_CROP_WIDTH
+    ) {
+      groups.push([item]);
+    } else {
+      current.push(item);
+    }
+  }
+
+  return groups.map((group) => {
+    const minX = Math.min(...group.map((item) => item.rect.x));
+    const maxX = Math.max(...group.map((item) => item.rect.x + item.rect.width));
+    const minY = Math.min(...group.map((item) => item.rect.y));
+    const maxY = Math.max(...group.map((item) => item.rect.y + item.rect.height));
+    const desiredWidth = Math.max(
+      metrics.viewportWidth,
+      maxX - minX + ERROR_CROP_PADDING_X * 2
+    );
+    const width = Math.max(1, Math.min(
+      metrics.documentWidth,
+      MAX_ERROR_CROP_WIDTH,
+      desiredWidth
+    ));
+    const x = clamp(minX - ERROR_CROP_PADDING_X, 0, metrics.documentWidth - width);
+    const desiredHeight = Math.min(
+      MAX_ERROR_CROP_HEIGHT,
+      maxY - minY + ERROR_CROP_PADDING_Y * 2
+    );
+    const y = clamp(minY - ERROR_CROP_PADDING_Y, 0, metrics.documentHeight - desiredHeight);
+    const height = Math.max(1, Math.min(desiredHeight, metrics.documentHeight - y));
+
+    return {
+      x: Math.round(x),
+      y: Math.round(y),
+      width: Math.round(width),
+      height: Math.round(height),
+      issueIndexes: group.map((item) => item.issueIndex)
+    };
+  });
+}
+
+async function readPageCaptureMetrics(page: Page): Promise<PageCaptureMetrics> {
+  return page.evaluate(() => {
+    const doc = document.documentElement;
+    const body = document.body;
+
+    return {
+      documentWidth: Math.max(doc.scrollWidth, body?.scrollWidth || 0, window.innerWidth),
+      documentHeight: Math.max(doc.scrollHeight, body?.scrollHeight || 0, window.innerHeight),
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight
+    };
+  });
+}
+
+async function getIssueDocumentRect(
+  page: Page,
+  selector: string
+): Promise<DocumentRect | undefined> {
+  try {
+    const rect = await page.evaluate((selectorText) => {
+      const element = document.querySelector(selectorText);
+      if (!element) return null;
+      const bounds = element.getBoundingClientRect();
+
+      return {
+        x: bounds.left + window.scrollX,
+        y: bounds.top + window.scrollY,
+        width: bounds.width,
+        height: bounds.height
+      };
+    }, selector);
+
+    return rect && rect.width > 0 && rect.height > 0 ? rect : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 async function stabilizePageForVisualEvidence(page: Page): Promise<void> {
@@ -705,66 +968,6 @@ async function stabilizePageForVisualEvidence(page: Page): Promise<void> {
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     });
   }).catch(() => undefined);
-}
-
-async function getElementBounds(
-  page: Page,
-  selector: string,
-  options: {
-    fullPage: boolean;
-  }
-): Promise<ElementBounds | undefined> {
-  if (!selector) return undefined;
-
-  try {
-    if (options.fullPage) {
-      const bounds = await page.evaluate((selectorText) => {
-        const element = document.querySelector(selectorText);
-        if (!element) return null;
-
-        const rect = element.getBoundingClientRect();
-        const doc = document.documentElement;
-        const body = document.body;
-        const documentWidth = Math.max(
-          doc.scrollWidth,
-          body?.scrollWidth || 0,
-          window.innerWidth
-        );
-        const documentHeight = Math.max(
-          doc.scrollHeight,
-          body?.scrollHeight || 0,
-          window.innerHeight
-        );
-
-        return {
-          x: rect.left + window.scrollX,
-          y: rect.top + window.scrollY,
-          width: rect.width,
-          height: rect.height,
-          containerWidth: documentWidth,
-          containerHeight: documentHeight
-        };
-      }, selector);
-
-      return toPercentBounds(bounds, "document");
-    }
-
-    const rect = await page.locator(selector).first().boundingBox({
-      timeout: 500
-    }).catch(() => null);
-    const viewport = await page.evaluate(() => ({
-      containerWidth: window.innerWidth,
-      containerHeight: window.innerHeight
-    }));
-
-    return toPercentBounds(rect ? {
-      ...rect,
-      containerWidth: viewport.containerWidth,
-      containerHeight: viewport.containerHeight
-    } : null, "viewport");
-  } catch {
-    return undefined;
-  }
 }
 
 function toPercentBounds(
@@ -803,6 +1006,11 @@ function toPercentBounds(
 function clampPercent(value: number): number {
   if (!Number.isFinite(value)) return 0;
   return Math.max(0, Math.min(100, value));
+}
+
+function clamp(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) return min;
+  return Math.max(min, Math.min(Math.max(min, max), value));
 }
 
 function roundPercent(value: number): number {
@@ -1140,11 +1348,15 @@ async function captureStateScreenshot(
     quality: number;
     fullPage: boolean;
     redactSensitiveFields: boolean;
+    kind: CapturedScreenshot["kind"];
+    issueIndexes: number[];
+    filenameSuffix?: string;
+    clip?: EvidenceClip;
   }
 ): Promise<CapturedScreenshot | undefined> {
   const screenshotsDir = path.join(options.outputDir, "screenshots");
   const extension = options.format === "jpeg" ? "jpg" : "png";
-  const filename = `${options.stateId}.${extension}`;
+  const filename = `${options.stateId}${options.filenameSuffix || ""}.${extension}`;
   const screenshotPath = path.join(screenshotsDir, filename);
 
   await fs.mkdir(screenshotsDir, { recursive: true });
@@ -1154,6 +1366,14 @@ async function captureStateScreenshot(
     path: screenshotPath,
     fullPage: options.fullPage,
     type: options.format,
+    ...(options.clip ? {
+      clip: {
+        x: options.clip.x,
+        y: options.clip.y,
+        width: options.clip.width,
+        height: options.clip.height
+      }
+    } : {}),
     ...(options.format === "jpeg" ? { quality: options.quality } : {})
   };
 
@@ -1166,7 +1386,9 @@ async function captureStateScreenshot(
 
   return {
     path: path.posix.join("screenshots", filename),
-    fingerprint: hashBuffer(screenshotBuffer)
+    fingerprint: hashBuffer(screenshotBuffer),
+    kind: options.kind,
+    issueIndexes: options.issueIndexes
   };
 }
 
