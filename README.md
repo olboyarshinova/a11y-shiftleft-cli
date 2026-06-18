@@ -565,6 +565,8 @@ node bin/cli.js check --dynamic --url http://localhost:5173 --out reports
   ticket drafts from `a11y-report.json`.
 - [Evidence methodology](docs/evidence-methodology.md): confidence scoring,
   issue categories, false-positive review, and metrics definitions.
+- [WCAG 2.2 coverage](docs/wcag-coverage.md): criterion-by-criterion automated,
+  manual, and missing coverage.
 - [Empirical validation](docs/empirical-validation.md): baseline vs
   intervention study design and analysis commands.
 - [Adoption strategy](docs/adoption-strategy.md): npm scripts, generated CI,
