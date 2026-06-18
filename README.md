@@ -249,6 +249,10 @@ npx a11y-shiftleft explore \
   --out reports
 ```
 
+Pixel-identical screenshots are stored only once. Repeated UI states remain in
+the exploration graph, but the HTML report replaces duplicate thumbnails with
+a link to the shared visual evidence.
+
 For apps that render data after the first page load, add a short settle wait:
 
 ```bash
@@ -267,7 +271,9 @@ npx a11y-shiftleft explore \
 ```
 
 It safely follows same-origin links and low-risk UI expansion controls such as
-menu buttons, tabs, disclosure widgets, and modal triggers.
+menu buttons, tabs, disclosure widgets, and modal triggers. Cookie consent
+controls are never clicked automatically, including short buttons such as
+`Accept` or `OK` when they appear inside a recognized consent banner.
 
 It creates:
 

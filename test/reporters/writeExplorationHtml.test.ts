@@ -34,6 +34,19 @@ const graph = {
       screenshot: "screenshots/state-2.png",
       issueCount: 0,
       actionCount: 0
+    },
+    {
+      id: "state-3",
+      url: "http://localhost:3000/",
+      title: "Demo",
+      depth: 1,
+      fingerprint: "ghi789",
+      actionLabel: "Click: Close menu",
+      screenshot: "screenshots/state-1.png",
+      screenshotFullPage: true,
+      visualDuplicateOf: "state-1",
+      issueCount: 0,
+      actionCount: 0
     }
   ],
   edges: [
@@ -62,10 +75,11 @@ const graph = {
     }
   ],
   summary: {
-    statesVisited: 2,
+    statesVisited: 3,
     actionsTried: 1,
     skippedActions: 1,
     screenshots: 2,
+    duplicateScreenshots: 1,
     maxDepth: 2,
     maxStates: 20
   }
@@ -111,6 +125,11 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /a11y-shiftleft exploration report/);
   assert.match(html, /States visited/);
   assert.match(html, /screenshots\/state-1\.png/);
+  assert.match(html, /Unique screenshots/);
+  assert.match(html, /Duplicate screenshots skipped/);
+  assert.match(html, /Duplicate visual not stored again/);
+  assert.match(html, /visual reused from state-1/);
+  assert.match(html, /Open this state's annotated evidence/);
   assert.match(html, /button-name/);
   assert.match(html, /Buttons must have discernible text/);
   assert.match(html, /Triage Overview/);

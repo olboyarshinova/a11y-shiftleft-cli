@@ -98,6 +98,11 @@ keep reports smaller:
 npx a11y-shiftleft explore --url $APP_URL --out reports
 ```
 
+Exact visual duplicates are fingerprinted after capture and stored only once.
+The state remains in `exploration-graph.json`, while `exploration.html` shows a
+compact reference to the original screenshot instead of repeating the same
+thumbnail. Each state can still open its own annotation layer.
+
 Sensitive form fields are masked in screenshots by default. The redaction covers
 common password, email, phone, token, card, address, and one-time-code inputs, as
 well as elements marked with `data-a11y-sensitive`, `data-a11y-redact`, or
@@ -145,6 +150,11 @@ payments, cookie consent, camera/photo, microphone/audio recording, location,
 notifications, file upload, and sharing controls. This is a safety layer, not a
 complete translation system; add project-specific patterns when your product
 uses custom wording.
+
+Cookie controls are also detected from their surrounding banner or dialog.
+This keeps short labels such as `Accept`, `Allow`, or `OK` from changing consent
+when the button itself does not mention cookies. Recognized cookie consent
+controls are never clicked by automatic exploration.
 
 Cookies are isolated between explored states by default, so a cookie-setting
 click in one state does not change later replay attempts. Use

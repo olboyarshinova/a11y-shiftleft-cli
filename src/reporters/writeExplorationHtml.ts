@@ -485,6 +485,25 @@ export function renderExplorationHtml(
       justify-content: center;
     }
 
+    .screenshot-reference {
+      align-items: center;
+      aspect-ratio: 16 / 10;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .screenshot-reference a {
+      color: var(--info);
+      font-weight: 700;
+    }
+
     @media (min-width: 1100px) {
       main {
         grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
@@ -508,7 +527,10 @@ export function renderExplorationHtml(
       ${metric("States visited", graph.summary.statesVisited)}
       ${metric("Actions tried", graph.summary.actionsTried)}
       ${metric("Actions skipped", graph.summary.skippedActions || 0)}
-      ${metric("Screenshots", graph.summary.screenshots)}
+      ${metric("Unique screenshots", graph.summary.screenshots)}
+      ${graph.summary.duplicateScreenshots
+        ? metric("Duplicate screenshots skipped", graph.summary.duplicateScreenshots)
+        : ""}
       ${metric("Critical", totals.critical, "critical")}
       ${metric("Warning", totals.warning, "warning")}
       ${metric("Info", totals.info, "info")}
@@ -569,6 +591,7 @@ function renderState(state: StateViewModel): string {
     <div class="badges">
       ${issueBadges}
       ${state.screenshotFullPage ? `<span class="badge">full-page evidence</span>` : ""}
+      ${state.visualDuplicateOf ? `<span class="badge">visual reused from ${escapeHtml(state.visualDuplicateOf)}</span>` : ""}
       <span class="badge">${state.actionCount} actions queued</span>
     </div>
     ${renderIssues(state.issues)}
@@ -586,8 +609,18 @@ function renderStateScreenshot(state: StateViewModel): string {
     .slice(0, 12)
     .map((issue, index) => renderAnnotation(issue, index + 1))
     .join("\n");
-  const previewAnnotations = state.screenshotFullPage ? "" : annotations;
   const screenshotTargetId = `screenshot-${state.id}`;
+
+  if (state.visualDuplicateOf) {
+    return `<div class="screenshot-reference">
+      <strong>Duplicate visual not stored again</strong>
+      <span>Same pixels as <a href="#${escapeAttribute(state.visualDuplicateOf)}">${escapeHtml(state.visualDuplicateOf)}</a>.</span>
+      <a href="#${escapeAttribute(screenshotTargetId)}">Open this state's annotated evidence</a>
+    </div>
+    ${renderAnnotatedScreenshotView(state, annotations, screenshotTargetId)}`;
+  }
+
+  const previewAnnotations = state.screenshotFullPage ? "" : annotations;
   const frameClass = state.screenshotFullPage
     ? "screenshot-frame screenshot-frame-full"
     : "screenshot-frame";

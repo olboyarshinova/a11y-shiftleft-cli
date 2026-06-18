@@ -419,6 +419,7 @@ export interface ExplorationState {
   actionLabel: string;
   screenshot?: string;
   screenshotFullPage?: boolean;
+  visualDuplicateOf?: string;
   issueCount: number;
   actionCount: number;
 }
@@ -440,6 +441,7 @@ export interface ExplorationGraph {
     actionsTried: number;
     skippedActions: number;
     screenshots: number;
+    duplicateScreenshots?: number;
     maxDepth: number;
     maxStates: number;
   };

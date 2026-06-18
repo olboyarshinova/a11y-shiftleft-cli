@@ -213,7 +213,7 @@ test("formatExploreConsoleSummary renders a readable visual scan summary", () =>
     screenshots: true
   });
 
-  assert.match(output, /Exploration: states 1\/20 \| actions tried 0 \| skipped 0 \| screenshots 1/);
+  assert.match(output, /Exploration: states 1\/20 \| actions tried 0 \| skipped 0 \| unique screenshots 1 \| duplicate screenshots skipped 0/);
   assert.match(output, /Findings: total 2 \| CRITICAL 0 \| WARNING 2 \| INFO 0/);
   assert.match(output, /color-contrast: 1/);
   assert.match(output, /state-1: 2 findings/);

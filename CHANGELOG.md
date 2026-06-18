@@ -2,7 +2,13 @@
 
 ## Unreleased
 
-No unreleased changes yet.
+### Changed
+
+- Visual exploration stores pixel-identical screenshots once and shows compact
+  references for duplicate states while preserving each state's findings and
+  annotation view.
+- Cookie consent controls are detected from their surrounding banner or dialog,
+  so short labels such as `Accept` or `OK` are not clicked automatically.
 
 ## 0.6.0 - 2026-06-13
 

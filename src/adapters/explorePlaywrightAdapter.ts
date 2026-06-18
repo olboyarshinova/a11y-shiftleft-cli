@@ -36,6 +36,13 @@ const DEFAULT_SCREENSHOT_FORMAT = "jpeg";
 const DEFAULT_SCREENSHOT_QUALITY = 70;
 const SCREENSHOT_REDACTION_COLOR = "#111827";
 
+const COOKIE_CONSENT_CONTEXT_PATTERNS = [
+  /\b(cookie|cookies|cookiebot|onetrust|consent|tracking|privacy\s*(choices|preferences|settings))\b/i,
+  /(куки|файлы\s*cookie|согласие|конфиденциальност)/i,
+  /(preferencias\s*de\s*privacidad|consentimiento|confidentialit[eé]|datenschutz|zustimmung)/i,
+  /(隐私|同意|쿠키|동의|プライバシー|同意|ملفات\s*تعريف\s*الارتباط)/i
+];
+
 const ALWAYS_BLOCKED_ACTION_PATTERNS = [
   /\b(log\s*out|logout|sign\s*out|signoff|disconnect|end\s*session)\b/i,
   /\b(login|log\s*in|sign\s*in|sign\s*up|register|create\s*account|authenticate)\b/i,
@@ -149,6 +156,11 @@ interface PageFingerprint {
   title: string;
 }
 
+interface CapturedScreenshot {
+  path: string;
+  fingerprint: string;
+}
+
 type RawExploreAction = Omit<ExploreAction, "id">;
 type RawSkippedAction = Omit<ExploreSkippedAction, "stateId">;
 
@@ -172,6 +184,10 @@ export async function runExplorePlaywrightAdapter(
   const edges: ExplorationGraph["edges"] = [];
   const skippedActions: ExploreSkippedAction[] = [];
   const fingerprintToStateId = new Map<string, string>();
+  const screenshotFingerprintToEvidence = new Map<string, {
+    stateId: string;
+    path: string;
+  }>();
   const maxDepth = positiveOrDefault(options.maxDepth, DEFAULT_MAX_DEPTH);
   const maxStates = positiveOrDefault(options.maxStates, DEFAULT_MAX_STATES);
   const maxActionsPerState = positiveOrDefault(
@@ -248,7 +264,7 @@ export async function runExplorePlaywrightAdapter(
           fullPage: screenshotFullPage
         })
         : scannedIssues;
-      const screenshot = screenshots
+      const capturedScreenshot = screenshots
         ? await captureStateScreenshot(page, {
           outputDir: options.outputDir,
           stateId,
@@ -258,7 +274,26 @@ export async function runExplorePlaywrightAdapter(
           redactSensitiveFields: screenshotRedaction
         })
         : undefined;
-      if (screenshot) screenshotsSaved += 1;
+      let screenshot = capturedScreenshot?.path;
+      let visualDuplicateOf: string | undefined;
+
+      if (capturedScreenshot) {
+        const existingEvidence = screenshotFingerprintToEvidence.get(
+          capturedScreenshot.fingerprint
+        );
+
+        if (existingEvidence) {
+          await removeDuplicateScreenshot(options.outputDir, capturedScreenshot.path);
+          screenshot = existingEvidence.path;
+          visualDuplicateOf = existingEvidence.stateId;
+        } else {
+          screenshotFingerprintToEvidence.set(capturedScreenshot.fingerprint, {
+            stateId,
+            path: capturedScreenshot.path
+          });
+          screenshotsSaved += 1;
+        }
+      }
 
       const stateIssues = screenshot
         ? boundedIssues.map((issue) => ({ ...issue, screenshot }))
@@ -282,6 +317,7 @@ export async function runExplorePlaywrightAdapter(
         actionLabel,
         screenshot,
         screenshotFullPage: screenshot ? screenshotFullPage : undefined,
+        visualDuplicateOf,
         issueCount: stateIssues.length,
         actionCount: actions.length
       };
@@ -339,6 +375,7 @@ export async function runExplorePlaywrightAdapter(
         actionsTried,
         skippedActions: skippedActions.length,
         screenshots: screenshotsSaved,
+        duplicateScreenshots: states.filter((state) => state.visualDuplicateOf).length,
         maxDepth,
         maxStates
       }
@@ -391,6 +428,10 @@ export function isSafeExploreActionWithConfig(
   safeMode: ExploreSafeModeConfig
 ): boolean {
   return getExploreActionSafety(action, baseUrl, safeMode).safe;
+}
+
+export function isCookieConsentContext(value: string): boolean {
+  return COOKIE_CONSENT_CONTEXT_PATTERNS.some((pattern) => pattern.test(value));
 }
 
 export function getExploreActionSafety(
@@ -752,10 +793,12 @@ async function discoverSafeActions(
   maxActions: number,
   safeMode: ExploreSafeModeConfig
 ): Promise<ActionDiscoveryResult> {
-  const discovery = await page.$$eval(INTERACTIVE_SELECTOR, (elements, safeMode): {
+  const discovery = await page.$$eval(INTERACTIVE_SELECTOR, (elements, input): {
     actions: RawExploreAction[];
     skipped: RawSkippedAction[];
   } => {
+    const { safeMode, cookieConsentPatternSources } = input;
+
     function textOf(element: Element): string {
       return [
         element.getAttribute("aria-label"),
@@ -821,6 +864,50 @@ async function discoverSafeActions(
       });
     }
 
+    function isCookieConsentControl(element: Element): boolean {
+      const directContainer = element.closest([
+        "[id*='cookie' i]",
+        "[class*='cookie' i]",
+        "[data-testid*='cookie' i]",
+        "[data-test*='cookie' i]",
+        "[id*='consent' i]",
+        "[class*='consent' i]",
+        "[data-testid*='consent' i]",
+        "[data-test*='consent' i]",
+        "[aria-label*='cookie' i]",
+        "[aria-label*='consent' i]"
+      ].join(", "));
+      if (directContainer) return true;
+
+      let current = element.parentElement;
+      let depth = 0;
+
+      while (current && current !== document.body && depth < 6) {
+        const role = current.getAttribute("role")?.toLowerCase();
+        const isConsentSurface = role === "dialog" ||
+          role === "alertdialog" ||
+          role === "region" ||
+          current.tagName.toLowerCase() === "aside";
+
+        if (isConsentSurface) {
+          const context = [
+            current.getAttribute("aria-label"),
+            current.getAttribute("title"),
+            current.textContent
+          ].filter(Boolean).join(" ").replace(/\s+/g, " ").slice(0, 2000);
+
+          if (cookieConsentPatternSources.some((source) => new RegExp(source, "i").test(context))) {
+            return true;
+          }
+        }
+
+        current = current.parentElement;
+        depth += 1;
+      }
+
+      return false;
+    }
+
     function skippedAction(
       element: Element,
       reason: string,
@@ -874,6 +961,14 @@ async function discoverSafeActions(
       const selector = selectorFor(element);
       const forcedExplore = matchesSelectorList(element, safeMode.allowedSelectors);
 
+      if (isCookieConsentControl(element)) {
+        skipped.push(skippedAction(
+          element,
+          "Cookie consent controls are never clicked during automatic exploration."
+        ));
+        continue;
+      }
+
       if (tag === "a") {
         const anchor = element as HTMLAnchorElement;
         if (anchor.target === "_blank" || anchor.hasAttribute("download")) {
@@ -917,7 +1012,12 @@ async function discoverSafeActions(
       actions,
       skipped
     };
-  }, safeMode);
+  }, {
+    safeMode,
+    cookieConsentPatternSources: COOKIE_CONSENT_CONTEXT_PATTERNS.map(
+      (pattern) => pattern.source
+    )
+  });
 
   const rawActions = discovery.actions;
   const skippedActions = [...discovery.skipped];
@@ -997,7 +1097,7 @@ async function captureStateScreenshot(
     fullPage: boolean;
     redactSensitiveFields: boolean;
   }
-): Promise<string | undefined> {
+): Promise<CapturedScreenshot | undefined> {
   const screenshotsDir = path.join(options.outputDir, "screenshots");
   const extension = options.format === "jpeg" ? "jpg" : "png";
   const filename = `${options.stateId}.${extension}`;
@@ -1018,9 +1118,16 @@ async function captureStateScreenshot(
     screenshotOptions.maskColor = SCREENSHOT_REDACTION_COLOR;
   }
 
-  await page.screenshot(screenshotOptions);
+  const screenshotBuffer = await page.screenshot(screenshotOptions);
 
-  return path.posix.join("screenshots", filename);
+  return {
+    path: path.posix.join("screenshots", filename),
+    fingerprint: hashBuffer(screenshotBuffer)
+  };
+}
+
+async function removeDuplicateScreenshot(outputDir: string, screenshot: string): Promise<void> {
+  await fs.unlink(path.resolve(outputDir, screenshot)).catch(() => undefined);
 }
 
 function createExploreErrorIssue(
@@ -1109,5 +1216,9 @@ function escapeRegExp(value: string): string {
 }
 
 function hash(value: string): string {
+  return crypto.createHash("sha1").update(value).digest("hex").slice(0, 12);
+}
+
+function hashBuffer(value: Uint8Array): string {
   return crypto.createHash("sha1").update(value).digest("hex").slice(0, 12);
 }

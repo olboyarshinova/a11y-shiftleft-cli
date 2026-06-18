@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   getExploreActionSafety,
+  isCookieConsentContext,
   isSafeExploreAction,
   isSafeExploreActionWithConfig,
   normalizeExploreUrl,
@@ -98,6 +99,13 @@ test("isSafeExploreAction blocks high-risk actions across common languages", () 
       role: "button"
     }, "http://localhost:3000/"), false, label);
   }
+});
+
+test("isCookieConsentContext recognizes consent surfaces with short action labels", () => {
+  assert.equal(isCookieConsentContext("Airbnb cookie preferences Accept"), true);
+  assert.equal(isCookieConsentContext("Privacy choices OK"), true);
+  assert.equal(isCookieConsentContext("Настройки конфиденциальности Принять"), true);
+  assert.equal(isCookieConsentContext("Open navigation menu"), false);
 });
 
 test("isSafeExploreActionWithConfig applies custom safe-mode patterns", () => {

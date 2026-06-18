@@ -29,6 +29,10 @@ artifacts, and easier open-source contribution.
   location, notifications, uploads, and sharing controls.
 - Added cookie isolation between explored states so one replayed action does
   not silently change later exploration states.
+- Added exact screenshot deduplication. Pixel-identical state images are stored
+  once and duplicate report cards link to shared visual evidence.
+- Expanded cookie safety from button-label matching to consent-banner context,
+  preventing short controls such as `Accept` or `OK` from changing consent.
 - Improved `exploration.html` with larger screenshots, compact exploration
   details, and an annotated screenshot view that keeps issue frames visible
   while inspecting a larger screenshot.

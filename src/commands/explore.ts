@@ -513,7 +513,7 @@ export function formatExploreConsoleSummary(
   return [
     "a11y-shiftleft explore",
     `Status: ${status}`,
-    `Exploration: states ${graph.summary.statesVisited}/${graph.summary.maxStates} | actions tried ${graph.summary.actionsTried} | skipped ${graph.summary.skippedActions} | screenshots ${graph.summary.screenshots}`,
+    `Exploration: states ${graph.summary.statesVisited}/${graph.summary.maxStates} | actions tried ${graph.summary.actionsTried} | skipped ${graph.summary.skippedActions} | unique screenshots ${graph.summary.screenshots} | duplicate screenshots skipped ${graph.summary.duplicateScreenshots || 0}`,
     `Findings: total ${summary.total} | CRITICAL ${summary.critical} | WARNING ${summary.warning} | INFO ${summary.info}`,
     `Framework: ${summary.framework}`,
     `Retention: ${retention}`,
