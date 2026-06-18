@@ -399,6 +399,7 @@ export interface ExplorationState {
   fingerprint: string;
   actionLabel: string;
   screenshot?: string;
+  screenshotFullPage?: boolean;
   issueCount: number;
   actionCount: number;
 }

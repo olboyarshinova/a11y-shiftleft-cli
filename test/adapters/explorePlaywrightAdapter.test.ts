@@ -5,7 +5,8 @@ import {
   isSafeExploreAction,
   isSafeExploreActionWithConfig,
   normalizeExploreUrl,
-  SENSITIVE_SCREENSHOT_SELECTOR
+  SENSITIVE_SCREENSHOT_SELECTOR,
+  shouldCaptureFullPageScreenshot
 } from "../../dist/adapters/explorePlaywrightAdapter.js";
 
 test("normalizeExploreUrl keeps same-origin HTTP URLs and removes hash", () => {
@@ -217,4 +218,10 @@ test("SENSITIVE_SCREENSHOT_SELECTOR covers common private form fields", () => {
   assert.match(SENSITIVE_SCREENSHOT_SELECTOR, /input\[type='email'\]/);
   assert.match(SENSITIVE_SCREENSHOT_SELECTOR, /autocomplete\*='cc-'/);
   assert.match(SENSITIVE_SCREENSHOT_SELECTOR, /name\*='token'/);
+});
+
+test("shouldCaptureFullPageScreenshot captures finding states automatically", () => {
+  assert.equal(shouldCaptureFullPageScreenshot(false, 0), false);
+  assert.equal(shouldCaptureFullPageScreenshot(false, 1), true);
+  assert.equal(shouldCaptureFullPageScreenshot(true, 0), true);
 });

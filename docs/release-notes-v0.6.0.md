@@ -21,6 +21,9 @@ artifacts, and easier open-source contribution.
 - Added bounded auto-scroll before dynamic and visual scans so lazy-loaded
   below-the-fold content can appear before axe runs. Use `--no-scroll` for
   unusual pages where scrolling itself triggers unwanted behavior.
+- Added automatic full-page screenshot evidence for states with findings, so
+  below-the-fold violations appear in the report without an extra CLI flag.
+  `--screenshot-full-page` now forces full-page evidence for clean states too.
 - Hardened `explore` safe mode with built-in high-risk action blocking for
   account/session actions, payments, cookie consent, camera/photo, microphone,
   location, notifications, uploads, and sharing controls.

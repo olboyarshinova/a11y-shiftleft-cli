@@ -46,6 +46,7 @@ test("formatVerboseExploreSummary renders exploration context", () => {
   assert.match(output, /limits: depth=2, states=20, actionsPerState=8/);
   assert.match(output, /pdf: on/);
   assert.match(output, /screenshots: jpeg quality=70/);
+  assert.match(output, /fullPageScreenshots: finding states/);
   assert.match(output, /screenshotRedaction: on/);
   assert.match(output, /wait: 1000ms selector=\[data-loaded\]/);
   assert.match(output, /scroll: on step=800px maxSteps=25 wait=100ms/);

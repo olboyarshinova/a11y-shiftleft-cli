@@ -99,7 +99,7 @@ export function registerExploreCommand(program: Command): void {
     .option("--no-screenshots", "Do not save state screenshots")
     .option("--screenshot-format <format>", "Screenshot format: jpeg or png", "jpeg")
     .option("--screenshot-quality <quality>", "JPEG screenshot quality from 1 to 100", "70")
-    .option("--screenshot-full-page", "Capture full-page screenshots instead of viewport screenshots")
+    .option("--screenshot-full-page", "Force full-page screenshots for every state; states with findings use them automatically")
     .option("--no-screenshot-redaction", "Do not mask sensitive fields in screenshots")
     .option("--no-safe-mode", "Disable safe-mode action blocking for exploration")
     .option("--safe-block-text <patterns...>", "Additional text patterns to skip during exploration")
@@ -439,7 +439,7 @@ export function formatVerboseExploreSummary(options: {
     `html: ${options.html ? "on" : "off"}`,
     `pdf: ${options.pdf ? "on" : "off"}`,
     `screenshots: ${options.screenshots ? `${options.screenshotFormat} quality=${options.screenshotQuality}` : "off"}`,
-    `screenshotFullPage: ${options.screenshotFullPage ? "on" : "off"}`,
+    `fullPageScreenshots: ${options.screenshotFullPage ? "all states" : "finding states"}`,
     `screenshotRedaction: ${options.screenshotRedaction ? "on" : "off"}`,
     `wait: ${options.waitMs}ms${options.waitForSelector ? ` selector=${options.waitForSelector}` : ""}`,
     `scroll: ${options.scrollEnabled ? `on step=${options.scrollStepPx}px maxSteps=${options.scrollMaxSteps} wait=${options.scrollWaitMs}ms` : "off"}`,

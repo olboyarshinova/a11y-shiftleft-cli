@@ -203,18 +203,24 @@ export function renderExplorationHtml(
       box-shadow: inset 4px 0 0 var(--ok);
     }
 
-    .state img {
-      aspect-ratio: 16 / 10;
+    .screenshot-frame {
+      aspect-ratio: 16 / 9;
+      background: #eef1f5;
+      border-bottom: 1px solid var(--line);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .screenshot-frame > img {
       background: #eef1f5;
       display: block;
-      object-fit: contain;
+      height: 100%;
+      object-fit: cover;
       width: 100%;
     }
 
-    .screenshot-frame {
-      background: #eef1f5;
-      border-bottom: 1px solid var(--line);
-      position: relative;
+    .screenshot-frame-full > img {
+      object-position: top;
     }
 
     .screenshot-open {
@@ -264,8 +270,11 @@ export function renderExplorationHtml(
     }
 
     .screenshot-lightbox-frame img {
-      max-height: calc(100vh - 150px);
+      display: block;
+      height: auto;
+      max-height: none;
       object-fit: contain;
+      width: 100%;
     }
 
     .lightbox-header {
@@ -508,6 +517,7 @@ function renderState(state: StateViewModel): string {
     </div>
     <div class="badges">
       ${issueBadges}
+      ${state.screenshotFullPage ? `<span class="badge">full-page evidence</span>` : ""}
       <span class="badge">${state.actionCount} actions queued</span>
     </div>
     ${renderIssues(state.issues)}
@@ -525,12 +535,22 @@ function renderStateScreenshot(state: StateViewModel): string {
     .slice(0, 12)
     .map((issue, index) => renderAnnotation(issue, index + 1))
     .join("\n");
+  const previewAnnotations = state.screenshotFullPage ? "" : annotations;
   const screenshotTargetId = `screenshot-${state.id}`;
+  const frameClass = state.screenshotFullPage
+    ? "screenshot-frame screenshot-frame-full"
+    : "screenshot-frame";
+  const openLabel = state.screenshotFullPage
+    ? "Open full-page evidence"
+    : "Open annotated screenshot";
+  const screenshotAlt = state.screenshotFullPage
+    ? `Full-page evidence for ${state.id}`
+    : `Screenshot for ${state.id}`;
 
-  return `<div class="screenshot-frame">
-    <img src="${escapeAttribute(state.screenshot)}" alt="Screenshot for ${escapeAttribute(state.id)}">
-    ${annotations}
-    <a class="screenshot-open" href="#${escapeAttribute(screenshotTargetId)}">Open annotated screenshot</a>
+  return `<div class="${frameClass}">
+    <img src="${escapeAttribute(state.screenshot)}" alt="${escapeAttribute(screenshotAlt)}">
+    ${previewAnnotations}
+    <a class="screenshot-open" href="#${escapeAttribute(screenshotTargetId)}">${openLabel}</a>
   </div>
   ${renderAnnotatedScreenshotView(state, annotations, screenshotTargetId)}`;
 }

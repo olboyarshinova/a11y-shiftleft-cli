@@ -32,10 +32,11 @@ Some apps render the shell first and load cards, charts, or authenticated data
 after a short delay. `explore` waits for network idle and a small settle delay by
 default before taking screenshots and running axe.
 
-`explore` also auto-scrolls each state before scanning. This is separate from
-the screenshot setting: auto-scroll helps load below-the-fold content, while
-`--screenshot-full-page` controls whether the saved image shows the whole page
-or only the viewport.
+`explore` also auto-scrolls each state before scanning. Auto-scroll helps load
+below-the-fold content. When axe finds an issue in a state, the saved evidence
+is automatically a full-page screenshot so the affected content can appear in
+the report even when it is below the first viewport. States without findings
+use a compact viewport screenshot.
 
 Use `--wait-ms` when screenshots are captured before the UI finishes rendering:
 
@@ -83,8 +84,9 @@ certification.
 
 ## Screenshot Privacy
 
-Screenshots are compressed by default as viewport JPEG files at quality `70` to
-keep reports small:
+Screenshots are compressed by default as JPEG files at quality `70`. States
+with findings use full-page evidence; clean states use viewport screenshots to
+keep reports smaller:
 
 ```bash
 npx a11y-shiftleft explore --url $APP_URL --out reports
@@ -111,8 +113,8 @@ npx a11y-shiftleft explore \
   --out reports
 ```
 
-Use PNG or full-page screenshots only when the extra detail is worth the larger
-artifact size:
+Use PNG only when the extra detail is worth the larger artifact size. Add
+`--screenshot-full-page` to force full-page evidence for clean states too:
 
 ```bash
 npx a11y-shiftleft explore \
@@ -122,8 +124,8 @@ npx a11y-shiftleft explore \
   --out reports
 ```
 
-Full-page screenshots are most useful when checking long pages where issues are
-below the first viewport. Keep `--no-screenshots` for sensitive pages.
+Finding states are full-page automatically. Keep `--no-screenshots` for
+sensitive pages.
 
 ## Safe Mode
 

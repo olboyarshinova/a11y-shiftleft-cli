@@ -234,24 +234,32 @@ export async function runExplorePlaywrightAdapter(
 
       const stateId = `state-${states.length + 1}`;
       const actionLabel = current.via?.label || "Initial page";
+      const scannedIssues = await scanState(config, page, {
+        stateId,
+        stateLabel: actionLabel
+      });
+      const screenshotFullPage = shouldCaptureFullPageScreenshot(
+        Boolean(options.screenshotFullPage),
+        scannedIssues.length
+      );
       const screenshot = screenshots
         ? await captureStateScreenshot(page, {
           outputDir: options.outputDir,
           stateId,
           format: screenshotFormat,
           quality: screenshotQuality,
-          fullPage: Boolean(options.screenshotFullPage),
+          fullPage: screenshotFullPage,
           redactSensitiveFields: screenshotRedaction
         })
         : undefined;
       if (screenshot) screenshotsSaved += 1;
 
-      const stateIssues = await scanState(config, page, {
-        stateId,
-        stateLabel: actionLabel,
-        screenshot,
-        screenshotFullPage: Boolean(options.screenshotFullPage)
-      });
+      const stateIssues = screenshot
+        ? await attachStateVisualEvidence(page, scannedIssues, {
+          screenshot,
+          fullPage: screenshotFullPage
+        })
+        : scannedIssues;
       issues.push(...stateIssues);
 
       const discovery = current.depth >= maxDepth
@@ -270,6 +278,7 @@ export async function runExplorePlaywrightAdapter(
         fingerprint: pageState.fingerprint,
         actionLabel,
         screenshot,
+        screenshotFullPage: screenshot ? screenshotFullPage : undefined,
         issueCount: stateIssues.length,
         actionCount: actions.length
       };
@@ -544,8 +553,6 @@ async function scanState(
   state: {
     stateId: string;
     stateLabel: string;
-    screenshot?: string;
-    screenshotFullPage: boolean;
   }
 ): Promise<Issue[]> {
   try {
@@ -555,11 +562,6 @@ async function scanState(
     for (const violation of results.violations) {
       for (const node of violation.nodes) {
         const selector = node.target.join(" ");
-        const elementBounds = state.screenshot
-          ? await getElementBounds(page, selector, {
-            fullPage: state.screenshotFullPage
-          })
-          : undefined;
 
         issues.push({
           source: "axe",
@@ -572,9 +574,7 @@ async function scanState(
           message: violation.help,
           url: page.url(),
           stateId: state.stateId,
-          stateLabel: state.stateLabel,
-          screenshot: state.screenshot,
-          elementBounds
+          stateLabel: state.stateLabel
         });
       }
     }
@@ -583,6 +583,40 @@ async function scanState(
   } catch (error) {
     return [createExploreErrorIssue(config, page.url(), error)];
   }
+}
+
+export function shouldCaptureFullPageScreenshot(
+  forceFullPage: boolean,
+  issueCount: number
+): boolean {
+  return forceFullPage || issueCount > 0;
+}
+
+async function attachStateVisualEvidence(
+  page: Page,
+  issues: Issue[],
+  evidence: {
+    screenshot: string;
+    fullPage: boolean;
+  }
+): Promise<Issue[]> {
+  const enriched: Issue[] = [];
+
+  for (const issue of issues) {
+    const elementBounds = issue.selector
+      ? await getElementBounds(page, issue.selector, {
+        fullPage: evidence.fullPage
+      })
+      : undefined;
+
+    enriched.push({
+      ...issue,
+      screenshot: evidence.screenshot,
+      elementBounds
+    });
+  }
+
+  return enriched;
 }
 
 async function getElementBounds(

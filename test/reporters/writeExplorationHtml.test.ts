@@ -20,6 +20,7 @@ const graph = {
       fingerprint: "abc123",
       actionLabel: "Initial page",
       screenshot: "screenshots/state-1.png",
+      screenshotFullPage: true,
       issueCount: 1,
       actionCount: 2
     },
@@ -118,6 +119,9 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /score 5/);
   assert.match(html, /WCAG 4\.1\.2 Name, Role, Value, Level A/);
   assert.match(html, /annotation annotation-critical/);
+  assert.match(html, /screenshot-frame screenshot-frame-full/);
+  assert.match(html, /Open full-page evidence/);
+  assert.match(html, /full-page evidence/);
   assert.match(html, /class="state state-critical" id="state-1"/);
   assert.match(html, /class="state state-ok" id="state-2"/);
   assert.match(html, /\.state-critical/);

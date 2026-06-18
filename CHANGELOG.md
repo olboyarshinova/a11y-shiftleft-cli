@@ -34,6 +34,8 @@ No unreleased changes yet.
   need a short stabilization period before screenshots and axe scans.
 - Bounded auto-scroll before dynamic and visual axe scans so lazy-loaded
   below-the-fold content can be checked without manually scrolling the page.
+- Automatic full-page screenshot evidence for explored states with findings,
+  while clean states keep compact viewport screenshots.
 - Severity-colored visual report cards and annotations without stacked gray
   overlays that obscure screenshots with multiple findings.
 - Built-in high-risk action blocking for account/session, payment, cookie
