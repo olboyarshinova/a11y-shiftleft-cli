@@ -39,6 +39,10 @@ causes, such as one shared active-navigation style failing on several routes.
 Root-cause grouping is heuristic and does not remove the evidence recorded for
 each page or state.
 
+Exploration compares titles across distinct page URLs and reports duplicated or
+obvious starter-template titles. Multiple UI states and color schemes at the
+same URL are treated as one page for this comparison.
+
 Every finding in `exploration.html` includes an expanded `How to fix` section
 with concrete steps, rule documentation, and a React, Vue, or Angular example
 when one is available. Generic fallback guidance remains visible for unknown or

@@ -2,6 +2,7 @@ import { chromium } from "playwright";
 import { AxeBuilder } from "@axe-core/playwright";
 import { applyColorScheme, detectPageColorSchemes, normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig, type ScrollablePage } from "../core/pageScroll.js";
 import { extractContrastEvidence } from "../core/contrast.js";
+import { analyzePageTitles, type PageTitleObservation } from "../core/pageTitles.js";
 import type { A11yConfig, Issue } from "../types.js";
 
 interface CrawlQueueItem {
@@ -49,6 +50,7 @@ export async function runAxePlaywrightAdapter(
 ): Promise<Issue[]> {
   const browser = await chromium.launch();
   const issues: Issue[] = [];
+  const pageTitles: PageTitleObservation[] = [];
 
   try {
     const context = await browser.newContext();
@@ -77,6 +79,7 @@ export async function runAxePlaywrightAdapter(
         });
         await page.goto(url, { waitUntil: "networkidle" });
         await scrollPageForLazyContent(page, scroll);
+        pageTitles.push({ url, title: await page.title() });
         const colorSchemes = await detectPageColorSchemes(page);
         const pageIssues: Issue[][] = [];
 
@@ -131,6 +134,8 @@ export async function runAxePlaywrightAdapter(
         issues.push(createScanErrorIssue(config, url, error));
       }
     }
+
+    issues.push(...analyzePageTitles(pageTitles, config.framework));
   } finally {
     await browser.close();
   }

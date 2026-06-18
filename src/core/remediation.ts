@@ -27,6 +27,28 @@ const RULE_HINTS: Record<string, RemediationHint> = {
       angular: "<title>Favorite items</title>"
     }
   },
+  "page-title-duplicate": {
+    summary: "Give each distinct page a title that identifies its topic or purpose.",
+    howToFix: [
+      "Put the page-specific description before the shared product or site name.",
+      "Verify that browser tabs and screen reader page lists distinguish every scanned route."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/page-titled.html",
+      "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/title"
+    ]
+  },
+  "page-title-placeholder": {
+    summary: "Replace the starter template title with a descriptive page title.",
+    howToFix: [
+      "Remove framework placeholders such as React App, Vue App, or Vite + React.",
+      "Use a title that states the current page purpose and includes the product name only as supporting context."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/page-titled.html",
+      "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/title"
+    ]
+  },
   "html-has-lang": {
     summary: "Declare the primary language of the page on the html element.",
     howToFix: [

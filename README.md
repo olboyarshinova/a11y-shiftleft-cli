@@ -194,6 +194,11 @@ the measured and required ratios, text and background colors, font metadata,
 and deterministic suggestions that meet the reported threshold. Treat suggested
 colors as starting points and verify shared design tokens and interactive states.
 
+When a dynamic run checks multiple pages, the CLI also compares document
+titles. It reports common starter placeholders such as `Vite + React` and titles
+reused across distinct URLs, while repeated dialogs, themes, and other states of
+the same URL are not treated as duplicate pages.
+
 ## Static Checks For React, Vue, And Angular
 
 Dynamic browser scans work without a framework adapter. Static checks are

@@ -125,6 +125,24 @@ test("getRemediationHint explains document metadata findings", () => {
   assert.equal(langHint?.frameworkExamples?.react?.includes("lang=\"en\""), true);
 });
 
+test("getRemediationHint explains cross-page title findings", () => {
+  const duplicateHint = getRemediationHint(
+    "page-title-duplicate",
+    getWcagCriteria(["2.4.2"]),
+    "unknown"
+  );
+  const placeholderHint = getRemediationHint(
+    "page-title-placeholder",
+    getWcagCriteria(["2.4.2"]),
+    "react"
+  );
+
+  assert.match(duplicateHint.summary, /each distinct page/);
+  assert.match(duplicateHint.howToFix[0], /page-specific description/);
+  assert.match(placeholderHint.summary, /starter template title/);
+  assert.match(placeholderHint.howToFix[0], /Vite \+ React/);
+});
+
 test("getRemediationHint explains ARIA validation findings", () => {
   const hint = getRemediationHint("aria-valid-attr-value", getWcagCriteria(["4.1.2"]), "unknown");
 

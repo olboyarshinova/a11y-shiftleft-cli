@@ -66,6 +66,7 @@ const WCAG_CATEGORY_MAP: Record<string, IssueCategory> = {
   "1.4.3": "contrast",
   "2.1.1": "keyboard",
   "2.4.1": "landmarks",
+  "2.4.2": "structure",
   "2.4.3": "focus",
   "2.4.6": "headings",
   "2.4.7": "focus",

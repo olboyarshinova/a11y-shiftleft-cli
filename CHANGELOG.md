@@ -9,6 +9,9 @@
 - Expanded `--semi-auto` with manual review steps for zoom and reflow,
   alternative-text quality, media and motion, landmarks and skip links, and
   representative assistive-technology usability testing.
+- Dynamic crawls and visual exploration now report common starter-template
+  page titles and titles reused across distinct URLs while ignoring repeated UI
+  states of the same page.
 
 ### Changed
 

@@ -7,6 +7,8 @@ const RULE_TO_WCAG: Record<string, string[]> = {
   "autocomplete-valid": ["1.3.5"],
   "color-contrast": ["1.4.3"],
   "document-title": ["2.4.2"],
+  "page-title-duplicate": ["2.4.2"],
+  "page-title-placeholder": ["2.4.2"],
   "form-field-multiple-labels": ["1.3.1", "3.3.2"],
   "html-has-lang": ["3.1.1"],
   "html-lang-valid": ["3.1.1"],

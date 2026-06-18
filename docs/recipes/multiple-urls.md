@@ -15,5 +15,9 @@ npx a11y-shiftleft check \
 This keeps the scan focused and makes it easy to compare the same key routes on
 every run.
 
+Multi-page runs compare document titles in addition to running axe on each
+page. A warning is reported when distinct URLs reuse the same title or retain a
+common framework starter title. Missing titles continue to be reported by axe.
+
 Use `--crawl` instead when you want the CLI to discover same-origin pages for
 you instead of maintaining the route list by hand.

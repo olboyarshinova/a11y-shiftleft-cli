@@ -62,8 +62,6 @@ remain suitable for reproducible empirical validation.
   [MTS web accessibility guide](https://a11y.mts.ru/web) and
   [MTS testing guide](https://a11y.mts.ru/qa) without treating any single guide
   as a conformance standard. Keep WCAG as the normative mapping source.
-- Add cross-page checks for duplicate or unhelpful document titles during
-  crawls and visual exploration.
 - Prototype a bounded zoom and reflow audit that checks 200% browser zoom,
   narrow 320 CSS pixel layouts, horizontal overflow, clipped content, and
   overlapping fixed or sticky controls.

@@ -5,6 +5,7 @@ import { AxeBuilder } from "@axe-core/playwright";
 import { chromium, type BrowserContext, type Page } from "playwright";
 import { applyColorScheme, detectPageColorSchemes, getPageAppearanceSignature, normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig } from "../core/pageScroll.js";
 import { extractContrastEvidence } from "../core/contrast.js";
+import { analyzePageTitles } from "../core/pageTitles.js";
 import type {
   A11yConfig,
   ExplorationGraph,
@@ -454,6 +455,19 @@ export async function runExplorePlaywrightAdapter(
   } finally {
     await browser.close();
   }
+
+  const titleIssues = analyzePageTitles(states.map((state) => ({
+    url: state.url,
+    title: state.title
+  })), config.framework).map((issue) => {
+    const state = states.find((candidate) => candidate.url === issue.url);
+    return {
+      ...issue,
+      stateId: state?.id,
+      stateLabel: state?.actionLabel
+    };
+  });
+  issues.push(...titleIssues);
 
   return {
     issues,
