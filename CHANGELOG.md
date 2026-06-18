@@ -6,6 +6,9 @@
   with images fitted inside the compact 16:9 preview.
 - Automatic exploration no longer opens recognized advertising or sponsored
   content, and closes popup pages opened by page scripts.
+- Expanded `--semi-auto` with manual review steps for zoom and reflow,
+  alternative-text quality, media and motion, landmarks and skip links, and
+  representative assistive-technology usability testing.
 
 ### Changed
 

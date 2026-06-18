@@ -18,6 +18,10 @@ test("createManualChecklist generates human-review checklist items", () => {
   assert.equal(checklist.urls[0], "http://localhost:3000");
   assert.equal(checklist.items.length > 0, true);
   assert.equal(checklist.items.some((item) => item.id === "complex-widget-focus"), true);
+  assert.equal(checklist.items.some((item) => item.id === "zoom-reflow"), true);
+  assert.equal(checklist.items.some((item) => item.id === "alternative-text-quality"), true);
+  assert.equal(checklist.items.some((item) => item.id === "media-motion"), true);
+  assert.equal(checklist.items.some((item) => item.id === "representative-user-test"), true);
 });
 
 test("createManualChecklist prioritizes form review when form issues exist", () => {
@@ -54,5 +58,8 @@ test("toManualChecklistMarkdown renders actionable Markdown checkboxes", () => {
   assert.match(markdown, /Semi-Automated Accessibility Review Checklist/);
   assert.match(markdown, /Framework: vue/);
   assert.match(markdown, /- \[ \] Navigate the page using only the keyboard\./);
+  assert.match(markdown, /Zoom the browser to 200%/);
+  assert.match(markdown, /accurate synchronized captions/);
+  assert.match(markdown, /Activate the skip link/);
   assert.match(markdown, /Automated accessibility tools do not prove full WCAG conformance/);
 });

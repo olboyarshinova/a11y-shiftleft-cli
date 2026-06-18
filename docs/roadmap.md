@@ -58,6 +58,21 @@ remain suitable for reproducible empirical validation.
 
 ## Near Term
 
+- Build on the practical review areas in the
+  [MTS web accessibility guide](https://a11y.mts.ru/web) and
+  [MTS testing guide](https://a11y.mts.ru/qa) without treating any single guide
+  as a conformance standard. Keep WCAG as the normative mapping source.
+- Add cross-page checks for duplicate or unhelpful document titles during
+  crawls and visual exploration.
+- Prototype a bounded zoom and reflow audit that checks 200% browser zoom,
+  narrow 320 CSS pixel layouts, horizontal overflow, clipped content, and
+  overlapping fixed or sticky controls.
+- Add media evidence summaries for captions, transcripts, autoplay controls,
+  reduced-motion behavior, and flashing risk while keeping content quality in
+  the manual checklist.
+- Add an optional usability-test worksheet that records task completion,
+  assistive technology and browser context, blockers, and remediation owners
+  without collecting unnecessary personal information.
 - Expand WCAG metadata for every rule currently emitted by the static and
   dynamic adapters.
 - Expand remediation hint coverage for additional axe and ESLint rules.

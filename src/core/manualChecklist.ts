@@ -80,6 +80,86 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
       "Screen reader/browser combination used",
       "Observed announcement issues"
     ]
+  },
+  {
+    id: "zoom-reflow",
+    title: "Zoom, reflow, and responsive layout",
+    principle: "perceivable",
+    wcag: ["1.4.4", "1.4.10"],
+    whyManual: "Automated scans cannot reliably judge whether zoomed content overlaps, clips, or remains usable across a complete task.",
+    steps: [
+      "Zoom the browser to 200% and repeat the primary task without resetting the zoom.",
+      "Check a narrow 320 CSS pixel viewport for unexpected horizontal scrolling, clipped text, and overlapping controls.",
+      "Confirm dialogs, sticky content, navigation, and validation messages remain visible and operable."
+    ],
+    evidence: [
+      "Screenshots at default and 200% zoom",
+      "List of clipped, overlapping, or horizontally scrolling content"
+    ]
+  },
+  {
+    id: "alternative-text-quality",
+    title: "Alternative text quality",
+    principle: "perceivable",
+    wcag: ["1.1.1"],
+    whyManual: "Tools can detect missing alternatives, but cannot determine whether an alternative communicates the image's purpose in context.",
+    steps: [
+      "Review informative image alternatives in the surrounding content and task context.",
+      "Confirm decorative images use an empty alternative and do not create redundant announcements.",
+      "Confirm charts, diagrams, and maps have an equivalent detailed description when a short alternative is insufficient."
+    ],
+    evidence: [
+      "Image inventory with purpose and approved alternative",
+      "Examples of complex-image descriptions"
+    ]
+  },
+  {
+    id: "media-motion",
+    title: "Media alternatives, autoplay, and motion",
+    principle: "perceivable",
+    wcag: ["1.2.1", "1.2.2", "2.2.2", "2.3.1"],
+    whyManual: "Metadata checks cannot confirm caption accuracy, transcript completeness, unexpected audio, or harmful flashing.",
+    steps: [
+      "Confirm prerecorded audio has a transcript and prerecorded video has accurate synchronized captions.",
+      "Confirm audio or motion does not start unexpectedly and that users can pause, stop, or hide moving content.",
+      "Review flashing and rapid animation, and verify the experience with reduced-motion preferences enabled."
+    ],
+    evidence: [
+      "Caption and transcript review notes",
+      "Media control and reduced-motion test results"
+    ]
+  },
+  {
+    id: "landmarks-bypass",
+    title: "Landmarks and repeated-content bypass",
+    principle: "operable",
+    wcag: ["1.3.1", "2.4.1", "2.4.6"],
+    whyManual: "Tools can inspect landmarks, but cannot fully confirm that page regions and bypass links support efficient navigation.",
+    steps: [
+      "Review header, navigation, main, complementary, and footer landmarks with a screen reader landmark list.",
+      "Activate the skip link and confirm it moves focus to the intended main content target.",
+      "Confirm repeated navigation regions have clear names and page headings describe the current content."
+    ],
+    evidence: [
+      "Landmark inventory",
+      "Skip-link keyboard test result"
+    ]
+  },
+  {
+    id: "representative-user-test",
+    title: "Representative assistive-technology usability test",
+    principle: "understandable",
+    wcag: ["2.1.1", "2.4.3", "3.3.1", "3.3.3"],
+    whyManual: "Only representative users can reveal task barriers caused by real assistive technology, personal settings, and product context.",
+    steps: [
+      "Run one key task with a representative keyboard or screen reader user on their familiar setup when possible.",
+      "Record device, browser, assistive technology, zoom, motion, and color settings used during the session.",
+      "Capture where the user becomes blocked, confused, or needs excessive focus steps, then assign remediation owners."
+    ],
+    evidence: [
+      "Consented session notes without unnecessary personal data",
+      "Task completion, blocker, and follow-up issue summary"
+    ]
   }
 ];
 
