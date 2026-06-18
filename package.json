@@ -25,7 +25,8 @@
     "developer-tools"
   ],
   "bin": {
-    "a11y-shiftleft": "bin/cli.js"
+    "a11y-shiftleft": "bin/cli.js",
+    "a11y-shiftleft-cli": "bin/cli.js"
   },
   "workspaces": [
     "packages/*"

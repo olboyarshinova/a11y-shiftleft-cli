@@ -4,6 +4,8 @@
 
 ### Changed
 
+- The package now exposes both `a11y-shiftleft` and `a11y-shiftleft-cli` as
+  executable names, so the npm package name works directly with `npx`.
 - HTML reports display generated timestamps in a readable UTC format while
   retaining the original ISO value in semantic `time` metadata.
 - Visual exploration stores pixel-identical screenshots once and shows compact
