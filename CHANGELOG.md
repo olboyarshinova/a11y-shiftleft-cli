@@ -2,16 +2,23 @@
 
 ## Unreleased
 
-- Fixed screenshot preview annotations so issue frames remain visible and align
-  with images fitted inside the compact 16:9 preview.
-- Automatic exploration no longer opens recognized advertising or sponsored
-  content, and closes popup pages opened by page scripts.
+## 0.6.1 - 2026-06-18
+
+### Added
+
 - Expanded `--semi-auto` with manual review steps for zoom and reflow,
   alternative-text quality, media and motion, landmarks and skip links, and
   representative assistive-technology usability testing.
 - Dynamic crawls and visual exploration now report common starter-template
   page titles and titles reused across distinct URLs while ignoring repeated UI
   states of the same page.
+
+### Fixed
+
+- Fixed screenshot preview annotations so issue frames remain visible and align
+  with images fitted inside the compact 16:9 preview.
+- Automatic exploration no longer opens recognized advertising or sponsored
+  content, and closes popup pages opened by page scripts.
 
 ### Changed
 

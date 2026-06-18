@@ -580,10 +580,11 @@ node bin/cli.js check --dynamic --url http://localhost:5173 --out reports
 
 Current release:
 
-- [v0.6.0](docs/release-notes-v0.6.0.md)
+- [v0.6.1](docs/release-notes-v0.6.1.md)
 
 Previous releases:
 
+- [v0.6.0](docs/release-notes-v0.6.0.md)
 - [v0.5.2](docs/release-notes-v0.5.2.md)
 - [v0.5.1](docs/release-notes-v0.5.1.md)
 - [v0.5.0](docs/release-notes-v0.5.0.md)
