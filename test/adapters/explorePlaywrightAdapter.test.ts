@@ -6,7 +6,9 @@ import {
   isSafeExploreAction,
   isSafeExploreActionWithConfig,
   normalizeExploreUrl,
+  prioritizeThemeActions,
   SENSITIVE_SCREENSHOT_SELECTOR,
+  isThemeAction,
   shouldCaptureFullPageScreenshot
 } from "../../dist/adapters/explorePlaywrightAdapter.js";
 
@@ -232,4 +234,33 @@ test("shouldCaptureFullPageScreenshot captures finding states automatically", ()
   assert.equal(shouldCaptureFullPageScreenshot(false, 0), false);
   assert.equal(shouldCaptureFullPageScreenshot(false, 1), true);
   assert.equal(shouldCaptureFullPageScreenshot(true, 0), true);
+});
+
+test("isThemeAction recognizes common theme toggles", () => {
+  assert.equal(isThemeAction({
+    type: "click",
+    selector: "[data-testid=theme-toggle]",
+    label: "Switch to dark mode",
+    role: "button"
+  }), true);
+  assert.equal(isThemeAction({
+    type: "click",
+    selector: "#menu",
+    label: "Open navigation",
+    role: "button"
+  }), false);
+});
+
+test("prioritizeThemeActions keeps theme controls inside bounded exploration", () => {
+  const actions = prioritizeThemeActions([
+    { label: "Open navigation", selector: "#menu" },
+    { label: "Switch to dark mode", selector: "#theme" },
+    { label: "Show details", selector: "#details" }
+  ]);
+
+  assert.equal(actions[0].selector, "#theme");
+  assert.deepEqual(actions.slice(1).map((action) => action.selector), [
+    "#menu",
+    "#details"
+  ]);
 });

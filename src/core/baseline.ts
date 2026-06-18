@@ -94,6 +94,7 @@ function toBaselineEntry(issue: DedupedIssue): BaselineEntry {
 function baselineTarget(issue: DedupedIssue): string {
   return [
     issue.url ? `url=${issue.url}` : "",
+    issue.colorScheme ? `color-scheme=${issue.colorScheme}` : "",
     issue.selector ? `selector=${issue.selector}` : "",
     issue.file ? `file=${issue.file}` : "",
     Number.isFinite(issue.line) ? `line=${issue.line}` : "",

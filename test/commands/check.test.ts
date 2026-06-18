@@ -281,6 +281,7 @@ test("formatCheckConsoleSummary renders a readable local summary", () => {
 
   assert.match(output, /Findings: total 2 \| CRITICAL 1 \| WARNING 1 \| INFO 0/);
   assert.match(output, /Sources: axe: 1, eslint: 1/);
+  assert.match(output, /Color-scheme findings: none/);
   assert.match(output, /color-contrast: 1/);
   assert.match(output, /reports\/a11y-comment.md/);
   assert.match(output, /reports\/a11y-manual-checklist.md/);

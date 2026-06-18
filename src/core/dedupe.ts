@@ -28,6 +28,7 @@ export function dedupeIssues(issues: TriagedIssue[]): DedupedIssue[] {
 function createFingerprint(issue: TriagedIssue): string {
   const target = [
     issue.url ? `url=${issue.url}` : "",
+    issue.colorScheme ? `color-scheme=${issue.colorScheme}` : "",
     issue.selector ? `selector=${issue.selector}` : "",
     issue.file ? `file=${issue.file}` : "",
     Number.isFinite(issue.line) ? `line=${issue.line}` : "",

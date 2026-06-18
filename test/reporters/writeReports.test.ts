@@ -26,6 +26,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
         }],
         selector: ".icon-button",
         url: "http://localhost:3000/settings",
+        colorScheme: "dark",
         message: "Buttons must have discernible text",
         remediation: {
           summary: "Give every button an accessible name.",
@@ -84,6 +85,9 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.deepEqual(report.summary.byConfidence, {
     high: 1,
     medium: 1
+  });
+  assert.deepEqual(report.summary.byColorScheme, {
+    dark: 1
   });
   assert.deepEqual(report.summary.byCategory, {
     aria: 1,
@@ -168,6 +172,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(csv, /complianceEvidence\.affectedPages,2/);
   assert.match(csv, /bySource\.axe,1/);
   assert.match(csv, /byConfidence\.high,1/);
+  assert.match(csv, /byColorScheme\.dark,1/);
   assert.match(csv, /byCategory\.aria,1/);
   assert.match(csv, /byPour\.robust,1/);
   assert.match(csv, /byWcagVersion\.2\.0,2/);
@@ -184,8 +189,10 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /http:\/\/localhost:3000\/settings \| 1 \| 1 \| 0 \| 0 \| 5/);
   assert.match(markdown, /WCAG versions \| 2\.0: 2/);
   assert.match(markdown, /Confidence \| high: 1, medium: 1/);
+  assert.match(markdown, /Color schemes \| dark: 1/);
   assert.match(markdown, /Categories \| aria: 1, images: 1/);
   assert.match(markdown, /category: aria confidence: high 95%/);
+  assert.match(markdown, /color scheme: dark/);
   assert.match(markdown, /WCAG 4\.1\.2 Name, Role, Value, Level A/);
   assert.match(markdown, /Fix: Give every button an accessible name/);
   assert.match(markdown, /name-role-value/);

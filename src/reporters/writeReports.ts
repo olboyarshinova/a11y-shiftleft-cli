@@ -108,6 +108,7 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     bySource: countBy(issues, "source"),
     bySeverity: countBy(issues, "severity"),
     byConfidence: countBy(issues, "confidence"),
+    byColorScheme: countByPresent(issues, "colorScheme"),
     byFindingType: countBy(issues, "findingType"),
     byCategory: countBy(issues, "category"),
     byPour: countByPour(issues),
@@ -139,13 +140,16 @@ export function toMarkdown(report: A11yReport): string {
       const criteria = formatCriteria(issue);
       const remediation = formatRemediation(issue);
       const state = issue.stateLabel ? ` state: ${issue.stateLabel}` : "";
+      const colorScheme = issue.colorScheme
+        ? ` color scheme: ${issue.colorScheme}`
+        : "";
       const screenshot = issue.screenshot ? ` screenshot: ${issue.screenshot}` : "";
       const baseline = issue.baselineStatus ? ` baseline: ${issue.baselineStatus}` : "";
       const confidence = formatIssueConfidence(issue);
       const findingType = ` type: ${formatFindingType(issue.findingType)}`;
       const category = issue.category ? ` category: ${issue.category}` : "";
       const contrast = formatContrastEvidence(issue);
-      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}${state}${screenshot}${baseline}${findingType}${category}${confidence}: ${issue.message}${contrast}${remediation}`;
+      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}${state}${colorScheme}${screenshot}${baseline}${findingType}${category}${confidence}: ${issue.message}${contrast}${remediation}`;
     })
     .join("\n");
 
@@ -175,6 +179,7 @@ ${formatRetentionRows(report.summary.retention)}| Retention evidence | ${formatR
 | WCAG levels | ${formatCountMap(report.summary.byWcagLevel)} |
 | WCAG versions | ${formatCountMap(report.summary.byWcagVersion)} |
 | Confidence | ${formatCountMap(report.summary.byConfidence)} |
+| Color schemes | ${formatCountMap(report.summary.byColorScheme)} |
 | Finding types | ${formatCountMap(report.summary.byFindingType)} |
 | Categories | ${formatCountMap(report.summary.byCategory)} |
 | Rules without WCAG mapping | ${formatCountMap(report.summary.byUnmappedRule)} |
@@ -194,6 +199,18 @@ ${formatDisclaimer(report.summary.standard)}
 function countBy(items: DedupedIssue[], field: "source" | "severity" | "confidence" | "findingType" | "category"): Record<string, number> {
   return items.reduce<Record<string, number>>((acc, item) => {
     const key = item[field] || "unknown";
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+function countByPresent(
+  items: DedupedIssue[],
+  field: "colorScheme"
+): Record<string, number> {
+  return items.reduce<Record<string, number>>((acc, item) => {
+    const key = item[field];
+    if (!key) return acc;
     acc[key] = (acc[key] || 0) + 1;
     return acc;
   }, {});

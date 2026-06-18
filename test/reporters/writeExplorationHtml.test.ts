@@ -19,6 +19,7 @@ const graph = {
       depth: 0,
       fingerprint: "abc123",
       actionLabel: "Initial page",
+      colorScheme: "dark",
       screenshot: "screenshots/state-1.png",
       screenshotFullPage: true,
       issueCount: 1,
@@ -105,6 +106,7 @@ const issues = [
     url: "http://localhost:3000/",
     stateId: "state-1",
     stateLabel: "Initial page",
+    colorScheme: "dark",
     screenshot: "screenshots/state-1.png",
     elementBounds: {
       x: 10,
@@ -125,7 +127,8 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /a11y-shiftleft exploration report/);
   assert.match(html, /Generated: <time datetime="2026-06-09T00:00:00.000Z">9 June 2026, 00:00 UTC<\/time>/);
   assert.doesNotMatch(html, />Generated 2026-06-09T/);
-  assert.match(html, /States visited/);
+  assert.match(html, /UI states explored/);
+  assert.match(html, /Rendered states/);
   assert.match(html, /screenshots\/state-1\.png/);
   assert.match(html, /Unique screenshots/);
   assert.match(html, /Duplicate screenshots skipped/);
@@ -133,6 +136,7 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /visual reused from state-1/);
   assert.match(html, /Open this state's annotated evidence/);
   assert.match(html, /button-name/);
+  assert.match(html, /dark color scheme/);
   assert.match(html, /Buttons must have discernible text/);
   assert.match(html, /<summary>How to fix<\/summary>/);
   assert.match(html, /Give every button an accessible name/);

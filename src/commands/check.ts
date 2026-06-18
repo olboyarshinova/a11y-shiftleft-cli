@@ -437,6 +437,7 @@ export function formatCheckConsoleSummary(
     `Standard: ${standard}`,
     `Sources: ${formatCountMap(summary.bySource)}`,
     `Confidence: ${formatCountMap(summary.byConfidence)}`,
+    `Color-scheme findings: ${formatCountMap(summary.byColorScheme)}`,
     `WCAG levels: ${formatCountMap(summary.byWcagLevel)}`,
     `Duplicates removed: ${summary.duplicateCount} of ${summary.rawCount} raw findings`,
     `Duration: ${summary.scanDurationMs}ms`,

@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { AxeBuilder } from "@axe-core/playwright";
 import { chromium, type BrowserContext, type Page } from "playwright";
-import { normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig } from "../core/pageScroll.js";
+import { applyColorScheme, detectPageColorSchemes, getPageAppearanceSignature, normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig } from "../core/pageScroll.js";
 import { extractContrastEvidence } from "../core/contrast.js";
 import type {
   A11yConfig,
@@ -74,6 +74,8 @@ const ALWAYS_BLOCKED_ACTION_PATTERNS = [
 ];
 
 const DANGEROUS_ACTION_PATTERN = /\b(delete|remove|destroy|submit|save|create|update|send|confirm|удалить|отправить|сохранить|создать|обновить|подтвердить)\b/i;
+
+const THEME_ACTION_PATTERN = /\b(theme|dark\s*mode|light\s*mode|night\s*mode|appearance|colou?r\s*scheme)\b|(?:тема|тёмн|темн|светл|оформлен)|(?:tema|modo\s*oscuro|modo\s*claro|apparence|thème|dunkel|hell|aspetto)|(?:主题|深色|浅色|ダーク|ライト|테마|다크|라이트|الوضع\s*المظلم|الوضع\s*الفاتح)/i;
 
 export const SENSITIVE_SCREENSHOT_SELECTOR = [
   "[data-a11y-sensitive]",
@@ -204,6 +206,7 @@ export async function runExplorePlaywrightAdapter(
   const scroll = normalizePageScrollConfig(options.scroll || config.explore.scroll);
   let actionsTried = 0;
   let screenshotsSaved = 0;
+  let uniqueUiStates = 0;
 
   try {
     const context = await browser.newContext();
@@ -216,11 +219,12 @@ export async function runExplorePlaywrightAdapter(
     const queue: QueuedState[] = [{ path: [], depth: 0 }];
     const queuedPaths = new Set(["start"]);
 
-    while (queue.length > 0 && states.length < maxStates) {
+    while (queue.length > 0 && uniqueUiStates < maxStates) {
       const current = queue.shift();
       if (!current) continue;
 
       try {
+        await applyColorScheme(page, "light");
         if (safeMode.isolateCookies) {
           await clearContextCookies(context);
         }
@@ -234,110 +238,123 @@ export async function runExplorePlaywrightAdapter(
         continue;
       }
 
-      const pageState = await fingerprintPage(page);
-      const existingId = fingerprintToStateId.get(pageState.fingerprint);
-
-      if (existingId) {
-        if (current.parentId && current.via) {
-          edges.push({
-            from: current.parentId,
-            to: existingId,
-            action: current.via
-          });
-          actionsTried += 1;
-        }
-        continue;
-      }
-
-      const stateId = `state-${states.length + 1}`;
-      const actionLabel = current.via?.label || "Initial page";
-      const scannedIssues = await scanState(config, page, {
-        stateId,
-        stateLabel: actionLabel
-      });
-      const screenshotFullPage = shouldCaptureFullPageScreenshot(
-        Boolean(options.screenshotFullPage),
-        scannedIssues.length
-      );
-      const boundedIssues = screenshots
-        ? await prepareStateVisualEvidence(page, scannedIssues, {
-          fullPage: screenshotFullPage
-        })
-        : scannedIssues;
-      const capturedScreenshot = screenshots
-        ? await captureStateScreenshot(page, {
-          outputDir: options.outputDir,
-          stateId,
-          format: screenshotFormat,
-          quality: screenshotQuality,
-          fullPage: screenshotFullPage,
-          redactSensitiveFields: screenshotRedaction
-        })
-        : undefined;
-      let screenshot = capturedScreenshot?.path;
-      let visualDuplicateOf: string | undefined;
-
-      if (capturedScreenshot) {
-        const existingEvidence = screenshotFingerprintToEvidence.get(
-          capturedScreenshot.fingerprint
-        );
-
-        if (existingEvidence) {
-          await removeDuplicateScreenshot(options.outputDir, capturedScreenshot.path);
-          screenshot = existingEvidence.path;
-          visualDuplicateOf = existingEvidence.stateId;
-        } else {
-          screenshotFingerprintToEvidence.set(capturedScreenshot.fingerprint, {
-            stateId,
-            path: capturedScreenshot.path
-          });
-          screenshotsSaved += 1;
-        }
-      }
-
-      const stateIssues = screenshot
-        ? boundedIssues.map((issue) => ({ ...issue, screenshot }))
-        : scannedIssues;
-      issues.push(...stateIssues);
-
+      const initialPageState = await fingerprintPage(page);
       const discovery = current.depth >= maxDepth
         ? { actions: [], skipped: [] }
-        : await discoverSafeActions(page, pageState.url, maxActionsPerState, safeMode);
+        : await discoverSafeActions(page, initialPageState.url, maxActionsPerState, safeMode);
       const actions = discovery.actions;
-      skippedActions.push(...discovery.skipped.map((action) => ({
-        ...action,
-        stateId
-      })));
-      const state: ExplorationState = {
-        id: stateId,
-        url: pageState.url,
-        title: pageState.title || undefined,
-        depth: current.depth,
-        fingerprint: pageState.fingerprint,
-        actionLabel,
-        screenshot,
-        screenshotFullPage: screenshot ? screenshotFullPage : undefined,
-        visualDuplicateOf,
-        issueCount: stateIssues.length,
-        actionCount: actions.length
-      };
+      const colorSchemes = await detectPageColorSchemes(page);
+      const actionLabel = current.via?.label || "Initial page";
+      let primaryStateId: string | undefined;
+      let createdState = false;
 
-      states.push(state);
-      fingerprintToStateId.set(pageState.fingerprint, stateId);
+      for (const colorScheme of colorSchemes) {
+        await applyColorScheme(page, colorScheme);
+        await scrollPageForLazyContent(page, scroll);
+        const pageState = await fingerprintPage(page);
+        const reportedColorScheme = colorSchemes.length > 1 ? colorScheme : undefined;
+        const existingId = fingerprintToStateId.get(pageState.fingerprint);
+
+        if (existingId) {
+          primaryStateId ||= existingId;
+          continue;
+        }
+
+        const stateId = `state-${states.length + 1}`;
+        primaryStateId ||= stateId;
+        const scannedIssues = await scanState(config, page, {
+          stateId,
+          stateLabel: actionLabel,
+          colorScheme: reportedColorScheme
+        });
+        const screenshotFullPage = shouldCaptureFullPageScreenshot(
+          Boolean(options.screenshotFullPage),
+          scannedIssues.length
+        );
+        const boundedIssues = screenshots
+          ? await prepareStateVisualEvidence(page, scannedIssues, {
+            fullPage: screenshotFullPage
+          })
+          : scannedIssues;
+        const capturedScreenshot = screenshots
+          ? await captureStateScreenshot(page, {
+            outputDir: options.outputDir,
+            stateId,
+            format: screenshotFormat,
+            quality: screenshotQuality,
+            fullPage: screenshotFullPage,
+            redactSensitiveFields: screenshotRedaction
+          })
+          : undefined;
+        let screenshot = capturedScreenshot?.path;
+        let visualDuplicateOf: string | undefined;
+
+        if (capturedScreenshot) {
+          const existingEvidence = screenshotFingerprintToEvidence.get(
+            capturedScreenshot.fingerprint
+          );
+
+          if (existingEvidence) {
+            await removeDuplicateScreenshot(options.outputDir, capturedScreenshot.path);
+            screenshot = existingEvidence.path;
+            visualDuplicateOf = existingEvidence.stateId;
+          } else {
+            screenshotFingerprintToEvidence.set(capturedScreenshot.fingerprint, {
+              stateId,
+              path: capturedScreenshot.path
+            });
+            screenshotsSaved += 1;
+          }
+        }
+
+        const stateIssues = screenshot
+          ? boundedIssues.map((issue) => ({ ...issue, screenshot }))
+          : scannedIssues;
+        issues.push(...stateIssues);
+
+        const state: ExplorationState = {
+          id: stateId,
+          url: pageState.url,
+          title: pageState.title || undefined,
+          depth: current.depth,
+          fingerprint: pageState.fingerprint,
+          actionLabel,
+          colorScheme: reportedColorScheme,
+          screenshot,
+          screenshotFullPage: screenshot ? screenshotFullPage : undefined,
+          visualDuplicateOf,
+          issueCount: stateIssues.length,
+          actionCount: actions.length
+        };
+
+        states.push(state);
+        fingerprintToStateId.set(pageState.fingerprint, stateId);
+        createdState = true;
+        options.onProgress?.({ type: "state", state });
+      }
+
+      await applyColorScheme(page, "light");
+
+      if (!primaryStateId) continue;
 
       if (current.parentId && current.via) {
         edges.push({
           from: current.parentId,
-          to: stateId,
+          to: primaryStateId,
           action: current.via
         });
         actionsTried += 1;
       }
 
-      options.onProgress?.({ type: "state", state });
+      if (!createdState) continue;
+      uniqueUiStates += 1;
+      skippedActions.push(...discovery.skipped.map((action) => ({
+        ...action,
+        stateId: primaryStateId
+      })));
       options.onProgress?.({
         type: "actions",
-        stateId,
+        stateId: primaryStateId,
         actionCount: actions.length,
         skippedActionCount: discovery.skipped.length
       });
@@ -347,13 +364,13 @@ export async function runExplorePlaywrightAdapter(
         const pathKey = nextPath.map((item) => item.id).join(">");
         if (queuedPaths.has(pathKey)) continue;
         if (current.depth + 1 > maxDepth) continue;
-        if (states.length + queue.length >= maxStates) continue;
+        if (uniqueUiStates + queue.length >= maxStates) continue;
 
         queuedPaths.add(pathKey);
         queue.push({
           path: nextPath,
           depth: current.depth + 1,
-          parentId: stateId,
+          parentId: primaryStateId,
           via: action
         });
       }
@@ -372,6 +389,7 @@ export async function runExplorePlaywrightAdapter(
       skippedActions,
       summary: {
         statesVisited: states.length,
+        uiStatesVisited: uniqueUiStates,
         actionsTried,
         skippedActions: skippedActions.length,
         screenshots: screenshotsSaved,
@@ -558,6 +576,7 @@ async function settle(page: Page, wait: ExploreWaitOptions): Promise<void> {
 }
 
 async function fingerprintPage(page: Page): Promise<PageFingerprint> {
+  const appearance = await getPageAppearanceSignature(page);
   const snapshot = await page.evaluate(() => {
     const visibleText = document.body?.innerText
       .replace(/\s+/g, " ")
@@ -582,7 +601,7 @@ async function fingerprintPage(page: Page): Promise<PageFingerprint> {
       statefulElements
     };
   });
-  const input = JSON.stringify(snapshot);
+  const input = JSON.stringify({ ...snapshot, appearance });
 
   return {
     fingerprint: hash(input),
@@ -597,6 +616,7 @@ async function scanState(
   state: {
     stateId: string;
     stateLabel: string;
+    colorScheme: Issue["colorScheme"];
   }
 ): Promise<Issue[]> {
   try {
@@ -617,6 +637,7 @@ async function scanState(
           selector,
           contrast: extractContrastEvidence(violation.id, node),
           helpUrl: violation.helpUrl,
+          colorScheme: state.colorScheme,
           message: violation.help,
           url: page.url(),
           stateId: state.stateId,
@@ -1020,7 +1041,7 @@ async function discoverSafeActions(
     )
   });
 
-  const rawActions = discovery.actions;
+  const rawActions = prioritizeThemeActions(discovery.actions);
   const skippedActions = [...discovery.skipped];
   const seenSkipped = new Set(skippedActions.map((action) => [
     action.type,
@@ -1074,6 +1095,28 @@ async function discoverSafeActions(
     actions,
     skipped: skippedActions
   };
+}
+
+export function prioritizeThemeActions<T extends {
+  label?: string;
+  text?: string;
+  selector?: string;
+}>(actions: T[]): T[] {
+  return [...actions].sort((left, right) =>
+    Number(isThemeAction(right)) - Number(isThemeAction(left))
+  );
+}
+
+export function isThemeAction(action: {
+  label?: string;
+  text?: string;
+  selector?: string;
+}): boolean {
+  return THEME_ACTION_PATTERN.test([
+    action.label,
+    action.text,
+    action.selector
+  ].filter(Boolean).join(" "));
 }
 
 function toSkippedAction(action: ExploreAction, reason: string): RawSkippedAction {

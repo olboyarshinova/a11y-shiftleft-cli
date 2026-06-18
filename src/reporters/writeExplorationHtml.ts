@@ -567,7 +567,8 @@ export function renderExplorationHtml(
   </header>
   <main>
     <section class="summary" aria-label="Exploration summary">
-      ${metric("States visited", graph.summary.statesVisited)}
+      ${metric("UI states explored", graph.summary.uiStatesVisited ?? graph.summary.statesVisited)}
+      ${metric("Rendered states", graph.summary.statesVisited)}
       ${metric("Actions tried", graph.summary.actionsTried)}
       ${metric("Actions skipped", graph.summary.skippedActions || 0)}
       ${metric("Unique screenshots", graph.summary.screenshots)}
@@ -636,6 +637,7 @@ function renderState(state: StateViewModel): string {
     </div>
     <div class="badges">
       ${issueBadges}
+      ${state.colorScheme ? `<span class="badge">${escapeHtml(state.colorScheme)} color scheme</span>` : ""}
       ${state.screenshotFullPage ? `<span class="badge">full-page evidence</span>` : ""}
       ${state.visualDuplicateOf ? `<span class="badge">visual reused from ${escapeHtml(state.visualDuplicateOf)}</span>` : ""}
       <span class="badge">${state.actionCount} actions queued</span>
@@ -773,6 +775,7 @@ function renderRootCauseGroups(groups: RootCauseGroup[]): string {
       <div class="badges">
         ${findingTypeBadge(group.findingType)}
         <span class="badge">${group.affectedPages.length} page${group.affectedPages.length === 1 ? "" : "s"}</span>
+        ${(group.affectedColorSchemes || []).map((scheme) => `<span class="badge">${escapeHtml(scheme)} color scheme</span>`).join("")}
       </div>
       <div class="url">${escapeHtml(group.targetPattern)}</div>
     </li>`;
@@ -858,6 +861,7 @@ function renderIssues(issues: DedupedIssue[]): string {
 
   const renderIssue = (issue: DedupedIssue): string => `<li class="issue">
       <div>${severityBadge(issue.severity)} ${findingTypeBadge(issue.findingType)} <code>${escapeHtml(issue.ruleId)}</code></div>
+      ${issue.colorScheme ? `<div class="badges"><span class="badge">${escapeHtml(issue.colorScheme)} color scheme</span></div>` : ""}
       <div>${escapeHtml(issue.message)}</div>
       ${issue.selector ? `<div class="url">${escapeHtml(issue.selector)}</div>` : ""}
       ${renderContrastEvidence(issue)}

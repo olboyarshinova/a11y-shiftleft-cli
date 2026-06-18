@@ -1,6 +1,6 @@
 import { chromium } from "playwright";
 import { AxeBuilder } from "@axe-core/playwright";
-import { normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig, type ScrollablePage } from "../core/pageScroll.js";
+import { applyColorScheme, detectPageColorSchemes, normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig, type ScrollablePage } from "../core/pageScroll.js";
 import { extractContrastEvidence } from "../core/contrast.js";
 import type { A11yConfig, Issue } from "../types.js";
 
@@ -77,33 +77,48 @@ export async function runAxePlaywrightAdapter(
         });
         await page.goto(url, { waitUntil: "networkidle" });
         await scrollPageForLazyContent(page, scroll);
-        const results = await new AxeBuilder({ page }).analyze();
-        let issueCount = 0;
+        const colorSchemes = await detectPageColorSchemes(page);
+        const pageIssues: Issue[][] = [];
 
-        for (const violation of results.violations) {
-          for (const node of violation.nodes) {
-            issueCount += 1;
-            issues.push({
-              source: "axe",
-              framework: config.framework,
-              ruleId: violation.id,
-              impact: violation.impact || undefined,
-              wcag: violation.tags.filter((tag: string) => tag.startsWith("wcag")),
-              tags: violation.tags,
-              selector: node.target.join(" "),
-              contrast: extractContrastEvidence(violation.id, node),
-              helpUrl: violation.helpUrl,
-              message: violation.help,
-              url
-            });
+        for (const colorScheme of colorSchemes) {
+          await applyColorScheme(page, colorScheme);
+          await scrollPageForLazyContent(page, scroll);
+          const results = await new AxeBuilder({ page }).analyze();
+          const reportedColorScheme = colorSchemes.length > 1 ? colorScheme : undefined;
+          const colorSchemeIssues: Issue[] = [];
+
+          for (const violation of results.violations) {
+            for (const node of violation.nodes) {
+              colorSchemeIssues.push({
+                source: "axe",
+                framework: config.framework,
+                ruleId: violation.id,
+                impact: violation.impact || undefined,
+                wcag: violation.tags.filter((tag: string) => tag.startsWith("wcag")),
+                tags: violation.tags,
+                selector: node.target.join(" "),
+                contrast: extractContrastEvidence(violation.id, node),
+                helpUrl: violation.helpUrl,
+                colorScheme: reportedColorScheme,
+                message: violation.help,
+                url
+              });
+            }
           }
+
+          pageIssues.push(colorSchemeIssues);
         }
+
+        const mergedPageIssues = pageIssues.length === 2
+          ? mergeEquivalentColorSchemeIssues(pageIssues[0], pageIssues[1])
+          : pageIssues.flat();
+        issues.push(...mergedPageIssues);
         options.onProgress?.({
           type: "scan-complete",
           url,
           scannedCount,
           totalUrls: scanUrls.length,
-          issueCount
+          issueCount: mergedPageIssues.length
         });
       } catch (error) {
         options.onProgress?.({
@@ -121,6 +136,54 @@ export async function runAxePlaywrightAdapter(
   }
 
   return issues;
+}
+
+export function mergeEquivalentColorSchemeIssues(
+  lightIssues: Issue[],
+  darkIssues: Issue[]
+): Issue[] {
+  const darkByEvidence = new Map<string, Issue[]>();
+
+  for (const issue of darkIssues) {
+    const key = colorSchemeEvidenceKey(issue);
+    const matches = darkByEvidence.get(key) || [];
+    matches.push(issue);
+    darkByEvidence.set(key, matches);
+  }
+
+  const merged: Issue[] = [];
+
+  for (const lightIssue of lightIssues) {
+    const key = colorSchemeEvidenceKey(lightIssue);
+    const matches = darkByEvidence.get(key);
+    const darkMatch = matches?.shift();
+
+    if (darkMatch) {
+      merged.push({ ...lightIssue, colorScheme: undefined });
+      if (matches?.length === 0) darkByEvidence.delete(key);
+    } else {
+      merged.push(lightIssue);
+    }
+  }
+
+  for (const remaining of darkByEvidence.values()) {
+    merged.push(...remaining);
+  }
+
+  return merged;
+}
+
+function colorSchemeEvidenceKey(issue: Issue): string {
+  return JSON.stringify([
+    issue.source,
+    issue.ruleId,
+    issue.selector,
+    issue.file,
+    issue.line,
+    issue.message,
+    issue.impact,
+    issue.contrast || null
+  ]);
 }
 
 export async function crawlSameOriginUrls(

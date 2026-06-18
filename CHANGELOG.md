@@ -4,6 +4,17 @@
 
 ### Changed
 
+- Dynamic checks and visual exploration now automatically compare light and
+  dark system color schemes when they produce different rendered appearances;
+  no additional command or flag is required.
+- Reports preserve color-scheme-specific findings, label affected visual
+  states, and show which schemes are represented in likely root-cause groups.
+- Regular dynamic checks merge identical light/dark findings so
+  theme-independent structural defects do not inflate totals; findings with
+  different evidence remain separated by color scheme.
+- Visual exploration prioritizes recognizable theme controls and includes
+  rendered appearance in state fingerprints so explicit theme toggles are not
+  collapsed into the same state.
 - Every finding now receives deterministic remediation guidance. Visual and
   Markdown reports show concrete steps, documentation links, and available
   framework examples; unknown rules receive conservative fallback guidance.

@@ -1,3 +1,6 @@
+import type { Page } from "playwright";
+import type { ColorScheme } from "../types.js";
+
 export const DEFAULT_PAGE_SCROLL_CONFIG: PageScrollConfig = {
   enabled: true,
   stepPx: 800,
@@ -96,6 +99,80 @@ export async function scrollPageForLazyContent(
     initialScrollHeight: initial.scrollHeight,
     finalScrollHeight: final.scrollHeight
   };
+}
+
+export async function detectPageColorSchemes(page: Page): Promise<ColorScheme[]> {
+  await applyColorScheme(page, "light");
+  const lightSignature = await getPageAppearanceSignature(page);
+  await applyColorScheme(page, "dark");
+  const darkSignature = await getPageAppearanceSignature(page);
+  await applyColorScheme(page, "light");
+
+  return resolveDetectedColorSchemes(lightSignature, darkSignature);
+}
+
+export function resolveDetectedColorSchemes(
+  lightSignature: string,
+  darkSignature: string
+): ColorScheme[] {
+  return lightSignature === darkSignature ? ["light"] : ["light", "dark"];
+}
+
+export async function applyColorScheme(
+  page: Page,
+  colorScheme: ColorScheme
+): Promise<void> {
+  await page.emulateMedia({ colorScheme });
+  await page.evaluate(async () => {
+    if (document.fonts?.ready) await document.fonts.ready;
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    });
+  }).catch(() => undefined);
+}
+
+export async function getPageAppearanceSignature(page: Page): Promise<string> {
+  return page.evaluate(() => {
+    const MAX_SAMPLED_ELEMENTS = 500;
+    const root = document.documentElement;
+    const candidates = [
+      root,
+      document.body,
+      ...Array.from(document.body?.querySelectorAll(
+        ":scope *:not(script):not(style):not(link):not(meta)"
+      ) || [])
+    ].filter((element): element is Element => (
+      Boolean(element) && (element === root || element === document.body || element.getClientRects().length > 0)
+    ));
+    const sampledCandidates = candidates.length <= MAX_SAMPLED_ELEMENTS
+      ? candidates
+      : Array.from({ length: MAX_SAMPLED_ELEMENTS }, (_, index) => (
+        candidates[Math.floor(index * (candidates.length - 1) / (MAX_SAMPLED_ELEMENTS - 1))]
+      ));
+    const sampled = sampledCandidates.map((element) => {
+      const style = window.getComputedStyle(element);
+      return [
+        element.tagName.toLowerCase(),
+        element.getAttribute("class") || "",
+        element.getAttribute("data-theme") || "",
+        element.getAttribute("data-color-scheme") || "",
+        style.color,
+        style.backgroundColor,
+        style.borderColor,
+        style.fill,
+        style.stroke,
+        style.colorScheme
+      ];
+    });
+
+    return JSON.stringify({
+      rootClass: root.className,
+      bodyClass: document.body?.className || "",
+      rootTheme: root.getAttribute("data-theme") || root.getAttribute("data-color-scheme") || "",
+      bodyTheme: document.body?.getAttribute("data-theme") || document.body?.getAttribute("data-color-scheme") || "",
+      sampled
+    });
+  });
 }
 
 async function readScrollMetrics(page: ScrollablePage): Promise<ScrollMetrics> {

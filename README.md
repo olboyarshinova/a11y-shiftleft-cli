@@ -246,6 +246,11 @@ helps trigger lazy-loaded sections below the first viewport. The scan still
 stays bounded for CI with a default maximum of 25 scroll steps per page. Use
 `--no-scroll` only when a project needs to avoid scroll-triggered behavior.
 
+The same commands automatically compare the rendered light and dark system
+color schemes when the page actually changes between them. Findings and visual
+states are labeled by color scheme in the reports. Pages that render identically
+are scanned once, so no theme option or second command is needed.
+
 Every explored state is captured as a compressed full-page screenshot, so the
 main visual report includes evidence below the first viewport. Full-page images
 are fitted into each report preview instead of being cropped. Use
@@ -284,6 +289,8 @@ It safely follows same-origin links and low-risk UI expansion controls such as
 menu buttons, tabs, disclosure widgets, and modal triggers. Cookie consent
 controls are never clicked automatically, including short buttons such as
 `Accept` or `OK` when they appear inside a recognized consent banner.
+Recognizable theme switches are checked early so explicit app themes are less
+likely to be skipped by the bounded action limit.
 
 It creates:
 

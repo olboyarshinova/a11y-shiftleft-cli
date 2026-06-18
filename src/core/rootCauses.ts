@@ -18,6 +18,7 @@ export function summarizeRootCauses(issues: DedupedIssue[]): RootCauseGroup[] {
       occurrenceCount: 0,
       affectedPages: new Set<string>(),
       affectedStates: new Set<string>(),
+      affectedColorSchemes: new Set<NonNullable<DedupedIssue["colorScheme"]>>(),
       representativeSelector: issue.selector,
       representativeFile: issue.file
     };
@@ -26,6 +27,7 @@ export function summarizeRootCauses(issues: DedupedIssue[]): RootCauseGroup[] {
     group.severity = higherSeverity(group.severity, issue.severity);
     if (issue.url) group.affectedPages.add(issue.url);
     if (issue.stateId) group.affectedStates.add(issue.stateId);
+    if (issue.colorScheme) group.affectedColorSchemes.add(issue.colorScheme);
     groups.set(key, group);
   }
 
@@ -33,7 +35,8 @@ export function summarizeRootCauses(issues: DedupedIssue[]): RootCauseGroup[] {
     .map((group) => ({
       ...group,
       affectedPages: [...group.affectedPages].sort(),
-      affectedStates: [...group.affectedStates].sort()
+      affectedStates: [...group.affectedStates].sort(),
+      affectedColorSchemes: [...group.affectedColorSchemes].sort()
     }))
     .sort((a, b) => {
       if (b.occurrenceCount !== a.occurrenceCount) {
@@ -45,9 +48,10 @@ export function summarizeRootCauses(issues: DedupedIssue[]): RootCauseGroup[] {
     });
 }
 
-interface RootCauseAccumulator extends Omit<RootCauseGroup, "affectedPages" | "affectedStates"> {
+interface RootCauseAccumulator extends Omit<RootCauseGroup, "affectedPages" | "affectedStates" | "affectedColorSchemes"> {
   affectedPages: Set<string>;
   affectedStates: Set<string>;
+  affectedColorSchemes: Set<NonNullable<DedupedIssue["colorScheme"]>>;
 }
 
 function createTargetPattern(issue: DedupedIssue): string {

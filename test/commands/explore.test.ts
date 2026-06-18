@@ -84,7 +84,7 @@ test("formatExploreProgressMessage renders compact progress lines", () => {
       issueCount: 3,
       actionCount: 4
     }
-  }), "[explore] visited 2/20 state-2 depth=1 issues=3 screenshot=screenshots/state-2.jpg");
+  }), "[explore] rendered 2 state-2 depth=1 issues=3 screenshot=screenshots/state-2.jpg");
 
   assert.equal(formatExploreProgressMessage({
     type: "actions",
@@ -223,8 +223,9 @@ test("formatExploreConsoleSummary renders a readable visual scan summary", () =>
     screenshots: true
   });
 
-  assert.match(output, /Exploration: states 1\/20 \| actions tried 0 \| skipped 0 \| unique screenshots 1 \| duplicate screenshots skipped 0/);
+  assert.match(output, /Exploration: UI states 1\/20 \| rendered states 1 \| actions tried 0 \| skipped 0 \| unique screenshots 1 \| duplicate screenshots skipped 0/);
   assert.match(output, /Findings: total 2 \| CRITICAL 0 \| WARNING 2 \| INFO 0/);
+  assert.match(output, /Color schemes: single\/default/);
   assert.match(output, /color-contrast: 1/);
   assert.match(output, /state-1: 2 findings/);
   assert.match(output, /reports\/exploration.html/);

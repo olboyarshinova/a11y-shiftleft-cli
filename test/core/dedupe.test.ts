@@ -64,6 +64,29 @@ test("dedupeIssues keeps matching selectors on different pages separate", () => 
   assert.equal(issues.length, 2);
 });
 
+test("dedupeIssues keeps light and dark findings separate", () => {
+  const issues = dedupeIssues([
+    {
+      source: "axe",
+      ruleId: "color-contrast",
+      selector: ".primary",
+      url: "http://localhost:3000/",
+      colorScheme: "light",
+      severity: "critical"
+    },
+    {
+      source: "axe",
+      ruleId: "color-contrast",
+      selector: ".primary",
+      url: "http://localhost:3000/",
+      colorScheme: "dark",
+      severity: "critical"
+    }
+  ]);
+
+  assert.equal(issues.length, 2);
+});
+
 test("dedupeIssues keeps matching static rules on different lines separate", () => {
   const issues = dedupeIssues([
     {

@@ -11,6 +11,12 @@ npx a11y-shiftleft explore --url $APP_URL --depth 2 --out reports
 same-origin links and low-risk UI expansion controls such as menu buttons,
 tabs, disclosure widgets, and modal triggers.
 
+For every discovered state, `explore` automatically compares light and dark
+system color schemes. When the rendered appearance changes, both variants are
+scanned and shown as separate labeled states. If they are visually equivalent,
+the state is scanned once. No theme-specific command is required. Recognizable
+theme toggle controls are prioritized during bounded action discovery as well.
+
 It saves:
 
 ```txt

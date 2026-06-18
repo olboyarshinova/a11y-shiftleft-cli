@@ -4,6 +4,8 @@ export type Severity = "critical" | "warning" | "info";
 
 export type ConfidenceLevel = "high" | "medium" | "low";
 
+export type ColorScheme = "light" | "dark";
+
 export type FindingType = "wcag" | "best-practice" | "unmapped";
 
 export type IssueCategory =
@@ -205,6 +207,7 @@ export interface Issue {
   elementBounds?: ElementBounds;
   contrast?: ContrastEvidence;
   helpUrl?: string;
+  colorScheme?: ColorScheme;
   message?: string;
   remediation?: RemediationHint;
 }
@@ -232,6 +235,7 @@ export interface NormalizedIssue extends Required<Pick<Issue, "source" | "framew
   elementBounds?: ElementBounds;
   contrast?: ContrastEvidence;
   helpUrl?: string;
+  colorScheme?: ColorScheme;
 }
 
 export interface TriagedIssue extends NormalizedIssue {
@@ -372,6 +376,7 @@ export interface ReportSummary {
   bySource: Record<string, number>;
   bySeverity: Record<string, number>;
   byConfidence: Record<string, number>;
+  byColorScheme?: Record<string, number>;
   byFindingType?: Record<string, number>;
   byCategory: Record<string, number>;
   byPour: Record<string, number>;
@@ -407,6 +412,7 @@ export interface RootCauseGroup {
   occurrenceCount: number;
   affectedPages: string[];
   affectedStates: string[];
+  affectedColorSchemes?: ColorScheme[];
   representativeSelector?: string;
   representativeFile?: string;
 }
@@ -441,6 +447,7 @@ export interface ExplorationState {
   depth: number;
   fingerprint: string;
   actionLabel: string;
+  colorScheme?: ColorScheme;
   screenshot?: string;
   screenshotFullPage?: boolean;
   visualDuplicateOf?: string;
@@ -462,6 +469,7 @@ export interface ExplorationGraph {
   skippedActions: ExploreSkippedAction[];
   summary: {
     statesVisited: number;
+    uiStatesVisited?: number;
     actionsTried: number;
     skippedActions: number;
     screenshots: number;

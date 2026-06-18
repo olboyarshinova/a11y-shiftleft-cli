@@ -480,7 +480,10 @@ export function formatExploreProgressMessage(event:
 ): string {
   if (event.type === "state") {
     const screenshot = event.state.screenshot ? ` screenshot=${event.state.screenshot}` : "";
-    return `[explore] visited ${event.visitedStates}/${event.maxStates} ${event.state.id} depth=${event.state.depth} issues=${event.state.issueCount}${screenshot}`;
+    const colorScheme = event.state.colorScheme
+      ? ` color-scheme=${event.state.colorScheme}`
+      : "";
+    return `[explore] rendered ${event.visitedStates} ${event.state.id} depth=${event.state.depth} issues=${event.state.issueCount}${colorScheme}${screenshot}`;
   }
 
   return `[explore] ${event.stateId} queued=${event.actionCount} skipped=${event.skippedActionCount}`;
@@ -519,12 +522,17 @@ export function formatExploreConsoleSummary(
       ? `dry-run planned delete ${options.retention.plannedDeletedRuns}, kept ${options.retention.keptRuns}`
       : `deleted ${options.retention.deletedRuns}, kept ${options.retention.keptRuns}`
     : "off";
+  const colorSchemes = [...new Set(
+    graph.states.map((state) => state.colorScheme).filter(Boolean)
+  )].join(", ") || "single/default";
+  const uiStatesVisited = graph.summary.uiStatesVisited ?? graph.summary.statesVisited;
 
   return [
     "a11y-shiftleft explore",
     `Status: ${status}`,
-    `Exploration: states ${graph.summary.statesVisited}/${graph.summary.maxStates} | actions tried ${graph.summary.actionsTried} | skipped ${graph.summary.skippedActions} | unique screenshots ${graph.summary.screenshots} | duplicate screenshots skipped ${graph.summary.duplicateScreenshots || 0}`,
+    `Exploration: UI states ${uiStatesVisited}/${graph.summary.maxStates} | rendered states ${graph.summary.statesVisited} | actions tried ${graph.summary.actionsTried} | skipped ${graph.summary.skippedActions} | unique screenshots ${graph.summary.screenshots} | duplicate screenshots skipped ${graph.summary.duplicateScreenshots || 0}`,
     `Findings: total ${summary.total} | CRITICAL ${summary.critical} | WARNING ${summary.warning} | INFO ${summary.info}`,
+    `Color schemes: ${colorSchemes}`,
     `Framework: ${summary.framework}`,
     `Retention: ${retention}`,
     "",

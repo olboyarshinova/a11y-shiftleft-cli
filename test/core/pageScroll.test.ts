@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   normalizePageScrollConfig,
+  resolveDetectedColorSchemes,
   scrollPageForLazyContent
 } from "../../dist/core/pageScroll.js";
 
@@ -17,6 +18,17 @@ test("normalizePageScrollConfig keeps bounded defaults", () => {
     maxSteps: 25,
     waitMs: 100
   });
+});
+
+test("resolveDetectedColorSchemes keeps one scan when themes render identically", () => {
+  assert.deepEqual(resolveDetectedColorSchemes("same", "same"), ["light"]);
+});
+
+test("resolveDetectedColorSchemes scans light and dark when appearance changes", () => {
+  assert.deepEqual(resolveDetectedColorSchemes("light-colors", "dark-colors"), [
+    "light",
+    "dark"
+  ]);
 });
 
 test("scrollPageForLazyContent scrolls to the bottom and restores the top", async () => {

@@ -36,6 +36,7 @@ export function normalizeIssue(issue: Issue): NormalizedIssue {
     elementBounds: issue.elementBounds,
     contrast: issue.contrast,
     helpUrl: issue.helpUrl,
+    colorScheme: issue.colorScheme,
     message: issue.message || "Accessibility issue detected."
   };
 }

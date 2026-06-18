@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   type AxeProgressEvent,
   crawlSameOriginUrls,
+  mergeEquivalentColorSchemeIssues,
   normalizeSameOriginUrl
 } from "../../dist/adapters/axePlaywrightAdapter.js";
 
@@ -81,4 +82,47 @@ test("crawlSameOriginUrls reports discovery progress", async () => {
     "http://localhost:3000/",
     "http://localhost:3000/about"
   ]);
+});
+
+test("mergeEquivalentColorSchemeIssues avoids duplicating theme-independent findings", () => {
+  const shared = {
+    source: "axe",
+    ruleId: "button-name",
+    selector: "#menu",
+    message: "Buttons must have discernible text",
+    url: "http://localhost:3000/"
+  };
+
+  const merged = mergeEquivalentColorSchemeIssues(
+    [{ ...shared, colorScheme: "light" }],
+    [{ ...shared, colorScheme: "dark" }]
+  );
+
+  assert.equal(merged.length, 1);
+  assert.equal(merged[0].colorScheme, undefined);
+});
+
+test("mergeEquivalentColorSchemeIssues preserves theme-specific evidence", () => {
+  const shared = {
+    source: "axe",
+    ruleId: "color-contrast",
+    selector: ".muted",
+    message: "Elements must meet minimum color contrast ratio thresholds",
+    url: "http://localhost:3000/"
+  };
+
+  const merged = mergeEquivalentColorSchemeIssues(
+    [{
+      ...shared,
+      colorScheme: "light",
+      contrast: { actualRatio: 4.6, requiredRatio: 7 }
+    }],
+    [{
+      ...shared,
+      colorScheme: "dark",
+      contrast: { actualRatio: 2.1, requiredRatio: 4.5 }
+    }]
+  );
+
+  assert.deepEqual(merged.map((issue) => issue.colorScheme), ["light", "dark"]);
 });

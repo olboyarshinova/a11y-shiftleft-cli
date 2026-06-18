@@ -20,6 +20,7 @@ test("summarizeRootCauses groups repeated active navigation contrast findings", 
     selector: `.margin-right\\:8:nth-child(${index + 1}) > .is-selected[aria-current="page"][href$="${page}/"]`,
     url: `https://binaryville.com/${page}/`,
     stateId: `state-${index + 1}`,
+    colorScheme: index % 2 === 0 ? "light" : "dark",
     message: "Elements must meet minimum color contrast ratio thresholds",
     fingerprint: `contrast-${page}`,
     duplicateCount: 0
@@ -40,6 +41,7 @@ test("summarizeRootCauses groups repeated active navigation contrast findings", 
   assert.equal(groups[0].occurrenceCount, 5);
   assert.equal(groups[0].affectedPages.length, 5);
   assert.equal(groups[0].affectedStates.length, 5);
+  assert.deepEqual(groups[0].affectedColorSchemes, ["dark", "light"]);
 });
 
 test("summarizeRootCauses keeps unrelated selectors separate", () => {
