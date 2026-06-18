@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   createEvidenceClips,
   getExploreActionSafety,
+  isAdvertisingActionContext,
   isCookieConsentContext,
   isSafeExploreAction,
   isSafeExploreActionWithConfig,
@@ -104,6 +105,35 @@ test("isSafeExploreAction blocks high-risk actions across common languages", () 
   }
 });
 
+test("isSafeExploreAction blocks advertising and sponsored actions", () => {
+  const unsafeActions = [
+    ["advertisement", "Navigate: Advertisement", "http://localhost:3000/ads/click"],
+    ["sponsored", "Navigate: Sponsored story", "http://localhost:3000/story"],
+    ["russian-ad", "Click: Реклама", undefined],
+    ["spanish-ad", "Click: Contenido patrocinado", undefined],
+    ["japanese-ad", "Click: 広告", undefined]
+  ] as const;
+
+  for (const [id, label, url] of unsafeActions) {
+    assert.equal(isSafeExploreAction({
+      id,
+      type: url ? "navigate" : "click",
+      selector: `#${id}`,
+      url,
+      label,
+      text: label.replace(/^(Navigate|Click): /, ""),
+      role: url ? "a" : "button"
+    }, "http://localhost:3000/"), false, label);
+  }
+});
+
+test("isAdvertisingActionContext recognizes ad metadata and networks", () => {
+  assert.equal(isAdvertisingActionContext("rel=sponsored"), true);
+  assert.equal(isAdvertisingActionContext("class=ad-banner"), true);
+  assert.equal(isAdvertisingActionContext("https://googleadservices.com/pagead/aclk"), true);
+  assert.equal(isAdvertisingActionContext("Open navigation menu"), false);
+});
+
 test("isCookieConsentContext recognizes consent surfaces with short action labels", () => {
   assert.equal(isCookieConsentContext("Airbnb cookie preferences Accept"), true);
   assert.equal(isCookieConsentContext("Privacy choices OK"), true);
@@ -181,6 +211,30 @@ test("getExploreActionSafety returns reviewable skip reasons", () => {
 
   assert.equal(safety.safe, false);
   assert.match(safety.reason || "", /high-risk action/);
+});
+
+test("getExploreActionSafety explains advertising blocks", () => {
+  const safety = getExploreActionSafety({
+    id: "sponsored",
+    type: "navigate",
+    selector: "[rel='sponsored']",
+    url: "http://localhost:3000/promoted-story",
+    label: "Navigate: Sponsored story",
+    text: "Sponsored story",
+    role: "a"
+  }, "http://localhost:3000/", {
+    enabled: false,
+    blockedText: [],
+    blockedRoles: [],
+    blockedUrls: [],
+    blockedSelectors: [],
+    allowedSelectors: ["[data-a11y-explore]"],
+    dismissDialogs: false,
+    isolateCookies: false
+  });
+
+  assert.equal(safety.safe, false);
+  assert.match(safety.reason || "", /Advertising and sponsored content/);
 });
 
 test("isSafeExploreActionWithConfig keeps hard blocks when safe mode is disabled", () => {

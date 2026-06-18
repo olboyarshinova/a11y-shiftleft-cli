@@ -4,6 +4,8 @@
 
 - Fixed screenshot preview annotations so issue frames remain visible and align
   with images fitted inside the compact 16:9 preview.
+- Automatic exploration no longer opens recognized advertising or sponsored
+  content, and closes popup pages opened by page scripts.
 
 ### Changed
 

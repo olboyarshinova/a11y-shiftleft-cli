@@ -48,6 +48,20 @@ const COOKIE_CONSENT_CONTEXT_PATTERNS = [
   /(隐私|同意|쿠키|동의|プライバシー|同意|ملفات\s*تعريف\s*الارتباط)/i
 ];
 
+const ADVERTISING_CONTEXT_PATTERNS = [
+  /\b(advertisement|advertising|advert|sponsored|promoted|paid\s*content|ad\s*choices?)\b/i,
+  /(^|[^a-z0-9])(ad|ads|adslot|adunit|adbanner|adcontainer)(?=$|[^a-z0-9])/i,
+  /\b(doubleclick|googlesyndication|googleadservices|adservice|amazon-adsystem|taboola|outbrain|criteo|adnxs|adserver|clickserve)\b/i,
+  /(реклама|рекламн|спонсорск|продвигаем)/i,
+  /(publicidad|anuncio|patrocinad|promocionad)/i,
+  /(publicité|sponsorisé|contenu\s*sponsorisé)/i,
+  /(werbung|anzeige|gesponsert)/i,
+  /(pubblicità|sponsorizzat)/i,
+  /(publicidade|anúncio|patrocinad)/i,
+  /(广告|赞助|推广|広告|スポンサー|プロモーション|광고|후원|프로모션)/i,
+  /(إعلان|محتوى\s*مدفوع|برعاية|विज्ञापन|प्रायोजित)/i
+];
+
 const ALWAYS_BLOCKED_ACTION_PATTERNS = [
   /\b(log\s*out|logout|sign\s*out|signoff|disconnect|end\s*session)\b/i,
   /\b(login|log\s*in|sign\s*in|sign\s*up|register|create\s*account|authenticate)\b/i,
@@ -248,6 +262,11 @@ export async function runExplorePlaywrightAdapter(
   try {
     const context = await browser.newContext();
     const page = await context.newPage();
+    context.on("page", async (openedPage) => {
+      if (openedPage !== page) {
+        await openedPage.close().catch(() => undefined);
+      }
+    });
     if (safeMode.enabled && safeMode.dismissDialogs) {
       page.on("dialog", async (dialog) => {
         await dialog.dismiss().catch(() => undefined);
@@ -509,6 +528,10 @@ export function isCookieConsentContext(value: string): boolean {
   return COOKIE_CONSENT_CONTEXT_PATTERNS.some((pattern) => pattern.test(value));
 }
 
+export function isAdvertisingActionContext(value: string): boolean {
+  return ADVERTISING_CONTEXT_PATTERNS.some((pattern) => pattern.test(value));
+}
+
 export function getExploreActionSafety(
   action: ExploreAction,
   baseUrl: string,
@@ -521,6 +544,13 @@ export function getExploreActionSafety(
     action.url,
     action.selector
   ].filter(Boolean).join(" ");
+
+  if (isAdvertisingActionContext(searchable)) {
+    return {
+      safe: false,
+      reason: "Advertising and sponsored content are never opened during automatic exploration."
+    };
+  }
 
   if (matchesAlwaysBlockedAction(searchable)) {
     return {
@@ -1037,7 +1067,11 @@ async function discoverSafeActions(
     actions: RawExploreAction[];
     skipped: RawSkippedAction[];
   } => {
-    const { safeMode, cookieConsentPatternSources } = input;
+    const {
+      safeMode,
+      cookieConsentPatternSources,
+      advertisingPatternSources
+    } = input;
 
     function textOf(element: Element): string {
       return [
@@ -1148,6 +1182,54 @@ async function discoverSafeActions(
       return false;
     }
 
+    function isAdvertisingControl(element: Element): boolean {
+      const explicitContainer = element.closest([
+        "[data-ad]",
+        "[data-ad-slot]",
+        "[data-ad-unit]",
+        "[data-ad-client]",
+        "[data-sponsored]",
+        "[data-google-query-id]",
+        "[rel~='sponsored']",
+        ".ad",
+        ".ads",
+        ".advertisement",
+        ".sponsored",
+        "[id='ad']",
+        "[id^='ad-']",
+        "[id$='-ad']"
+      ].join(", "));
+      if (explicitContainer) return true;
+
+      let current: Element | null = element;
+      let depth = 0;
+
+      while (current && current !== document.body && depth < 5) {
+        const metadata = [
+          current.getAttribute("id"),
+          current.getAttribute("class"),
+          current.getAttribute("aria-label"),
+          current.getAttribute("title"),
+          current.getAttribute("data-testid"),
+          current.getAttribute("data-test"),
+          current.getAttribute("href")
+        ].filter(Boolean).join(" ");
+        const text = (current.textContent || "").replace(/\s+/g, " ").trim();
+        const context = text.length <= 1200 ? `${metadata} ${text}` : metadata;
+
+        if (advertisingPatternSources.some(
+          (source) => new RegExp(source, "i").test(context)
+        )) {
+          return true;
+        }
+
+        current = current.parentElement;
+        depth += 1;
+      }
+
+      return false;
+    }
+
     function skippedAction(
       element: Element,
       reason: string,
@@ -1200,6 +1282,14 @@ async function discoverSafeActions(
       const text = textOf(element);
       const selector = selectorFor(element);
       const forcedExplore = matchesSelectorList(element, safeMode.allowedSelectors);
+
+      if (isAdvertisingControl(element)) {
+        skipped.push(skippedAction(
+          element,
+          "Advertising and sponsored content are never opened during automatic exploration."
+        ));
+        continue;
+      }
 
       if (isCookieConsentControl(element)) {
         skipped.push(skippedAction(
@@ -1255,6 +1345,9 @@ async function discoverSafeActions(
   }, {
     safeMode,
     cookieConsentPatternSources: COOKIE_CONSENT_CONTEXT_PATTERNS.map(
+      (pattern) => pattern.source
+    ),
+    advertisingPatternSources: ADVERTISING_CONTEXT_PATTERNS.map(
       (pattern) => pattern.source
     )
   });

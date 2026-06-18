@@ -168,6 +168,11 @@ notifications, file upload, and sharing controls. This is a safety layer, not a
 complete translation system; add project-specific patterns when your product
 uses custom wording.
 
+Advertising and sponsored content are also hard-blocked. Exploration recognizes
+common ad labels in multiple languages, `rel="sponsored"`, standard ad data
+attributes and container names, and common advertising network URLs. External
+links remain blocked, and script-opened popup pages are closed automatically.
+
 Cookie controls are also detected from their surrounding banner or dialog.
 This keeps short labels such as `Accept`, `Allow`, or `OK` from changing consent
 when the button itself does not mention cookies. Recognized cookie consent
