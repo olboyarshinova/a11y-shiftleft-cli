@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { enrichIssueEvidence } from "../core/classification.js";
 import { createManualChecklist, toManualChecklistMarkdown } from "../core/manualChecklist.js";
+import { getRemediationHint } from "../core/remediation.js";
 import { summarizeRootCauses } from "../core/rootCauses.js";
 import type { A11yReport, ComplianceEvidenceSummary, ComplianceStandardMetadata, DedupedIssue, PageSummary, ReportFormat, ReportMetrics, ReportSummary, RootCauseGroup, Severity } from "../types.js";
 
@@ -20,9 +21,23 @@ export async function writeReports(
 ): Promise<A11yReport> {
   await fs.mkdir(outputDir, { recursive: true });
   const formats = new Set(options.formats || ["json", "csv", "markdown"]);
-  const reportIssues = issues.map((issue) => issue.confidence && issue.category && issue.findingType
-    ? issue
-    : enrichIssueEvidence(issue));
+  const reportIssues = issues.map((issue) => {
+    const enrichedIssue = issue.confidence && issue.category && issue.findingType
+      ? issue
+      : enrichIssueEvidence(issue);
+
+    return enrichedIssue.remediation
+      ? enrichedIssue
+      : {
+        ...enrichedIssue,
+        remediation: getRemediationHint(
+          enrichedIssue.ruleId,
+          enrichedIssue.wcagCriteria,
+          enrichedIssue.framework,
+          { helpUrl: enrichedIssue.helpUrl }
+        )
+      };
+  });
 
   const report = {
     generatedAt: new Date().toISOString(),
@@ -286,9 +301,13 @@ function formatRemediation(issue: DedupedIssue): string {
     .map((url) => `<${url}>`)
     .join(", ");
   const example = formatFrameworkExample(issue);
+  const steps = issue.remediation.howToFix
+    .map((step, index) => `\n  - Step ${index + 1}: ${step}`)
+    .join("");
 
   return [
     `\n  - Fix: ${issue.remediation.summary}`,
+    steps,
     docs ? `\n  - Docs: ${docs}` : "",
     example
   ].join("");

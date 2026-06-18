@@ -92,6 +92,7 @@ export async function runAxePlaywrightAdapter(
               tags: violation.tags,
               selector: node.target.join(" "),
               contrast: extractContrastEvidence(violation.id, node),
+              helpUrl: violation.helpUrl,
               message: violation.help,
               url
             });

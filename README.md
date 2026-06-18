@@ -134,6 +134,11 @@ Each finding is labeled as a `WCAG violation`, `best practice`, or
 causes when the same rule and component state appear across routes. This grouping is
 heuristic: per-page evidence remains available for review.
 
+Every finding includes a deterministic `How to fix` recommendation. Known rules
+provide specific steps, official guidance links, and framework examples when
+available. Unknown rules still receive safe review steps instead of an empty
+recommendation; axe findings also preserve their rule-specific help link.
+
 | File | Use it for | Commit it? |
 |---|---|---|
 | `reports/a11y-comment.md` | Human review and PR comments | Usually no |

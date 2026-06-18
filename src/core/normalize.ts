@@ -20,7 +20,9 @@ export function normalizeIssue(issue: Issue): NormalizedIssue {
     confidenceReason: issue.confidenceReason,
     findingType: issue.findingType,
     category: issue.category,
-    remediation: issue.remediation || getRemediationHint(ruleId, wcagCriteria, framework),
+    remediation: issue.remediation || getRemediationHint(ruleId, wcagCriteria, framework, {
+      helpUrl: issue.helpUrl
+    }),
     severity: issue.severity,
     impact: issue.impact,
     selector: issue.selector,
@@ -33,6 +35,7 @@ export function normalizeIssue(issue: Issue): NormalizedIssue {
     screenshot: issue.screenshot,
     elementBounds: issue.elementBounds,
     contrast: issue.contrast,
+    helpUrl: issue.helpUrl,
     message: issue.message || "Accessibility issue detected."
   };
 }

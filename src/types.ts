@@ -204,6 +204,7 @@ export interface Issue {
   screenshot?: string;
   elementBounds?: ElementBounds;
   contrast?: ContrastEvidence;
+  helpUrl?: string;
   message?: string;
   remediation?: RemediationHint;
 }
@@ -230,6 +231,7 @@ export interface NormalizedIssue extends Required<Pick<Issue, "source" | "framew
   screenshot?: string;
   elementBounds?: ElementBounds;
   contrast?: ContrastEvidence;
+  helpUrl?: string;
 }
 
 export interface TriagedIssue extends NormalizedIssue {

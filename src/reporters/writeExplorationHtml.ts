@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { enrichIssueEvidence } from "../core/classification.js";
 import { formatReportDateUtc } from "../core/reportDate.js";
+import { getRemediationHint } from "../core/remediation.js";
 import { summarizeRootCauses } from "../core/rootCauses.js";
 import type { DedupedIssue, ExplorationGraph, ExplorationState, RootCauseGroup, Severity } from "../types.js";
 
@@ -458,6 +459,39 @@ export function renderExplorationHtml(
       background: #e7eaf0;
     }
 
+    .remediation {
+      background: #f4fbf7;
+      border-left: 3px solid var(--ok);
+      border-top: 0;
+      margin-top: 8px;
+      padding: 9px 10px;
+    }
+
+    .remediation-body {
+      display: grid;
+      gap: 7px;
+      padding-top: 7px;
+    }
+
+    .remediation ol {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .remediation pre {
+      background: #e8f4ed;
+      margin: 0;
+      overflow-x: auto;
+      padding: 8px;
+      white-space: pre-wrap;
+    }
+
+    .remediation-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 12px;
+    }
+
     details {
       border-top: 1px solid var(--line);
       padding-top: 10px;
@@ -827,6 +861,7 @@ function renderIssues(issues: DedupedIssue[]): string {
       <div>${escapeHtml(issue.message)}</div>
       ${issue.selector ? `<div class="url">${escapeHtml(issue.selector)}</div>` : ""}
       ${renderContrastEvidence(issue)}
+      ${renderRemediation(issue)}
     </li>`;
   const visibleIssues = issues.slice(0, 8);
   const remainingIssues = issues.slice(8);
@@ -838,6 +873,48 @@ function renderIssues(issues: DedupedIssue[]): string {
     <summary>Show ${remainingIssues.length} more finding${remainingIssues.length === 1 ? "" : "s"}</summary>
     <ul class="issue-list">${remainingIssues.map(renderIssue).join("\n")}</ul>
   </details>` : ""}`;
+}
+
+function renderRemediation(issue: DedupedIssue): string {
+  const remediation = issue.remediation || getRemediationHint(
+    issue.ruleId,
+    issue.wcagCriteria,
+    issue.framework,
+    { helpUrl: issue.helpUrl }
+  );
+  const steps = remediation.howToFix.length > 0
+    ? `<ol>${remediation.howToFix.map((step) => `<li>${escapeHtml(step)}</li>`).join("\n")}</ol>`
+    : "";
+  const examples = Object.entries(remediation.frameworkExamples || {});
+  const example = examples.length > 0
+    ? `<div><strong>${escapeHtml(examples[0][0])} example</strong></div>
+      <pre><code>${escapeHtml(examples[0][1])}</code></pre>`
+    : "";
+  const docs = remediation.docs
+    .map(safeExternalUrl)
+    .filter((url): url is string => Boolean(url));
+  const links = docs.length > 0
+    ? `<div class="remediation-links">${docs.slice(0, 3).map((url, index) => `<a href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">Guidance ${index + 1}</a>`).join("\n")}</div>`
+    : "";
+
+  return `<details class="remediation" open>
+    <summary>How to fix</summary>
+    <div class="remediation-body">
+      <div>${escapeHtml(remediation.summary)}</div>
+      ${steps}
+      ${example}
+      ${links}
+    </div>
+  </details>`;
+}
+
+function safeExternalUrl(value: string): string | undefined {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function renderContrastEvidence(issue: DedupedIssue): string {

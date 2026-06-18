@@ -160,6 +160,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.equal(json.issues[0].confidenceScore, 95);
   assert.equal(json.issues[0].category, "aria");
   assert.equal(json.issues[0].remediation.summary, "Give every button an accessible name.");
+  assert.match(markdown, /Step 1: Use visible button text when possible/);
   assert.match(csv, /duplicateRate,0\.5/);
   assert.match(csv, /standard\.id,ada-title-ii/);
   assert.match(csv, /standard\.requiresManualReview,true/);
@@ -282,6 +283,26 @@ test("writeReports summarizes rules without WCAG mappings", async () => {
   assert.match(markdown, /Unmapped findings \| 1/);
   assert.match(markdown, /type: best practice/);
   assert.match(markdown, /@angular-eslint\/template\/button-has-type: 1/);
+});
+
+test("writeReports adds fallback remediation to unknown findings", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-remediation-"));
+  const report = await writeReports(outputDir, [{
+    source: "axe",
+    severity: "warning",
+    ruleId: "custom-unmapped-rule",
+    wcag: [],
+    wcagCriteria: [],
+    tags: [],
+    selector: "#custom-control",
+    helpUrl: "https://example.com/custom-rule",
+    message: "Review this custom accessibility condition"
+  }], { framework: "unknown" });
+  const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+
+  assert.match(report.issues[0].remediation?.summary || "", /custom-unmapped-rule/);
+  assert.deepEqual(report.issues[0].remediation?.docs, ["https://example.com/custom-rule"]);
+  assert.match(markdown, /Step 1: Inspect the reported selector or source location/);
 });
 
 test("writeReports includes baseline comparison metadata", async () => {

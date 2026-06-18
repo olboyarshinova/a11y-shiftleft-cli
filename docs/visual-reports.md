@@ -32,6 +32,11 @@ causes, such as one shared active-navigation style failing on several routes.
 Root-cause grouping is heuristic and does not remove the evidence recorded for
 each page or state.
 
+Every finding in `exploration.html` includes an expanded `How to fix` section
+with concrete steps, rule documentation, and a React, Vue, or Angular example
+when one is available. Generic fallback guidance remains visible for unknown or
+custom rules so no finding ends without a next action.
+
 For `color-contrast` findings, the HTML report also shows the measured ratio,
 required ratio, foreground and background swatches, font metadata, and options
 for minimally changing the text color while preserving the current background.

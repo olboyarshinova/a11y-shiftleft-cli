@@ -134,6 +134,12 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /Open this state's annotated evidence/);
   assert.match(html, /button-name/);
   assert.match(html, /Buttons must have discernible text/);
+  assert.match(html, /<summary>How to fix<\/summary>/);
+  assert.match(html, /Give every button an accessible name/);
+  assert.match(html, /Use visible button text when possible/);
+  assert.match(html, /react example/);
+  assert.match(html, /aria-label/);
+  assert.match(html, /Guidance 1/);
   assert.match(html, /Triage Overview/);
   assert.match(html, /Most Affected States/);
   assert.match(html, /Top Rules/);
@@ -232,6 +238,22 @@ test("renderExplorationHtml labels best practices separately from WCAG findings"
   assert.match(html, /best practice<\/span>/);
   assert.match(html, /Likely Root Causes/);
   assert.doesNotMatch(html, /WCAG 1\.3\.1/);
+});
+
+test("renderExplorationHtml provides fallback guidance for unknown rules", () => {
+  const html = renderExplorationHtml(graph, [{
+    ...issues[0],
+    ruleId: "custom-unmapped-rule",
+    wcag: [],
+    wcagCriteria: [],
+    helpUrl: "https://example.com/custom-rule",
+    remediation: undefined,
+    message: "Review this custom accessibility condition"
+  }]);
+
+  assert.match(html, /resolve the custom-unmapped-rule accessibility rule/);
+  assert.match(html, /Inspect the reported selector or source location/);
+  assert.match(html, /href="https:\/\/example\.com\/custom-rule"/);
 });
 
 test("renderExplorationHtml keeps overflow report data in collapsed sections", () => {

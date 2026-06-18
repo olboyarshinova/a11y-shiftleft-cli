@@ -616,6 +616,7 @@ async function scanState(
           tags: violation.tags,
           selector,
           contrast: extractContrastEvidence(violation.id, node),
+          helpUrl: violation.helpUrl,
           message: violation.help,
           url: page.url(),
           stateId: state.stateId,

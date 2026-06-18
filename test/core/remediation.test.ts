@@ -28,6 +28,25 @@ test("getRemediationHint falls back to mapped WCAG documentation", () => {
   assert.equal(hint?.docs[0].includes("contrast-minimum"), true);
 });
 
+test("getRemediationHint always returns guidance for unmapped rules", () => {
+  const hint = getRemediationHint("custom-unmapped-rule", [], "unknown", {
+    helpUrl: "https://dequeuniversity.com/rules/axe/4.11/custom-unmapped-rule"
+  });
+
+  assert.match(hint.summary, /custom-unmapped-rule/);
+  assert.equal(hint.howToFix.length, 3);
+  assert.deepEqual(hint.docs, [
+    "https://dequeuniversity.com/rules/axe/4.11/custom-unmapped-rule"
+  ]);
+});
+
+test("getRemediationHint explains how to recover adapter failures", () => {
+  const hint = getRemediationHint("adapter/axe-scan-error");
+
+  assert.match(hint.summary, /scanner setup/);
+  assert.match(hint.howToFix[0], /target URL/);
+});
+
 test("normalizeIssue attaches remediation hints", () => {
   const issue = normalizeIssue({
     source: "axe",
@@ -40,6 +59,21 @@ test("normalizeIssue attaches remediation hints", () => {
   assert.deepEqual(issue.tags, ["wcag412", "cat.name-role-value"]);
   assert.equal(issue.remediation?.summary.includes("accessible name"), true);
   assert.equal(issue.remediation?.frameworkExamples?.react?.includes("aria-label"), true);
+});
+
+test("normalizeIssue preserves axe help URLs in remediation guidance", () => {
+  const helpUrl = "https://dequeuniversity.com/rules/axe/4.11/button-name";
+  const issue = normalizeIssue({
+    source: "axe",
+    framework: "react",
+    ruleId: "button-name",
+    tags: ["wcag412"],
+    helpUrl,
+    message: "Buttons must have discernible text"
+  });
+
+  assert.equal(issue.helpUrl, helpUrl);
+  assert.equal(issue.remediation?.docs[0], helpUrl);
 });
 
 test("normalizeIssue preserves visual element bounds", () => {

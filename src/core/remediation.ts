@@ -452,17 +452,69 @@ const RULE_HINTS: Record<string, RemediationHint> = {
 export function getRemediationHint(
   ruleId: string,
   wcagCriteria: WcagCriterion[] = [],
-  framework: Framework | string = "unknown"
-): RemediationHint | undefined {
+  framework: Framework | string = "unknown",
+  options: {
+    helpUrl?: string;
+  } = {}
+): RemediationHint {
   const directHint = findRuleHint(ruleId);
-  if (directHint) return filterFrameworkExamples(directHint, framework);
+  if (directHint) {
+    return withAdditionalDocs(
+      filterFrameworkExamples(directHint, framework),
+      options.helpUrl
+    );
+  }
 
-  if (wcagCriteria.length === 0) return undefined;
+  if (wcagCriteria.length === 0) {
+    return createGenericHint(ruleId, options);
+  }
 
   return {
     summary: "Review the mapped WCAG success criteria and fix the underlying accessibility requirement.",
     howToFix: wcagCriteria.map((criterion) => `Address WCAG ${criterion.id} ${criterion.title}.`),
-    docs: unique(wcagCriteria.map((criterion) => criterion.url))
+    docs: unique([
+      ...(options.helpUrl ? [options.helpUrl] : []),
+      ...wcagCriteria.map((criterion) => criterion.url)
+    ])
+  };
+}
+
+function createGenericHint(
+  ruleId: string,
+  options: {
+    helpUrl?: string;
+  }
+): RemediationHint {
+  if (ruleId.startsWith("adapter/")) {
+    return {
+      summary: "Restore the scanner setup so the affected accessibility checks can run.",
+      howToFix: [
+        "Read the adapter error message and verify the target URL, installed dependencies, and project configuration.",
+        "Run the command again with --verbose and confirm that the adapter completes before relying on the report."
+      ],
+      docs: options.helpUrl ? [options.helpUrl] : []
+    };
+  }
+
+  return {
+    summary: `Review the reported target and resolve the ${ruleId} accessibility rule.`,
+    howToFix: [
+      "Inspect the reported selector or source location and compare it with the rule guidance.",
+      "Prefer native semantic HTML; add ARIA only when native semantics cannot express the required behavior.",
+      "Rerun the automated check, then verify the affected interaction manually with keyboard and assistive technology where relevant."
+    ],
+    docs: options.helpUrl
+      ? [options.helpUrl]
+      : ["https://www.w3.org/WAI/test-evaluate/preliminary/"]
+  };
+}
+
+function withAdditionalDocs(hint: RemediationHint, helpUrl?: string): RemediationHint {
+  if (!helpUrl) return hint;
+
+  return {
+    ...hint,
+    docs: unique([helpUrl, ...hint.docs])
   };
 }
 

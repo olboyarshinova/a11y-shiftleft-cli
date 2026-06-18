@@ -4,6 +4,11 @@
 
 ### Changed
 
+- Every finding now receives deterministic remediation guidance. Visual and
+  Markdown reports show concrete steps, documentation links, and available
+  framework examples; unknown rules receive conservative fallback guidance.
+- Dynamic axe adapters preserve each violation's rule-specific `helpUrl` in
+  JSON and use it in remediation links.
 - Visual exploration now captures full-page screenshots for every state by
   default and fits complete images into report previews. Use
   `--compact-screenshots` to keep viewport images for clean states.
