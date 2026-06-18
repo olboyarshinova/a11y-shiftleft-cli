@@ -86,11 +86,13 @@ export function registerKeyboardCommand(program: Command): void {
     });
 }
 
-export function keyboardSummary(audit: Pick<Awaited<ReturnType<typeof runKeyboardPlaywrightAdapter>>, "focusableCount" | "steps" | "completedCycle" | "maxTabs">): {
+export function keyboardSummary(audit: Pick<Awaited<ReturnType<typeof runKeyboardPlaywrightAdapter>>, "focusableCount" | "steps" | "backwardSteps" | "completedCycle" | "reverseOrderMatches" | "maxTabs">): {
   focusableCount: number;
   focusSteps: number;
   uniqueFocusTargets: number;
   completedCycle: boolean;
+  reverseFocusSteps: number;
+  reverseOrderMatches: boolean | null;
   maxTabs: number;
 } {
   return {
@@ -98,6 +100,8 @@ export function keyboardSummary(audit: Pick<Awaited<ReturnType<typeof runKeyboar
     focusSteps: audit.steps.length,
     uniqueFocusTargets: new Set(audit.steps.map((step) => step.selector)).size,
     completedCycle: audit.completedCycle,
+    reverseFocusSteps: audit.backwardSteps.length,
+    reverseOrderMatches: audit.reverseOrderMatches,
     maxTabs: audit.maxTabs
   };
 }
@@ -107,6 +111,7 @@ function formatKeyboardSummary(outputDir: string, audit: Awaited<ReturnType<type
     "a11y-shiftleft keyboard",
     `Focus path: ${new Set(audit.steps.map((step) => step.selector)).size}/${audit.focusableCount} controls (${audit.steps.length} steps)`,
     `Completed cycle: ${audit.completedCycle ? "yes" : "no"}`,
+    `Reverse order: ${audit.reverseOrderMatches === null ? "not tested" : audit.reverseOrderMatches ? "matches" : "mismatch"} (${audit.backwardSteps.length} steps)`,
     `Findings: ${summary.total} | critical ${summary.critical} | warning ${summary.warning}`,
     `Reports: ${outputDir}/keyboard-path.md, ${outputDir}/keyboard-report.json, ${outputDir}/a11y-comment.md`
   ].join("\n");

@@ -50,6 +50,8 @@ const RULE_TO_WCAG: Record<string, string[]> = {
   "keyboard-focus-stuck": ["2.1.2"],
   "keyboard-focus-cycle": ["2.1.2", "2.4.3"],
   "keyboard-positive-tabindex": ["2.4.3"],
+  "keyboard-reverse-order-mismatch": ["2.4.3"],
+  "keyboard-reverse-focus-not-reached": ["2.1.1", "2.4.3"],
   "keyboard-focus-indicator-missing": ["2.4.7"],
   "keyboard-focus-not-visible": ["2.4.7", "2.4.11"],
   "keyboard-focus-obscured": ["2.4.11"],

@@ -85,6 +85,7 @@ export interface ElementBounds {
 
 export interface KeyboardFocusStep {
   index: number;
+  direction: "forward" | "backward";
   selector: string;
   tagName: string;
   role: string;
@@ -105,6 +106,8 @@ export interface KeyboardAuditResult {
   focusableCount: number;
   completedCycle: boolean;
   steps: KeyboardFocusStep[];
+  backwardSteps: KeyboardFocusStep[];
+  reverseOrderMatches: boolean | null;
   issues: Issue[];
 }
 

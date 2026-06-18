@@ -37,7 +37,7 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
 - 23 of 55 A/AA criteria have at least one installed axe-core signal.
 - All 23 A/AA axe signals now resolve to criterion metadata in the project
   catalog; 12 mappings were restored after the 2026-06-18 catalog audit.
-- Focus Order now has static signals, a bounded forward-Tab path, and a manual
+- Focus Order now has static signals, bounded Tab and Shift+Tab paths, and a manual
   checklist; complete task semantics and reverse traversal remain manual.
 - 33 of 55 A/AA criteria have either an automated signal or an explicitly
   mapped `--semi-auto` review step.
@@ -98,7 +98,7 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
 | 2.3.3 Animation from Interactions | AAA | Gap | Outside current target |
 | 2.4.1 Bypass Blocks | A | Automated + mapped; manual checklist | axe `bypass` plus landmark and skip-link review |
 | 2.4.2 Page Titled | A | Automated + mapped | axe title rule plus duplicate and placeholder title analysis across URLs |
-| 2.4.3 Focus Order | A | Partial automated + mapped; manual checklist | Angular tabindex/focus lint plus a recorded bounded forward-Tab path; logical task order still requires review |
+| 2.4.3 Focus Order | A | Partial automated + mapped; manual checklist | Angular tabindex/focus lint plus recorded bounded Tab and Shift+Tab paths; logical task order still requires review |
 | 2.4.4 Link Purpose (In Context) | A | Automated + mapped | axe link and area accessible-name rules cover common failures |
 | 2.4.5 Multiple Ways | AA | Gap | No sitemap, search, navigation, or related-page comparison |
 | 2.4.6 Headings and Labels | AA | Manual checklist | Structural signals exist, but descriptive quality needs explicit review |

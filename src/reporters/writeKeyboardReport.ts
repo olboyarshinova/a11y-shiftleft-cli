@@ -11,9 +11,8 @@ export async function writeKeyboardReport(outputDir: string, result: KeyboardAud
 }
 
 export function toKeyboardMarkdown(result: KeyboardAuditResult): string {
-  const rows = result.steps.length > 0
-    ? result.steps.map((step) => `| ${step.index} | ${escapeCell(step.selector)} | ${escapeCell(step.role || step.tagName)} | ${escapeCell(step.accessibleName || "none")} | ${yesNo(step.visible)} | ${yesNo(step.indicatorVisible)} | ${yesNo(step.obscured)} |`).join("\n")
-    : "| - | No focus path recorded | - | - | - | - | - |";
+  const forwardRows = focusRows(result.steps, "No forward focus path recorded");
+  const backwardRows = focusRows(result.backwardSteps, "Reverse path was not run because the forward path was incomplete");
 
   return `# Keyboard Focus Path
 
@@ -26,6 +25,7 @@ Generated: ${result.generatedAt}
 | Unique focus steps recorded | ${new Set(result.steps.map((step) => step.selector)).size} |
 | Tab limit | ${result.maxTabs} |
 | Completed focus cycle | ${result.completedCycle ? "yes" : "no"} |
+| Reverse order matches | ${result.reverseOrderMatches === null ? "not tested" : yesNo(result.reverseOrderMatches)} |
 | Keyboard findings | ${result.issues.length} |
 | Duration | ${result.durationMs}ms |
 
@@ -33,15 +33,26 @@ Generated: ${result.generatedAt}
 
 | Step | Selector | Role | Accessible name | Visible | Indicator | Obscured |
 |---:|---|---|---|---:|---:|---:|
-${rows}
+${forwardRows}
+
+## Reverse Focus Path
+
+| Step | Selector | Role | Accessible name | Visible | Indicator | Obscured |
+|---:|---|---|---|---:|---:|---:|
+${backwardRows}
 
 ## Interpretation
 
-This is a bounded automated Tab traversal. It can detect common focus problems,
+This is a bounded automated Tab and Shift+Tab traversal. It can detect common focus problems,
 but it does not prove that every task or complex widget is keyboard accessible.
 Confirm activation keys, modal escape behavior, logical order, and custom focus
 treatments manually.
 `;
+}
+
+function focusRows(steps: KeyboardAuditResult["steps"], fallback: string): string {
+  if (steps.length === 0) return `| - | ${fallback} | - | - | - | - | - |`;
+  return steps.map((step) => `| ${step.index} | ${escapeCell(step.selector)} | ${escapeCell(step.role || step.tagName)} | ${escapeCell(step.accessibleName || "none")} | ${yesNo(step.visible)} | ${yesNo(step.indicatorVisible)} | ${yesNo(step.obscured)} |`).join("\n");
 }
 
 function escapeCell(value: string): string {

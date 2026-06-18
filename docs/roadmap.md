@@ -25,11 +25,11 @@ remain suitable for reproducible empirical validation.
 ### 0.7.x Keyboard Audit Mode
 
 - Stabilize the initial `a11y-shiftleft keyboard --url <url>` workflow, which
-  now performs a bounded forward-Tab traversal and writes shared findings plus
-  dedicated Markdown and JSON focus-path artifacts.
-- Extend the initial focus path with `Shift+Tab` symmetry and page-state
-  snapshots while preserving the existing selector, accessible name, role,
-  visibility, bounding-box, focus-indicator, and obscuration evidence.
+  now performs bounded forward-Tab and reverse Shift+Tab traversal and writes
+  shared findings plus dedicated Markdown and JSON focus-path artifacts.
+- Add page-state snapshots to the bidirectional focus path while preserving the
+  existing selector, accessible name, role, visibility, bounding-box,
+  focus-indicator, and obscuration evidence.
 - Detect common keyboard blockers: invisible focus, focus loss to `body`,
   repeated focus loops, unreachable interactive controls, positive tabindex
   risks, and focus traps that do not expose an escape path.

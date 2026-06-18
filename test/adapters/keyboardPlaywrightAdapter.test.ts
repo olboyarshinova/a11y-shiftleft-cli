@@ -1,11 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { issuesForFocusStep } from "../../dist/adapters/keyboardPlaywrightAdapter.js";
+import { compareFocusPaths, issuesForFocusStep } from "../../dist/adapters/keyboardPlaywrightAdapter.js";
 import type { KeyboardFocusStep } from "../../dist/types.js";
 
 function focusStep(overrides: Partial<KeyboardFocusStep> = {}): KeyboardFocusStep {
   return {
     index: 1,
+    direction: "forward",
     selector: "#save",
     tagName: "button",
     role: "button",
@@ -40,4 +41,10 @@ test("issuesForFocusStep reports invisible and obscured focus without duplicatio
 
 test("issuesForFocusStep keeps a visible focus treatment clean", () => {
   assert.deepEqual(issuesForFocusStep(focusStep(), "unknown", "http://localhost:3000"), []);
+});
+
+test("compareFocusPaths requires an exact reverse traversal", () => {
+  assert.equal(compareFocusPaths(["#first", "#second", "#third"], ["#third", "#second", "#first"]), true);
+  assert.equal(compareFocusPaths(["#first", "#second", "#third"], ["#third", "#first"]), false);
+  assert.equal(compareFocusPaths(["#first", "#second"], ["#first", "#second"]), false);
 });

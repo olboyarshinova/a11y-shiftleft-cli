@@ -7,6 +7,8 @@ test("keyboardSummary reports bounded traversal coverage", () => {
     focusableCount: 3,
     maxTabs: 10,
     completedCycle: true,
+    reverseOrderMatches: true,
+    backwardSteps: [{ selector: "#two" }, { selector: "#one" }] as never,
     steps: [
       { selector: "#one" },
       { selector: "#two" },
@@ -19,6 +21,8 @@ test("keyboardSummary reports bounded traversal coverage", () => {
     focusSteps: 3,
     uniqueFocusTargets: 2,
     completedCycle: true,
+    reverseFocusSteps: 2,
+    reverseOrderMatches: true,
     maxTabs: 10
   });
 });

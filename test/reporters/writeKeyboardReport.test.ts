@@ -13,9 +13,24 @@ const result: KeyboardAuditResult = {
   maxTabs: 40,
   focusableCount: 2,
   completedCycle: true,
+  reverseOrderMatches: true,
   issues: [],
   steps: [{
     index: 1,
+    direction: "forward",
+    selector: "#save",
+    tagName: "button",
+    role: "button",
+    accessibleName: "Save | continue",
+    tabIndex: 0,
+    visible: true,
+    focusVisible: true,
+    indicatorVisible: true,
+    obscured: false
+  }],
+  backwardSteps: [{
+    index: 1,
+    direction: "backward",
     selector: "#save",
     tagName: "button",
     role: "button",
@@ -34,7 +49,9 @@ test("toKeyboardMarkdown renders a readable focus path", () => {
   assert.match(markdown, /Keyboard Focus Path/);
   assert.match(markdown, /Save \\| continue/);
   assert.match(markdown, /Completed focus cycle \| yes/);
-  assert.match(markdown, /bounded automated Tab traversal/);
+  assert.match(markdown, /Reverse order matches \| yes/);
+  assert.match(markdown, /Reverse Focus Path/);
+  assert.match(markdown, /bounded automated Tab and Shift\+Tab traversal/);
 });
 
 test("writeKeyboardReport writes JSON and Markdown artifacts", async () => {

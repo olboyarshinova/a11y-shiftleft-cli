@@ -9,7 +9,7 @@ export interface KeyboardAuditOptions {
   onProgress?: (step: KeyboardFocusStep) => void;
 }
 
-interface PageKeyboardSnapshot extends Omit<KeyboardFocusStep, "index"> {}
+type PageKeyboardSnapshot = Omit<KeyboardFocusStep, "index" | "direction">;
 
 export async function runKeyboardPlaywrightAdapter(options: KeyboardAuditOptions): Promise<KeyboardAuditResult> {
   const startedAt = Date.now();
@@ -17,8 +17,10 @@ export async function runKeyboardPlaywrightAdapter(options: KeyboardAuditOptions
   const browser = await chromium.launch();
   const issues: Issue[] = [];
   const steps: KeyboardFocusStep[] = [];
+  const backwardSteps: KeyboardFocusStep[] = [];
   let focusableCount = 0;
   let completedCycle = false;
+  let reverseOrderMatches: boolean | null = null;
 
   try {
     const context = await browser.newContext();
@@ -47,7 +49,7 @@ export async function runKeyboardPlaywrightAdapter(options: KeyboardAuditOptions
       const snapshot = await collectFocusedElement(page);
       if (!snapshot || snapshot.tagName === "body") continue;
 
-      const step = { ...snapshot, index };
+      const step = { ...snapshot, index, direction: "forward" as const };
       steps.push(step);
       options.onProgress?.(step);
 
@@ -87,6 +89,50 @@ export async function runKeyboardPlaywrightAdapter(options: KeyboardAuditOptions
       issues.push(...issuesForFocusStep(step, options.framework, options.url));
     }
 
+    const forwardOrder = uniqueSelectors(steps);
+    if (completedCycle && forwardOrder.length === focusableCount && forwardOrder.length > 0) {
+      const firstSelector = forwardOrder[0];
+
+      for (let index = 1; index <= maxTabs; index += 1) {
+        await page.keyboard.press("Shift+Tab");
+        const snapshot = await collectFocusedElement(page);
+        if (!snapshot || snapshot.tagName === "body") continue;
+
+        const step = { ...snapshot, index, direction: "backward" as const };
+        backwardSteps.push(step);
+        options.onProgress?.(step);
+        issues.push(...issuesForFocusStep(step, options.framework, options.url));
+
+        if (snapshot.selector === firstSelector) break;
+        if (backwardSteps.slice(0, -1).some((item) => item.selector === snapshot.selector)) break;
+      }
+
+      const backwardOrder = uniqueSelectors(backwardSteps);
+      reverseOrderMatches = compareFocusPaths(forwardOrder, backwardOrder);
+
+      if (backwardOrder.length === 0) {
+        issues.push(createKeyboardIssue({
+          framework: options.framework,
+          url: options.url,
+          ruleId: "keyboard-reverse-focus-not-reached",
+          selector: firstSelector,
+          severity: "critical",
+          message: "Shift+Tab did not move focus backward after a complete forward focus cycle.",
+          wcag: ["2.1.1", "2.4.3"]
+        }));
+      } else if (!reverseOrderMatches) {
+        issues.push(createKeyboardIssue({
+          framework: options.framework,
+          url: options.url,
+          ruleId: "keyboard-reverse-order-mismatch",
+          selector: backwardOrder[0],
+          severity: "warning",
+          message: "The Shift+Tab path does not mirror the completed forward Tab order; review focus order and one-way traps.",
+          wcag: ["2.4.3"]
+        }));
+      }
+    }
+
     if (focusableCount > 0 && steps.length === 0) {
       issues.push(createKeyboardIssue({
         framework: options.framework,
@@ -110,8 +156,16 @@ export async function runKeyboardPlaywrightAdapter(options: KeyboardAuditOptions
     focusableCount,
     completedCycle,
     steps,
+    backwardSteps,
+    reverseOrderMatches,
     issues
   };
+}
+
+export function compareFocusPaths(forwardOrder: string[], backwardOrder: string[]): boolean {
+  if (forwardOrder.length === 0 || backwardOrder.length !== forwardOrder.length) return false;
+  const expected = [...forwardOrder].reverse();
+  return expected.every((selector, index) => selector === backwardOrder[index]);
 }
 
 export function issuesForFocusStep(step: KeyboardFocusStep, framework: Framework, url: string): Issue[] {
@@ -293,4 +347,8 @@ async function collectFocusedElement(page: Page): Promise<PageKeyboardSnapshot |
 
 function normalizeMaxTabs(value = 40): number {
   return Math.max(1, Math.min(200, Math.trunc(value)));
+}
+
+function uniqueSelectors(steps: KeyboardFocusStep[]): string[] {
+  return [...new Set(steps.map((step) => step.selector))];
 }

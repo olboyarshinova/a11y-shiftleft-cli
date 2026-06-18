@@ -485,11 +485,13 @@ Run a bounded keyboard-only traversal on a page:
 npx a11y-shiftleft keyboard --url $APP_URL --out reports/keyboard
 ```
 
-The runner presses `Tab` without clicking controls or submitting forms. It
+The runner presses `Tab` and, after a complete forward cycle, `Shift+Tab`
+without clicking controls or submitting forms. It
 records selectors, roles, accessible names, visibility, focus indicators, and
 obscuration for up to 40 steps. It reports common positive `tabindex`, stuck or
-incomplete focus cycles, missing visible focus, and focus hidden behind other
-content, with mappings to WCAG 2.1.1, 2.1.2, 2.4.3, 2.4.7, and 2.4.11.
+incomplete focus cycles, forward/reverse order mismatches, missing visible
+focus, and focus hidden behind other content, with mappings to WCAG 2.1.1,
+2.1.2, 2.4.3, 2.4.7, and 2.4.11.
 
 Use `--max-tabs 80` for a larger page. The generated `keyboard-path.md` and
 `keyboard-report.json` are accompanied by the normal Markdown, JSON, and CSV

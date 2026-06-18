@@ -7,6 +7,8 @@
 - Added an initial bounded `keyboard` command that records the rendered Tab
   path, detects common focus-order, visibility, indicator, obscuration, and trap
   risks, and writes dedicated Markdown/JSON evidence alongside normal reports.
+- Added bounded Shift+Tab traversal after complete forward cycles, including
+  reverse-order evidence and WCAG 2.4.3 findings for asymmetric focus paths.
 - Added WCAG metadata for No Keyboard Trap, Focus Visible, and Focus Not
   Obscured (Minimum) so keyboard findings use the shared report pipeline.
 - Added a dedicated manual logo review covering purpose, alternative text,

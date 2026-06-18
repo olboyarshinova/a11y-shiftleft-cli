@@ -1,6 +1,6 @@
 # Keyboard Focus Audit
 
-The `keyboard` command records a bounded Tab path through one rendered page and
+The `keyboard` command records bounded Tab and Shift+Tab paths through one rendered page and
 sends detected problems through the same WCAG, severity, confidence,
 deduplication, and remediation pipeline as other checks.
 
@@ -35,6 +35,7 @@ npx a11y-shiftleft keyboard \
 - Positive `tabindex` values that can override logical source order.
 - Focus that does not advance when `Tab` is pressed.
 - A repeated focus cycle before all detected controls are reached.
+- A reverse Shift+Tab order that does not mirror a complete forward Tab cycle.
 - Focused elements outside the visible viewport or hidden from rendering.
 - Focused elements obscured at their center point by other content.
 - Missing outline or box-shadow while `:focus-visible` is active. Treat this as
@@ -43,7 +44,10 @@ npx a11y-shiftleft keyboard \
 
 ## Safety And Limits
 
-The initial runner only presses `Tab`. It does not click, submit forms, accept
+The initial runner only presses `Tab` and `Shift+Tab`. Reverse traversal runs
+only after the forward path reaches every detected control and completes a
+cycle, avoiding unsupported conclusions from partial scans. It does not click,
+submit forms, accept
 cookies, upload files, use camera or microphone controls, or activate payment,
 delete, and logout actions. It also does not yet validate Enter, Space, Escape,
 arrow-key widget behavior, modal focus restoration, or complete task flows.
