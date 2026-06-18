@@ -24,7 +24,26 @@ test("enrichIssueEvidence marks rendered axe WCAG findings as high confidence", 
   assert.equal(issue.confidence, "high");
   assert.equal(issue.confidenceScore, 95);
   assert.equal(issue.category, "aria");
+  assert.equal(issue.findingType, "wcag");
   assert.match(issue.confidenceReason, /rendered DOM/);
+});
+
+test("enrichIssueEvidence separates axe best practices from WCAG violations", () => {
+  const issue = enrichIssueEvidence({
+    source: "axe",
+    framework: "unknown",
+    ruleId: "heading-order",
+    wcag: [],
+    wcagCriteria: [],
+    tags: ["cat.semantics", "best-practice"],
+    selector: "h3",
+    message: "Heading levels should only increase by one"
+  });
+
+  assert.equal(issue.findingType, "best-practice");
+  assert.equal(issue.confidence, "medium");
+  assert.equal(issue.confidenceScore, 75);
+  assert.match(issue.confidenceReason, /best-practice rule/);
 });
 
 test("enrichIssueEvidence marks accessibility lint findings as medium confidence", () => {

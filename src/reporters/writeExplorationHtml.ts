@@ -1,7 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { enrichIssueEvidence } from "../core/classification.js";
 import { formatReportDateUtc } from "../core/reportDate.js";
-import type { DedupedIssue, ExplorationGraph, ExplorationState, Severity } from "../types.js";
+import { summarizeRootCauses } from "../core/rootCauses.js";
+import type { DedupedIssue, ExplorationGraph, ExplorationState, RootCauseGroup, Severity } from "../types.js";
 
 interface StateViewModel extends ExplorationState {
   issues: DedupedIssue[];
@@ -23,11 +25,16 @@ export function renderExplorationHtml(
   graph: ExplorationGraph,
   issues: DedupedIssue[]
 ): string {
+  const reportIssues = issues.map((issue) => issue.findingType
+    ? issue
+    : enrichIssueEvidence(issue));
   const states = graph.states.map((state) => ({
     ...state,
-    issues: issues.filter((issue) => issue.stateId === state.id)
+    issues: reportIssues.filter((issue) => issue.stateId === state.id)
   }));
-  const totals = summarizeIssues(issues);
+  const totals = summarizeIssues(reportIssues);
+  const findingTypes = countFindingTypes(reportIssues);
+  const rootCauseGroups = summarizeRootCauses(reportIssues);
 
   return `<!doctype html>
 <html lang="en">
@@ -535,10 +542,13 @@ export function renderExplorationHtml(
       ${metric("Critical", totals.critical, "critical")}
       ${metric("Warning", totals.warning, "warning")}
       ${metric("Info", totals.info, "info")}
+      ${metric("WCAG findings", findingTypes.wcag)}
+      ${metric("Best practices", findingTypes["best-practice"])}
+      ${metric("Likely root causes", rootCauseGroups.length)}
     </section>
 
     <section class="panel triage" aria-label="Triage overview">
-      ${renderTriageOverview(states, issues)}
+      ${renderTriageOverview(states, reportIssues, rootCauseGroups)}
     </section>
 
     <section class="panel states" aria-label="Checked states">
@@ -693,7 +703,11 @@ function formatBoundsStyle(bounds: NonNullable<DedupedIssue["elementBounds"]>): 
   ].join("; ");
 }
 
-function renderTriageOverview(states: StateViewModel[], issues: DedupedIssue[]): string {
+function renderTriageOverview(
+  states: StateViewModel[],
+  issues: DedupedIssue[],
+  rootCauseGroups: RootCauseGroup[]
+): string {
   return `<h2>Triage Overview</h2>
   <div class="triage-grid">
     <div>
@@ -704,7 +718,32 @@ function renderTriageOverview(states: StateViewModel[], issues: DedupedIssue[]):
       <h3>Top Rules</h3>
       ${renderTopRules(issues)}
     </div>
+    <div>
+      <h3>Likely Root Causes</h3>
+      ${renderRootCauseGroups(rootCauseGroups)}
+    </div>
   </div>`;
+}
+
+function renderRootCauseGroups(groups: RootCauseGroup[]): string {
+  if (groups.length === 0) {
+    return `<p class="muted">No root-cause candidates were generated.</p>`;
+  }
+
+  return `<ol class="triage-list">
+    ${groups.slice(0, 8).map((group) => `<li class="triage-item">
+      <div class="triage-title">
+        <code>${escapeHtml(group.ruleId)}</code>
+        <span class="badge">${group.occurrenceCount} occurrence${group.occurrenceCount === 1 ? "" : "s"}</span>
+      </div>
+      <div class="badges">
+        ${findingTypeBadge(group.findingType)}
+        <span class="badge">${group.affectedPages.length} page${group.affectedPages.length === 1 ? "" : "s"}</span>
+      </div>
+      <div class="url">${escapeHtml(group.targetPattern)}</div>
+    </li>`).join("\n")}
+  </ol>
+  <p class="muted">Groups are heuristic and keep individual page evidence below.</p>`;
 }
 
 function renderTopStates(states: StateViewModel[]): string {
@@ -758,6 +797,7 @@ function renderTopRules(issues: DedupedIssue[]): string {
         <span class="badge">score ${rule.severityScore}</span>
       </div>
       <div class="badges">
+        ${findingTypeBadge(rule.findingType)}
         ${rule.critical ? badge("critical", `${rule.critical} critical`) : ""}
         ${rule.warning ? badge("warning", `${rule.warning} warning`) : ""}
         ${rule.info ? badge("info", `${rule.info} info`) : ""}
@@ -775,7 +815,7 @@ function renderIssues(issues: DedupedIssue[]): string {
 
   return `<ul class="issue-list">
     ${issues.slice(0, 8).map((issue) => `<li class="issue">
-      <div>${severityBadge(issue.severity)} <code>${escapeHtml(issue.ruleId)}</code></div>
+      <div>${severityBadge(issue.severity)} ${findingTypeBadge(issue.findingType)} <code>${escapeHtml(issue.ruleId)}</code></div>
       <div>${escapeHtml(issue.message)}</div>
       ${issue.selector ? `<div class="url">${escapeHtml(issue.selector)}</div>` : ""}
       ${renderContrastEvidence(issue)}
@@ -894,6 +934,23 @@ function badge(kind: Severity | "ok", label: string): string {
   return `<span class="badge badge-${kind}">${escapeHtml(label)}</span>`;
 }
 
+function findingTypeBadge(type: DedupedIssue["findingType"]): string {
+  if (type === "wcag") return `<span class="badge">WCAG violation</span>`;
+  if (type === "best-practice") return `<span class="badge">best practice</span>`;
+  return `<span class="badge">unmapped review</span>`;
+}
+
+function countFindingTypes(issues: DedupedIssue[]): Record<DedupedIssue["findingType"], number> {
+  return issues.reduce<Record<DedupedIssue["findingType"], number>>((counts, issue) => {
+    counts[issue.findingType] += 1;
+    return counts;
+  }, {
+    wcag: 0,
+    "best-practice": 0,
+    unmapped: 0
+  });
+}
+
 function summarizeIssues(issues: DedupedIssue[]): Record<Severity, number> {
   return issues.reduce<Record<Severity, number>>((summary, issue) => {
     summary[issue.severity] += 1;
@@ -907,6 +964,7 @@ function summarizeIssues(issues: DedupedIssue[]): Record<Severity, number> {
 
 function summarizeRules(issues: DedupedIssue[]): Array<{
   ruleId: string;
+  findingType: DedupedIssue["findingType"];
   critical: number;
   warning: number;
   info: number;
@@ -916,6 +974,7 @@ function summarizeRules(issues: DedupedIssue[]): Array<{
 }> {
   const summaries = new Map<string, {
     ruleId: string;
+    findingType: DedupedIssue["findingType"];
     critical: number;
     warning: number;
     info: number;
@@ -927,6 +986,7 @@ function summarizeRules(issues: DedupedIssue[]): Array<{
   for (const issue of issues) {
     const summary = summaries.get(issue.ruleId) || {
       ruleId: issue.ruleId,
+      findingType: issue.findingType,
       critical: 0,
       warning: 0,
       info: 0,

@@ -26,6 +26,7 @@ test("mapRuleToWcag maps rule ids that contain known tokens", () => {
 
 test("mapRuleToWcag returns an empty list for unknown rules", () => {
   assert.deepEqual(mapRuleToWcag("custom-rule"), []);
+  assert.deepEqual(mapRuleToWcag("heading-order"), []);
 });
 
 test("getWcagCriteria returns title, level, principle, and documentation URL", () => {

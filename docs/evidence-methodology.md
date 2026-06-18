@@ -7,6 +7,30 @@ The project does not claim complete accessibility conformance. Automated scans
 are evidence for risk detection and remediation tracking, not a replacement for
 manual review.
 
+## Finding Types
+
+Reports separate three kinds of evidence:
+
+| Type | Meaning |
+|---|---|
+| `wcag` | The rule is mapped to one or more WCAG success criteria. |
+| `best-practice` | The scanner identifies useful guidance without claiming a WCAG failure. |
+| `unmapped` | The finding needs review because no supported standards mapping is available. |
+
+For example, axe maps `color-contrast` to WCAG 1.4.3. Axe tags
+`heading-order`, `region`, and `page-has-heading-one` as best-practice rules,
+so the reports must not present those findings as confirmed WCAG violations.
+
+## Likely Root Causes
+
+One shared component can produce the same finding on several routes. Reports
+group matching rule and target patterns into likely root causes while retaining
+every original occurrence. For example, five contrast findings on the same
+active-navigation class may represent one design-token fix across five pages.
+
+This grouping is deterministic but heuristic. It estimates remediation units;
+it does not prove that two DOM nodes share the same source implementation.
+
 ## Why Confidence Exists
 
 Severity and confidence answer different questions:

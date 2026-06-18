@@ -2,7 +2,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { enrichIssueEvidence } from "../core/classification.js";
 import { createManualChecklist, toManualChecklistMarkdown } from "../core/manualChecklist.js";
-import type { A11yReport, ComplianceEvidenceSummary, ComplianceStandardMetadata, DedupedIssue, PageSummary, ReportFormat, ReportMetrics, ReportSummary, Severity } from "../types.js";
+import { summarizeRootCauses } from "../core/rootCauses.js";
+import type { A11yReport, ComplianceEvidenceSummary, ComplianceStandardMetadata, DedupedIssue, PageSummary, ReportFormat, ReportMetrics, ReportSummary, RootCauseGroup, Severity } from "../types.js";
 
 interface WriteReportOptions {
   formats?: ReportFormat[];
@@ -19,7 +20,7 @@ export async function writeReports(
 ): Promise<A11yReport> {
   await fs.mkdir(outputDir, { recursive: true });
   const formats = new Set(options.formats || ["json", "csv", "markdown"]);
-  const reportIssues = issues.map((issue) => issue.confidence && issue.category
+  const reportIssues = issues.map((issue) => issue.confidence && issue.category && issue.findingType
     ? issue
     : enrichIssueEvidence(issue));
 
@@ -70,6 +71,7 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
   const rawCount = metrics.rawCount || issues.length;
   const duplicateCount = metrics.duplicateCount || 0;
   const byPage = summarizePages(issues);
+  const rootCauseGroups = summarizeRootCauses(issues);
 
   return {
     total: issues.length,
@@ -91,12 +93,15 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     bySource: countBy(issues, "source"),
     bySeverity: countBy(issues, "severity"),
     byConfidence: countBy(issues, "confidence"),
+    byFindingType: countBy(issues, "findingType"),
     byCategory: countBy(issues, "category"),
     byPour: countByPour(issues),
     byWcagLevel: countByWcagLevel(issues),
     byWcagVersion: countByWcagVersion(issues),
     byUnmappedRule: countByUnmappedRule(issues),
-    byPage
+    byPage,
+    rootCauseCount: rootCauseGroups.length,
+    rootCauseGroups
   };
 }
 
@@ -122,9 +127,10 @@ export function toMarkdown(report: A11yReport): string {
       const screenshot = issue.screenshot ? ` screenshot: ${issue.screenshot}` : "";
       const baseline = issue.baselineStatus ? ` baseline: ${issue.baselineStatus}` : "";
       const confidence = formatIssueConfidence(issue);
+      const findingType = ` type: ${formatFindingType(issue.findingType)}`;
       const category = issue.category ? ` category: ${issue.category}` : "";
       const contrast = formatContrastEvidence(issue);
-      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}${state}${screenshot}${baseline}${category}${confidence}: ${issue.message}${contrast}${remediation}`;
+      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}${state}${screenshot}${baseline}${findingType}${category}${confidence}: ${issue.message}${contrast}${remediation}`;
     })
     .join("\n");
 
@@ -146,12 +152,15 @@ ${formatBaselineRows(report.summary.baseline)}| Automated coverage | ${report.su
 ${formatIgnoreRows(report.summary.ignore)}| Manual review required | ${complianceEvidence.requiresManualReview ? "yes" : "no"} |
 ${formatRetentionRows(report.summary.retention)}| Retention evidence | ${formatRetentionEvidenceStatus(report.summary.retention)} |
 | WCAG-mapped findings | ${complianceEvidence.wcagMappedFindings} |
+| Best-practice findings | ${complianceEvidence.bestPracticeFindings || 0} |
 | Unmapped findings | ${complianceEvidence.unmappedFindings} |
+| Likely root causes | ${report.summary.rootCauseCount || 0} |
 | Affected pages | ${complianceEvidence.affectedPages} |
 | POUR | ${formatCountMap(report.summary.byPour)} |
 | WCAG levels | ${formatCountMap(report.summary.byWcagLevel)} |
 | WCAG versions | ${formatCountMap(report.summary.byWcagVersion)} |
 | Confidence | ${formatCountMap(report.summary.byConfidence)} |
+| Finding types | ${formatCountMap(report.summary.byFindingType)} |
 | Categories | ${formatCountMap(report.summary.byCategory)} |
 | Rules without WCAG mapping | ${formatCountMap(report.summary.byUnmappedRule)} |
 
@@ -159,13 +168,15 @@ ${formatPageSummary(report.summary.byPage || [])}
 
 ${formatComplianceEvidence(complianceEvidence)}
 
+${formatRootCauseGroups(report.summary.rootCauseGroups || [])}
+
 ${topIssues || "No accessibility findings detected."}
 
 ${formatDisclaimer(report.summary.standard)}
 `;
 }
 
-function countBy(items: DedupedIssue[], field: "source" | "severity" | "confidence" | "category"): Record<string, number> {
+function countBy(items: DedupedIssue[], field: "source" | "severity" | "confidence" | "findingType" | "category"): Record<string, number> {
   return items.reduce<Record<string, number>>((acc, item) => {
     const key = item[field] || "unknown";
     acc[key] = (acc[key] || 0) + 1;
@@ -242,7 +253,9 @@ function summarizeComplianceEvidence(
   pages: PageSummary[],
   standard: ComplianceStandardMetadata | undefined
 ): ComplianceEvidenceSummary {
-  const wcagMappedFindings = issues.filter((issue) => (issue.wcagCriteria || []).length > 0).length;
+  const wcagMappedFindings = issues.filter((issue) => issue.findingType === "wcag").length;
+  const bestPracticeFindings = issues.filter((issue) => issue.findingType === "best-practice").length;
+  const unmappedFindings = issues.length - wcagMappedFindings - bestPracticeFindings;
 
   return {
     standardId: standard?.id,
@@ -252,7 +265,8 @@ function summarizeComplianceEvidence(
     requiresManualReview: true,
     totalFindings: issues.length,
     wcagMappedFindings,
-    unmappedFindings: issues.length - wcagMappedFindings,
+    bestPracticeFindings,
+    unmappedFindings,
     affectedPages: pages.length,
     topAffectedPages: pages.slice(0, 3)
   };
@@ -394,6 +408,7 @@ function formatComplianceEvidence(evidence: ComplianceEvidenceSummary): string {
 |---|---:|
 | Total findings | ${evidence.totalFindings} |
 | WCAG-mapped findings | ${evidence.wcagMappedFindings} |
+| Best-practice findings | ${evidence.bestPracticeFindings || 0} |
 | Unmapped findings | ${evidence.unmappedFindings} |
 | Affected pages | ${evidence.affectedPages} |
 | Automated coverage | ${evidence.automatedCoverage} |
@@ -402,6 +417,31 @@ function formatComplianceEvidence(evidence: ComplianceEvidenceSummary): string {
 Top affected pages:
 
 ${topPages}`;
+}
+
+function formatRootCauseGroups(groups: RootCauseGroup[]): string {
+  if (groups.length === 0) {
+    return `### Likely Root Causes\n\nNo root-cause candidates were generated.`;
+  }
+
+  const rows = groups
+    .slice(0, 10)
+    .map((group) => `| \`${group.ruleId}\` | ${formatFindingType(group.findingType)} | ${group.severity} | ${group.occurrenceCount} | ${group.affectedPages.length} | \`${group.targetPattern}\` |`)
+    .join("\n");
+
+  return `### Likely Root Causes
+
+Heuristic groups reduce repeated page-level occurrences without hiding their individual evidence.
+
+| Rule | Type | Severity | Occurrences | Pages | Target pattern |
+|---|---|---|---:|---:|---|
+${rows}`;
+}
+
+function formatFindingType(type: DedupedIssue["findingType"]): string {
+  if (type === "wcag") return "WCAG violation";
+  if (type === "best-practice") return "best practice";
+  return "unmapped review";
 }
 
 function summarizeRetention(retention: ReportMetrics["retention"]): ReportSummary["retention"] {

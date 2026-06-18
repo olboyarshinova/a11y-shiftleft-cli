@@ -104,6 +104,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
     requiresManualReview: true,
     totalFindings: 2,
     wcagMappedFindings: 2,
+    bestPracticeFindings: 0,
     unmappedFindings: 0,
     affectedPages: 2,
     topAffectedPages: [
@@ -126,6 +127,8 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
     ]
   });
   assert.deepEqual(report.summary.byUnmappedRule, {});
+  assert.deepEqual(report.summary.byFindingType, { wcag: 2 });
+  assert.equal(report.summary.rootCauseCount, 2);
   assert.deepEqual(report.summary.byPage, [
     {
       url: "http://localhost:3000/settings",
@@ -268,9 +271,16 @@ test("writeReports summarizes rules without WCAG mappings", async () => {
     "@angular-eslint/template/button-has-type": 1
   });
   assert.equal(report.summary.complianceEvidence.wcagMappedFindings, 0);
-  assert.equal(report.summary.complianceEvidence.unmappedFindings, 2);
+  assert.equal(report.summary.complianceEvidence.bestPracticeFindings, 1);
+  assert.equal(report.summary.complianceEvidence.unmappedFindings, 1);
+  assert.deepEqual(report.summary.byFindingType, {
+    "best-practice": 1,
+    unmapped: 1
+  });
   assert.match(markdown, /Rules without WCAG mapping \| page-has-heading-one: 1/);
-  assert.match(markdown, /Unmapped findings \| 2/);
+  assert.match(markdown, /Best-practice findings \| 1/);
+  assert.match(markdown, /Unmapped findings \| 1/);
+  assert.match(markdown, /type: best practice/);
   assert.match(markdown, /@angular-eslint\/template\/button-has-type: 1/);
 });
 

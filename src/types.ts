@@ -4,6 +4,8 @@ export type Severity = "critical" | "warning" | "info";
 
 export type ConfidenceLevel = "high" | "medium" | "low";
 
+export type FindingType = "wcag" | "best-practice" | "unmapped";
+
 export type IssueCategory =
   | "aria"
   | "contrast"
@@ -49,6 +51,7 @@ export interface ComplianceEvidenceSummary {
   requiresManualReview: boolean;
   totalFindings: number;
   wcagMappedFindings: number;
+  bestPracticeFindings?: number;
   unmappedFindings: number;
   affectedPages: number;
   topAffectedPages: PageSummary[];
@@ -188,6 +191,7 @@ export interface Issue {
   confidence?: ConfidenceLevel;
   confidenceScore?: number;
   confidenceReason?: string;
+  findingType?: FindingType;
   category?: IssueCategory;
   impact?: AxeImpact | string;
   selector?: string;
@@ -211,6 +215,7 @@ export interface NormalizedIssue extends Required<Pick<Issue, "source" | "framew
   confidence?: ConfidenceLevel;
   confidenceScore?: number;
   confidenceReason?: string;
+  findingType?: FindingType;
   category?: IssueCategory;
   remediation?: RemediationHint;
   severity?: Severity;
@@ -232,6 +237,7 @@ export interface TriagedIssue extends NormalizedIssue {
   confidence: ConfidenceLevel;
   confidenceScore: number;
   confidenceReason: string;
+  findingType: FindingType;
   category: IssueCategory;
 }
 
@@ -364,12 +370,15 @@ export interface ReportSummary {
   bySource: Record<string, number>;
   bySeverity: Record<string, number>;
   byConfidence: Record<string, number>;
+  byFindingType?: Record<string, number>;
   byCategory: Record<string, number>;
   byPour: Record<string, number>;
   byWcagLevel: Record<string, number>;
   byWcagVersion: Record<string, number>;
   byUnmappedRule: Record<string, number>;
   byPage: PageSummary[];
+  rootCauseCount?: number;
+  rootCauseGroups?: RootCauseGroup[];
 }
 
 export interface A11yReport {
@@ -385,6 +394,19 @@ export interface PageSummary {
   warning: number;
   info: number;
   severityScore: number;
+}
+
+export interface RootCauseGroup {
+  id: string;
+  ruleId: string;
+  findingType: FindingType;
+  severity: Severity;
+  targetPattern: string;
+  occurrenceCount: number;
+  affectedPages: string[];
+  affectedStates: string[];
+  representativeSelector?: string;
+  representativeFile?: string;
 }
 
 export type ExploreActionType = "click" | "navigate";

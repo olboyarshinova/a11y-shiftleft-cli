@@ -1,4 +1,4 @@
-import type { ConfidenceLevel, IssueCategory, NormalizedIssue } from "../types.js";
+import type { ConfidenceLevel, FindingType, IssueCategory, NormalizedIssue } from "../types.js";
 
 interface ConfidenceResult {
   confidence: ConfidenceLevel;
@@ -74,16 +74,25 @@ const WCAG_CATEGORY_MAP: Record<string, IssueCategory> = {
   "4.1.2": "aria"
 };
 
-export function enrichIssueEvidence<T extends NormalizedIssue>(issue: T): T & ConfidenceResult & { category: IssueCategory } {
+export function enrichIssueEvidence<T extends NormalizedIssue>(issue: T): T & ConfidenceResult & { category: IssueCategory; findingType: FindingType } {
   const confidence = inferConfidence(issue);
 
   return {
     ...issue,
     category: issue.category || inferIssueCategory(issue),
+    findingType: issue.findingType || inferFindingType(issue),
     confidence: issue.confidence || confidence.confidence,
     confidenceScore: issue.confidenceScore || confidence.confidenceScore,
     confidenceReason: issue.confidenceReason || confidence.confidenceReason
   };
+}
+
+export function inferFindingType(issue: NormalizedIssue): FindingType {
+  if ((issue.wcagCriteria || []).length > 0) return "wcag";
+  if ((issue.tags || []).some((tag) => tag.toLowerCase() === "best-practice")) {
+    return "best-practice";
+  }
+  return "unmapped";
 }
 
 export function inferIssueCategory(issue: NormalizedIssue): IssueCategory {
@@ -129,6 +138,14 @@ export function inferConfidence(issue: NormalizedIssue): ConfidenceResult {
   }
 
   if (issue.source === "axe") {
+    if (inferFindingType(issue) === "best-practice" && issue.selector) {
+      return {
+        confidence: "medium",
+        confidenceScore: 75,
+        confidenceReason: "Detected by an axe best-practice rule on the rendered DOM; review as guidance rather than a confirmed WCAG violation."
+      };
+    }
+
     if (issue.selector && (issue.wcagCriteria || []).length > 0) {
       return {
         confidence: "high",

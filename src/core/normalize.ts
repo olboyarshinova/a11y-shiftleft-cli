@@ -18,6 +18,7 @@ export function normalizeIssue(issue: Issue): NormalizedIssue {
     confidence: issue.confidence,
     confidenceScore: issue.confidenceScore,
     confidenceReason: issue.confidenceReason,
+    findingType: issue.findingType,
     category: issue.category,
     remediation: issue.remediation || getRemediationHint(ruleId, wcagCriteria, framework),
     severity: issue.severity,

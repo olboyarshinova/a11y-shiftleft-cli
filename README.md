@@ -129,6 +129,11 @@ After a scan, start with `reports/a11y-comment.md`. It contains a compact table
 and a list of findings with severity, WCAG metadata, confidence, and remediation
 hints.
 
+Each finding is labeled as a `WCAG violation`, `best practice`, or
+`unmapped review`. Reports also group repeated occurrences into likely root
+causes when the same rule and component state appear across routes. This grouping is
+heuristic: per-page evidence remains available for review.
+
 | File | Use it for | Commit it? |
 |---|---|---|
 | `reports/a11y-comment.md` | Human review and PR comments | Usually no |
@@ -150,6 +155,7 @@ Each finding can include:
   "confidence": "high",
   "confidenceScore": 95,
   "category": "contrast",
+  "findingType": "wcag",
   "contrast": {
     "actualRatio": 2.32,
     "requiredRatio": 4.5,

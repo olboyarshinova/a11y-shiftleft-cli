@@ -26,6 +26,12 @@ reports/screenshots/state-*.jpg
 findings, recorded transitions, skipped actions, and reviewable overlays around
 affected elements when Playwright can resolve their bounds.
 
+Findings are identified as WCAG violations, best-practice guidance, or unmapped
+review items. The report also groups repeated occurrences into likely root
+causes, such as one shared active-navigation style failing on several routes.
+Root-cause grouping is heuristic and does not remove the evidence recorded for
+each page or state.
+
 For `color-contrast` findings, the HTML report also shows the measured ratio,
 required ratio, foreground and background swatches, font metadata, and options
 for minimally changing the text color while preserving the current background.

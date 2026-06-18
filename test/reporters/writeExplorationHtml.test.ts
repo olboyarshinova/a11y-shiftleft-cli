@@ -210,6 +210,29 @@ test("renderExplorationHtml renders color contrast evidence and suggestions", ()
   assert.match(html, /background-color: #767676/);
 });
 
+test("renderExplorationHtml labels best practices separately from WCAG findings", () => {
+  const html = renderExplorationHtml(graph, [{
+    ...issues[0],
+    ruleId: "heading-order",
+    wcag: [],
+    wcagCriteria: [],
+    tags: ["best-practice"],
+    severity: "warning",
+    confidence: undefined,
+    confidenceScore: undefined,
+    confidenceReason: undefined,
+    findingType: undefined,
+    category: undefined,
+    selector: "h3",
+    message: "Heading levels should only increase by one"
+  }]);
+
+  assert.match(html, /Best practices<\/span>/);
+  assert.match(html, /best practice<\/span>/);
+  assert.match(html, /Likely Root Causes/);
+  assert.doesNotMatch(html, /WCAG 1\.3\.1/);
+});
+
 test("writeExplorationHtml writes exploration.html", async () => {
   const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-exploration-html-"));
 

@@ -4,6 +4,12 @@
 
 ### Changed
 
+- Reports now distinguish mapped WCAG violations, axe best-practice guidance,
+  and unmapped review items instead of presenting every finding as equivalent.
+- JSON, Markdown, and visual reports group repeated occurrences into likely
+  root causes while preserving per-page evidence.
+- Removed the unsupported WCAG 1.3.1 mapping from axe `heading-order`; axe
+  classifies this rule as best-practice guidance.
 - The package now exposes both `a11y-shiftleft` and `a11y-shiftleft-cli` as
   executable names, so the npm package name works directly with `npx`.
 - HTML reports display generated timestamps in a readable UTC format while

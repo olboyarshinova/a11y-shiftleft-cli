@@ -8,7 +8,6 @@ const RULE_TO_WCAG: Record<string, string[]> = {
   "color-contrast": ["1.4.3"],
   "document-title": ["2.4.2"],
   "form-field-multiple-labels": ["1.3.1", "3.3.2"],
-  "heading-order": ["1.3.1"],
   "html-has-lang": ["3.1.1"],
   "html-lang-valid": ["3.1.1"],
   "image-alt": ["1.1.1"],
