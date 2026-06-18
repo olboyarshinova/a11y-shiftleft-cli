@@ -168,6 +168,8 @@ interface CapturedScreenshot {
   fingerprint: string;
   kind: "full-page" | "viewport" | "error-crop";
   issueIndexes: number[];
+  width: number;
+  height: number;
 }
 
 export interface DocumentRect {
@@ -350,7 +352,9 @@ export async function runExplorePlaywrightAdapter(
             screenshotEvidence.push({
               path: finalPath,
               kind: capturedScreenshot.kind,
-              issueCount: capturedScreenshot.issueIndexes.length
+              issueCount: capturedScreenshot.issueIndexes.length,
+              width: capturedScreenshot.width,
+              height: capturedScreenshot.height
             });
           }
         }
@@ -750,7 +754,9 @@ async function captureStateVisualEvidence(
       ...options,
       fullPage: true,
       kind: "full-page",
-      issueIndexes: issues.map((_, index) => index)
+      issueIndexes: issues.map((_, index) => index),
+      imageWidth: metrics.documentWidth,
+      imageHeight: metrics.documentHeight
     });
 
     return {
@@ -777,7 +783,9 @@ async function captureStateVisualEvidence(
         kind: "error-crop",
         issueIndexes: clip.issueIndexes,
         filenameSuffix: `-error-${clipIndex + 1}`,
-        clip
+        clip,
+        imageWidth: clip.width,
+        imageHeight: clip.height
       });
       if (!captured) continue;
       captures.push(captured);
@@ -815,7 +823,9 @@ async function captureStateVisualEvidence(
     ...options,
     fullPage: false,
     kind: "viewport",
-    issueIndexes: issues.map((_, index) => index)
+    issueIndexes: issues.map((_, index) => index),
+    imageWidth: metrics.viewportWidth,
+    imageHeight: metrics.viewportHeight
   });
 
   return {
@@ -1350,6 +1360,8 @@ async function captureStateScreenshot(
     redactSensitiveFields: boolean;
     kind: CapturedScreenshot["kind"];
     issueIndexes: number[];
+    imageWidth: number;
+    imageHeight: number;
     filenameSuffix?: string;
     clip?: EvidenceClip;
   }
@@ -1388,7 +1400,9 @@ async function captureStateScreenshot(
     path: path.posix.join("screenshots", filename),
     fingerprint: hashBuffer(screenshotBuffer),
     kind: options.kind,
-    issueIndexes: options.issueIndexes
+    issueIndexes: options.issueIndexes,
+    width: options.imageWidth,
+    height: options.imageHeight
   };
 }
 

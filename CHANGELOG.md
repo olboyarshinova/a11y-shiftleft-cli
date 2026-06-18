@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Fixed screenshot preview annotations so issue frames remain visible and align
+  with images fitted inside the compact 16:9 preview.
+
 ### Changed
 
 - Dynamic checks and visual exploration now automatically compare light and

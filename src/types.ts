@@ -460,6 +460,8 @@ export interface ExplorationScreenshotEvidence {
   path: string;
   kind: "full-page" | "viewport" | "error-crop";
   issueCount: number;
+  width?: number;
+  height?: number;
 }
 
 export interface ExplorationEdge {

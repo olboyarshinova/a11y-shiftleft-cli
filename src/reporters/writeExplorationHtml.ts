@@ -245,13 +245,14 @@ export function renderExplorationHtml(
       background: #eef1f5;
       display: block;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
+      object-position: center;
       width: 100%;
     }
 
     .screenshot-frame-full .screenshot-stage > img {
       object-fit: contain;
-      object-position: top;
+      object-position: center;
     }
 
     .screenshot-open {
@@ -695,7 +696,8 @@ function renderEvidenceFrame(
   evidence: NonNullable<ExplorationState["screenshotEvidence"]>[number],
   index: number
 ): string {
-  const annotations = annotationsForEvidence(state, evidence.path);
+  const previewAnnotations = annotationsForEvidence(state, evidence.path, evidence);
+  const lightboxAnnotations = annotationsForEvidence(state, evidence.path);
   const targetId = index === 0
     ? `screenshot-${state.id}`
     : `screenshot-${state.id}-${index + 1}`;
@@ -717,21 +719,25 @@ function renderEvidenceFrame(
   return `<div class="${frameClass}">
     <div class="screenshot-stage">
       <img src="${escapeAttribute(evidence.path)}" alt="${escapeAttribute(screenshotAlt)}">
-      ${renderAnnotationLayer(fullPage ? "" : annotations)}
+      ${renderAnnotationLayer(previewAnnotations)}
     </div>
     <a class="screenshot-open" href="#${escapeAttribute(targetId)}">${openLabel}</a>
   </div>
-  ${renderAnnotatedScreenshotView(state, evidence.path, annotations, targetId)}`;
+  ${renderAnnotatedScreenshotView(state, evidence.path, lightboxAnnotations, targetId)}`;
 }
 
-function annotationsForEvidence(state: StateViewModel, screenshot: string): string {
+function annotationsForEvidence(
+  state: StateViewModel,
+  screenshot: string,
+  evidence?: NonNullable<ExplorationState["screenshotEvidence"]>[number]
+): string {
   const matchingIssues = state.issues.filter((issue) => issue.screenshot === screenshot);
   const issues = matchingIssues.length > 0 ? matchingIssues : state.issues;
 
   return issues
     .filter((issue) => issue.elementBounds)
     .slice(0, 12)
-    .map((issue, index) => renderAnnotation(issue, index + 1))
+    .map((issue, index) => renderAnnotation(issue, index + 1, evidence))
     .join("\n");
 }
 
@@ -765,15 +771,62 @@ function renderAnnotationLayer(annotations: string): string {
   return `<div class="annotation-layer" aria-hidden="true">${annotations}</div>`;
 }
 
-function renderAnnotation(issue: DedupedIssue, index: number): string {
+function renderAnnotation(
+  issue: DedupedIssue,
+  index: number,
+  evidence?: NonNullable<ExplorationState["screenshotEvidence"]>[number]
+): string {
   const bounds = issue.elementBounds;
   if (!bounds) return "";
+
+  const renderedBounds = evidence?.width && evidence.height
+    ? transformBoundsForContainedPreview(bounds, evidence.width, evidence.height)
+    : bounds;
 
   return `<span
     class="annotation annotation-${issue.severity}"
     title="${escapeAttribute(`${index}. ${issue.severity} ${issue.ruleId}: ${issue.message}`)}"
-    style="${formatBoundsStyle(bounds)}"
+    style="${formatBoundsStyle(renderedBounds)}"
   ></span>`;
+}
+
+export function transformBoundsForContainedPreview(
+  bounds: NonNullable<DedupedIssue["elementBounds"]>,
+  imageWidth: number,
+  imageHeight: number,
+  frameAspectRatio = 16 / 9
+): NonNullable<DedupedIssue["elementBounds"]> {
+  if (
+    !Number.isFinite(imageWidth)
+    || !Number.isFinite(imageHeight)
+    || !Number.isFinite(frameAspectRatio)
+    || imageWidth <= 0
+    || imageHeight <= 0
+    || frameAspectRatio <= 0
+  ) {
+    return bounds;
+  }
+
+  const imageAspectRatio = imageWidth / imageHeight;
+  if (imageAspectRatio > frameAspectRatio) {
+    const renderedHeight = frameAspectRatio / imageAspectRatio;
+    return {
+      ...bounds,
+      y: roundPreviewPercent(((1 - renderedHeight) / 2) * 100 + bounds.y * renderedHeight),
+      height: roundPreviewPercent(bounds.height * renderedHeight)
+    };
+  }
+
+  const renderedWidth = imageAspectRatio / frameAspectRatio;
+  return {
+    ...bounds,
+    x: roundPreviewPercent(((1 - renderedWidth) / 2) * 100 + bounds.x * renderedWidth),
+    width: roundPreviewPercent(bounds.width * renderedWidth)
+  };
+}
+
+function roundPreviewPercent(value: number): number {
+  return Math.round(value * 1000) / 1000;
 }
 
 function formatBoundsStyle(bounds: NonNullable<DedupedIssue["elementBounds"]>): string {

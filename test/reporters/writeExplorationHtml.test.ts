@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import {
   renderExplorationHtml,
+  transformBoundsForContainedPreview,
   writeExplorationHtml
 } from "../../dist/reporters/writeExplorationHtml.js";
 
@@ -150,6 +151,7 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /score 5/);
   assert.match(html, /WCAG 4\.1\.2 Name, Role, Value, Level A/);
   assert.match(html, /annotation annotation-critical/);
+  assert.equal((html.match(/annotation annotation-critical/g) ?? []).length, 2);
   assert.match(html, /class="annotation-layer" aria-hidden="true"/);
   assert.match(html, /\.annotation-layer/);
   assert.match(html, /screenshot-frame screenshot-frame-full/);
@@ -232,12 +234,16 @@ test("renderExplorationHtml renders focused evidence crops for long pages", () =
         {
           path: "screenshots/state-1-error-1.jpg",
           kind: "error-crop",
-          issueCount: 1
+          issueCount: 1,
+          width: 1280,
+          height: 900
         },
         {
           path: "screenshots/state-1-error-2.jpg",
           kind: "error-crop",
-          issueCount: 1
+          issueCount: 1,
+          width: 1280,
+          height: 900
         }
       ]
     }]
@@ -262,6 +268,43 @@ test("renderExplorationHtml renders focused evidence crops for long pages", () =
   assert.match(html, /Open error evidence 1/);
   assert.match(html, /Open error evidence 2/);
   assert.match(html, /id="screenshot-state-1-2"/);
+  assert.equal((html.match(/annotation annotation-critical/g) ?? []).length, 4);
+});
+
+test("transformBoundsForContainedPreview aligns annotations on tall screenshots", () => {
+  const transformed = transformBoundsForContainedPreview({
+    x: 10,
+    y: 20,
+    width: 30,
+    height: 12,
+    coordinateSpace: "document"
+  }, 1280, 2400);
+
+  assert.deepEqual(transformed, {
+    x: 38,
+    y: 20,
+    width: 9,
+    height: 12,
+    coordinateSpace: "document"
+  });
+});
+
+test("transformBoundsForContainedPreview aligns annotations on wide screenshots", () => {
+  const transformed = transformBoundsForContainedPreview({
+    x: 10,
+    y: 20,
+    width: 30,
+    height: 12,
+    coordinateSpace: "viewport"
+  }, 1600, 800);
+
+  assert.deepEqual(transformed, {
+    x: 10,
+    y: 23.333,
+    width: 30,
+    height: 10.667,
+    coordinateSpace: "viewport"
+  });
 });
 
 test("renderExplorationHtml labels best practices separately from WCAG findings", () => {
