@@ -35,6 +35,9 @@ artifacts, and easier open-source contribution.
 - Replaced stacked gray screenshot overlays with severity-colored card accents
   and annotations: red for critical, orange for warning, blue for info, and
   green for states with no automated findings.
+- Fixed annotation drift in the expanded screenshot view by stabilizing fonts
+  and motion, measuring elements immediately before capture, and anchoring
+  overlays to the rendered image instead of the outer lightbox container.
 - Added structured `color-contrast` evidence with measured and required ratios,
   foreground/background swatches, font metadata, and deterministic suggestions
   for minimum, recommended, and enhanced text contrast while preserving the

@@ -119,6 +119,8 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /score 5/);
   assert.match(html, /WCAG 4\.1\.2 Name, Role, Value, Level A/);
   assert.match(html, /annotation annotation-critical/);
+  assert.match(html, /class="annotation-layer" aria-hidden="true"/);
+  assert.match(html, /\.annotation-layer/);
   assert.match(html, /screenshot-frame screenshot-frame-full/);
   assert.match(html, /Open full-page evidence/);
   assert.match(html, /full-page evidence/);

@@ -211,7 +211,17 @@ export function renderExplorationHtml(
       position: relative;
     }
 
-    .screenshot-frame > img {
+    .screenshot-stage {
+      line-height: 0;
+      position: relative;
+      width: 100%;
+    }
+
+    .screenshot-frame .screenshot-stage {
+      height: 100%;
+    }
+
+    .screenshot-frame .screenshot-stage > img {
       background: #eef1f5;
       display: block;
       height: 100%;
@@ -219,7 +229,7 @@ export function renderExplorationHtml(
       width: 100%;
     }
 
-    .screenshot-frame-full > img {
+    .screenshot-frame-full .screenshot-stage > img {
       object-position: top;
     }
 
@@ -235,6 +245,7 @@ export function renderExplorationHtml(
       position: absolute;
       right: 8px;
       text-decoration: none;
+      z-index: 2;
     }
 
     .screenshot-lightbox {
@@ -269,12 +280,18 @@ export function renderExplorationHtml(
       position: relative;
     }
 
-    .screenshot-lightbox-frame img {
+    .screenshot-lightbox-frame .screenshot-stage > img {
       display: block;
       height: auto;
       max-height: none;
       object-fit: contain;
       width: 100%;
+    }
+
+    .annotation-layer {
+      inset: 0;
+      pointer-events: none;
+      position: absolute;
     }
 
     .lightbox-header {
@@ -582,8 +599,10 @@ function renderStateScreenshot(state: StateViewModel): string {
     : `Screenshot for ${state.id}`;
 
   return `<div class="${frameClass}">
-    <img src="${escapeAttribute(state.screenshot)}" alt="${escapeAttribute(screenshotAlt)}">
-    ${previewAnnotations}
+    <div class="screenshot-stage">
+      <img src="${escapeAttribute(state.screenshot)}" alt="${escapeAttribute(screenshotAlt)}">
+      ${renderAnnotationLayer(previewAnnotations)}
+    </div>
     <a class="screenshot-open" href="#${escapeAttribute(screenshotTargetId)}">${openLabel}</a>
   </div>
   ${renderAnnotatedScreenshotView(state, annotations, screenshotTargetId)}`;
@@ -606,11 +625,18 @@ function renderAnnotatedScreenshotView(
         <a class="lightbox-close" href="#${escapeAttribute(state.id)}">Close</a>
       </div>
       <div class="screenshot-lightbox-frame">
-        <img src="${escapeAttribute(state.screenshot)}" alt="Annotated screenshot for ${escapeAttribute(state.id)}">
-        ${annotations}
+        <div class="screenshot-stage">
+          <img src="${escapeAttribute(state.screenshot)}" alt="Annotated screenshot for ${escapeAttribute(state.id)}">
+          ${renderAnnotationLayer(annotations)}
+        </div>
       </div>
     </div>
   </div>`;
+}
+
+function renderAnnotationLayer(annotations: string): string {
+  if (!annotations.trim()) return "";
+  return `<div class="annotation-layer" aria-hidden="true">${annotations}</div>`;
 }
 
 function renderAnnotation(issue: DedupedIssue, index: number): string {

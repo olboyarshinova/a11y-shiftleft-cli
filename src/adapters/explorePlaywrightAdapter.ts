@@ -243,6 +243,11 @@ export async function runExplorePlaywrightAdapter(
         Boolean(options.screenshotFullPage),
         scannedIssues.length
       );
+      const boundedIssues = screenshots
+        ? await prepareStateVisualEvidence(page, scannedIssues, {
+          fullPage: screenshotFullPage
+        })
+        : scannedIssues;
       const screenshot = screenshots
         ? await captureStateScreenshot(page, {
           outputDir: options.outputDir,
@@ -256,10 +261,7 @@ export async function runExplorePlaywrightAdapter(
       if (screenshot) screenshotsSaved += 1;
 
       const stateIssues = screenshot
-        ? await attachStateVisualEvidence(page, scannedIssues, {
-          screenshot,
-          fullPage: screenshotFullPage
-        })
+        ? boundedIssues.map((issue) => ({ ...issue, screenshot }))
         : scannedIssues;
       issues.push(...stateIssues);
 
@@ -594,31 +596,52 @@ export function shouldCaptureFullPageScreenshot(
   return forceFullPage || issueCount > 0;
 }
 
-async function attachStateVisualEvidence(
+async function prepareStateVisualEvidence(
   page: Page,
   issues: Issue[],
-  evidence: {
-    screenshot: string;
+  options: {
     fullPage: boolean;
   }
 ): Promise<Issue[]> {
+  await stabilizePageForVisualEvidence(page);
   const enriched: Issue[] = [];
 
   for (const issue of issues) {
     const elementBounds = issue.selector
       ? await getElementBounds(page, issue.selector, {
-        fullPage: evidence.fullPage
+        fullPage: options.fullPage
       })
       : undefined;
 
     enriched.push({
       ...issue,
-      screenshot: evidence.screenshot,
       elementBounds
     });
   }
 
   return enriched;
+}
+
+async function stabilizePageForVisualEvidence(page: Page): Promise<void> {
+  await page.addStyleTag({
+    content: `
+      *, *::before, *::after {
+        animation: none !important;
+        caret-color: transparent !important;
+        transition: none !important;
+      }
+    `
+  }).catch(() => undefined);
+
+  await page.evaluate(async () => {
+    if (document.fonts?.ready) {
+      await document.fonts.ready;
+    }
+
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    });
+  }).catch(() => undefined);
 }
 
 async function getElementBounds(
@@ -982,6 +1005,8 @@ async function captureStateScreenshot(
 
   await fs.mkdir(screenshotsDir, { recursive: true });
   const screenshotOptions: Parameters<Page["screenshot"]>[0] = {
+    animations: "disabled",
+    caret: "hide",
     path: screenshotPath,
     fullPage: options.fullPage,
     type: options.format,

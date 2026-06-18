@@ -41,6 +41,8 @@ No unreleased changes yet.
   suggestions that preserve the current background.
 - Severity-colored visual report cards and annotations without stacked gray
   overlays that obscure screenshots with multiple findings.
+- Screenshot annotations now use a dedicated image-sized overlay, with layout
+  stabilization and element bounds captured immediately before the screenshot.
 - Built-in high-risk action blocking for account/session, payment, cookie
   consent, camera/photo, microphone, location, notification, upload, and sharing
   controls, with cookie isolation between explored states.
