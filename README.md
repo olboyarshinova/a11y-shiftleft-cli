@@ -117,6 +117,7 @@ npx a11y-shiftleft check --dynamic --url http://localhost:4200 --out reports
 | Scan several known pages | `npx a11y-shiftleft check --dynamic --url $APP_URL $APP_URL/settings $APP_URL/checkout --out reports` |
 | Let the CLI discover same-origin pages | `npx a11y-shiftleft check --dynamic --url $APP_URL --crawl --crawl-depth 1 --crawl-limit 10 --out reports` |
 | Trigger lazy-loaded below-the-fold content | `npx a11y-shiftleft check --dynamic --url $APP_URL --scroll-step 800 --scroll-max-steps 25 --out reports` |
+| Audit the keyboard focus path | `npx a11y-shiftleft keyboard --url $APP_URL --out reports/keyboard` |
 | Create a visual state report | `npx a11y-shiftleft explore --url $APP_URL --depth 2 --out reports` |
 | Force complete page screenshots | `npx a11y-shiftleft explore --url $APP_URL --depth 2 --screenshot-full-page --out reports` |
 | Keep reports refreshed while coding | `npx a11y-shiftleft watch --url $APP_URL --out reports/watch` |
@@ -146,6 +147,8 @@ recommendation; axe findings also preserve their rule-specific help link.
 | `reports/a11y-metrics.csv` | Trends and empirical validation | Usually no |
 | `reports/exploration.html` | Visual review of explored UI states | Usually no |
 | `reports/exploration.pdf` | Portable visual report artifact when `--pdf` is used | Usually no |
+| `reports/keyboard-path.md` | Human-readable Tab order and focus evidence | Usually no |
+| `reports/keyboard-report.json` | Structured keyboard traversal data | Usually no |
 | `reports/screenshots/` | Screenshots from visual exploration | No |
 | `.a11y-shiftleft.json` | Shared project config | Usually yes |
 | `.a11y-baseline.json` | Accepted known findings | Yes, when using baseline mode |
@@ -474,6 +477,28 @@ The export groups findings by severity, rule, page, and target. It does not
 connect to Jira or Linear yet, so teams can review the draft before creating
 real tickets.
 
+## Keyboard Focus Audit
+
+Run a bounded keyboard-only traversal on a page:
+
+```bash
+npx a11y-shiftleft keyboard --url $APP_URL --out reports/keyboard
+```
+
+The runner presses `Tab` without clicking controls or submitting forms. It
+records selectors, roles, accessible names, visibility, focus indicators, and
+obscuration for up to 40 steps. It reports common positive `tabindex`, stuck or
+incomplete focus cycles, missing visible focus, and focus hidden behind other
+content, with mappings to WCAG 2.1.1, 2.1.2, 2.4.3, 2.4.7, and 2.4.11.
+
+Use `--max-tabs 80` for a larger page. The generated `keyboard-path.md` and
+`keyboard-report.json` are accompanied by the normal Markdown, JSON, and CSV
+finding reports. This bounded traversal does not replace manual testing of
+Enter, Space, Escape, arrow-key widgets, modal behavior, or complete user tasks.
+
+See [Keyboard focus audit](docs/keyboard-audit.md) for report details and
+current limits.
+
 ## Manual Review Checklist
 
 Automated tools do not catch every accessibility issue. Generate a manual
@@ -559,6 +584,8 @@ node bin/cli.js check --dynamic --url http://localhost:5173 --out reports
   baseline files, ignores, cleanup, and retention.
 - [Visual reports](docs/visual-reports.md): screenshot privacy, safe mode, and
   advanced `explore` options.
+- [Keyboard focus audit](docs/keyboard-audit.md): bounded Tab traversal,
+  generated focus-path evidence, and current limitations.
 - [Watch mode](docs/watch-mode.md): local development feedback after file
   changes.
 - [Ticket export](docs/ticket-export.md): dry-run Jira, Linear, or generic

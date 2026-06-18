@@ -61,6 +61,38 @@ test("normalizeIssue attaches remediation hints", () => {
   assert.equal(issue.remediation?.frameworkExamples?.react?.includes("aria-label"), true);
 });
 
+test("normalizeIssue restores display metadata for previously unmapped axe checks", () => {
+  const checks = [
+    ["audio-caption", "wcag121", "1.2.1"],
+    ["video-caption", "wcag122", "1.2.2"],
+    ["css-orientation-lock", "wcag134", "1.3.4"],
+    ["link-in-text-block", "wcag141", "1.4.1"],
+    ["no-autoplay-audio", "wcag142", "1.4.2"],
+    ["meta-viewport", "wcag144", "1.4.4"],
+    ["avoid-inline-spacing", "wcag1412", "1.4.12"],
+    ["meta-refresh", "wcag221", "2.2.1"],
+    ["blink", "wcag222", "2.2.2"],
+    ["bypass", "wcag241", "2.4.1"],
+    ["label-content-name-mismatch", "wcag253", "2.5.3"],
+    ["valid-lang", "wcag312", "3.1.2"]
+  ] as const;
+
+  for (const [ruleId, tag, criterionId] of checks) {
+    const issue = normalizeIssue({
+      source: "axe",
+      framework: "unknown",
+      ruleId,
+      wcag: [tag],
+      selector: "#example",
+      message: `Example ${ruleId} finding`
+    });
+
+    assert.deepEqual(issue.wcag, [criterionId]);
+    assert.equal(issue.wcagCriteria[0]?.id, criterionId);
+    assert.equal(issue.remediation?.docs.some((url) => url.includes("w3.org/WAI/WCAG22")), true);
+  }
+});
+
 test("normalizeIssue preserves axe help URLs in remediation guidance", () => {
   const helpUrl = "https://dequeuniversity.com/rules/axe/4.11/button-name";
   const issue = normalizeIssue({

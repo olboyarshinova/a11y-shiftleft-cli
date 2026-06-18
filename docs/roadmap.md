@@ -24,12 +24,12 @@ remain suitable for reproducible empirical validation.
 
 ### 0.7.x Keyboard Audit Mode
 
-- Add a dedicated keyboard-only audit workflow, such as
-  `a11y-shiftleft keyboard --url <url>`, that verifies whether key user
-  interface states can be reached and operated without a mouse.
-- Record a focus path by sending `Tab` and `Shift+Tab`, collecting the focused
-  element selector, accessible name, role, visibility, bounding box, and page
-  state after each step.
+- Stabilize the initial `a11y-shiftleft keyboard --url <url>` workflow, which
+  now performs a bounded forward-Tab traversal and writes shared findings plus
+  dedicated Markdown and JSON focus-path artifacts.
+- Extend the initial focus path with `Shift+Tab` symmetry and page-state
+  snapshots while preserving the existing selector, accessible name, role,
+  visibility, bounding-box, focus-indicator, and obscuration evidence.
 - Detect common keyboard blockers: invisible focus, focus loss to `body`,
   repeated focus loops, unreachable interactive controls, positive tabindex
   risks, and focus traps that do not expose an escape path.
@@ -37,9 +37,8 @@ remain suitable for reproducible empirical validation.
   `Escape`, and arrow keys where the role implies expected keyboard behavior,
   while reusing `explore` safe-mode blocks for destructive actions such as
   logout, delete, pay, upload, camera, microphone, and cookie changes.
-- Write keyboard-specific artifacts, for example
-  `keyboard-report.json`, `keyboard-path.md`, and optional annotated
-  screenshots that show the focused element at each step.
+- Add optional annotated focus screenshots to the existing
+  `keyboard-report.json` and `keyboard-path.md` artifacts.
 - Surface keyboard findings in the same severity, WCAG, confidence, baseline,
   ignore, dashboard, and PR-report pipeline used by `check` and `explore`.
 - Keep the first version bounded and predictable for pull requests: limit max
@@ -71,8 +70,9 @@ remain suitable for reproducible empirical validation.
 - Add an optional usability-test worksheet that records task completion,
   assistive technology and browser context, blockers, and remediation owners
   without collecting unnecessary personal information.
-- Expand WCAG metadata for every rule currently emitted by the static and
-  dynamic adapters.
+- Keep WCAG metadata complete for every rule emitted by the static and dynamic
+  adapters; the 2026-06-18 audit restored metadata for all 23 current A/AA axe
+  signals.
 - Expand remediation hint coverage for additional axe and ESLint rules.
 - Expand compliance evidence summaries with manual-review follow-up details.
 - Improve Vue and Angular static coverage while continuing to rely on

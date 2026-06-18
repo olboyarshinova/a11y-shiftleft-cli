@@ -69,6 +69,7 @@
     "ci": "node bin/cli.js ci",
     "doctor": "node bin/cli.js doctor",
     "dashboard": "node bin/cli.js dashboard",
+    "keyboard": "node bin/cli.js keyboard",
     "watch": "node bin/cli.js watch",
     "ticket": "node bin/cli.js ticket",
     "post-a11y-comment": "node scripts/post-a11y-comment.js"

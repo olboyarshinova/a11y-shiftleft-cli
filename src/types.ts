@@ -83,6 +83,31 @@ export interface ElementBounds {
   coordinateSpace: "viewport" | "document";
 }
 
+export interface KeyboardFocusStep {
+  index: number;
+  selector: string;
+  tagName: string;
+  role: string;
+  accessibleName: string;
+  tabIndex: number;
+  visible: boolean;
+  focusVisible: boolean;
+  indicatorVisible: boolean;
+  obscured: boolean;
+  bounds?: ElementBounds;
+}
+
+export interface KeyboardAuditResult {
+  url: string;
+  generatedAt: string;
+  durationMs: number;
+  maxTabs: number;
+  focusableCount: number;
+  completedCycle: boolean;
+  steps: KeyboardFocusStep[];
+  issues: Issue[];
+}
+
 export interface ContrastSuggestion {
   target: "foreground" | "background";
   purpose: "minimum" | "recommended" | "enhanced";

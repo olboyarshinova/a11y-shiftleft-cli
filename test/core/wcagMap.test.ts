@@ -8,6 +8,21 @@ import {
   normalizeWcagReferences
 } from "../../dist/core/wcagMap.js";
 
+const restoredAxeMappings = [
+  ["audio-caption", "1.2.1", "Audio-only and Video-only (Prerecorded)", "A", "perceivable"],
+  ["video-caption", "1.2.2", "Captions (Prerecorded)", "A", "perceivable"],
+  ["css-orientation-lock", "1.3.4", "Orientation", "AA", "perceivable"],
+  ["link-in-text-block", "1.4.1", "Use of Color", "A", "perceivable"],
+  ["no-autoplay-audio", "1.4.2", "Audio Control", "A", "perceivable"],
+  ["meta-viewport", "1.4.4", "Resize Text", "AA", "perceivable"],
+  ["avoid-inline-spacing", "1.4.12", "Text Spacing", "AA", "perceivable"],
+  ["meta-refresh", "2.2.1", "Timing Adjustable", "A", "operable"],
+  ["blink", "2.2.2", "Pause, Stop, Hide", "A", "operable"],
+  ["bypass", "2.4.1", "Bypass Blocks", "A", "operable"],
+  ["label-content-name-mismatch", "2.5.3", "Label in Name", "A", "operable"],
+  ["valid-lang", "3.1.2", "Language of Parts", "AA", "understandable"]
+] as const;
+
 test("mapRuleToWcag maps exact known rules", () => {
   assert.deepEqual(mapRuleToWcag("color-contrast"), ["1.4.3"]);
   assert.deepEqual(mapRuleToWcag("button-name"), ["4.1.2"]);
@@ -20,10 +35,29 @@ test("mapRuleToWcag maps exact known rules", () => {
   assert.deepEqual(mapRuleToWcag("listitem"), ["1.3.1"]);
   assert.deepEqual(mapRuleToWcag("@angular-eslint/template/alt-text"), ["1.1.1"]);
   assert.deepEqual(mapRuleToWcag("@angular-eslint/template/valid-aria"), ["4.1.2"]);
+  assert.deepEqual(mapRuleToWcag("keyboard-focus-stuck"), ["2.1.2"]);
+  assert.deepEqual(mapRuleToWcag("keyboard-focus-indicator-missing"), ["2.4.7"]);
+  assert.deepEqual(mapRuleToWcag("keyboard-focus-obscured"), ["2.4.11"]);
 });
 
 test("mapRuleToWcag maps rule ids that contain known tokens", () => {
   assert.deepEqual(mapRuleToWcag("jsx-a11y/alt-text"), ["1.1.1"]);
+});
+
+test("restored axe checks resolve to complete WCAG metadata", () => {
+  for (const [ruleId, criterionId, title, level, principle] of restoredAxeMappings) {
+    assert.deepEqual(mapRuleToWcag(ruleId), [criterionId], ruleId);
+
+    const [criterion] = getWcagCriteria([criterionId]);
+    assert.ok(criterion, `${ruleId} should resolve WCAG ${criterionId}`);
+    assert.equal(criterion.title, title);
+    assert.equal(criterion.level, level);
+    assert.equal(criterion.principle, principle);
+    assert.match(criterion.url, /^https:\/\/www\.w3\.org\/WAI\/WCAG22\/Understanding\//);
+  }
+
+  assert.equal(new Set(restoredAxeMappings.map(([, criterionId]) => criterionId)).size, 12);
+  assert.deepEqual(mapRuleToWcag("marquee"), ["2.2.2"]);
 });
 
 test("mapRuleToWcag returns an empty list for unknown rules", () => {
@@ -64,6 +98,26 @@ test("normalizeWcagReferences converts axe wcag tags to success criteria", () =>
   assert.deepEqual(
     normalizeWcagReferences(["wcag2aa", "wcag143", "wcag412"]),
     ["1.4.3", "4.1.2"]
+  );
+});
+
+test("normalizeWcagReferences preserves all restored A and AA axe tags", () => {
+  assert.deepEqual(
+    normalizeWcagReferences([
+      "wcag121",
+      "wcag122",
+      "wcag134",
+      "wcag141",
+      "wcag142",
+      "wcag144",
+      "wcag1412",
+      "wcag221",
+      "wcag222",
+      "wcag241",
+      "wcag253",
+      "wcag312"
+    ]),
+    restoredAxeMappings.map(([, criterionId]) => criterionId)
   );
 });
 

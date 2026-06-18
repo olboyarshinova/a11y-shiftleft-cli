@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Added
+
+- Added an initial bounded `keyboard` command that records the rendered Tab
+  path, detects common focus-order, visibility, indicator, obscuration, and trap
+  risks, and writes dedicated Markdown/JSON evidence alongside normal reports.
+- Added WCAG metadata for No Keyboard Trap, Focus Visible, and Focus Not
+  Obscured (Minimum) so keyboard findings use the shared report pipeline.
+
+### Fixed
+
+- Restored criterion names, levels, POUR principles, documentation links, and
+  WCAG filtering for 12 A/AA checks already emitted by axe-core.
+- Corrected the `valid-lang` fallback mapping from WCAG 3.1.1 Language of Page
+  to WCAG 3.1.2 Language of Parts.
+
 ## 0.6.3 - 2026-06-18
 
 ### Fixed

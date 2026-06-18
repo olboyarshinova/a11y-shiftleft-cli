@@ -7,6 +7,7 @@ import { registerDashboardCommand } from "./commands/dashboard.js";
 import { registerDoctorCommand } from "./commands/doctor.js";
 import { registerExploreCommand } from "./commands/explore.js";
 import { registerInitCommand } from "./commands/init.js";
+import { registerKeyboardCommand } from "./commands/keyboard.js";
 import { registerTicketCommand } from "./commands/ticket.js";
 import { registerWatchCommand } from "./commands/watch.js";
 
@@ -27,6 +28,7 @@ export function createProgram(): Command {
   registerDoctorCommand(program);
   registerAdapterCommand(program);
   registerExploreCommand(program);
+  registerKeyboardCommand(program);
   registerDashboardCommand(program);
   registerWatchCommand(program);
   registerTicketCommand(program);
