@@ -4,6 +4,8 @@
 
 ### Changed
 
+- HTML reports display generated timestamps in a readable UTC format while
+  retaining the original ISO value in semantic `time` metadata.
 - Visual exploration stores pixel-identical screenshots once and shows compact
   references for duplicate states while preserving each state's findings and
   annotation view.

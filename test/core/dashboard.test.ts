@@ -73,6 +73,7 @@ test("renderDashboardHtml renders dashboard sections and escapes content", async
   const html = renderDashboardHtml(await collectDashboardData(root));
 
   assert.match(html, /a11y-shiftleft dashboard/);
+  assert.match(html, /10 June 2026, 00:00 UTC/);
   assert.match(html, /Accessibility Trend/);
   assert.match(html, /Top Rules/);
   assert.match(html, /Most Affected Pages/);

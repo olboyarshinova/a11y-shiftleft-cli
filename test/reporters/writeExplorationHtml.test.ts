@@ -123,6 +123,8 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   const html = renderExplorationHtml(graph, issues);
 
   assert.match(html, /a11y-shiftleft exploration report/);
+  assert.match(html, /Generated: <time datetime="2026-06-09T00:00:00.000Z">9 June 2026, 00:00 UTC<\/time>/);
+  assert.doesNotMatch(html, />Generated 2026-06-09T/);
   assert.match(html, /States visited/);
   assert.match(html, /screenshots\/state-1\.png/);
   assert.match(html, /Unique screenshots/);

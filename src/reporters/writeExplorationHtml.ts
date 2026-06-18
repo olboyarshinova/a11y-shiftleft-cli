@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { formatReportDateUtc } from "../core/reportDate.js";
 import type { DedupedIssue, ExplorationGraph, ExplorationState, Severity } from "../types.js";
 
 interface StateViewModel extends ExplorationState {
@@ -520,7 +521,7 @@ export function renderExplorationHtml(
 <body>
   <header>
     <h1>a11y-shiftleft exploration report</h1>
-    <p class="muted">Generated ${escapeHtml(graph.generatedAt)} from ${escapeHtml(graph.startUrl)}</p>
+    <p class="muted">Generated: <time datetime="${escapeAttribute(graph.generatedAt)}">${escapeHtml(formatReportDateUtc(graph.generatedAt))}</time><br>Start URL: ${escapeHtml(graph.startUrl)}</p>
   </header>
   <main>
     <section class="summary" aria-label="Exploration summary">

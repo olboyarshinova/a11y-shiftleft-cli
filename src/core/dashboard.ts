@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { formatReportDateUtc } from "./reportDate.js";
 import type { A11yReport } from "../types.js";
 
 export interface DashboardOptions {
@@ -218,7 +219,7 @@ export function renderDashboardHtml(data: DashboardData): string {
   <main>
     <header>
       <h1>a11y-shiftleft dashboard</h1>
-      <div class="muted">Generated ${escapeHtml(formatDate(data.generatedAt))} from <code>${escapeHtml(data.reportsRoot)}</code></div>
+      <div class="muted">Generated: <time datetime="${escapeHtml(data.generatedAt)}">${escapeHtml(formatReportDateUtc(data.generatedAt))}</time> from <code>${escapeHtml(data.reportsRoot)}</code></div>
     </header>
 
     <div class="grid metrics" aria-label="Dashboard summary metrics">
@@ -372,7 +373,7 @@ function trendSection(data: DashboardData, maxTrend: number): string {
     .map((point) => {
       const width = Math.max(2, Math.round((point.total / maxTrend) * 100));
       return `<div class="bar-row">
-        <div><code>${escapeHtml(point.id)}</code><div class="muted">${escapeHtml(formatDate(point.generatedAt))}</div></div>
+        <div><code>${escapeHtml(point.id)}</code><div class="muted">${escapeHtml(formatReportDateUtc(point.generatedAt))}</div></div>
         <div class="track" aria-hidden="true"><div class="fill" style="width: ${width}%"></div></div>
         <div class="num">${point.total}</div>
       </div>`;
@@ -432,7 +433,7 @@ function runsSection(runs: DashboardRunSummary[]): string {
   const rows = [...runs].reverse().slice(0, 20)
     .map((run) => `<tr>
       <td><code>${escapeHtml(run.id)}</code></td>
-      <td>${escapeHtml(formatDate(run.generatedAt))}</td>
+      <td>${escapeHtml(formatReportDateUtc(run.generatedAt))}</td>
       <td class="num">${run.total}</td>
       <td class="num critical">${run.critical}</td>
       <td class="num warning">${run.warning}</td>
@@ -470,12 +471,6 @@ function isA11yReport(value: unknown): value is A11yReport {
   return typeof report.generatedAt === "string" &&
     Boolean(report.summary) &&
     Array.isArray(report.issues);
-}
-
-function formatDate(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toISOString();
 }
 
 function normalizePath(value: string): string {
