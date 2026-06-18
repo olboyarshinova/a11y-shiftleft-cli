@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.6.2 - 2026-06-18
+
+### Fixed
+
+- Fixed visual exploration closing its primary page while attempting to block
+  popup windows, which caused `adapter/explore-scan-error` findings instead of
+  running axe checks on affected sites.
+
 ## 0.6.1 - 2026-06-18
 
 ### Added

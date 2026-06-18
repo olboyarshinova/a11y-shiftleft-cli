@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  attachExplorePopupGuard,
   createEvidenceClips,
   getExploreActionSafety,
   isAdvertisingActionContext,
@@ -13,6 +14,28 @@ import {
   isThemeAction,
   shouldCaptureFullPageScreenshot
 } from "../../dist/adapters/explorePlaywrightAdapter.js";
+
+test("attachExplorePopupGuard closes popup pages without observing the primary page", async () => {
+  let registeredEvent = "";
+  let popupListener: ((popup: { close(): Promise<void> }) => Promise<void>) | undefined;
+  let popupClosed = false;
+
+  attachExplorePopupGuard({
+    on(event, listener) {
+      registeredEvent = event;
+      popupListener = listener;
+    }
+  });
+
+  assert.equal(registeredEvent, "popup");
+  assert.ok(popupListener);
+  await popupListener({
+    async close() {
+      popupClosed = true;
+    }
+  });
+  assert.equal(popupClosed, true);
+});
 
 test("normalizeExploreUrl keeps same-origin HTTP URLs and removes hash", () => {
   assert.equal(

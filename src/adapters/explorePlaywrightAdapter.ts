@@ -228,6 +228,20 @@ interface ActionSafetyResult {
   reason?: string;
 }
 
+interface PopupCloseTarget {
+  close(): Promise<void>;
+}
+
+interface PopupEventSource {
+  on(event: "popup", listener: (popup: PopupCloseTarget) => Promise<void>): unknown;
+}
+
+export function attachExplorePopupGuard(page: PopupEventSource): void {
+  page.on("popup", async (openedPage) => {
+    await openedPage.close().catch(() => undefined);
+  });
+}
+
 export async function runExplorePlaywrightAdapter(
   config: A11yConfig,
   options: ExplorePlaywrightOptions
@@ -263,11 +277,7 @@ export async function runExplorePlaywrightAdapter(
   try {
     const context = await browser.newContext();
     const page = await context.newPage();
-    context.on("page", async (openedPage) => {
-      if (openedPage !== page) {
-        await openedPage.close().catch(() => undefined);
-      }
-    });
+    attachExplorePopupGuard(page);
     if (safeMode.enabled && safeMode.dismissDialogs) {
       page.on("dialog", async (dialog) => {
         await dialog.dismiss().catch(() => undefined);
