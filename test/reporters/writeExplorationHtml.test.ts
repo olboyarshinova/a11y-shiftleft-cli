@@ -118,6 +118,11 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /score 5/);
   assert.match(html, /WCAG 4\.1\.2 Name, Role, Value, Level A/);
   assert.match(html, /annotation annotation-critical/);
+  assert.match(html, /class="state state-critical" id="state-1"/);
+  assert.match(html, /class="state state-ok" id="state-2"/);
+  assert.match(html, /\.state-critical/);
+  assert.match(html, /background: rgb\(180 35 24 \/ 10%\)/);
+  assert.doesNotMatch(html, /9999px rgb\(30 36 48 \/ 4%\)/);
   assert.match(html, /Open annotated screenshot/);
   assert.match(html, /id="screenshot-state-1"/);
   assert.match(html, /Annotated screenshot for state-1/);

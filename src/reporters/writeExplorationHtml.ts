@@ -170,6 +170,38 @@ export function renderExplorationHtml(
       overflow: hidden;
     }
 
+    .state-critical {
+      border-color: #e59a92;
+      box-shadow: inset 4px 0 0 var(--critical);
+    }
+
+    .state-critical .state-body {
+      background: #fff7f6;
+    }
+
+    .state-warning {
+      border-color: #e8b98a;
+      box-shadow: inset 4px 0 0 var(--warning);
+    }
+
+    .state-warning .state-body {
+      background: #fffaf5;
+    }
+
+    .state-info {
+      border-color: #9fc3f5;
+      box-shadow: inset 4px 0 0 var(--info);
+    }
+
+    .state-info .state-body {
+      background: #f7faff;
+    }
+
+    .state-ok {
+      border-color: #a6d8c3;
+      box-shadow: inset 4px 0 0 var(--ok);
+    }
+
     .state img {
       aspect-ratio: 16 / 10;
       background: #eef1f5;
@@ -250,7 +282,8 @@ export function renderExplorationHtml(
     .annotation {
       border: 2px solid var(--warning);
       border-radius: 4px;
-      box-shadow: 0 0 0 9999px rgb(30 36 48 / 4%);
+      background: rgb(181 71 8 / 8%);
+      box-shadow: 0 0 0 1px rgb(181 71 8 / 22%);
       min-height: 10px;
       min-width: 10px;
       pointer-events: none;
@@ -258,15 +291,21 @@ export function renderExplorationHtml(
     }
 
     .annotation-critical {
+      background: rgb(180 35 24 / 10%);
       border-color: var(--critical);
+      box-shadow: 0 0 0 1px rgb(180 35 24 / 30%);
     }
 
     .annotation-warning {
+      background: rgb(181 71 8 / 8%);
       border-color: var(--warning);
+      box-shadow: 0 0 0 1px rgb(181 71 8 / 22%);
     }
 
     .annotation-info {
+      background: rgb(23 92 211 / 8%);
       border-color: var(--info);
+      box-shadow: 0 0 0 1px rgb(23 92 211 / 22%);
     }
 
     .state-body {
@@ -441,6 +480,13 @@ export function renderExplorationHtml(
 
 function renderState(state: StateViewModel): string {
   const issueSummary = summarizeIssues(state.issues);
+  const stateSeverity = issueSummary.critical > 0
+    ? "critical"
+    : issueSummary.warning > 0
+      ? "warning"
+      : issueSummary.info > 0
+        ? "info"
+        : "ok";
   const issueBadges = state.issues.length > 0
     ? [
       issueSummary.critical ? badge("critical", `${issueSummary.critical} critical`) : "",
@@ -449,7 +495,7 @@ function renderState(state: StateViewModel): string {
     ].filter(Boolean).join("")
     : badge("ok", "no findings");
 
-  return `<article class="state" id="${escapeAttribute(state.id)}">
+  return `<article class="state state-${stateSeverity}" id="${escapeAttribute(state.id)}">
   ${renderStateScreenshot(state)}
   <div class="state-body">
     <div class="state-title">

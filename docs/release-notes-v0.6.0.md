@@ -29,6 +29,9 @@ artifacts, and easier open-source contribution.
 - Improved `exploration.html` with larger screenshots, compact exploration
   details, and an annotated screenshot view that keeps issue frames visible
   while inspecting a larger screenshot.
+- Replaced stacked gray screenshot overlays with severity-colored card accents
+  and annotations: red for critical, amber for warning, blue for info, and
+  green for states with no automated findings.
 - Improved contributor onboarding with issue templates, a pull request
   template, clearer `CONTRIBUTING.md`, and a seed script for five
   beginner-friendly `good first issue` tasks.
