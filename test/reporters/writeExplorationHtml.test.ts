@@ -144,6 +144,7 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /\.annotation-layer/);
   assert.match(html, /screenshot-frame screenshot-frame-full/);
   assert.match(html, /Open full-page evidence/);
+  assert.match(html, /screenshot-frame-full[\s\S]*?object-fit: contain/);
   assert.match(html, /full-page evidence/);
   assert.match(html, /class="state state-critical" id="state-1"/);
   assert.match(html, /class="state state-ok" id="state-2"/);
@@ -231,6 +232,41 @@ test("renderExplorationHtml labels best practices separately from WCAG findings"
   assert.match(html, /best practice<\/span>/);
   assert.match(html, /Likely Root Causes/);
   assert.doesNotMatch(html, /WCAG 1\.3\.1/);
+});
+
+test("renderExplorationHtml keeps overflow report data in collapsed sections", () => {
+  const overflowIssues = Array.from({ length: 9 }, (_, index) => ({
+    ...issues[0],
+    ruleId: `test-rule-${index + 1}`,
+    message: `Finding ${index + 1}`,
+    fingerprint: `finding-${index + 1}`,
+    elementBounds: undefined
+  }));
+  const overflowEdges = Array.from({ length: 13 }, (_, index) => ({
+    ...graph.edges[0],
+    action: {
+      ...graph.edges[0].action,
+      id: `action-${index + 1}`,
+      label: `Transition ${index + 1}`
+    }
+  }));
+  const overflowActions = Array.from({ length: 21 }, (_, index) => ({
+    ...graph.skippedActions[0],
+    label: `Skipped action ${index + 1}`
+  }));
+
+  const html = renderExplorationHtml({
+    ...graph,
+    edges: overflowEdges,
+    skippedActions: overflowActions
+  }, overflowIssues);
+
+  assert.match(html, /Show 1 more finding/);
+  assert.match(html, /Finding 9/);
+  assert.match(html, /Show 1 more transition/);
+  assert.match(html, /Transition 13/);
+  assert.match(html, /Show 1 more skipped action/);
+  assert.match(html, /Skipped action 21/);
 });
 
 test("writeExplorationHtml writes exploration.html", async () => {

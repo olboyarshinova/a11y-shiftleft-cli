@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import {
   formatExploreConsoleSummary,
   formatExploreProgressMessage,
-  formatVerboseExploreSummary
+  formatVerboseExploreSummary,
+  resolveFullPageScreenshots
 } from "../../dist/commands/explore.js";
 import type { A11yReport, ExplorationGraph } from "../../dist/types.js";
 
@@ -57,6 +58,15 @@ test("formatVerboseExploreSummary renders exploration context", () => {
   assert.match(output, /safeModeBlockedUrls: \*\/checkout\*/);
   assert.match(output, /safeModeBlockedSelectors: \[data-danger\]/);
   assert.match(output, /retention: on/);
+});
+
+test("resolveFullPageScreenshots uses complete pages by default", () => {
+  assert.equal(resolveFullPageScreenshots({}), true);
+  assert.equal(resolveFullPageScreenshots({ compactScreenshots: true }), false);
+  assert.equal(resolveFullPageScreenshots({
+    compactScreenshots: true,
+    screenshotFullPage: true
+  }), true);
 });
 
 test("formatExploreProgressMessage renders compact progress lines", () => {

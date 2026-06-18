@@ -4,6 +4,14 @@
 
 ### Changed
 
+- Visual exploration now captures full-page screenshots for every state by
+  default and fits complete images into report previews. Use
+  `--compact-screenshots` to keep viewport images for clean states.
+- `exploration.html` now includes overflow findings, root causes, transitions,
+  and skipped actions in collapsed sections instead of requiring a second
+  user-facing report.
+- Explore cleanup removes the obsolete `exploration-visual-check.html` artifact;
+  `exploration.html` is the single canonical visual report.
 - Reports now distinguish mapped WCAG violations, axe best-practice guidance,
   and unmapped review items instead of presenting every finding as equivalent.
 - JSON, Markdown, and visual reports group repeated occurrences into likely

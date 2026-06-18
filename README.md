@@ -118,7 +118,7 @@ npx a11y-shiftleft check --dynamic --url http://localhost:4200 --out reports
 | Let the CLI discover same-origin pages | `npx a11y-shiftleft check --dynamic --url $APP_URL --crawl --crawl-depth 1 --crawl-limit 10 --out reports` |
 | Trigger lazy-loaded below-the-fold content | `npx a11y-shiftleft check --dynamic --url $APP_URL --scroll-step 800 --scroll-max-steps 25 --out reports` |
 | Create a visual state report | `npx a11y-shiftleft explore --url $APP_URL --depth 2 --out reports` |
-| Force full-page screenshots for every state | `npx a11y-shiftleft explore --url $APP_URL --depth 2 --screenshot-full-page --out reports` |
+| Use smaller screenshots for clean states | `npx a11y-shiftleft explore --url $APP_URL --depth 2 --compact-screenshots --out reports` |
 | Keep reports refreshed while coding | `npx a11y-shiftleft watch --url $APP_URL --out reports/watch` |
 | Generate a fast PR workflow | `npx a11y-shiftleft ci --url $APP_URL --start-command "npm run dev -- --host localhost --port 5173"` |
 | View historical trends | `npx a11y-shiftleft dashboard --reports reports` |
@@ -241,17 +241,16 @@ helps trigger lazy-loaded sections below the first viewport. The scan still
 stays bounded for CI with a default maximum of 25 scroll steps per page. Use
 `--no-scroll` only when a project needs to avoid scroll-triggered behavior.
 
-States with automated findings are captured as compressed full-page screenshots
-automatically, so evidence below the first viewport is included in the report.
-States without findings keep a compact viewport screenshot. Add
-`--screenshot-full-page` only when every explored state should use full-page
-evidence:
+Every explored state is captured as a compressed full-page screenshot, so the
+main visual report includes evidence below the first viewport. Full-page images
+are fitted into each report preview instead of being cropped. Use
+`--compact-screenshots` when clean states only need a smaller viewport image:
 
 ```bash
 npx a11y-shiftleft explore \
   --url $APP_URL \
   --depth 2 \
-  --screenshot-full-page \
+  --compact-screenshots \
   --out reports
 ```
 

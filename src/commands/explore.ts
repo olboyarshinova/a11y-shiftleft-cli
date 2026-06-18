@@ -46,6 +46,7 @@ interface ExploreOptions {
   screenshotFormat?: string;
   screenshotQuality?: string;
   screenshotFullPage?: boolean;
+  compactScreenshots?: boolean;
   screenshotRedaction?: boolean;
   safeMode?: boolean;
   safeBlockText?: string[];
@@ -99,7 +100,8 @@ export function registerExploreCommand(program: Command): void {
     .option("--no-screenshots", "Do not save state screenshots")
     .option("--screenshot-format <format>", "Screenshot format: jpeg or png", "jpeg")
     .option("--screenshot-quality <quality>", "JPEG screenshot quality from 1 to 100", "70")
-    .option("--screenshot-full-page", "Force full-page screenshots for every state; states with findings use them automatically")
+    .option("--screenshot-full-page", "Capture full-page screenshots for every state (default)")
+    .option("--compact-screenshots", "Use viewport screenshots for clean states to reduce report size")
     .option("--no-screenshot-redaction", "Do not mask sensitive fields in screenshots")
     .option("--no-safe-mode", "Disable safe-mode action blocking for exploration")
     .option("--safe-block-text <patterns...>", "Additional text patterns to skip during exploration")
@@ -190,6 +192,7 @@ export function registerExploreCommand(program: Command): void {
       const waitMs = toNonNegativeInteger(options.waitMs) ?? effectiveConfig.explore.waitMs;
       const screenshotFormat = toScreenshotFormat(options.screenshotFormat);
       const screenshotQuality = toScreenshotQuality(options.screenshotQuality);
+      const screenshotFullPage = resolveFullPageScreenshots(options);
       const formats = parseFormats(options.format);
       const progressEnabled = shouldPrintExploreProgress(options);
       let visitedStates = 0;
@@ -208,7 +211,7 @@ export function registerExploreCommand(program: Command): void {
           screenshots: options.screenshots !== false,
           screenshotFormat,
           screenshotQuality: screenshotQuality || 70,
-          screenshotFullPage: Boolean(options.screenshotFullPage),
+          screenshotFullPage,
           screenshotRedaction: options.screenshotRedaction !== false,
           waitMs,
           waitForSelector: effectiveConfig.explore.waitForSelector,
@@ -237,7 +240,7 @@ export function registerExploreCommand(program: Command): void {
         screenshots: options.screenshots,
         screenshotFormat,
         screenshotQuality,
-        screenshotFullPage: Boolean(options.screenshotFullPage),
+        screenshotFullPage,
         screenshotRedaction: options.screenshotRedaction,
         waitMs,
         waitForSelector: effectiveConfig.explore.waitForSelector,
@@ -452,6 +455,13 @@ export function formatVerboseExploreSummary(options: {
     `safeModeBlockedSelectors: ${formatPatternList(options.safeModeBlockedSelectors)}`,
     `retention: ${retention}`
   ].join("\n");
+}
+
+export function resolveFullPageScreenshots(options: {
+  screenshotFullPage?: boolean;
+  compactScreenshots?: boolean;
+}): boolean {
+  return Boolean(options.screenshotFullPage) || !options.compactScreenshots;
 }
 
 export function formatExploreProgressMessage(event:

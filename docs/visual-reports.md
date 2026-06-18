@@ -45,10 +45,9 @@ after a short delay. `explore` waits for network idle and a small settle delay b
 default before taking screenshots and running axe.
 
 `explore` also auto-scrolls each state before scanning. Auto-scroll helps load
-below-the-fold content. When axe finds an issue in a state, the saved evidence
-is automatically a full-page screenshot so the affected content can appear in
-the report even when it is below the first viewport. States without findings
-use a compact viewport screenshot.
+below-the-fold content. Every state uses a full-page screenshot by default so
+the report can show the complete checked page, including clean states. Use
+`--compact-screenshots` when clean states only need viewport evidence.
 
 Use `--wait-ms` when screenshots are captured before the UI finishes rendering:
 
@@ -96,9 +95,9 @@ certification.
 
 ## Screenshot Privacy
 
-Screenshots are compressed by default as JPEG files at quality `70`. States
-with findings use full-page evidence; clean states use viewport screenshots to
-keep reports smaller:
+Screenshots are compressed by default as JPEG files at quality `70`. Every state
+uses full-page evidence, and the HTML preview fits the complete page into the
+available frame instead of cropping it:
 
 ```bash
 npx a11y-shiftleft explore --url $APP_URL --out reports
@@ -131,17 +130,17 @@ npx a11y-shiftleft explore \
 ```
 
 Use PNG only when the extra detail is worth the larger artifact size. Add
-`--screenshot-full-page` to force full-page evidence for clean states too:
+`--compact-screenshots` when smaller clean-state evidence is preferable:
 
 ```bash
 npx a11y-shiftleft explore \
   --url $APP_URL \
   --screenshot-format png \
-  --screenshot-full-page \
+  --compact-screenshots \
   --out reports
 ```
 
-Finding states are full-page automatically. Keep `--no-screenshots` for
+Finding states remain full-page in compact mode. Keep `--no-screenshots` for
 sensitive pages.
 
 ## Safe Mode

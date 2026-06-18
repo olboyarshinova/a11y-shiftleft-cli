@@ -7,6 +7,7 @@ const REPORT_FILES = [
   "a11y-comment.md",
   "a11y-manual-checklist.md",
   "exploration-graph.json",
+  "exploration-visual-check.html",
   "exploration.html",
   "exploration.pdf"
 ];

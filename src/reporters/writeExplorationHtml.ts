@@ -238,6 +238,7 @@ export function renderExplorationHtml(
     }
 
     .screenshot-frame-full .screenshot-stage > img {
+      object-fit: contain;
       object-position: top;
     }
 
@@ -730,8 +731,7 @@ function renderRootCauseGroups(groups: RootCauseGroup[]): string {
     return `<p class="muted">No root-cause candidates were generated.</p>`;
   }
 
-  return `<ol class="triage-list">
-    ${groups.slice(0, 8).map((group) => `<li class="triage-item">
+  const renderGroup = (group: RootCauseGroup): string => `<li class="triage-item">
       <div class="triage-title">
         <code>${escapeHtml(group.ruleId)}</code>
         <span class="badge">${group.occurrenceCount} occurrence${group.occurrenceCount === 1 ? "" : "s"}</span>
@@ -741,8 +741,17 @@ function renderRootCauseGroups(groups: RootCauseGroup[]): string {
         <span class="badge">${group.affectedPages.length} page${group.affectedPages.length === 1 ? "" : "s"}</span>
       </div>
       <div class="url">${escapeHtml(group.targetPattern)}</div>
-    </li>`).join("\n")}
+    </li>`;
+  const visibleGroups = groups.slice(0, 8);
+  const remainingGroups = groups.slice(8);
+
+  return `<ol class="triage-list">
+    ${visibleGroups.map(renderGroup).join("\n")}
   </ol>
+  ${remainingGroups.length > 0 ? `<details>
+    <summary>Show ${remainingGroups.length} more root cause${remainingGroups.length === 1 ? "" : "s"}</summary>
+    <ol class="triage-list">${remainingGroups.map(renderGroup).join("\n")}</ol>
+  </details>` : ""}
   <p class="muted">Groups are heuristic and keep individual page evidence below.</p>`;
 }
 
@@ -813,14 +822,22 @@ function renderIssues(issues: DedupedIssue[]): string {
     return `<p class="muted">No automated findings in this state.</p>`;
   }
 
-  return `<ul class="issue-list">
-    ${issues.slice(0, 8).map((issue) => `<li class="issue">
+  const renderIssue = (issue: DedupedIssue): string => `<li class="issue">
       <div>${severityBadge(issue.severity)} ${findingTypeBadge(issue.findingType)} <code>${escapeHtml(issue.ruleId)}</code></div>
       <div>${escapeHtml(issue.message)}</div>
       ${issue.selector ? `<div class="url">${escapeHtml(issue.selector)}</div>` : ""}
       ${renderContrastEvidence(issue)}
-    </li>`).join("\n")}
-  </ul>`;
+    </li>`;
+  const visibleIssues = issues.slice(0, 8);
+  const remainingIssues = issues.slice(8);
+
+  return `<ul class="issue-list">
+    ${visibleIssues.map(renderIssue).join("\n")}
+  </ul>
+  ${remainingIssues.length > 0 ? `<details>
+    <summary>Show ${remainingIssues.length} more finding${remainingIssues.length === 1 ? "" : "s"}</summary>
+    <ul class="issue-list">${remainingIssues.map(renderIssue).join("\n")}</ul>
+  </details>` : ""}`;
 }
 
 function renderContrastEvidence(issue: DedupedIssue): string {
@@ -872,20 +889,24 @@ function renderEdges(graph: ExplorationGraph): string {
     </details>`;
   }
 
+  const renderEdge = (edge: ExplorationGraph["edges"][number]): string => `<li class="edge">
+      <div><a href="#${escapeAttribute(edge.from)}">${escapeHtml(edge.from)}</a> -> <a href="#${escapeAttribute(edge.to)}">${escapeHtml(edge.to)}</a></div>
+      <div class="muted">${escapeHtml(edge.action.label)}</div>
+      ${edge.action.selector ? `<div><code>${escapeHtml(edge.action.selector)}</code></div>` : ""}
+    </li>`;
   const visibleEdges = graph.edges.slice(0, 12);
-  const hiddenCount = graph.edges.length - visibleEdges.length;
+  const remainingEdges = graph.edges.slice(12);
 
   return `<details>
     <summary>State transitions: ${graph.edges.length}</summary>
     <p class="muted">Transition details are mainly useful for debugging crawl coverage. Full data is available in <code>exploration-graph.json</code>.</p>
     <ul class="edge-list">
-    ${visibleEdges.map((edge) => `<li class="edge">
-      <div><a href="#${escapeAttribute(edge.from)}">${escapeHtml(edge.from)}</a> -> <a href="#${escapeAttribute(edge.to)}">${escapeHtml(edge.to)}</a></div>
-      <div class="muted">${escapeHtml(edge.action.label)}</div>
-      ${edge.action.selector ? `<div><code>${escapeHtml(edge.action.selector)}</code></div>` : ""}
-    </li>`).join("\n")}
+    ${visibleEdges.map(renderEdge).join("\n")}
   </ul>
-  ${hiddenCount > 0 ? `<p class="muted">${hiddenCount} more transitions are available in <code>exploration-graph.json</code>.</p>` : ""}
+  ${remainingEdges.length > 0 ? `<details>
+    <summary>Show ${remainingEdges.length} more transition${remainingEdges.length === 1 ? "" : "s"}</summary>
+    <ul class="edge-list">${remainingEdges.map(renderEdge).join("\n")}</ul>
+  </details>` : ""}
   </details>`;
 }
 
@@ -899,21 +920,25 @@ function renderSkippedActions(graph: ExplorationGraph): string {
     </details>`;
   }
 
+  const renderAction = (action: NonNullable<ExplorationGraph["skippedActions"]>[number]): string => `<li class="edge">
+      <div><a href="#${escapeAttribute(action.stateId)}">${escapeHtml(action.stateId)}</a>: ${escapeHtml(action.label)}</div>
+      <div class="muted">${escapeHtml(action.reason)}</div>
+      ${action.selector ? `<div><code>${escapeHtml(action.selector)}</code></div>` : ""}
+      ${action.url ? `<div class="url">${escapeHtml(action.url)}</div>` : ""}
+    </li>`;
   const visibleActions = skippedActions.slice(0, 20);
-  const hiddenCount = skippedActions.length - visibleActions.length;
+  const remainingActions = skippedActions.slice(20);
 
   return `<details>
     <summary>Skipped actions: ${skippedActions.length}</summary>
     <p class="muted">Skipped actions are usually safety decisions, such as avoiding submit, payment, logout, or destructive controls.</p>
     <ul class="edge-list">
-    ${visibleActions.map((action) => `<li class="edge">
-      <div><a href="#${escapeAttribute(action.stateId)}">${escapeHtml(action.stateId)}</a>: ${escapeHtml(action.label)}</div>
-      <div class="muted">${escapeHtml(action.reason)}</div>
-      ${action.selector ? `<div><code>${escapeHtml(action.selector)}</code></div>` : ""}
-      ${action.url ? `<div class="url">${escapeHtml(action.url)}</div>` : ""}
-    </li>`).join("\n")}
+    ${visibleActions.map(renderAction).join("\n")}
   </ul>
-  ${hiddenCount > 0 ? `<p class="muted">${hiddenCount} more skipped actions are available in <code>exploration-graph.json</code>.</p>` : ""}
+  ${remainingActions.length > 0 ? `<details>
+    <summary>Show ${remainingActions.length} more skipped action${remainingActions.length === 1 ? "" : "s"}</summary>
+    <ul class="edge-list">${remainingActions.map(renderAction).join("\n")}</ul>
+  </details>` : ""}
   </details>`;
 }
 
