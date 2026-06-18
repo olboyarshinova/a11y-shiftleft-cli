@@ -114,6 +114,24 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
     ]
   },
   {
+    id: "brand-logo-accessibility",
+    title: "Logo purpose and accessible name",
+    principle: "perceivable",
+    wcag: ["1.1.1", "2.4.4", "4.1.2"],
+    whyManual: "Tools can detect missing alternatives, but cannot reliably decide whether a logo is informative, decorative, duplicated by nearby text, or a clearly named home link.",
+    steps: [
+      "Review logos in headers, footers, authentication screens, and branded content across the tested routes.",
+      "Give a standalone informative logo a concise organization or product name; use an empty alternative when adjacent visible text already provides the same name.",
+      "When a logo links to the home page, confirm the link has a clear accessible name and keyboard focus indicator without duplicate or filename-based announcements.",
+      "For inline SVG logos, confirm decorative paths are hidden and the containing image or link exposes one meaningful accessible name.",
+      "Check that the logo and its linked focus state remain recognizable at 200% zoom and in forced-colors or high-contrast mode."
+    ],
+    evidence: [
+      "Logo inventory with purpose, destination, and expected accessible name",
+      "Screen reader announcement and keyboard-focus notes for linked logos"
+    ]
+  },
+  {
     id: "media-motion",
     title: "Media alternatives, autoplay, and motion",
     principle: "perceivable",

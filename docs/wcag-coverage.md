@@ -49,7 +49,7 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
 
 | Criterion | Level | Current coverage | Current source or limitation |
 |---|---|---|---|
-| 1.1.1 Non-text Content | A | Automated + mapped; manual checklist | axe image/ARIA alternative rules, framework lint, alternative-text quality review |
+| 1.1.1 Non-text Content | A | Automated + mapped; manual checklist | axe image/ARIA alternative rules, framework lint, alternative-text and logo-purpose review |
 | 1.2.1 Audio-only and Video-only (Prerecorded) | A | Automated + mapped; manual checklist | axe `audio-caption`; media checklist cannot validate transcript quality automatically |
 | 1.2.2 Captions (Prerecorded) | A | Automated + mapped; manual checklist | axe `video-caption`; manual caption accuracy review |
 | 1.2.3 Audio Description or Media Alternative (Prerecorded) | A | Gap | No dedicated mapped review |

@@ -515,7 +515,7 @@ reports/a11y-manual-checklist.md
 ```
 
 The checklist covers areas such as keyboard flow, screen reader smoke testing,
-form labels, content clarity, 200% zoom and reflow, alternative-text quality,
+form labels, content clarity, 200% zoom and reflow, alternative-text and logo quality,
 media and motion, skip links, and representative-user task testing that
 automated tools cannot fully judge.
 

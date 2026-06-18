@@ -9,6 +9,9 @@
   risks, and writes dedicated Markdown/JSON evidence alongside normal reports.
 - Added WCAG metadata for No Keyboard Trap, Focus Visible, and Focus Not
   Obscured (Minimum) so keyboard findings use the shared report pipeline.
+- Added a dedicated manual logo review covering purpose, alternative text,
+  duplicate announcements, linked-logo names, SVG semantics, zoom, and
+  high-contrast behavior.
 
 ### Fixed
 
