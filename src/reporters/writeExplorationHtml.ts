@@ -398,6 +398,40 @@ export function renderExplorationHtml(
       word-break: break-word;
     }
 
+    .contrast-evidence {
+      background: #f6f7f9;
+      border-left: 3px solid var(--info);
+      display: grid;
+      gap: 7px;
+      margin-top: 8px;
+      padding: 9px 10px;
+    }
+
+    .contrast-colors,
+    .contrast-suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px 14px;
+    }
+
+    .contrast-color {
+      align-items: center;
+      display: inline-flex;
+      gap: 6px;
+    }
+
+    .color-swatch {
+      border: 1px solid #717784;
+      display: inline-block;
+      flex: 0 0 18px;
+      height: 18px;
+      width: 18px;
+    }
+
+    .contrast-evidence code {
+      background: #e7eaf0;
+    }
+
     details {
       border-top: 1px solid var(--line);
       padding-top: 10px;
@@ -684,8 +718,50 @@ function renderIssues(issues: DedupedIssue[]): string {
       <div>${severityBadge(issue.severity)} <code>${escapeHtml(issue.ruleId)}</code></div>
       <div>${escapeHtml(issue.message)}</div>
       ${issue.selector ? `<div class="url">${escapeHtml(issue.selector)}</div>` : ""}
+      ${renderContrastEvidence(issue)}
     </li>`).join("\n")}
   </ul>`;
+}
+
+function renderContrastEvidence(issue: DedupedIssue): string {
+  const contrast = issue.contrast;
+  if (!contrast) return "";
+
+  const typography = [contrast.fontSize, contrast.fontWeight].filter(Boolean).join(", ");
+  const suggestions = contrast.suggestions.length > 0
+    ? `<div class="contrast-suggestions">
+      ${contrast.suggestions.map((suggestion) => `<span class="contrast-color">
+        ${renderColorSwatch(suggestion.color)}
+        ${formatContrastSuggestionPurpose(suggestion.purpose)}: <code>${escapeHtml(suggestion.color)}</code> → ${suggestion.contrastRatio}:1
+      </span>`).join("\n")}
+    </div>`
+    : `<div class="muted">No reliable single-color suggestion is available. Review this contrast manually.</div>`;
+
+  return `<div class="contrast-evidence">
+    <div><strong>Contrast ${contrast.actualRatio}:1</strong> · required ${contrast.requiredRatio}:1</div>
+    <div class="contrast-colors">
+      <span class="contrast-color">${renderColorSwatch(contrast.foreground)} Text <code>${escapeHtml(contrast.foreground)}</code></span>
+      <span class="contrast-color">${renderColorSwatch(contrast.background)} Background <code>${escapeHtml(contrast.background)}</code></span>
+    </div>
+    ${typography ? `<div class="url">${escapeHtml(typography)}</div>` : ""}
+    <div><strong>Suggested accessible colors</strong></div>
+    <div class="url">Keep background ${escapeHtml(contrast.background)} and change the text color:</div>
+    ${suggestions}
+    <div class="url">Review design tokens and hover, focus, disabled, and visited states before applying.</div>
+  </div>`;
+}
+
+function formatContrastSuggestionPurpose(
+  purpose: NonNullable<DedupedIssue["contrast"]>["suggestions"][number]["purpose"]
+): string {
+  if (purpose === "minimum") return "Minimum change";
+  if (purpose === "recommended") return "Recommended";
+  return "Enhanced contrast";
+}
+
+function renderColorSwatch(color: string): string {
+  if (!/^#[0-9a-f]{3,8}$/i.test(color)) return "";
+  return `<span class="color-swatch" style="background-color: ${escapeAttribute(color)}" aria-hidden="true"></span>`;
 }
 
 function renderEdges(graph: ExplorationGraph): string {

@@ -36,6 +36,9 @@ No unreleased changes yet.
   below-the-fold content can be checked without manually scrolling the page.
 - Automatic full-page screenshot evidence for explored states with findings,
   while clean states keep compact viewport screenshots.
+- Structured color-contrast evidence in JSON, Markdown, and HTML reports with
+  measured and required ratios, color swatches, and passing text-color
+  suggestions that preserve the current background.
 - Severity-colored visual report cards and annotations without stacked gray
   overlays that obscure screenshots with multiple findings.
 - Built-in high-risk action blocking for account/session, payment, cookie

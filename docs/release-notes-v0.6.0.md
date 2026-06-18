@@ -35,6 +35,10 @@ artifacts, and easier open-source contribution.
 - Replaced stacked gray screenshot overlays with severity-colored card accents
   and annotations: red for critical, orange for warning, blue for info, and
   green for states with no automated findings.
+- Added structured `color-contrast` evidence with measured and required ratios,
+  foreground/background swatches, font metadata, and deterministic suggestions
+  for minimum, recommended, and enhanced text contrast while preserving the
+  current background.
 - Improved contributor onboarding with issue templates, a pull request
   template, clearer `CONTRIBUTING.md`, and a seed script for five
   beginner-friendly `good first issue` tasks.

@@ -26,6 +26,12 @@ reports/screenshots/state-*.jpg
 findings, recorded transitions, skipped actions, and reviewable overlays around
 affected elements when Playwright can resolve their bounds.
 
+For `color-contrast` findings, the HTML report also shows the measured ratio,
+required ratio, foreground and background swatches, font metadata, and options
+for minimally changing the text color while preserving the current background.
+Suggestions are calculated from WCAG relative luminance and should still be
+checked against design tokens and hover, focus, disabled, and visited states.
+
 ## Waiting For Async UI
 
 Some apps render the shell first and load cards, charts, or authenticated data

@@ -1,6 +1,7 @@
 import { chromium } from "playwright";
 import { AxeBuilder } from "@axe-core/playwright";
 import { normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig, type ScrollablePage } from "../core/pageScroll.js";
+import { extractContrastEvidence } from "../core/contrast.js";
 import type { A11yConfig, Issue } from "../types.js";
 
 interface CrawlQueueItem {
@@ -90,6 +91,7 @@ export async function runAxePlaywrightAdapter(
               wcag: violation.tags.filter((tag: string) => tag.startsWith("wcag")),
               tags: violation.tags,
               selector: node.target.join(" "),
+              contrast: extractContrastEvidence(violation.id, node),
               message: violation.help,
               url
             });

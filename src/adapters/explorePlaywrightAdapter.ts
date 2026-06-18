@@ -4,6 +4,7 @@ import path from "node:path";
 import { AxeBuilder } from "@axe-core/playwright";
 import { chromium, type BrowserContext, type Page } from "playwright";
 import { normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig } from "../core/pageScroll.js";
+import { extractContrastEvidence } from "../core/contrast.js";
 import type {
   A11yConfig,
   ExplorationGraph,
@@ -571,6 +572,7 @@ async function scanState(
           wcag: violation.tags.filter((tag: string) => tag.startsWith("wcag")),
           tags: violation.tags,
           selector,
+          contrast: extractContrastEvidence(violation.id, node),
           message: violation.help,
           url: page.url(),
           stateId: state.stateId,

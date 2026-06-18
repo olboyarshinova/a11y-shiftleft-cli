@@ -78,6 +78,23 @@ export interface ElementBounds {
   coordinateSpace: "viewport" | "document";
 }
 
+export interface ContrastSuggestion {
+  target: "foreground" | "background";
+  purpose: "minimum" | "recommended" | "enhanced";
+  color: string;
+  contrastRatio: number;
+}
+
+export interface ContrastEvidence {
+  actualRatio: number;
+  requiredRatio: number;
+  foreground: string;
+  background: string;
+  fontSize?: string;
+  fontWeight?: string;
+  suggestions: ContrastSuggestion[];
+}
+
 export interface StaticConfig {
   enabled: boolean;
   include: string[];
@@ -182,6 +199,7 @@ export interface Issue {
   stateLabel?: string;
   screenshot?: string;
   elementBounds?: ElementBounds;
+  contrast?: ContrastEvidence;
   message?: string;
   remediation?: RemediationHint;
 }
@@ -206,6 +224,7 @@ export interface NormalizedIssue extends Required<Pick<Issue, "source" | "framew
   stateLabel?: string;
   screenshot?: string;
   elementBounds?: ElementBounds;
+  contrast?: ContrastEvidence;
 }
 
 export interface TriagedIssue extends NormalizedIssue {

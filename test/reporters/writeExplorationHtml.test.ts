@@ -157,6 +157,36 @@ test("renderExplorationHtml escapes dynamic content", () => {
   assert.doesNotMatch(html, /<script>alert/);
 });
 
+test("renderExplorationHtml renders color contrast evidence and suggestions", () => {
+  const html = renderExplorationHtml(graph, [{
+    ...issues[0],
+    ruleId: "color-contrast",
+    contrast: {
+      actualRatio: 2.32,
+      requiredRatio: 4.5,
+      foreground: "#aaaaaa",
+      background: "#ffffff",
+      fontSize: "12.0pt (16px)",
+      fontWeight: "normal",
+      suggestions: [
+        { target: "foreground", purpose: "minimum", color: "#767676", contrastRatio: 4.54 },
+        { target: "foreground", purpose: "recommended", color: "#6F6F6F", contrastRatio: 5.02 },
+        { target: "foreground", purpose: "enhanced", color: "#595959", contrastRatio: 7 }
+      ]
+    }
+  }]);
+
+  assert.match(html, /Contrast 2\.32:1/);
+  assert.match(html, /required 4\.5:1/);
+  assert.match(html, /Text <code>#aaaaaa<\/code>/);
+  assert.match(html, /Background <code>#ffffff<\/code>/);
+  assert.match(html, /Keep background #ffffff and change the text color/);
+  assert.match(html, /Minimum change: <code>#767676<\/code> → 4\.54:1/);
+  assert.match(html, /Recommended: <code>#6F6F6F<\/code> → 5\.02:1/);
+  assert.match(html, /Enhanced contrast: <code>#595959<\/code> → 7:1/);
+  assert.match(html, /background-color: #767676/);
+});
+
 test("writeExplorationHtml writes exploration.html", async () => {
   const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-exploration-html-"));
 

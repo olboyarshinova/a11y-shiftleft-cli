@@ -123,7 +123,8 @@ export function toMarkdown(report: A11yReport): string {
       const baseline = issue.baselineStatus ? ` baseline: ${issue.baselineStatus}` : "";
       const confidence = formatIssueConfidence(issue);
       const category = issue.category ? ` category: ${issue.category}` : "";
-      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}${state}${screenshot}${baseline}${category}${confidence}: ${issue.message}${remediation}`;
+      const contrast = formatContrastEvidence(issue);
+      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}${state}${screenshot}${baseline}${category}${confidence}: ${issue.message}${contrast}${remediation}`;
     })
     .join("\n");
 
@@ -276,6 +277,21 @@ function formatRemediation(issue: DedupedIssue): string {
     `\n  - Fix: ${issue.remediation.summary}`,
     docs ? `\n  - Docs: ${docs}` : "",
     example
+  ].join("");
+}
+
+function formatContrastEvidence(issue: DedupedIssue): string {
+  if (!issue.contrast) return "";
+
+  const contrast = issue.contrast;
+  const suggestions = contrast.suggestions
+    .map((suggestion) => `${suggestion.purpose} text ${suggestion.color} (${suggestion.contrastRatio}:1)`)
+    .join(", ");
+
+  return [
+    `\n  - Contrast: ${contrast.actualRatio}:1; required: ${contrast.requiredRatio}:1`,
+    `\n  - Colors: text ${contrast.foreground}; background ${contrast.background}`,
+    suggestions ? `\n  - Suggested text colors on ${contrast.background}: ${suggestions}` : ""
   ].join("");
 }
 

@@ -188,6 +188,44 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /react example: `<button type="button" aria-label="Open menu">/);
 });
 
+test("writeReports includes structured contrast evidence in JSON and Markdown", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-contrast-"));
+  const contrast = {
+    actualRatio: 2.32,
+    requiredRatio: 4.5,
+    foreground: "#aaaaaa",
+    background: "#ffffff",
+    fontSize: "12.0pt (16px)",
+    fontWeight: "normal",
+    suggestions: [
+      { target: "foreground" as const, purpose: "minimum" as const, color: "#767676", contrastRatio: 4.54 },
+      { target: "foreground" as const, purpose: "recommended" as const, color: "#6F6F6F", contrastRatio: 5.02 },
+      { target: "foreground" as const, purpose: "enhanced" as const, color: "#595959", contrastRatio: 7 }
+    ]
+  };
+
+  const report = await writeReports(outputDir, [{
+    source: "axe",
+    framework: "react",
+    severity: "critical",
+    ruleId: "color-contrast",
+    wcag: ["1.4.3"],
+    wcagCriteria: [],
+    tags: [],
+    selector: ".muted-copy",
+    message: "Elements must meet minimum color contrast ratio thresholds",
+    contrast
+  }], { framework: "react" });
+  const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+
+  assert.deepEqual(report.issues[0].contrast, contrast);
+  assert.match(markdown, /Contrast: 2\.32:1; required: 4\.5:1/);
+  assert.match(markdown, /Colors: text #aaaaaa; background #ffffff/);
+  assert.match(markdown, /Suggested text colors on #ffffff/);
+  assert.match(markdown, /minimum text #767676 \(4\.54:1\)/);
+  assert.match(markdown, /recommended text #6F6F6F \(5\.02:1\)/);
+});
+
 test("writeReports summarizes rules without WCAG mappings", async () => {
   const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-unmapped-"));
 

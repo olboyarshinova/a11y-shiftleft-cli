@@ -150,6 +150,17 @@ Each finding can include:
   "confidence": "high",
   "confidenceScore": 95,
   "category": "contrast",
+  "contrast": {
+    "actualRatio": 2.32,
+    "requiredRatio": 4.5,
+    "foreground": "#aaaaaa",
+    "background": "#ffffff",
+    "suggestions": [
+      { "target": "foreground", "purpose": "minimum", "color": "#767676", "contrastRatio": 4.54 },
+      { "target": "foreground", "purpose": "recommended", "color": "#6F6F6F", "contrastRatio": 5.02 },
+      { "target": "foreground", "purpose": "enhanced", "color": "#595959", "contrastRatio": 7 }
+    ]
+  },
   "wcag": ["1.4.3"],
   "wcagCriteria": [
     {
@@ -166,6 +177,11 @@ Each finding can include:
 Severity answers: "How risky is this finding?"
 
 Confidence answers: "How strong is the tool evidence?"
+
+For axe `color-contrast` findings, JSON, Markdown, and visual reports include
+the measured and required ratios, text and background colors, font metadata,
+and deterministic suggestions that meet the reported threshold. Treat suggested
+colors as starting points and verify shared design tokens and interactive states.
 
 ## Static Checks For React, Vue, And Angular
 

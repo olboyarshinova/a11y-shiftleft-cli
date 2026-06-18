@@ -31,6 +31,7 @@ export function normalizeIssue(issue: Issue): NormalizedIssue {
     stateLabel: issue.stateLabel,
     screenshot: issue.screenshot,
     elementBounds: issue.elementBounds,
+    contrast: issue.contrast,
     message: issue.message || "Accessibility issue detected."
   };
 }
