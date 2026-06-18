@@ -44,6 +44,7 @@ export function renderExplorationHtml(
       --line: #d9dde5;
       --critical: #b42318;
       --warning: #b54708;
+      --warning-marker: #f97316;
       --info: #175cd3;
       --ok: #067647;
     }
@@ -180,12 +181,12 @@ export function renderExplorationHtml(
     }
 
     .state-warning {
-      border-color: #e8b98a;
-      box-shadow: inset 4px 0 0 var(--warning);
+      border-color: #f7a45a;
+      box-shadow: inset 4px 0 0 var(--warning-marker);
     }
 
     .state-warning .state-body {
-      background: #fffaf5;
+      background: #fff8f1;
     }
 
     .state-info {
@@ -280,10 +281,10 @@ export function renderExplorationHtml(
     }
 
     .annotation {
-      border: 2px solid var(--warning);
+      border: 2px solid var(--warning-marker);
       border-radius: 4px;
-      background: rgb(181 71 8 / 8%);
-      box-shadow: 0 0 0 1px rgb(181 71 8 / 22%);
+      background: rgb(249 115 22 / 10%);
+      box-shadow: 0 0 0 1px rgb(249 115 22 / 28%);
       min-height: 10px;
       min-width: 10px;
       pointer-events: none;
@@ -297,9 +298,9 @@ export function renderExplorationHtml(
     }
 
     .annotation-warning {
-      background: rgb(181 71 8 / 8%);
-      border-color: var(--warning);
-      box-shadow: 0 0 0 1px rgb(181 71 8 / 22%);
+      background: rgb(249 115 22 / 10%);
+      border-color: var(--warning-marker);
+      box-shadow: 0 0 0 1px rgb(249 115 22 / 28%);
     }
 
     .annotation-info {

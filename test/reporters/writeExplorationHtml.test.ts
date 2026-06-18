@@ -122,6 +122,8 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /class="state state-ok" id="state-2"/);
   assert.match(html, /\.state-critical/);
   assert.match(html, /background: rgb\(180 35 24 \/ 10%\)/);
+  assert.match(html, /--warning-marker: #f97316/);
+  assert.match(html, /border-color: var\(--warning-marker\)/);
   assert.doesNotMatch(html, /9999px rgb\(30 36 48 \/ 4%\)/);
   assert.match(html, /Open annotated screenshot/);
   assert.match(html, /id="screenshot-state-1"/);
