@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.6.3 - 2026-06-18
+
+### Fixed
+
+- Fixed screenshot annotations drifting in previews and expanded views by
+  capturing error crops beyond the viewport and storing the actual PNG/JPEG
+  dimensions instead of assumed crop dimensions.
+
 ## 0.6.2 - 2026-06-18
 
 ### Fixed

@@ -10,10 +10,39 @@ import {
   isSafeExploreActionWithConfig,
   normalizeExploreUrl,
   prioritizeThemeActions,
+  readScreenshotDimensions,
   SENSITIVE_SCREENSHOT_SELECTOR,
   isThemeAction,
   shouldCaptureFullPageScreenshot
 } from "../../dist/adapters/explorePlaywrightAdapter.js";
+
+test("readScreenshotDimensions reads PNG and JPEG dimensions", () => {
+  const png = Buffer.alloc(24);
+  png.write("PNG", 1, "ascii");
+  png.writeUInt32BE(1280, 16);
+  png.writeUInt32BE(896, 20);
+
+  const jpeg = Buffer.from([
+    0xff, 0xd8,
+    0xff, 0xc0,
+    0x00, 0x11,
+    0x08,
+    0x02, 0xd0,
+    0x05, 0x00,
+    0x03, 0x01, 0x11, 0x00, 0x02, 0x11, 0x00, 0x03, 0x11, 0x00,
+    0xff, 0xd9
+  ]);
+
+  assert.deepEqual(readScreenshotDimensions(png, "png"), {
+    width: 1280,
+    height: 896
+  });
+  assert.deepEqual(readScreenshotDimensions(jpeg, "jpeg"), {
+    width: 1280,
+    height: 720
+  });
+  assert.equal(readScreenshotDimensions(Buffer.from("invalid"), "jpeg"), undefined);
+});
 
 test("attachExplorePopupGuard closes popup pages without observing the primary page", async () => {
   let registeredEvent = "";

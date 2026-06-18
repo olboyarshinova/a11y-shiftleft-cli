@@ -332,6 +332,7 @@ export function renderExplorationHtml(
       border: 2px solid var(--warning-marker);
       border-radius: 4px;
       background: rgb(249 115 22 / 10%);
+      box-sizing: border-box;
       box-shadow: 0 0 0 1px rgb(249 115 22 / 28%);
       min-height: 10px;
       min-width: 10px;
