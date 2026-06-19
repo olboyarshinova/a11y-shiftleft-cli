@@ -40,6 +40,18 @@ This project connects those pieces into one repeatable developer workflow:
 - Add bounded checks to pull requests.
 - Track whether accessibility is getting better or worse over time.
 
+## See The Visual Report
+
+The `explore` command creates one local HTML report with summary metrics,
+WCAG-aware triage, likely root causes, screenshots, and fix recommendations.
+
+[![Demo exploration report showing summary metrics, affected states, top accessibility rules, and likely root causes](docs/assets/demo-report-overview.png)](docs/assets/demo-report-overview.png)
+
+It also records safely discovered UI states. This demo report shows the initial
+page and an automatically opened modal with annotated accessibility findings.
+
+[![Demo exploration report showing the initial page and an opened modal with accessibility findings outlined](docs/assets/demo-report-states.png)](docs/assets/demo-report-states.png)
+
 ## 2-Minute Quick Start
 
 Use this when your app already runs locally.

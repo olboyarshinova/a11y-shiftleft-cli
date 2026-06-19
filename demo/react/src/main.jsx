@@ -31,6 +31,19 @@ function App() {
         <h2 id="audit-title">Seeded issues</h2>
 
         <article>
+          <h3>Stateful modal issue</h3>
+          <p className="muted">Explore mode can open this dialog and scan the new UI state.</p>
+          <button
+            className="secondary-button"
+            type="button"
+            data-a11y-explore
+            onClick={() => setIsModalOpen(true)}
+          >
+            Open audit modal
+          </button>
+        </article>
+
+        <article>
           <h3>Missing image alternative text</h3>
           <img src="/demo/react/src/sample-chart.svg" />
         </article>
@@ -45,19 +58,6 @@ function App() {
         <article>
           <h3>Icon-only action with no name</h3>
           <button className="icon-button" type="button"></button>
-        </article>
-
-        <article>
-          <h3>Stateful modal issue</h3>
-          <p className="muted">Explore mode can open this dialog and scan the new UI state.</p>
-          <button
-            className="secondary-button"
-            type="button"
-            data-a11y-explore
-            onClick={() => setIsModalOpen(true)}
-          >
-            Open audit modal
-          </button>
         </article>
       </section>
 
