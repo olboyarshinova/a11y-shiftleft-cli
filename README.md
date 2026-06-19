@@ -49,6 +49,10 @@ npm install --save-dev a11y-shiftleft-cli
 npx playwright install chromium
 ```
 
+The examples below use the published package name
+`npx a11y-shiftleft-cli`. After local installation, the shorter
+`npx a11y-shiftleft` alias also works inside the project.
+
 2. Start your app in another terminal:
 
 ```bash
@@ -71,13 +75,21 @@ When in doubt, use the URL your terminal prints after `npm run dev`.
 3. Run your first scan. Replace the URL with the URL printed by your dev server:
 
 ```bash
-npx a11y-shiftleft check --dynamic --url http://localhost:5173 --out reports
+npx a11y-shiftleft-cli check --dynamic --url http://localhost:5173 --out reports
 ```
 
-4. Open the human-readable report:
+4. Open the human-readable report with your editor, or use the command for your
+operating system:
 
 ```bash
+# macOS
 open reports/a11y-comment.md
+
+# Linux
+xdg-open reports/a11y-comment.md
+
+# Windows PowerShell
+start reports/a11y-comment.md
 ```
 
 The same run also creates:
@@ -92,37 +104,42 @@ reports/a11y-metrics.csv
 Create a config file and add generated reports to `.gitignore`:
 
 ```bash
-npx a11y-shiftleft init --framework auto --gitignore
+npx a11y-shiftleft-cli init --framework auto --gitignore
 ```
 
-Then use a URL shortcut in your terminal:
+Then use a URL shortcut in your terminal. The examples below use macOS/Linux
+shell syntax:
 
 ```bash
 export APP_URL=http://localhost:5173
-npx a11y-shiftleft doctor --url $APP_URL
-npx a11y-shiftleft check --dynamic --url $APP_URL --out reports
+npx a11y-shiftleft-cli doctor --url $APP_URL
+npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports
 ```
+
+In Windows PowerShell, set `$env:APP_URL = "http://localhost:5173"` and use
+`$env:APP_URL` in place of `$APP_URL`. You can also avoid environment variables
+and pass the URL directly on every operating system.
 
 `APP_URL` is only a shortcut. You can always pass the URL directly:
 
 ```bash
-npx a11y-shiftleft check --dynamic --url http://localhost:4200 --out reports
+npx a11y-shiftleft-cli check --dynamic --url http://localhost:4200 --out reports
 ```
 
 ## Copy-Paste Recipes
 
 | Goal | Command |
 |---|---|
-| Scan one running app URL | `npx a11y-shiftleft check --dynamic --url http://localhost:5173 --out reports` |
-| Scan several known pages | `npx a11y-shiftleft check --dynamic --url $APP_URL $APP_URL/settings $APP_URL/checkout --out reports` |
-| Let the CLI discover same-origin pages | `npx a11y-shiftleft check --dynamic --url $APP_URL --crawl --crawl-depth 1 --crawl-limit 10 --out reports` |
-| Trigger lazy-loaded below-the-fold content | `npx a11y-shiftleft check --dynamic --url $APP_URL --scroll-step 800 --scroll-max-steps 25 --out reports` |
-| Audit the keyboard focus path | `npx a11y-shiftleft keyboard --url $APP_URL --out reports/keyboard` |
-| Create a visual state report | `npx a11y-shiftleft explore --url $APP_URL --depth 2 --out reports` |
-| Force complete page screenshots | `npx a11y-shiftleft explore --url $APP_URL --depth 2 --screenshot-full-page --out reports` |
-| Keep reports refreshed while coding | `npx a11y-shiftleft watch --url $APP_URL --out reports/watch` |
-| Generate a fast PR workflow | `npx a11y-shiftleft ci --url $APP_URL --start-command "npm run dev -- --host localhost --port 5173"` |
-| View historical trends | `npx a11y-shiftleft dashboard --reports reports` |
+| Scan one running app URL | `npx a11y-shiftleft-cli check --dynamic --url http://localhost:5173 --out reports` |
+| Scan several known pages | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL $APP_URL/settings $APP_URL/checkout --out reports` |
+| Let the CLI discover same-origin pages | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --crawl --crawl-depth 1 --crawl-limit 10 --out reports` |
+| Trigger lazy-loaded below-the-fold content | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --scroll-step 800 --scroll-max-steps 25 --out reports` |
+| Audit the keyboard focus path | `npx a11y-shiftleft-cli keyboard --url $APP_URL --out reports/keyboard` |
+| Create a visual state report | `npx a11y-shiftleft-cli explore --url $APP_URL --depth 2 --out reports` |
+| Force complete page screenshots | `npx a11y-shiftleft-cli explore --url $APP_URL --depth 2 --screenshot-full-page --out reports` |
+| Keep reports refreshed while coding | `npx a11y-shiftleft-cli watch --url $APP_URL --out reports/watch` |
+| Generate a fast PR workflow | `npx a11y-shiftleft-cli ci --url $APP_URL --start-command "npm run dev"` |
+| View historical trends | `npx a11y-shiftleft-cli dashboard --reports reports` |
 
 ## What The Reports Mean
 
@@ -218,21 +235,21 @@ Install only the adapter package you need:
 Ask the CLI for a recommendation:
 
 ```bash
-npx a11y-shiftleft adapter add react
-npx a11y-shiftleft adapter add vue
-npx a11y-shiftleft adapter add angular
+npx a11y-shiftleft-cli adapter add react
+npx a11y-shiftleft-cli adapter add vue
+npx a11y-shiftleft-cli adapter add angular
 ```
 
 Run static checks only:
 
 ```bash
-npx a11y-shiftleft check --static --framework react --out reports
+npx a11y-shiftleft-cli check --static --framework react --out reports
 ```
 
 Run static and dynamic checks together:
 
 ```bash
-npx a11y-shiftleft check --url $APP_URL --out reports
+npx a11y-shiftleft-cli check --url $APP_URL --out reports
 ```
 
 ## Visual Exploration
@@ -246,7 +263,7 @@ Use `explore` when you do not want to list every route manually or when you
 want screenshots of checked states:
 
 ```bash
-npx a11y-shiftleft explore --url $APP_URL --depth 2 --out reports
+npx a11y-shiftleft-cli explore --url $APP_URL --depth 2 --out reports
 ```
 
 Dynamic scans and visual exploration auto-scroll pages before running axe. This
@@ -266,7 +283,7 @@ unrelated pixels. Force complete pages only when an audit specifically needs
 that context:
 
 ```bash
-npx a11y-shiftleft explore \
+npx a11y-shiftleft-cli explore \
   --url $APP_URL \
   --depth 2 \
   --screenshot-full-page \
@@ -280,14 +297,14 @@ a link to the shared visual evidence.
 For apps that render data after the first page load, add a short settle wait:
 
 ```bash
-npx a11y-shiftleft explore --url $APP_URL --depth 2 --wait-ms 1000 --out reports
+npx a11y-shiftleft-cli explore --url $APP_URL --depth 2 --wait-ms 1000 --out reports
 ```
 
 If your app exposes a stable loaded-state selector, wait for that instead of
 guessing a long timeout:
 
 ```bash
-npx a11y-shiftleft explore \
+npx a11y-shiftleft-cli explore \
   --url $APP_URL \
   --wait-for-selector "[data-page-ready]" \
   --wait-ms 1000 \
@@ -316,14 +333,14 @@ Use `--no-screenshots` for apps with personal data, login screens, payment
 details, or production records:
 
 ```bash
-npx a11y-shiftleft explore --url $APP_URL --depth 2 --no-screenshots --out reports
+npx a11y-shiftleft-cli explore --url $APP_URL --depth 2 --no-screenshots --out reports
 ```
 
 Add `--pdf` when you need a portable copy of the visual report for a PR,
 ticket, or internal review:
 
 ```bash
-npx a11y-shiftleft explore --url $APP_URL --depth 2 --pdf --out reports
+npx a11y-shiftleft-cli explore --url $APP_URL --depth 2 --pdf --out reports
 ```
 
 See [Visual reports](docs/visual-reports.md) for privacy and safe-mode details.
@@ -333,7 +350,7 @@ See [Visual reports](docs/visual-reports.md) for privacy and safe-mode details.
 Use `watch` during local development:
 
 ```bash
-npx a11y-shiftleft watch --url $APP_URL --out reports/watch
+npx a11y-shiftleft-cli watch --url $APP_URL --out reports/watch
 ```
 
 It watches common source folders such as `src`, `app`, `pages`, and
@@ -347,7 +364,7 @@ fixed 2, new 1, remaining 4
 Use custom paths when your UI code lives somewhere else:
 
 ```bash
-npx a11y-shiftleft watch \
+npx a11y-shiftleft-cli watch \
   --url $APP_URL \
   --watch-path src shared/ui packages/app \
   --out reports/watch
@@ -361,14 +378,14 @@ Use baseline mode when adopting the CLI in a project that already has known
 findings. The first run records the current findings:
 
 ```bash
-npx a11y-shiftleft check --dynamic --url $APP_URL --baseline --out reports
+npx a11y-shiftleft-cli check --dynamic --url $APP_URL --baseline --out reports
 ```
 
 Commit `.a11y-baseline.json`. Later CI runs with `--baseline` fail only on new
 findings at the configured severity:
 
 ```bash
-npx a11y-shiftleft check \
+npx a11y-shiftleft-cli check \
   --dynamic \
   --url $APP_URL \
   --baseline \
@@ -403,12 +420,16 @@ permanent hidden risk.
 Generate a pull request workflow:
 
 ```bash
-npx a11y-shiftleft ci \
+npx a11y-shiftleft-cli ci \
   --url $APP_URL \
-  --start-command "npm run dev -- --host localhost --port 5173" \
+  --start-command "npm run dev" \
   --fail-on critical \
   --standard wcag22-aa
 ```
+
+`--start-command` must be the command that starts your project at `APP_URL`.
+For example, a Vite project on a non-default port can use
+`"npm run dev -- --host localhost --port 5173"`.
 
 This creates:
 
@@ -419,10 +440,10 @@ This creates:
 For a fast PR workflow plus a broader scheduled scan:
 
 ```bash
-npx a11y-shiftleft ci \
+npx a11y-shiftleft-cli ci \
   --profile split \
   --url $APP_URL \
-  --start-command "npm run dev -- --host localhost --port 5173" \
+  --start-command "npm run dev" \
   --fail-on critical \
   --full-fail-on none \
   --crawl-limit 10 \
@@ -443,20 +464,20 @@ This creates:
 After several saved runs, open a local dashboard:
 
 ```bash
-npx a11y-shiftleft dashboard --reports reports
+npx a11y-shiftleft-cli dashboard --reports reports
 ```
 
 Or write a static dashboard file:
 
 ```bash
-npx a11y-shiftleft dashboard --reports reports --no-serve
+npx a11y-shiftleft-cli dashboard --reports reports --no-serve
 ```
 
 Add `--pdf` when the dashboard should be attached to a ticket, review, or
 internal report:
 
 ```bash
-npx a11y-shiftleft dashboard --reports reports --pdf
+npx a11y-shiftleft-cli dashboard --reports reports --pdf
 ```
 
 The dashboard summarizes trends, top rules, affected pages, and recent runs.
@@ -467,7 +488,7 @@ Create dry-run Jira, Linear, or generic ticket drafts from an existing
 `a11y-report.json`:
 
 ```bash
-npx a11y-shiftleft ticket export \
+npx a11y-shiftleft-cli ticket export \
   --report reports/a11y-report.json \
   --tracker linear \
   --out reports/a11y-tickets.md
@@ -482,7 +503,7 @@ real tickets.
 Run a bounded keyboard-only traversal on a page:
 
 ```bash
-npx a11y-shiftleft keyboard --url $APP_URL --out reports/keyboard
+npx a11y-shiftleft-cli keyboard --url $APP_URL --out reports/keyboard
 ```
 
 The runner presses `Tab` and, after a complete forward cycle, `Shift+Tab`
@@ -507,7 +528,7 @@ Automated tools do not catch every accessibility issue. Generate a manual
 review checklist when you need human follow-up:
 
 ```bash
-npx a11y-shiftleft check --url $APP_URL --semi-auto --out reports
+npx a11y-shiftleft-cli check --url $APP_URL --semi-auto --out reports
 ```
 
 This adds:
@@ -526,16 +547,16 @@ automated tools cannot fully judge.
 Filter mapped findings by WCAG level or version:
 
 ```bash
-npx a11y-shiftleft check --url $APP_URL --wcag-filter AA --out reports
-npx a11y-shiftleft check --url $APP_URL --wcag-version 2.0 --out reports
+npx a11y-shiftleft-cli check --url $APP_URL --wcag-filter AA --out reports
+npx a11y-shiftleft-cli check --url $APP_URL --wcag-version 2.0 --out reports
 ```
 
 Use a report metadata preset:
 
 ```bash
-npx a11y-shiftleft check --url $APP_URL --standard wcag22-aa --out reports
-npx a11y-shiftleft check --url $APP_URL --standard section508 --out reports
-npx a11y-shiftleft check --url $APP_URL --standard ada-title-ii --out reports
+npx a11y-shiftleft-cli check --url $APP_URL --standard wcag22-aa --out reports
+npx a11y-shiftleft-cli check --url $APP_URL --standard section508 --out reports
+npx a11y-shiftleft-cli check --url $APP_URL --standard ada-title-ii --out reports
 ```
 
 Automated reports do not certify full WCAG, ADA, or Section 508 conformance.
@@ -548,15 +569,15 @@ If a scan fails because of Node, Playwright, Chromium, config, or a target URL,
 run:
 
 ```bash
-npx a11y-shiftleft doctor --url $APP_URL
+npx a11y-shiftleft-cli doctor --url $APP_URL
 ```
 
 For CI or scripts:
 
 ```bash
-npx a11y-shiftleft check --dynamic --url $APP_URL --json-summary --out reports
-npx a11y-shiftleft check --dynamic --url $APP_URL --quiet --out reports
-npx a11y-shiftleft check --dynamic --url $APP_URL --verbose --out reports
+npx a11y-shiftleft-cli check --dynamic --url $APP_URL --json-summary --out reports
+npx a11y-shiftleft-cli check --dynamic --url $APP_URL --quiet --out reports
+npx a11y-shiftleft-cli check --dynamic --url $APP_URL --verbose --out reports
 ```
 
 ## Local Demo
