@@ -4,6 +4,9 @@
 
 ### Added
 
+- PDF exports now generate tagged structure and heading bookmarks, preserve
+  language/title semantics, validate required PDF accessibility metadata, and
+  use explicitly labeled dashboard tables with scoped column headers.
 - Pull request comments now link to the exact GitHub Actions run containing the
   uploaded visual report artifact.
 - Added report-sharing guidance and a privacy-gated sanitized export roadmap.

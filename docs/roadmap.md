@@ -13,6 +13,9 @@ remain suitable for reproducible empirical validation.
 - Ship PDF export for `exploration.html` via `explore --pdf` and for the
   historical dashboard via `dashboard --pdf`. Treat PDF as an evidence-friendly,
   shareable audit artifact, not as legal certification.
+- Keep both PDF exports tagged and navigable, with language, title, heading
+  outline, alternative text, semantic tables, and a structural generation gate.
+  Continue recommending independent PDF/UA validation for formal deliverables.
 - Keep PDF export local-first and dependency-light by reusing Playwright's
   browser rendering path where possible instead of adding a heavy PDF stack.
 - Prototype issue-tracker export for Jira and Linear after `watch` is stable.

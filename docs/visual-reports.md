@@ -96,7 +96,7 @@ Use `--pdf` when you need a portable copy of the visual report for a pull
 request, remediation ticket, or internal review:
 
 ```bash
-npx a11y-shiftleft explore --url $APP_URL --depth 2 --pdf --out reports
+npx a11y-shiftleft-cli explore --url $APP_URL --depth 2 --pdf --out reports
 ```
 
 This writes:
@@ -105,9 +105,17 @@ This writes:
 reports/exploration.pdf
 ```
 
-The PDF is generated from `exploration.html` with Playwright/Chromium. It is an
-evidence-friendly report artifact, not a WCAG, ADA, or Section 508 compliance
-certification.
+The PDF is generated from `exploration.html` with Playwright/Chromium. Export
+enables tagged structure and a document outline, preserves the report language,
+title, headings, image alternative text, and semantic table markup, and fails
+when required structural metadata is missing. This makes the report more useful
+with screen readers and keyboard navigation.
+
+Tagged output is not the same as independent PDF/UA certification. Before a PDF
+is used as a formal external deliverable, validate it with the organization's
+PDF accessibility process and a dedicated checker such as PAC or an equivalent
+PDF/UA validator. The report remains an evidence artifact, not a WCAG, ADA, or
+Section 508 compliance certification.
 
 ## Screenshot Privacy
 

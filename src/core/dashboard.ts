@@ -168,11 +168,14 @@ export function renderDashboardHtml(data: DashboardData): string {
       border-collapse: collapse;
       margin-top: 10px;
     }
+    thead { display: table-header-group; }
+    tr { break-inside: avoid; }
     th, td {
       border-bottom: 1px solid var(--line);
       padding: 8px;
       text-align: left;
       vertical-align: top;
+      overflow-wrap: anywhere;
     }
     th {
       color: var(--muted);
@@ -182,6 +185,12 @@ export function renderDashboardHtml(data: DashboardData): string {
     .critical { color: var(--critical); }
     .warning { color: var(--warning); }
     .info { color: var(--info); }
+    .pages-table, .runs-table { table-layout: fixed; font-size: 12px; }
+    .pages-table th:first-child, .pages-table td:first-child { width: 46%; }
+    .runs-table th:first-child, .runs-table td:first-child { width: 9%; }
+    .runs-table th:nth-child(2), .runs-table td:nth-child(2) { width: 16%; }
+    .runs-table th:nth-child(7), .runs-table td:nth-child(7) { width: 10%; }
+    .runs-table th:nth-child(8), .runs-table td:nth-child(8) { width: 21%; }
     .bars {
       display: grid;
       gap: 10px;
@@ -212,6 +221,9 @@ export function renderDashboardHtml(data: DashboardData): string {
       .bar-row { grid-template-columns: 1fr; }
       .num { text-align: left; }
       th:nth-child(n+3), td:nth-child(n+3) { display: none; }
+    }
+    @media print {
+      .pages-table, .runs-table { font-size: 10px; }
     }
   </style>
 </head>
@@ -399,9 +411,9 @@ function rulesSection(rules: DashboardRuleSummary[]): string {
     .join("\n");
 
   return `<section>
-    <h2>Top Rules</h2>
-    <table>
-      <thead><tr><th>Rule</th><th class="num">Total</th><th class="num">Critical</th><th class="num">Warning</th><th class="num">Info</th></tr></thead>
+    <h2 id="top-rules-heading">Top Rules</h2>
+    <table aria-labelledby="top-rules-heading">
+      <thead><tr><th scope="col">Rule</th><th scope="col" class="num">Total</th><th scope="col" class="num">Critical</th><th scope="col" class="num">Warning</th><th scope="col" class="num">Info</th></tr></thead>
       <tbody>${rows || "<tr><td colspan=\"5\">No rule findings.</td></tr>"}</tbody>
     </table>
   </section>`;
@@ -421,9 +433,9 @@ function pagesSection(pages: DashboardPageSummary[]): string {
     .join("\n");
 
   return `<section>
-    <h2>Most Affected Pages</h2>
-    <table>
-      <thead><tr><th>URL</th><th class="num">Total</th><th class="num">Critical</th><th class="num">Warning</th><th class="num">Info</th><th class="num">Score</th><th class="num">Runs</th></tr></thead>
+    <h2 id="affected-pages-heading">Most Affected Pages</h2>
+    <table class="pages-table" aria-labelledby="affected-pages-heading">
+      <thead><tr><th scope="col">URL</th><th scope="col" class="num">Total</th><th scope="col" class="num">Critical</th><th scope="col" class="num">Warning</th><th scope="col" class="num">Info</th><th scope="col" class="num">Score</th><th scope="col" class="num">Runs</th></tr></thead>
       <tbody>${rows || "<tr><td colspan=\"7\">No page-level evidence.</td></tr>"}</tbody>
     </table>
   </section>`;
@@ -444,9 +456,9 @@ function runsSection(runs: DashboardRunSummary[]): string {
     .join("\n");
 
   return `<section>
-    <h2>Recent Runs</h2>
-    <table>
-      <thead><tr><th>Run</th><th>Generated</th><th class="num">Total</th><th class="num">Critical</th><th class="num">Warning</th><th class="num">Info</th><th>Framework</th><th>Report</th></tr></thead>
+    <h2 id="recent-runs-heading">Recent Runs</h2>
+    <table class="runs-table" aria-labelledby="recent-runs-heading">
+      <thead><tr><th scope="col">Run</th><th scope="col">Generated</th><th scope="col" class="num">Total</th><th scope="col" class="num">Critical</th><th scope="col" class="num">Warning</th><th scope="col" class="num">Info</th><th scope="col">Framework</th><th scope="col">Report</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
   </section>`;

@@ -343,6 +343,12 @@ ticket, or internal review:
 npx a11y-shiftleft-cli explore --url $APP_URL --depth 2 --pdf --out reports
 ```
 
+Generated PDFs include tagged structure, document language and title metadata,
+heading bookmarks, image alternative text from the HTML report, and semantic
+table headers where tables are present. Generation fails if the required PDF
+structure is missing. This improves screen-reader and keyboard navigation, but
+does not claim independent PDF/UA conformance certification.
+
 See [Visual reports](docs/visual-reports.md) for privacy and safe-mode details.
 
 ## Watch Mode
