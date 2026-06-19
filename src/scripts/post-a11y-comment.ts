@@ -115,7 +115,7 @@ export async function postA11yComment({
   }
 
   const client = octokit ?? new Octokit({ auth: context.token });
-  const markedBody = withCommentMarker(body);
+  const markedBody = withCommentMarker(withArtifactRunLink(body, env));
 
   try {
     const existingComment = await findExistingComment(client, context);
@@ -163,6 +163,23 @@ function isMissingFileError(error: unknown): boolean {
 function withCommentMarker(body: string): string {
   if (body.includes(COMMENT_MARKER)) return body;
   return `${COMMENT_MARKER}\n${body}`;
+}
+
+export function withArtifactRunLink(body: string, env: GitHubEnv): string {
+  const { GITHUB_REPOSITORY, GITHUB_RUN_ID } = env;
+
+  if (!GITHUB_REPOSITORY || !GITHUB_RUN_ID) return body;
+
+  const serverUrl = (env.GITHUB_SERVER_URL || "https://github.com").replace(/\/$/, "");
+  const artifactName = normalizeArtifactName(env.REPORT_ARTIFACT_NAME);
+  const runUrl = `${serverUrl}/${GITHUB_REPOSITORY}/actions/runs/${encodeURIComponent(GITHUB_RUN_ID)}`;
+
+  return `${body.trimEnd()}\n\n## Visual Report\n\n[Open the GitHub Actions run to download \`${artifactName}\`](${runUrl}). Access and retention follow the repository's GitHub Actions settings.\n`;
+}
+
+function normalizeArtifactName(value: string | undefined): string {
+  if (!value || !/^[a-zA-Z0-9._-]+$/.test(value)) return "a11y-report";
+  return value;
 }
 
 function isGitHubCommentPermissionError(error: unknown): boolean {

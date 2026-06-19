@@ -4,6 +4,9 @@
 
 ### Added
 
+- Pull request comments now link to the exact GitHub Actions run containing the
+  uploaded visual report artifact.
+- Added report-sharing guidance and a privacy-gated sanitized export roadmap.
 - Added an initial bounded `keyboard` command that records the rendered Tab
   path, detects common focus-order, visibility, indicator, obscuration, and trap
   risks, and writes dedicated Markdown/JSON evidence alongside normal reports.

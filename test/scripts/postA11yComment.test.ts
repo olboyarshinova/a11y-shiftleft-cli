@@ -6,7 +6,8 @@ import path from "node:path";
 import {
   buildCommentBody,
   getPullRequestContext,
-  postA11yComment
+  postA11yComment,
+  withArtifactRunLink
 } from "../../dist/scripts/post-a11y-comment.js";
 
 test("getPullRequestContext returns null when GitHub env is missing", () => {
@@ -75,6 +76,22 @@ test("buildCommentBody returns null when no report exists", async () => {
   assert.equal(await buildCommentBody(reportDir), null);
 });
 
+test("withArtifactRunLink adds the current GitHub Actions run", () => {
+  assert.equal(
+    withArtifactRunLink("report body", {
+      GITHUB_SERVER_URL: "https://github.example.com/",
+      GITHUB_REPOSITORY: "owner/repo",
+      GITHUB_RUN_ID: "123",
+      REPORT_ARTIFACT_NAME: "a11y-preview"
+    }),
+    "report body\n\n## Visual Report\n\n[Open the GitHub Actions run to download `a11y-preview`](https://github.example.com/owner/repo/actions/runs/123). Access and retention follow the repository's GitHub Actions settings.\n"
+  );
+});
+
+test("withArtifactRunLink leaves local report comments unchanged", () => {
+  assert.equal(withArtifactRunLink("report body", {}), "report body");
+});
+
 test("postA11yComment skips when no report exists", async () => {
   const reportDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-comment-no-report-"));
   const result = await postA11yComment({
@@ -126,6 +143,32 @@ test("postA11yComment can be tested with an injected client", async () => {
       body: "<!-- a11y-shiftleft-report -->\nbody"
     }
   ]);
+});
+
+test("postA11yComment includes the uploaded report run link in CI", async () => {
+  const reportDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-comment-artifact-"));
+  await fs.writeFile(path.join(reportDir, "a11y-comment.md"), "body");
+
+  const calls = [];
+  await postA11yComment({
+    reportDir,
+    env: {
+      GITHUB_TOKEN: "token",
+      GITHUB_REPOSITORY: "owner/repo",
+      GITHUB_RUN_ID: "456",
+      PR_NUMBER: "3"
+    },
+    octokit: {
+      issues: {
+        createComment: async (payload) => {
+          calls.push(payload);
+        }
+      }
+    }
+  });
+
+  assert.match(calls[0].body, /github\.com\/owner\/repo\/actions\/runs\/456/);
+  assert.match(calls[0].body, /a11y-report/);
 });
 
 test("postA11yComment skips when GitHub token cannot write PR comments", async () => {

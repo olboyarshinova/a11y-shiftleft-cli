@@ -55,6 +55,20 @@ remain suitable for reproducible empirical validation.
   include Lighthouse suggested fixes where useful, and surface the comparison in
   `exploration.html` and the local dashboard.
 
+### 0.9.x Secure Report Sharing
+
+- Add a local `share prepare` workflow that creates a separate sanitized static
+  report without uploading it anywhere.
+- Exclude screenshots, absolute paths, query strings, form values, tokens, and
+  raw HTML by default; require explicit allow flags for sensitive evidence.
+- Add a machine-readable privacy summary so users can review exactly which
+  fields and assets would be shared.
+- Evaluate an optional public-link publisher only after sanitized export is
+  stable. Require explicit confirmation, unguessable URLs, expiration,
+  revocation, and deletion.
+- Keep public hosting optional. Local checks, CI artifacts, dashboards, and
+  report generation must continue to work without an account or hosted service.
+
 ## Near Term
 
 - Build on the practical review areas in the
@@ -137,8 +151,9 @@ remain suitable for reproducible empirical validation.
   provided preview URL, update an existing accessibility comment, and apply
   severity labels when GitHub credentials are available.
 - Extend the GitHub Action wrapper with uploaded `exploration.html` artifacts,
-  stable artifact links in PR comments, preview URL inputs, and optional
-  severity labels.
+  direct artifact links, preview URL inputs, and optional severity labels. The
+  generated workflow already uploads reports and links its workflow run from
+  the PR comment.
 - Publish a public demo repository and before/after case study showing a full
   pull request workflow with findings, fixes, and generated reports.
 - Design read-only `--interactive` issue review with deterministic remediation
@@ -192,4 +207,4 @@ remain suitable for reproducible empirical validation.
 - No ML-based triage in the core CLI.
 - No automatic AI code changes in the core CLI.
 - No browser extension bundled into the core CLI.
-- No SaaS authorization or hosted dashboard.
+- No mandatory SaaS authorization or hosted dashboard in the core CLI.

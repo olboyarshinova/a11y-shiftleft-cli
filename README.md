@@ -586,6 +586,8 @@ node bin/cli.js check --dynamic --url http://localhost:5173 --out reports
   baseline files, ignores, cleanup, and retention.
 - [Visual reports](docs/visual-reports.md): screenshot privacy, safe mode, and
   advanced `explore` options.
+- [Report sharing](docs/report-sharing.md): GitHub Actions artifacts, privacy
+  review, and the planned sanitized export path.
 - [Keyboard focus audit](docs/keyboard-audit.md): bounded Tab traversal,
   generated focus-path evidence, and current limitations.
 - [Watch mode](docs/watch-mode.md): local development feedback after file

@@ -160,6 +160,7 @@ jobs:
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: \${{ github.repository }}
           PR_NUMBER: \${{ github.event.pull_request.number }}
+          REPORT_ARTIFACT_NAME: a11y-report
 `;
 }
 
