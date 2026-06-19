@@ -16,8 +16,10 @@ framework-specific static checks, removes duplicate findings, assigns severity
 and confidence, and writes reports that are useful for developers, QA, CI, and
 trend tracking.
 
-You can use it with React, Vue, Angular, Next.js, Svelte, Astro, Rails, Django,
-static HTML, or any app that can run at a local or preview URL.
+Dynamic browser checks work with any rendered website available at a local or
+preview URL, regardless of whether it was built with React, Vue, Angular,
+Next.js, Svelte, Astro, Rails, Django, or static HTML. Optional static adapters
+are currently available only for React, Vue, and Angular.
 
 ## Why Use It?
 
@@ -225,6 +227,10 @@ the same URL are not treated as duplicate pages.
 
 Dynamic browser scans work without a framework adapter. Static checks are
 optional and add framework-specific lint findings.
+
+Next.js projects can use the React adapter for JSX and TSX. Svelte, Astro,
+Rails, and Django projects currently use dynamic browser checks only; listing
+them as supported targets does not imply that dedicated static adapters exist.
 
 Install only the adapter package you need:
 
