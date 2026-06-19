@@ -22,6 +22,7 @@ It saves:
 ```txt
 reports/a11y-report.json
 reports/a11y-comment.md
+reports/a11y-findings.csv
 reports/exploration.html
 reports/exploration.pdf       # only when --pdf is used
 reports/exploration-graph.json

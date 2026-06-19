@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { stringify } from "csv-stringify/sync";
 import { enrichIssueEvidence } from "../core/classification.js";
 import { createManualChecklist, toManualChecklistMarkdown } from "../core/manualChecklist.js";
 import { getRemediationHint } from "../core/remediation.js";
@@ -53,10 +54,16 @@ export async function writeReports(
   }
 
   if (formats.has("csv")) {
-    await fs.writeFile(
-      path.join(outputDir, "a11y-metrics.csv"),
-      toCsv(report.summary)
-    );
+    await Promise.all([
+      fs.writeFile(
+        path.join(outputDir, "a11y-metrics.csv"),
+        toCsv(report.summary)
+      ),
+      fs.writeFile(
+        path.join(outputDir, "a11y-findings.csv"),
+        toFindingsCsv(report.issues)
+      )
+    ]);
   }
 
   if (formats.has("markdown")) {
@@ -128,6 +135,74 @@ function toCsv(summary: ReportSummary): string {
   ].join("\n");
 }
 
+export function toFindingsCsv(issues: DedupedIssue[]): string {
+  const records = issues.map((issue) => sanitizeCsvRecord({
+    severity: issue.severity,
+    confidence: issue.confidence,
+    confidenceScore: issue.confidenceScore,
+    source: issue.source,
+    framework: issue.framework,
+    ruleId: issue.ruleId,
+    findingType: issue.findingType,
+    category: issue.category,
+    wcag: issue.wcag.join(" | "),
+    wcagCriteria: issue.wcagCriteria.map((criterion) => `${criterion.id} ${criterion.title} (${criterion.level})`).join(" | "),
+    url: issue.url || "",
+    file: issue.file || "",
+    line: issue.line || "",
+    selector: issue.selector || "",
+    message: issue.message,
+    fixSummary: issue.remediation?.summary || "",
+    fixSteps: issue.remediation?.howToFix.join(" | ") || "",
+    documentation: issue.remediation?.docs.join(" | ") || "",
+    frameworkExamples: formatFrameworkExamplesForCsv(issue),
+    duplicateCount: issue.duplicateCount,
+    baselineStatus: issue.baselineStatus || ""
+  }));
+
+  return stringify(records, {
+    header: true,
+    columns: [
+      "severity",
+      "confidence",
+      "confidenceScore",
+      "source",
+      "framework",
+      "ruleId",
+      "findingType",
+      "category",
+      "wcag",
+      "wcagCriteria",
+      "url",
+      "file",
+      "line",
+      "selector",
+      "message",
+      "fixSummary",
+      "fixSteps",
+      "documentation",
+      "frameworkExamples",
+      "duplicateCount",
+      "baselineStatus"
+    ]
+  });
+}
+
+function sanitizeCsvRecord(record: Record<string, string | number>): Record<string, string | number> {
+  return Object.fromEntries(Object.entries(record).map(([key, value]) => [
+    key,
+    typeof value === "string" && /^[\t\r ]*[=+\-@]/.test(value)
+      ? `'${value}`
+      : value
+  ]));
+}
+
+function formatFrameworkExamplesForCsv(issue: DedupedIssue): string {
+  return Object.entries(issue.remediation?.frameworkExamples || {})
+    .map(([framework, example]) => `${framework}: ${example}`)
+    .join(" | ");
+}
+
 export function toMarkdown(report: A11yReport): string {
   const complianceEvidence = report.summary.complianceEvidence || summarizeComplianceEvidence(
     report.issues,
@@ -190,7 +265,11 @@ ${formatComplianceEvidence(complianceEvidence)}
 
 ${formatRootCauseGroups(report.summary.rootCauseGroups || [])}
 
+## Top Findings And Recommendations
+
 ${topIssues || "No accessibility findings detected."}
+
+${report.issues.length > 10 ? `Showing 10 of ${report.issues.length} findings. See \`a11y-report.json\` or \`a11y-findings.csv\` for every finding and recommendation.` : ""}
 
 ${formatDisclaimer(report.summary.standard)}
 `;

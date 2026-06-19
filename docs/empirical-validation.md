@@ -88,6 +88,7 @@ Collect these artifacts from every PR run:
 ```txt
 reports/a11y-report.json
 reports/a11y-metrics.csv
+reports/a11y-findings.csv
 reports/a11y-comment.md
 reports/a11y-manual-checklist.md
 ```

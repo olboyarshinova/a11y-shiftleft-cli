@@ -41,6 +41,10 @@ ${forwardRows}
 |---:|---|---|---|---:|---:|---:|
 ${backwardRows}
 
+## Findings And Recommendations
+
+${formatKeyboardFindings(result)}
+
 ## Interpretation
 
 This is a bounded automated Tab and Shift+Tab traversal. It can detect common focus problems,
@@ -48,6 +52,33 @@ but it does not prove that every task or complex widget is keyboard accessible.
 Confirm activation keys, modal escape behavior, logical order, and custom focus
 treatments manually.
 `;
+}
+
+function formatKeyboardFindings(result: KeyboardAuditResult): string {
+  if (result.issues.length === 0) return "No keyboard findings detected.";
+
+  return result.issues.map((issue, index) => {
+    const remediation = issue.remediation;
+    const steps = remediation?.howToFix.length
+      ? remediation.howToFix.map((step, stepIndex) => `${stepIndex + 1}. ${step}`).join("\n")
+      : "1. Review the affected focus target and verify the expected keyboard behavior manually.";
+    const docs = remediation?.docs.length
+      ? `\n\nGuidance: ${remediation.docs.join(", ")}`
+      : "";
+    const examples = Object.entries(remediation?.frameworkExamples || {})
+      .map(([framework, example]) => `\n\n${framework} example: \`${example}\``)
+      .join("");
+
+    return `### ${index + 1}. ${(issue.severity || "info").toUpperCase()} - ${issue.ruleId || "keyboard-review"}
+
+${issue.message || "Review the recorded keyboard behavior."}
+
+Target: \`${issue.selector || issue.file || "unknown"}\`
+
+Suggested fix: ${remediation?.summary || "Review the affected focus target and correct its keyboard behavior."}
+
+${steps}${docs}${examples}`;
+  }).join("\n\n");
 }
 
 function focusRows(steps: KeyboardAuditResult["steps"], fallback: string): string {

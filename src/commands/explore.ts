@@ -581,7 +581,10 @@ function explorationReportFiles(
   files.push(joinOutputPath(outputDir, "exploration-graph.json"));
   if (formats.includes("markdown")) files.push(joinOutputPath(outputDir, "a11y-comment.md"));
   if (formats.includes("json")) files.push(joinOutputPath(outputDir, "a11y-report.json"));
-  if (formats.includes("csv")) files.push(joinOutputPath(outputDir, "a11y-metrics.csv"));
+  if (formats.includes("csv")) {
+    files.push(joinOutputPath(outputDir, "a11y-metrics.csv"));
+    files.push(joinOutputPath(outputDir, "a11y-findings.csv"));
+  }
   if (options.screenshots) files.push(joinOutputPath(outputDir, "screenshots/"));
 
   return files;

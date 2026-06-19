@@ -51,6 +51,8 @@ test("collectDashboardData summarizes historical report runs", async () => {
   assert.equal(data.topRules[0].total, 3);
   assert.equal(data.topPages[0].url, "http://localhost:3000/");
   assert.equal(data.runs[0].reportPath, "run-1/a11y-report.json");
+  assert.equal(data.latestRecommendations[0].ruleId, "color-contrast");
+  assert.match(data.latestRecommendations[0].remediation.summary, /contrast/i);
   assert.doesNotMatch(JSON.stringify(data), new RegExp(escapeRegExp(root)));
 });
 
@@ -77,6 +79,9 @@ test("renderDashboardHtml renders dashboard sections and escapes content", async
   assert.match(html, /Accessibility Trend/);
   assert.match(html, /Top Rules/);
   assert.match(html, /Most Affected Pages/);
+  assert.match(html, /Latest Fix Recommendations/);
+  assert.match(html, /Suggested fix/);
+  assert.match(html, /react example/);
   assert.match(html, /image-alt/);
   assert.match(html, /&lt;script&gt;/);
   assert.doesNotMatch(html, /<script>/);

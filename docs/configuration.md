@@ -118,10 +118,10 @@ demos, or release evidence.
 
 ## Report Lifecycle
 
-- `check` overwrites `a11y-report.json`, `a11y-metrics.csv`, and
-  `a11y-comment.md` in the selected output directory.
+- `check` overwrites `a11y-report.json`, `a11y-metrics.csv`,
+  `a11y-findings.csv`, and `a11y-comment.md` in the selected output directory.
 - `explore` cleans stale generated artifacts before a new run, including
-  `a11y-report.json`, `a11y-comment.md`, `exploration.html`,
+  `a11y-report.json`, `a11y-findings.csv`, `a11y-comment.md`, `exploration.html`,
   `exploration-graph.json`, and generated state screenshots.
 - After fixing an accessibility issue, rerun the same command. The fixed issue
   should disappear from the new report.

@@ -1,7 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { getRemediationHint } from "./remediation.js";
 import { formatReportDateUtc } from "./reportDate.js";
-import type { A11yReport } from "../types.js";
+import type { A11yReport, RemediationHint, Severity } from "../types.js";
 
 export interface DashboardOptions {
   maxDepth?: number;
@@ -42,6 +43,16 @@ export interface DashboardRunSummary extends DashboardTrendPoint {
   urls: string[];
 }
 
+export interface DashboardRecommendation {
+  ruleId: string;
+  severity: Severity;
+  message: string;
+  page: string;
+  target: string;
+  occurrences: number;
+  remediation: RemediationHint;
+}
+
 export interface DashboardData {
   generatedAt: string;
   reportsRoot: string;
@@ -51,6 +62,7 @@ export interface DashboardData {
   trend: DashboardTrendPoint[];
   topRules: DashboardRuleSummary[];
   topPages: DashboardPageSummary[];
+  latestRecommendations: DashboardRecommendation[];
 }
 
 interface ReportFile {
@@ -87,7 +99,8 @@ export async function collectDashboardData(
     runs,
     trend: runs.map(({ framework: _framework, urls: _urls, ...point }) => point),
     topRules: summarizeRules(files),
-    topPages: summarizePages(files)
+    topPages: summarizePages(files),
+    latestRecommendations: summarizeLatestRecommendations(files)
   };
 }
 
@@ -217,6 +230,14 @@ export function renderDashboardHtml(data: DashboardData): string {
       border-radius: 4px;
       padding: 2px 4px;
     }
+    pre {
+      margin: 8px 0;
+      padding: 10px;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+      background: #eef2f7;
+      border-radius: 4px;
+    }
     @media (max-width: 720px) {
       .bar-row { grid-template-columns: 1fr; }
       .num { text-align: left; }
@@ -245,6 +266,7 @@ export function renderDashboardHtml(data: DashboardData): string {
     trendSection(data, maxTrend),
     rulesSection(data.topRules),
     pagesSection(data.topPages),
+    recommendationsSection(data.latestRecommendations),
     runsSection(data.runs)
   ].join("\n")}
   </main>
@@ -380,6 +402,49 @@ function summarizePages(files: ReportFile[]): DashboardPageSummary[] {
   });
 }
 
+function summarizeLatestRecommendations(files: ReportFile[]): DashboardRecommendation[] {
+  const latest = [...files]
+    .sort((a, b) => a.report.generatedAt.localeCompare(b.report.generatedAt))
+    .at(-1);
+  const recommendations = new Map<string, DashboardRecommendation>();
+
+  for (const issue of latest?.report.issues || []) {
+    const ruleId = issue.ruleId || "unknown";
+    const current = recommendations.get(ruleId);
+
+    if (current) {
+      current.occurrences += 1 + (issue.duplicateCount || 0);
+      if (severityRank(issue.severity) > severityRank(current.severity)) {
+        current.severity = issue.severity;
+      }
+      continue;
+    }
+
+    recommendations.set(ruleId, {
+      ruleId,
+      severity: issue.severity,
+      message: issue.message,
+      page: issue.url || issue.file || "unknown",
+      target: issue.selector || issue.file || "unknown",
+      occurrences: 1 + (issue.duplicateCount || 0),
+      remediation: issue.remediation || getRemediationHint(
+        ruleId,
+        issue.wcagCriteria,
+        issue.framework,
+        { helpUrl: issue.helpUrl }
+      )
+    });
+  }
+
+  return [...recommendations.values()].sort((a, b) => {
+    if (severityRank(b.severity) !== severityRank(a.severity)) {
+      return severityRank(b.severity) - severityRank(a.severity);
+    }
+    if (b.occurrences !== a.occurrences) return b.occurrences - a.occurrences;
+    return a.ruleId.localeCompare(b.ruleId);
+  });
+}
+
 function trendSection(data: DashboardData, maxTrend: number): string {
   const bars = data.trend
     .map((point) => {
@@ -438,6 +503,36 @@ function pagesSection(pages: DashboardPageSummary[]): string {
       <thead><tr><th scope="col">URL</th><th scope="col" class="num">Total</th><th scope="col" class="num">Critical</th><th scope="col" class="num">Warning</th><th scope="col" class="num">Info</th><th scope="col" class="num">Score</th><th scope="col" class="num">Runs</th></tr></thead>
       <tbody>${rows || "<tr><td colspan=\"7\">No page-level evidence.</td></tr>"}</tbody>
     </table>
+  </section>`;
+}
+
+function recommendationsSection(recommendations: DashboardRecommendation[]): string {
+  const items = recommendations.slice(0, 10).map((recommendation) => {
+    const steps = recommendation.remediation.howToFix
+      .map((step) => `<li>${escapeHtml(step)}</li>`)
+      .join("");
+    const docs = recommendation.remediation.docs[0]
+      ? `<a href="${escapeHtml(recommendation.remediation.docs[0])}">Guidance</a>`
+      : "";
+    const frameworkExample = Object.entries(recommendation.remediation.frameworkExamples || {})[0];
+    const example = frameworkExample
+      ? `<p><strong>${escapeHtml(frameworkExample[0])} example:</strong></p><pre><code>${escapeHtml(frameworkExample[1])}</code></pre>`
+      : "";
+
+    return `<li>
+      <h3><code>${escapeHtml(recommendation.ruleId)}</code> <span class="${recommendation.severity}">${escapeHtml(recommendation.severity)}</span></h3>
+      <p>${escapeHtml(recommendation.message)}</p>
+      <p><strong>Suggested fix:</strong> ${escapeHtml(recommendation.remediation.summary)}</p>
+      <ol>${steps}</ol>
+      ${example}
+      <p class="muted">${recommendation.occurrences} occurrence(s) in the latest run; example target <code>${escapeHtml(recommendation.target)}</code> on ${escapeHtml(recommendation.page)}. ${docs}</p>
+    </li>`;
+  }).join("\n");
+
+  return `<section>
+    <h2>Latest Fix Recommendations</h2>
+    <p class="muted">Grouped by rule from the latest report. JSON and findings CSV retain every individual occurrence.</p>
+    <ol>${items || "<li>No recommendations because the latest run has no findings.</li>"}</ol>
   </section>`;
 }
 
@@ -504,4 +599,10 @@ function positiveOrDefault(value: number | undefined, fallback: number): number 
 
 function isNodeError(error: unknown): error is NodeJS.ErrnoException {
   return error instanceof Error && "code" in error;
+}
+
+function severityRank(severity: Severity): number {
+  if (severity === "critical") return 3;
+  if (severity === "warning") return 2;
+  return 1;
 }

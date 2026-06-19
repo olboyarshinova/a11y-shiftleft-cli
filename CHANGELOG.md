@@ -4,6 +4,9 @@
 
 ### Added
 
+- Added deterministic fix recommendations across non-visual reports: a new
+  per-finding CSV export, keyboard Markdown guidance, and grouped latest-run
+  recommendations in the local dashboard and dashboard PDF.
 - PDF exports now generate tagged structure and heading bookmarks, preserve
   language/title semantics, validate required PDF accessibility metadata, and
   use explicitly labeled dashboard tables with scoped column headers.

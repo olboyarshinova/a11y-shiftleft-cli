@@ -156,6 +156,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
     await fs.readFile(path.join(outputDir, "a11y-report.json"), "utf8")
   );
   const csv = await fs.readFile(path.join(outputDir, "a11y-metrics.csv"), "utf8");
+  const findingsCsv = await fs.readFile(path.join(outputDir, "a11y-findings.csv"), "utf8");
   const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
 
   assert.equal(json.summary.framework, "react");
@@ -178,6 +179,10 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(csv, /byWcagVersion\.2\.0,2/);
   assert.match(csv, /byPage\.0\.url,http:\/\/localhost:3000\/settings/);
   assert.match(csv, /byPage\.0\.severityScore,5/);
+  assert.match(findingsCsv, /fixSummary,fixSteps,documentation,frameworkExamples/);
+  assert.match(findingsCsv, /Give every button an accessible name/);
+  assert.match(findingsCsv, /Use visible button text when possible/);
+  assert.match(findingsCsv, /react: <button type=""button"" aria-label=""Open menu"">/);
   assert.match(markdown, /Scan duration \| 123ms/);
   assert.match(markdown, /ADA Title II web accessibility support mode \(2\.1 AA\)/);
   assert.match(markdown, /Compliance Note/);
@@ -197,6 +202,26 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /Fix: Give every button an accessible name/);
   assert.match(markdown, /name-role-value/);
   assert.match(markdown, /react example: `<button type="button" aria-label="Open menu">/);
+});
+
+test("findings CSV neutralizes spreadsheet formulas in report text", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-csv-safety-"));
+
+  await writeReports(outputDir, [{
+    source: "axe",
+    severity: "warning",
+    ruleId: "custom-rule",
+    wcag: [],
+    wcagCriteria: [],
+    tags: [],
+    selector: "@dangerous-cell",
+    message: "=HYPERLINK(\"https://example.com\")"
+  }], { framework: "unknown" });
+
+  const findingsCsv = await fs.readFile(path.join(outputDir, "a11y-findings.csv"), "utf8");
+
+  assert.match(findingsCsv, /'@dangerous-cell/);
+  assert.match(findingsCsv, /'=HYPERLINK/);
 });
 
 test("writeReports includes structured contrast evidence in JSON and Markdown", async () => {
@@ -468,6 +493,7 @@ test("writeReports can limit output formats", async () => {
 
   assert.equal(await exists(path.join(outputDir, "a11y-report.json")), true);
   assert.equal(await exists(path.join(outputDir, "a11y-metrics.csv")), false);
+  assert.equal(await exists(path.join(outputDir, "a11y-findings.csv")), false);
   assert.equal(await exists(path.join(outputDir, "a11y-comment.md")), false);
 });
 

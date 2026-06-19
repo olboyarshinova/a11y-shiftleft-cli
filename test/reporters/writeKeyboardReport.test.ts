@@ -64,3 +64,34 @@ test("writeKeyboardReport writes JSON and Markdown artifacts", async () => {
   assert.equal(json.steps[0].selector, "#save");
   assert.match(markdown, /http:\/\/localhost:3000\/settings/);
 });
+
+test("toKeyboardMarkdown includes deterministic fix recommendations", () => {
+  const markdown = toKeyboardMarkdown({
+    ...result,
+    issues: [{
+      source: "keyboard",
+      framework: "react",
+      ruleId: "focus-visible",
+      wcag: ["2.4.7"],
+      wcagCriteria: [],
+      tags: [],
+      severity: "warning",
+      selector: "#save",
+      message: "Focused control has no visible focus indicator.",
+      remediation: {
+        summary: "Add a visible focus indicator.",
+        howToFix: ["Use :focus-visible with a high-contrast outline."],
+        docs: ["https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html"],
+        frameworkExamples: {
+          react: ".button:focus-visible { outline: 2px solid currentColor; }"
+        }
+      }
+    }]
+  });
+
+  assert.match(markdown, /Findings And Recommendations/);
+  assert.match(markdown, /Suggested fix: Add a visible focus indicator/);
+  assert.match(markdown, /Use :focus-visible with a high-contrast outline/);
+  assert.match(markdown, /focus-visible\.html/);
+  assert.match(markdown, /react example/);
+});

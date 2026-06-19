@@ -97,6 +97,7 @@ The same run also creates:
 ```txt
 reports/a11y-report.json
 reports/a11y-metrics.csv
+reports/a11y-findings.csv
 ```
 
 ## Optional Project Setup
@@ -162,6 +163,7 @@ recommendation; axe findings also preserve their rule-specific help link.
 | `reports/a11y-comment.md` | Human review and PR comments | Usually no |
 | `reports/a11y-report.json` | Automation, debugging, integrations | Usually no |
 | `reports/a11y-metrics.csv` | Trends and empirical validation | Usually no |
+| `reports/a11y-findings.csv` | Every finding with fix steps, guidance, and framework examples | Usually no |
 | `reports/exploration.html` | Visual review of explored UI states | Usually no |
 | `reports/exploration.pdf` | Portable visual report artifact when `--pdf` is used | Usually no |
 | `reports/keyboard-path.md` | Human-readable Tab order and focus evidence | Usually no |

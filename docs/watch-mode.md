@@ -31,6 +31,7 @@ Each run refreshes:
 reports/watch/a11y-comment.md
 reports/watch/a11y-report.json
 reports/watch/a11y-metrics.csv
+reports/watch/a11y-findings.csv
 ```
 
 ## Custom Source Paths

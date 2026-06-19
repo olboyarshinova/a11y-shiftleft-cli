@@ -487,7 +487,10 @@ function reportFiles(outputDir: string, formats: ReportFormat[], semiAuto: boole
 
   if (formats.includes("markdown")) files.push(joinOutputPath(outputDir, "a11y-comment.md"));
   if (formats.includes("json")) files.push(joinOutputPath(outputDir, "a11y-report.json"));
-  if (formats.includes("csv")) files.push(joinOutputPath(outputDir, "a11y-metrics.csv"));
+  if (formats.includes("csv")) {
+    files.push(joinOutputPath(outputDir, "a11y-metrics.csv"));
+    files.push(joinOutputPath(outputDir, "a11y-findings.csv"));
+  }
   if (semiAuto) files.push(joinOutputPath(outputDir, "a11y-manual-checklist.md"));
 
   return files;

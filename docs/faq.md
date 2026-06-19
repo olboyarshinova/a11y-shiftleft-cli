@@ -83,13 +83,14 @@ After a scan, the output folder you specified with `--out` contains several file
 reports/a11y-comment.md   ← start here
 reports/a11y-report.json
 reports/a11y-metrics.csv
+reports/a11y-findings.csv
 ```
 
 Open `reports/a11y-comment.md` in your editor or any Markdown viewer. It contains a compact table of findings with severity, WCAG metadata, confidence score, and remediation hints.
 
 ### Should I commit generated reports to my repository?
 
-Usually no. Report files (`a11y-comment.md`, `a11y-report.json`, `a11y-metrics.csv`, `exploration.html`, `screenshots/`) change on every run and quickly inflate repository size. Add the reports folder to `.gitignore`:
+Usually no. Report files (`a11y-comment.md`, `a11y-report.json`, `a11y-metrics.csv`, `a11y-findings.csv`, `exploration.html`, `screenshots/`) change on every run and quickly inflate repository size. Add the reports folder to `.gitignore`:
 
 ```
 # .gitignore

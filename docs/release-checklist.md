@@ -123,6 +123,7 @@ Expected files:
 reports-smoke/exploration.html
 reports-smoke/exploration.pdf
 reports-smoke/a11y-report.json
+reports-smoke/a11y-findings.csv
 ```
 
 Verify ticket drafts:
