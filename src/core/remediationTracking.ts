@@ -1,7 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type {
+  A11yReport,
   DedupedIssue,
+  RemediationStatus,
   RemediationTrackingEntry,
   RemediationTrackingFile,
   RemediationTrackingSummary
@@ -69,6 +71,83 @@ export function isValidTrackingEntry(entry: RemediationTrackingEntry): boolean {
   }
 
   return ["open", "in-progress", "fixed", "manual-review"].includes(entry.status);
+}
+
+export function createRemediationTrackingFile(
+  report: Pick<A11yReport, "issues">,
+  now = new Date()
+): RemediationTrackingFile {
+  const updatedAt = now.toISOString().slice(0, 10);
+  const items = [...new Map(report.issues.map((issue) => [issue.fingerprint, issue])).values()]
+    .filter((issue) => Boolean(issue.fingerprint))
+    .map((issue) => ({
+      fingerprint: issue.fingerprint,
+      status: "open" as const,
+      owner: "",
+      reason: "",
+      updatedAt
+    }))
+    .sort((left, right) => left.fingerprint.localeCompare(right.fingerprint));
+
+  return { version: 1, items };
+}
+
+export function updateRemediationStatus(
+  file: RemediationTrackingFile,
+  update: {
+    fingerprint: string;
+    status: RemediationStatus;
+    owner?: string;
+    reason?: string;
+    reviewBy?: string;
+  },
+  now = new Date()
+): RemediationTrackingFile {
+  const index = file.items.findIndex((item) => item.fingerprint === update.fingerprint);
+  if (index < 0) {
+    throw new Error(`Remediation fingerprint not found: ${update.fingerprint}`);
+  }
+
+  const existing = file.items[index];
+  const next: RemediationTrackingEntry = {
+    ...existing,
+    status: update.status,
+    owner: update.owner ?? existing.owner,
+    reason: update.reason ?? existing.reason,
+    updatedAt: now.toISOString().slice(0, 10),
+    reviewBy: update.reviewBy ?? existing.reviewBy
+  };
+
+  if (next.status !== "accepted-temporarily" && update.reviewBy === undefined) {
+    delete next.reviewBy;
+  }
+  if (!isValidTrackingEntry(next)) {
+    throw new Error(`Invalid remediation update for status ${next.status}. Add the required owner, reason, and review date.`);
+  }
+
+  return {
+    version: 1,
+    items: file.items.map((item, itemIndex) => itemIndex === index ? next : item)
+  };
+}
+
+export async function readRemediationTrackingFile(filePath: string): Promise<RemediationTrackingFile> {
+  try {
+    return parseTrackingFile(await fs.readFile(filePath, "utf8"), filePath);
+  } catch (error) {
+    if (isNodeError(error) && error.code === "ENOENT") {
+      throw new Error(`Accessibility remediation file not found: ${filePath}`);
+    }
+    throw error;
+  }
+}
+
+export async function writeRemediationTrackingFile(
+  filePath: string,
+  file: RemediationTrackingFile
+): Promise<void> {
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.writeFile(filePath, `${JSON.stringify(file, null, 2)}\n`);
 }
 
 async function readTrackingFileIfExists(filePath: string): Promise<RemediationTrackingFile | null> {

@@ -442,6 +442,24 @@ new findings. Keep the previous and current runs in different directories.
 Keep team-owned remediation decisions in `a11y-remediation.json`. Entries are
 matched by the stable `fingerprint` from `a11y-report.json`:
 
+Create the initial file directly from a completed scan:
+
+```bash
+npx a11y-shiftleft-cli remediation init \
+  --report reports/a11y-report.json \
+  --out a11y-remediation.json
+```
+
+Then update an item without editing JSON manually:
+
+```bash
+npx a11y-shiftleft-cli remediation set \
+  --fingerprint "button-name::url=http://localhost:5173::selector=.menu-button::critical" \
+  --status in-progress \
+  --owner @frontend-team \
+  --reason "Fix is assigned to the current sprint."
+```
+
 ```json
 {
   "version": 1,
@@ -462,6 +480,10 @@ Supported statuses are `open`, `in-progress`, `fixed`,
 `accepted-temporarily`, and `manual-review`. A temporary acceptance requires an
 owner, reason, and review date. Findings remain visible in reports regardless
 of status; use `a11y-ignore.json` only when an approved issue must be filtered.
+
+For `accepted-temporarily`, pass `--owner`, `--reason`, and
+`--review-by YYYY-MM-DD`. `remediation init` refuses to overwrite an existing
+file unless `--force` is explicitly provided.
 
 Use another file when needed:
 

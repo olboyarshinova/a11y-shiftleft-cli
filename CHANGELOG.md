@@ -14,6 +14,9 @@
 - Added optional `a11y-remediation.json` tracking. Fresh reports retain every
   finding while attaching team-owned status, owner, reason, update date, and
   review date, and summarize stale or invalid tracking entries.
+- Added `remediation init` and `remediation set` so teams can create status
+  tracking from a report and update validated findings without editing JSON by
+  hand.
 - Added `evidence pack` for preparing a checksummed local evidence directory.
   It copies only known report artifacts, excludes visual evidence by default,
   and records privacy warnings without uploading any files.

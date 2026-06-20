@@ -30,6 +30,8 @@ remain suitable for reproducible empirical validation.
   environment, evidence links, notes, date, and remediation ownership.
 - Overlay persistent team-owned remediation statuses on fresh findings without
   hiding accepted or in-progress accessibility risk from generated evidence.
+- Add CLI helpers that initialize remediation tracking from a report and update
+  one validated fingerprint without requiring manual JSON editing.
 - Add a local, checksummed evidence package with a strict artifact allowlist,
   privacy manifest, and opt-in visual reports and screenshots.
 
@@ -84,8 +86,8 @@ remain suitable for reproducible empirical validation.
 
 - Validate the structured manual-review records in real keyboard-only, screen
   reader, zoom, reflow, reduced-motion, cognitive, and task-flow reviews.
-- Add CLI helpers for creating and updating local remediation status files from
-  report fingerprints while keeping generated scan artifacts immutable.
+- Validate remediation ownership and temporary-acceptance review dates in real
+  pull request and retest workflows.
 - Validate evidence packages across automated scans, manual reviews, keyboard
   audits, visual exploration, and retest history before adding archive export.
 

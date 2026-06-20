@@ -9,6 +9,7 @@ import { registerEvidenceCommand } from "./commands/evidence.js";
 import { registerExploreCommand } from "./commands/explore.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerKeyboardCommand } from "./commands/keyboard.js";
+import { registerRemediationCommand } from "./commands/remediation.js";
 import { registerTicketCommand } from "./commands/ticket.js";
 import { registerWatchCommand } from "./commands/watch.js";
 
@@ -31,6 +32,7 @@ export function createProgram(): Command {
   registerAdapterCommand(program);
   registerExploreCommand(program);
   registerKeyboardCommand(program);
+  registerRemediationCommand(program);
   registerDashboardCommand(program);
   registerWatchCommand(program);
   registerTicketCommand(program);

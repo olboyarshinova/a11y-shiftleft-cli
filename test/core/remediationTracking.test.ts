@@ -5,8 +5,10 @@ import os from "node:os";
 import path from "node:path";
 import {
   applyRemediationTracking,
+  createRemediationTrackingFile,
   DEFAULT_REMEDIATION_FILE,
-  isValidTrackingEntry
+  isValidTrackingEntry,
+  updateRemediationStatus
 } from "../../dist/core/remediationTracking.js";
 
 test("applyRemediationTracking annotates findings without filtering them", async () => {
@@ -70,6 +72,39 @@ test("accepted temporary findings require ownership, reason, and review date", (
     reason: "",
     updatedAt: "2026-06-20"
   }), false);
+});
+
+test("createRemediationTrackingFile creates sorted unique open items", () => {
+  const file = createRemediationTrackingFile({
+    issues: [issue("z-warning"), issue("a-warning"), issue("z-warning")]
+  }, new Date("2026-06-20T12:00:00.000Z"));
+
+  assert.deepEqual(file.items.map((item) => item.fingerprint), ["a-warning", "z-warning"]);
+  assert.equal(file.items[0].status, "open");
+  assert.equal(file.items[0].updatedAt, "2026-06-20");
+});
+
+test("updateRemediationStatus validates temporary acceptance metadata", () => {
+  const file = createRemediationTrackingFile({ issues: [issue("known-warning")] });
+  const updated = updateRemediationStatus(file, {
+    fingerprint: "known-warning",
+    status: "accepted-temporarily",
+    owner: "@frontend",
+    reason: "Waiting for the shared component release.",
+    reviewBy: "2026-07-20"
+  }, new Date("2026-06-20T12:00:00.000Z"));
+
+  assert.equal(updated.items[0].status, "accepted-temporarily");
+  assert.equal(updated.items[0].owner, "@frontend");
+  assert.equal(updated.items[0].updatedAt, "2026-06-20");
+  assert.throws(() => updateRemediationStatus(file, {
+    fingerprint: "known-warning",
+    status: "accepted-temporarily"
+  }), /required owner, reason, and review date/);
+  assert.throws(() => updateRemediationStatus(file, {
+    fingerprint: "missing",
+    status: "open"
+  }), /fingerprint not found/);
 });
 
 function issue(fingerprint: string) {
