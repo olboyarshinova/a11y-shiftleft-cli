@@ -147,6 +147,16 @@ test("getRemediationHint explains Angular button type findings", () => {
   assert.equal(hint?.frameworkExamples?.angular?.includes("type=\"button\""), true);
 });
 
+test("getRemediationHint explains keyboard focus loss and unreachable controls", () => {
+  const lostFocus = getRemediationHint("keyboard-focus-lost", getWcagCriteria(["2.1.1", "2.4.3"]), "unknown");
+  const unreachable = getRemediationHint("keyboard-control-unreachable", getWcagCriteria(["2.1.1"]), "react");
+
+  assert.match(lostFocus.summary, /meaningful interactive target/);
+  assert.equal(lostFocus.docs.some((url) => url.includes("focus-order")), true);
+  assert.match(unreachable.summary, /reachable/);
+  assert.equal(unreachable.howToFix.some((step) => step.includes("tabindex")), true);
+});
+
 test("getRemediationHint explains document metadata findings", () => {
   const titleHint = getRemediationHint("document-title", getWcagCriteria(["2.4.2"]), "react");
   const langHint = getRemediationHint("html-has-lang", getWcagCriteria(["3.1.1"]), "react");

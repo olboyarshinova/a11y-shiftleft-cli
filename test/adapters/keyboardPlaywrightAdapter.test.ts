@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { compareFocusPaths, createKeyboardStateId, issuesForFocusStep } from "../../dist/adapters/keyboardPlaywrightAdapter.js";
+import { compareFocusPaths, createKeyboardStateId, findUnreachableFocusableSelectors, issuesForFocusStep } from "../../dist/adapters/keyboardPlaywrightAdapter.js";
 import type { KeyboardFocusStep } from "../../dist/types.js";
 
 function focusStep(overrides: Partial<KeyboardFocusStep> = {}): KeyboardFocusStep {
@@ -68,4 +68,11 @@ test("createKeyboardStateId is stable and changes with semantic UI state", () =>
   assert.equal(initial, createKeyboardStateId(state, ["#menu|button|false"]));
   assert.notEqual(initial, createKeyboardStateId(state, ["#menu|button|true"]));
   assert.notEqual(initial, createKeyboardStateId({ ...state, scrollY: 400 }, ["#menu|button|false"]));
+});
+
+test("findUnreachableFocusableSelectors returns unique inventory targets missing from the completed path", () => {
+  assert.deepEqual(
+    findUnreachableFocusableSelectors(["#first", "#second", "#second", "#third"], ["#first", "#third"]),
+    ["#second"]
+  );
 });

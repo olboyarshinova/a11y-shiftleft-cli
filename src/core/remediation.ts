@@ -440,6 +440,30 @@ const RULE_HINTS: Record<string, RemediationHint> = {
       angular: "<main><h1>Favorite items</h1></main>"
     }
   },
+  "keyboard-focus-lost": {
+    summary: "Keep keyboard focus on a meaningful interactive target after every Tab press.",
+    howToFix: [
+      "Do not remove or disable the currently focused element without moving focus to the next logical target.",
+      "Check custom key handlers for preventDefault calls that stop normal Tab navigation.",
+      "After closing temporary UI, restore focus to the control that opened it or another logical target."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html",
+      "https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html"
+    ]
+  },
+  "keyboard-control-unreachable": {
+    summary: "Make every interactive control reachable in the logical keyboard focus order.",
+    howToFix: [
+      "Use a native interactive element such as button, a, input, select, or textarea whenever possible.",
+      "Remove tabindex=\"-1\" from controls that users must reach directly and avoid positive tabindex values.",
+      "Check whether an inert, hidden, disabled, or collapsed ancestor incorrectly excludes the control from navigation."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html",
+      "https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/tabindex"
+    ]
+  },
   "region": {
     summary: "Place visible page content inside semantic landmarks.",
     howToFix: [

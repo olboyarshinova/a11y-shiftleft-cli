@@ -639,7 +639,8 @@ obscuration for up to 40 steps. Each step also references a deduplicated
 semantic page state containing the URL, title, H1, scroll position, viewport,
 and counts of open dialogs and expanded controls. These state snapshots do not
 capture screenshots, form values, or page HTML. It reports common positive `tabindex`, stuck or
-incomplete focus cycles, forward/reverse order mismatches, missing visible
+incomplete focus cycles, specific controls skipped by a completed cycle,
+focus loss to the document body, forward/reverse order mismatches, missing visible
 focus, and focus hidden behind other content, with mappings to WCAG 2.1.1,
 2.1.2, 2.4.3, 2.4.7, and 2.4.11.
 

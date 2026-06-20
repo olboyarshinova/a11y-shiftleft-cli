@@ -36,6 +36,8 @@ test("mapRuleToWcag maps exact known rules", () => {
   assert.deepEqual(mapRuleToWcag("@angular-eslint/template/alt-text"), ["1.1.1"]);
   assert.deepEqual(mapRuleToWcag("@angular-eslint/template/valid-aria"), ["4.1.2"]);
   assert.deepEqual(mapRuleToWcag("keyboard-focus-stuck"), ["2.1.2"]);
+  assert.deepEqual(mapRuleToWcag("keyboard-focus-lost"), ["2.1.1", "2.4.3"]);
+  assert.deepEqual(mapRuleToWcag("keyboard-control-unreachable"), ["2.1.1"]);
   assert.deepEqual(mapRuleToWcag("keyboard-focus-indicator-missing"), ["2.4.7"]);
   assert.deepEqual(mapRuleToWcag("keyboard-focus-obscured"), ["2.4.11"]);
   assert.deepEqual(mapRuleToWcag("keyboard-reverse-order-mismatch"), ["2.4.3"]);

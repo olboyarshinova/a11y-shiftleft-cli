@@ -7,6 +7,8 @@
   open dialog count, and expanded-control count.
 - Prevented keyboard focus evidence from treating user-entered text field
   values as accessible names; associated labels and ARIA names are used instead.
+- Added conservative detection for focus loss to the document body and for
+  concrete controls skipped by a completed keyboard focus cycle.
 
 ### Added
 

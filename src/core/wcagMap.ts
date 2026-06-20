@@ -47,6 +47,8 @@ const RULE_TO_WCAG: Record<string, string[]> = {
   "no-autoplay-audio": ["1.4.2"],
   "keyboard": ["2.1.1"],
   "keyboard-focus-not-reached": ["2.1.1"],
+  "keyboard-focus-lost": ["2.1.1", "2.4.3"],
+  "keyboard-control-unreachable": ["2.1.1"],
   "keyboard-focus-stuck": ["2.1.2"],
   "keyboard-focus-cycle": ["2.1.2", "2.4.3"],
   "keyboard-positive-tabindex": ["2.4.3"],

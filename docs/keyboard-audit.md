@@ -47,7 +47,10 @@ does not store form values, page HTML, or visual captures in this mode.
 
 - Positive `tabindex` values that can override logical source order.
 - Focus that does not advance when `Tab` is pressed.
+- Focus that remains on the document body after repeated `Tab` presses.
 - A repeated focus cycle before all detected controls are reached.
+- Specific focusable controls skipped by a completed focus cycle. Reporting is
+  capped at ten targets per page to keep the result actionable.
 - A reverse Shift+Tab order that does not mirror a complete forward Tab cycle.
 - Focused elements outside the visible viewport or hidden from rendering.
 - Focused elements obscured at their center point by other content.

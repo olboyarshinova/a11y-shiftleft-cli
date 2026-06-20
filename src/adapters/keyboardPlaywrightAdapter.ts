@@ -26,6 +26,7 @@ export async function runKeyboardPlaywrightAdapter(options: KeyboardAuditOptions
   let focusableCount = 0;
   let completedCycle = false;
   let reverseOrderMatches: boolean | null = null;
+  let focusableSelectors: string[] = [];
 
   try {
     const context = await browser.newContext();
@@ -36,6 +37,7 @@ export async function runKeyboardPlaywrightAdapter(options: KeyboardAuditOptions
 
     const pageInventory = await collectKeyboardInventory(page);
     focusableCount = pageInventory.focusableCount;
+    focusableSelectors = pageInventory.focusableSelectors;
     issues.push(...pageInventory.positiveTabIndexes.map((item) => createKeyboardIssue({
       framework: options.framework,
       url: options.url,
@@ -48,11 +50,30 @@ export async function runKeyboardPlaywrightAdapter(options: KeyboardAuditOptions
 
     const visited = new Map<string, number>();
     let previousSelector = "";
+    let consecutiveBodySteps = 0;
+    let reportedFocusLoss = false;
 
     for (let index = 1; index <= maxTabs; index += 1) {
       await page.keyboard.press("Tab");
       const snapshot = await collectFocusedElement(page);
-      if (!snapshot || snapshot.tagName === "body") continue;
+      if (!snapshot) continue;
+      if (snapshot.tagName === "body") {
+        consecutiveBodySteps += 1;
+        if (steps.length > 0 && consecutiveBodySteps >= 2 && !reportedFocusLoss) {
+          issues.push(createKeyboardIssue({
+            framework: options.framework,
+            url: options.url,
+            ruleId: "keyboard-focus-lost",
+            selector: "body",
+            severity: "critical",
+            message: "Keyboard focus remained on the document body after repeated Tab presses; later controls may be unreachable.",
+            wcag: ["2.1.1", "2.4.3"]
+          }));
+          reportedFocusLoss = true;
+        }
+        continue;
+      }
+      consecutiveBodySteps = 0;
 
       const step = { ...snapshot, index, direction: "forward" as const };
       steps.push(step);
@@ -92,6 +113,19 @@ export async function runKeyboardPlaywrightAdapter(options: KeyboardAuditOptions
       visited.set(snapshot.selector, index);
       previousSelector = snapshot.selector;
       issues.push(...issuesForFocusStep(step, options.framework, options.url));
+    }
+
+    if (completedCycle) {
+      const unreachableSelectors = findUnreachableFocusableSelectors(focusableSelectors, [...visited.keys()]);
+      issues.push(...unreachableSelectors.slice(0, 10).map((selector) => createKeyboardIssue({
+        framework: options.framework,
+        url: options.url,
+        ruleId: "keyboard-control-unreachable",
+        selector,
+        severity: "critical",
+        message: `The focus cycle completed without reaching ${selector}. Verify its tabindex, disabled state, DOM order, and any enclosing inert or hidden state.`,
+        wcag: ["2.1.1"]
+      })));
     }
 
     const forwardOrder = uniqueSelectors(steps);
@@ -239,6 +273,7 @@ function createKeyboardIssue(input: {
 
 async function collectKeyboardInventory(page: Page): Promise<{
   focusableCount: number;
+  focusableSelectors: string[];
   positiveTabIndexes: Array<{ selector: string; tabIndex: number }>;
 }> {
   return page.evaluate(() => {
@@ -254,6 +289,7 @@ async function collectKeyboardInventory(page: Page): Promise<{
 
     return {
       focusableCount: focusable.length,
+      focusableSelectors: focusable.map(cssSelector),
       positiveTabIndexes: focusable
         .filter((element) => element.tabIndex > 0)
         .map((element) => ({ selector: cssSelector(element), tabIndex: element.tabIndex }))
@@ -274,6 +310,11 @@ async function collectKeyboardInventory(page: Page): Promise<{
       return parts.join(" > ") || element.tagName.toLowerCase();
     }
   });
+}
+
+export function findUnreachableFocusableSelectors(inventory: string[], visited: string[]): string[] {
+  const visitedSet = new Set(visited);
+  return [...new Set(inventory)].filter((selector) => !visitedSet.has(selector));
 }
 
 async function collectFocusedElement(page: Page): Promise<PageKeyboardSnapshot | null> {
