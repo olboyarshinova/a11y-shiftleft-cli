@@ -437,6 +437,41 @@ The new JSON, CSV, Markdown, and console summaries show how many findings were
 fixed, remain, or are new. With `--retest`, the severity gate applies only to
 new findings. Keep the previous and current runs in different directories.
 
+## Remediation Statuses
+
+Keep team-owned remediation decisions in `a11y-remediation.json`. Entries are
+matched by the stable `fingerprint` from `a11y-report.json`:
+
+```json
+{
+  "version": 1,
+  "items": [
+    {
+      "fingerprint": "button-name::url=http://localhost:5173::selector=.menu-button::critical",
+      "status": "in-progress",
+      "owner": "@frontend-team",
+      "reason": "Fix is assigned to the current sprint.",
+      "updatedAt": "2026-06-20",
+      "reviewBy": "2026-07-01"
+    }
+  ]
+}
+```
+
+Supported statuses are `open`, `in-progress`, `fixed`,
+`accepted-temporarily`, and `manual-review`. A temporary acceptance requires an
+owner, reason, and review date. Findings remain visible in reports regardless
+of status; use `a11y-ignore.json` only when an approved issue must be filtered.
+
+Use another file when needed:
+
+```bash
+npx a11y-shiftleft-cli check \
+  --url $APP_URL \
+  --remediation-file audit/a11y-remediation.json \
+  --out reports
+```
+
 ## Temporary Ignores
 
 Use `a11y-ignore.json` only for reviewed temporary exceptions:

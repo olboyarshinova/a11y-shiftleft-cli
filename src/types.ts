@@ -281,6 +281,7 @@ export interface DedupedIssue extends TriagedIssue {
   sources?: string[];
   baselineStatus?: "new" | "existing";
   retestStatus?: "new" | "remaining";
+  remediationTracking?: RemediationTrackingEntry;
 }
 
 export interface IgnoreEntry {
@@ -356,6 +357,33 @@ export interface RetestComparisonSummary {
   newInfo: number;
 }
 
+export type RemediationStatus = "open" | "in-progress" | "fixed" | "accepted-temporarily" | "manual-review";
+
+export interface RemediationTrackingEntry {
+  fingerprint: string;
+  status: RemediationStatus;
+  owner: string;
+  reason: string;
+  updatedAt: string;
+  reviewBy?: string;
+}
+
+export interface RemediationTrackingFile {
+  version: 1;
+  items: RemediationTrackingEntry[];
+}
+
+export interface RemediationTrackingSummary {
+  enabled: boolean;
+  file: string;
+  totalEntries: number;
+  validEntries: number;
+  invalidEntries: number;
+  matchedIssues: number;
+  staleEntries: number;
+  byStatus: Record<string, number>;
+}
+
 export interface ReportRetentionEvidence {
   enabled: boolean;
   dryRun: boolean;
@@ -374,6 +402,7 @@ export interface ReportMetrics {
   standard?: ComplianceStandardMetadata;
   baseline?: BaselineComparisonSummary;
   retest?: RetestComparisonSummary;
+  remediationTracking?: RemediationTrackingSummary;
   ignore?: IgnoreSummary;
   retention?: ReportRetentionEvidence;
   scanDurationMs?: number;
@@ -430,6 +459,7 @@ export interface ReportSummary {
   standard?: ComplianceStandardMetadata;
   baseline?: BaselineComparisonSummary;
   retest?: RetestComparisonSummary;
+  remediationTracking?: RemediationTrackingSummary;
   ignore?: IgnoreSummary;
   retention?: ReportRetentionEvidence;
   complianceEvidence: ComplianceEvidenceSummary;

@@ -442,6 +442,59 @@ test("writeReports includes retest comparison metadata", async () => {
   assert.match(markdown, /retest: new/);
 });
 
+test("writeReports includes remediation tracking without hiding findings", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-remediation-tracking-"));
+
+  const report = await writeReports(
+    outputDir,
+    [
+      {
+        source: "axe",
+        severity: "warning",
+        ruleId: "button-name",
+        wcag: [],
+        wcagCriteria: [],
+        tags: [],
+        selector: "button",
+        message: "Buttons must have discernible text",
+        fingerprint: "button-name::selector=button::warning",
+        duplicateCount: 0,
+        remediationTracking: {
+          fingerprint: "button-name::selector=button::warning",
+          status: "in-progress",
+          owner: "@frontend",
+          reason: "Fix is assigned.",
+          updatedAt: "2026-06-20",
+          reviewBy: "2026-07-01"
+        }
+      }
+    ],
+    {
+      framework: "react",
+      remediationTracking: {
+        enabled: true,
+        file: "a11y-remediation.json",
+        totalEntries: 2,
+        validEntries: 2,
+        invalidEntries: 0,
+        matchedIssues: 1,
+        staleEntries: 1,
+        byStatus: { "in-progress": 1 }
+      }
+    }
+  );
+
+  const findingsCsv = await fs.readFile(path.join(outputDir, "a11y-findings.csv"), "utf8");
+  const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+
+  assert.equal(report.summary.total, 1);
+  assert.equal(report.summary.remediationTracking?.matchedIssues, 1);
+  assert.match(findingsCsv, /remediationStatus/);
+  assert.match(findingsCsv, /in-progress/);
+  assert.match(markdown, /Tracked findings \| 1/);
+  assert.match(markdown, /remediation: in-progress owner: @frontend review by: 2026-07-01/);
+});
+
 test("writeReports includes ignore metadata", async () => {
   const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-ignore-"));
 

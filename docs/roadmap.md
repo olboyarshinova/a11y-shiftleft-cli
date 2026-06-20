@@ -28,6 +28,8 @@ remain suitable for reproducible empirical validation.
   and new findings without changing the committed baseline.
 - Write matching Markdown and JSON manual-review records with status, tester,
   environment, evidence links, notes, date, and remediation ownership.
+- Overlay persistent team-owned remediation statuses on fresh findings without
+  hiding accepted or in-progress accessibility risk from generated evidence.
 
 ### 0.7.x Keyboard Audit Mode
 
@@ -80,8 +82,8 @@ remain suitable for reproducible empirical validation.
 
 - Validate the structured manual-review records in real keyboard-only, screen
   reader, zoom, reflow, reduced-motion, cognitive, and task-flow reviews.
-- Add local remediation statuses with owner, reason, and review date while
-  keeping generated scan artifacts immutable.
+- Add CLI helpers for creating and updating local remediation status files from
+  report fingerprints while keeping generated scan artifacts immutable.
 - Add a local evidence-package command that bundles selected reports,
   screenshots, manual-review records, and retest history without uploading
   them.

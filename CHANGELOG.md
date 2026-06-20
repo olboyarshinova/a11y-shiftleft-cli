@@ -11,6 +11,9 @@
 - Semi-automated review now writes matching Markdown and JSON checklists with
   structured status, tester, environment, evidence-link, notes, date, and
   remediation-owner fields for every manual check.
+- Added optional `a11y-remediation.json` tracking. Fresh reports retain every
+  finding while attaching team-owned status, owner, reason, update date, and
+  review date, and summarize stale or invalid tracking entries.
 - Added deterministic fix recommendations across non-visual reports: a new
   per-finding CSV export, keyboard Markdown guidance, and grouped latest-run
   recommendations in the local dashboard and dashboard PDF.

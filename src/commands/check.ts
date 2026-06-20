@@ -12,6 +12,7 @@ import { matchesWcagLevel, matchesWcagVersion } from "../core/wcagMap.js";
 import { resolveStandard } from "../core/standards.js";
 import { applyBaseline } from "../core/baseline.js";
 import { applyRetest } from "../core/retest.js";
+import { applyRemediationTracking, DEFAULT_REMEDIATION_FILE } from "../core/remediationTracking.js";
 import { applyIgnores, DEFAULT_IGNORE_FILE } from "../core/ignore.js";
 import { applyReportRetention } from "../core/reportRetention.js";
 import type { A11yReport, ComplianceStandard, Framework, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel, WcagVersion } from "../types.js";
@@ -42,6 +43,8 @@ export interface CheckOptions {
   baselineFile?: string;
   updateBaseline?: boolean;
   retest?: string;
+  remediationTracking?: boolean;
+  remediationFile?: string;
   ignore?: boolean;
   ignoreFile?: string;
   retention?: boolean;
@@ -94,6 +97,8 @@ export function registerCheckCommand(program: Command): void {
     .option("--baseline-file <file>", "Baseline file path")
     .option("--update-baseline", "Overwrite the baseline file with the current findings")
     .option("--retest <report>", "Compare with a previous report file or directory and fail only on new findings")
+    .option("--remediation-file <file>", "Remediation status file path", DEFAULT_REMEDIATION_FILE)
+    .option("--no-remediation-tracking", "Do not apply remediation statuses to findings")
     .option("--ignore-file <file>", "Scoped ignore file path", DEFAULT_IGNORE_FILE)
     .option("--no-ignore", "Disable a11y-ignore.json filtering")
     .option("--retention-max-runs <count>", "Keep at most this many report run directories including the current output")
@@ -228,21 +233,26 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
     enabled: options.ignore !== false,
     ignoreFile: options.ignoreFile
   });
+  const remediationResult = await applyRemediationTracking(ignoreResult.issues, {
+    cwd: effectiveConfig.cwd,
+    file: options.remediationFile,
+    enabled: options.remediationTracking !== false
+  });
   const baselineEnabled = Boolean(options.baseline || options.updateBaseline);
   const baselineResult = baselineEnabled
-    ? await applyBaseline(ignoreResult.issues, {
+    ? await applyBaseline(remediationResult.issues, {
       cwd: effectiveConfig.cwd,
       baselineFile: options.baselineFile,
       update: Boolean(options.updateBaseline)
     })
     : undefined;
   const retestResult = options.retest
-    ? await applyRetest(ignoreResult.issues, {
+    ? await applyRetest(remediationResult.issues, {
       cwd: effectiveConfig.cwd,
       previous: options.retest
     })
     : undefined;
-  const reportIssues = baselineResult?.issues || retestResult?.issues || ignoreResult.issues;
+  const reportIssues = baselineResult?.issues || retestResult?.issues || remediationResult.issues;
   const formats = parseFormats(options.format);
   const retentionSummary = await applyReportRetention(effectiveConfig.outputDir, effectiveConfig.retention);
   const report = await writeReports(effectiveConfig.outputDir, reportIssues, {
@@ -256,6 +266,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
     },
     baseline: baselineResult?.summary,
     retest: retestResult?.summary,
+    remediationTracking: remediationResult.summary,
     ignore: ignoreResult.summary,
     retention: retentionSummary.enabled ? retentionSummary : undefined,
     scanDurationMs: Date.now() - startedAt,
@@ -445,6 +456,9 @@ export function formatCheckConsoleSummary(
   const retest = summary.retest?.enabled
     ? `Retest: fixed ${summary.retest.fixedIssues} | remaining ${summary.retest.remainingIssues} | new ${summary.retest.newIssues}`
     : undefined;
+  const remediation = summary.remediationTracking?.enabled
+    ? `Remediation: tracked ${summary.remediationTracking.matchedIssues} | stale ${summary.remediationTracking.staleEntries} | invalid ${summary.remediationTracking.invalidEntries}`
+    : undefined;
 
   return [
     "a11y-shiftleft check",
@@ -458,6 +472,7 @@ export function formatCheckConsoleSummary(
     `WCAG levels: ${formatCountMap(summary.byWcagLevel)}`,
     `Duplicates removed: ${summary.duplicateCount} of ${summary.rawCount} raw findings`,
     ...(retest ? [retest] : []),
+    ...(remediation ? [remediation] : []),
     `Duration: ${summary.scanDurationMs}ms`,
     "",
     "Top rules:",
