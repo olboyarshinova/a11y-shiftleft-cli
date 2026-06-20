@@ -8,6 +8,9 @@
   `a11y-report.json` file or report directory. JSON, CSV, Markdown, and console
   output now distinguish fixed, remaining, and new findings, while severity
   gates apply only to new findings during a retest.
+- Semi-automated review now writes matching Markdown and JSON checklists with
+  structured status, tester, environment, evidence-link, notes, date, and
+  remediation-owner fields for every manual check.
 - Added deterministic fix recommendations across non-visual reports: a new
   per-finding CSV export, keyboard Markdown guidance, and grouped latest-run
   recommendations in the local dashboard and dashboard PDF.

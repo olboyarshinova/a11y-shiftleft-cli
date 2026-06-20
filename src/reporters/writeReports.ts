@@ -80,10 +80,16 @@ export async function writeReports(
       issues: reportIssues
     });
 
-    await fs.writeFile(
-      path.join(outputDir, "a11y-manual-checklist.md"),
-      toManualChecklistMarkdown(checklist)
-    );
+    await Promise.all([
+      fs.writeFile(
+        path.join(outputDir, "a11y-manual-checklist.md"),
+        toManualChecklistMarkdown(checklist)
+      ),
+      fs.writeFile(
+        path.join(outputDir, "a11y-manual-checklist.json"),
+        `${JSON.stringify(checklist, null, 2)}\n`
+      )
+    ]);
   }
 
   return report;

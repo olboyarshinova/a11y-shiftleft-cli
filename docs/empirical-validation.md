@@ -91,6 +91,7 @@ reports/a11y-metrics.csv
 reports/a11y-findings.csv
 reports/a11y-comment.md
 reports/a11y-manual-checklist.md
+reports/a11y-manual-checklist.json
 ```
 
 Generate the manual review checklist during intervention PRs:
@@ -104,7 +105,9 @@ npx a11y-shiftleft check \
 ```
 
 Use `a11y-manual-checklist.md` to record human-review evidence for issues that
-automated tools cannot reliably detect.
+automated tools cannot reliably detect. Keep the matching JSON when reviewer
+status, environment, evidence links, and remediation ownership will be
+aggregated across runs.
 
 ## Metrics
 
@@ -208,7 +211,7 @@ dx_score = average(question_1, question_2, question_3, question_4)
 - Record CLI version and commit SHA.
 - Store raw `a11y-report.json` files for every PR.
 - Store `a11y-metrics.csv` exports.
-- Store `a11y-manual-checklist.md` notes for semi-automated review PRs.
+- Store the Markdown and JSON manual checklists for semi-automated review PRs.
 - Store periodic `analysis/adoption.json` snapshots for npm downloads and
   GitHub traffic when available.
 - Store manual reviewer labels for false positives.

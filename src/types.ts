@@ -392,11 +392,27 @@ export interface ManualCheckItem {
   evidence: string[];
 }
 
+export type ManualReviewStatus = "not-reviewed" | "pass" | "fail" | "not-applicable";
+
+export interface ManualReviewRecord {
+  status: ManualReviewStatus;
+  tester: string;
+  testedAt: string;
+  environment: string;
+  notes: string;
+  evidenceLinks: string[];
+  remediationOwner: string;
+}
+
+export interface ManualChecklistEntry extends ManualCheckItem {
+  review: ManualReviewRecord;
+}
+
 export interface ManualChecklist {
   generatedAt: string;
   framework: Framework | string;
   urls: string[];
-  items: ManualCheckItem[];
+  items: ManualChecklistEntry[];
 }
 
 export interface ReportSummary {

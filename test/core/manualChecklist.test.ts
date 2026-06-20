@@ -23,6 +23,7 @@ test("createManualChecklist generates human-review checklist items", () => {
   assert.equal(checklist.items.some((item) => item.id === "brand-logo-accessibility"), true);
   assert.equal(checklist.items.some((item) => item.id === "media-motion"), true);
   assert.equal(checklist.items.some((item) => item.id === "representative-user-test"), true);
+  assert.equal(checklist.items.every((item) => item.review.status === "not-reviewed"), true);
 });
 
 test("createManualChecklist prioritizes form review when form issues exist", () => {
@@ -65,4 +66,7 @@ test("toManualChecklistMarkdown renders actionable Markdown checkboxes", () => {
   assert.match(markdown, /logo links to the home page/);
   assert.match(markdown, /Activate the skip link/);
   assert.match(markdown, /Automated accessibility tools do not prove full WCAG conformance/);
+  assert.match(markdown, /Status: `not-reviewed`/);
+  assert.match(markdown, /Environment \(browser, assistive technology, viewport\/zoom, input method\)/);
+  assert.match(markdown, /Remediation owner:/);
 });

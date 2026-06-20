@@ -1,4 +1,4 @@
-import type { DedupedIssue, Framework, ManualCheckItem, ManualChecklist } from "../types.js";
+import type { DedupedIssue, Framework, ManualCheckItem, ManualChecklist, ManualChecklistEntry } from "../types.js";
 
 const MANUAL_CHECKS: ManualCheckItem[] = [
   {
@@ -191,7 +191,7 @@ export function createManualChecklist(options: {
     generatedAt: options.generatedAt || new Date().toISOString(),
     framework: options.framework,
     urls: options.urls || [],
-    items: prioritizeManualChecks(MANUAL_CHECKS, options.issues || [])
+    items: prioritizeManualChecks(MANUAL_CHECKS, options.issues || []).map(toChecklistEntry)
   };
 }
 
@@ -208,6 +208,15 @@ ${item.steps.map((step) => `- [ ] ${step}`).join("\n")}
 
 Evidence to capture:
 ${item.evidence.map((evidence) => `- [ ] ${evidence}`).join("\n")}
+
+Review record:
+- Status: \`${item.review.status}\` (pass, fail, or not-applicable)
+- Tester:
+- Tested at:
+- Environment (browser, assistive technology, viewport/zoom, input method):
+- Remediation owner:
+- Notes:
+- Evidence links:
 `).join("\n");
 
   return `# Semi-Automated Accessibility Review Checklist
@@ -221,6 +230,21 @@ checklist to review issues that require human judgment, keyboard walkthroughs,
 and assistive technology checks.
 
 ${items}`;
+}
+
+function toChecklistEntry(item: ManualCheckItem): ManualChecklistEntry {
+  return {
+    ...item,
+    review: {
+      status: "not-reviewed",
+      tester: "",
+      testedAt: "",
+      environment: "",
+      notes: "",
+      evidenceLinks: [],
+      remediationOwner: ""
+    }
+  };
 }
 
 function prioritizeManualChecks(items: ManualCheckItem[], issues: DedupedIssue[]): ManualCheckItem[] {

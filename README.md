@@ -579,12 +579,16 @@ This adds:
 
 ```txt
 reports/a11y-manual-checklist.md
+reports/a11y-manual-checklist.json
 ```
 
 The checklist covers areas such as keyboard flow, screen reader smoke testing,
 form labels, content clarity, 200% zoom and reflow, alternative-text and logo quality,
 media and motion, skip links, and representative-user task testing that
-automated tools cannot fully judge.
+automated tools cannot fully judge. Each item includes fields for review status,
+tester, date, test environment, notes, evidence links, and remediation owner.
+Use Markdown for human review and JSON when the evidence needs to be processed
+or aggregated later.
 
 ## WCAG And Compliance Support
 

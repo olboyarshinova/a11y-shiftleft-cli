@@ -509,7 +509,10 @@ function reportFiles(outputDir: string, formats: ReportFormat[], semiAuto: boole
     files.push(joinOutputPath(outputDir, "a11y-metrics.csv"));
     files.push(joinOutputPath(outputDir, "a11y-findings.csv"));
   }
-  if (semiAuto) files.push(joinOutputPath(outputDir, "a11y-manual-checklist.md"));
+  if (semiAuto) {
+    files.push(joinOutputPath(outputDir, "a11y-manual-checklist.md"));
+    files.push(joinOutputPath(outputDir, "a11y-manual-checklist.json"));
+  }
 
   return files;
 }

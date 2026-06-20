@@ -26,6 +26,8 @@ remain suitable for reproducible empirical validation.
   without account setup, SaaS authorization, or extra installation weight.
 - Add report-to-report retesting so remediation runs identify fixed, remaining,
   and new findings without changing the committed baseline.
+- Write matching Markdown and JSON manual-review records with status, tester,
+  environment, evidence links, notes, date, and remediation ownership.
 
 ### 0.7.x Keyboard Audit Mode
 
@@ -76,8 +78,8 @@ remain suitable for reproducible empirical validation.
 
 ## Near Term
 
-- Extend the manual checklist with explicit keyboard-only, screen reader, zoom,
-  reflow, reduced-motion, cognitive, and task-flow evidence fields.
+- Validate the structured manual-review records in real keyboard-only, screen
+  reader, zoom, reflow, reduced-motion, cognitive, and task-flow reviews.
 - Add local remediation statuses with owner, reason, and review date while
   keeping generated scan artifacts immutable.
 - Add a local evidence-package command that bundles selected reports,

@@ -573,10 +573,16 @@ test("writeReports can generate a semi-automated manual checklist", async () => 
     path.join(outputDir, "a11y-manual-checklist.md"),
     "utf8"
   );
+  const checklistJson = JSON.parse(await fs.readFile(
+    path.join(outputDir, "a11y-manual-checklist.json"),
+    "utf8"
+  ));
 
   assert.match(checklist, /Semi-Automated Accessibility Review Checklist/);
   assert.match(checklist, /Framework: react/);
   assert.match(checklist, /Screen reader smoke test/);
+  assert.equal(checklistJson.items[0].review.status, "not-reviewed");
+  assert.equal(checklistJson.items[0].review.environment, "");
 });
 
 async function exists(filePath) {
