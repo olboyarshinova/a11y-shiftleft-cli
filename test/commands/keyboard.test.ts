@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { keyboardSummary } from "../../dist/commands/keyboard.js";
+import { DEFAULT_KEYBOARD_BASELINE_FILE, keyboardSummary, validateKeyboardComparisonOptions } from "../../dist/commands/keyboard.js";
 
 test("keyboardSummary reports bounded traversal coverage", () => {
   const summary = keyboardSummary({
@@ -25,4 +25,14 @@ test("keyboardSummary reports bounded traversal coverage", () => {
     reverseOrderMatches: true,
     maxTabs: 10
   });
+});
+
+test("keyboard comparison modes use a dedicated baseline and reject ambiguous comparisons", () => {
+  assert.equal(DEFAULT_KEYBOARD_BASELINE_FILE, ".a11y-keyboard-baseline.json");
+  assert.doesNotThrow(() => validateKeyboardComparisonOptions({ baseline: true }));
+  assert.doesNotThrow(() => validateKeyboardComparisonOptions({ retest: "previous/a11y-report.json" }));
+  assert.throws(
+    () => validateKeyboardComparisonOptions({ baseline: true, retest: "previous/a11y-report.json" }),
+    /either --retest or keyboard baseline mode/
+  );
 });

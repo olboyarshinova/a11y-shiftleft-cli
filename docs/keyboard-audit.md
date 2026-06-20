@@ -58,6 +58,25 @@ does not store form values, page HTML, or visual captures in this mode.
   a review signal because custom border, background, or animated treatments may
   still provide a valid indicator.
 
+## CI Baseline And Retesting
+
+Create or refresh the dedicated keyboard baseline:
+
+```bash
+npx a11y-shiftleft keyboard --url $APP_URL --update-baseline --out reports/keyboard
+```
+
+On later runs, `--baseline --fail-on warning` fails only when new warning or
+critical keyboard findings appear. The default file is
+`.a11y-keyboard-baseline.json`, separate from the baseline used by `check`.
+Use `--retest <previous-report-or-directory>` for a one-time comparison instead
+of a committed baseline.
+
+Keyboard findings also pass through scoped `a11y-ignore.json` rules and receive
+matching statuses from `a11y-remediation.json`. These policies annotate or
+filter the shared finding report without removing raw focus-path evidence from
+`keyboard-report.json`.
+
 ## Safety And Limits
 
 The initial runner only presses `Tab` and `Shift+Tab`. Reverse traversal runs

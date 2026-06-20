@@ -9,6 +9,8 @@
   values as accessible names; associated labels and ARIA names are used instead.
 - Added conservative detection for focus loss to the document body and for
   concrete controls skipped by a completed keyboard focus cycle.
+- Connected keyboard findings to baseline, retest, scoped ignore, and
+  remediation tracking, using a dedicated `.a11y-keyboard-baseline.json` file.
 
 ### Added
 

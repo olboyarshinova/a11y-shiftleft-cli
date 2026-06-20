@@ -55,7 +55,9 @@ remain suitable for reproducible empirical validation.
 - Add optional annotated focus screenshots to the existing
   `keyboard-report.json` and `keyboard-path.md` artifacts.
 - Surface keyboard findings in the same severity, WCAG, confidence, baseline,
-  ignore, dashboard, and PR-report pipeline used by `check` and `explore`.
+  ignore, remediation, retest, dashboard, and PR-report pipeline used by
+  `check` and `explore`. Keyboard mode now supports the shared finding policies
+  with a dedicated baseline file.
 - Keep the first version bounded and predictable for pull requests: limit max
   tab steps, max states, and activation attempts, then recommend broader manual
   keyboard walkthroughs through `--semi-auto`.

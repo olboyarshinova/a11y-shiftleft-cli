@@ -649,6 +649,27 @@ Use `--max-tabs 80` for a larger page. The generated `keyboard-path.md` and
 finding reports. This bounded traversal does not replace manual testing of
 Enter, Space, Escape, arrow-key widgets, modal behavior, or complete user tasks.
 
+Adopt existing keyboard findings without blocking CI, then fail only on new
+ones:
+
+```bash
+npx a11y-shiftleft-cli keyboard \
+  --url $APP_URL \
+  --update-baseline \
+  --out reports/keyboard
+
+npx a11y-shiftleft-cli keyboard \
+  --url $APP_URL \
+  --baseline \
+  --fail-on warning \
+  --out reports/keyboard
+```
+
+Keyboard mode uses `.a11y-keyboard-baseline.json` by default so it does not
+replace the baseline used by `check`. It also applies `a11y-ignore.json` and
+`a11y-remediation.json`; use `--no-ignore` or `--no-remediation-tracking` when
+those policies should not apply.
+
 See [Keyboard focus audit](docs/keyboard-audit.md) for report details and
 current limits.
 

@@ -3,7 +3,11 @@ import { runKeyboardPlaywrightAdapter } from "../adapters/keyboardPlaywrightAdap
 import { loadConfig } from "../config/loadConfig.js";
 import { dedupeIssues } from "../core/dedupe.js";
 import { detectFramework } from "../core/detectFramework.js";
+import { applyBaseline } from "../core/baseline.js";
+import { applyIgnores, DEFAULT_IGNORE_FILE } from "../core/ignore.js";
 import { normalizeIssue } from "../core/normalize.js";
+import { applyRemediationTracking, DEFAULT_REMEDIATION_FILE } from "../core/remediationTracking.js";
+import { applyRetest } from "../core/retest.js";
 import { triageIssues } from "../core/severity.js";
 import { resolveStandard } from "../core/standards.js";
 import { writeKeyboardReport } from "../reporters/writeKeyboardReport.js";
@@ -22,7 +26,17 @@ interface KeyboardOptions {
   failOn?: Severity | "none";
   quiet?: boolean;
   jsonSummary?: boolean;
+  baseline?: boolean;
+  baselineFile?: string;
+  updateBaseline?: boolean;
+  retest?: string;
+  remediationTracking?: boolean;
+  remediationFile?: string;
+  ignore?: boolean;
+  ignoreFile?: string;
 }
+
+export const DEFAULT_KEYBOARD_BASELINE_FILE = ".a11y-keyboard-baseline.json";
 
 export function registerKeyboardCommand(program: Command): void {
   program
@@ -36,9 +50,18 @@ export function registerKeyboardCommand(program: Command): void {
     .option("--max-tabs <count>", "Maximum Tab key presses", "40")
     .option("--wait-ms <ms>", "Extra page settle time before traversal", "250")
     .option("--fail-on <severity>", "critical, warning, info, or none")
+    .option("--baseline", "Compare with the keyboard baseline and fail only on new findings")
+    .option("--baseline-file <file>", "Keyboard baseline file path", DEFAULT_KEYBOARD_BASELINE_FILE)
+    .option("--update-baseline", "Overwrite the keyboard baseline with current findings")
+    .option("--retest <report>", "Compare with a previous keyboard a11y-report.json")
+    .option("--remediation-file <file>", "Remediation status file path", DEFAULT_REMEDIATION_FILE)
+    .option("--no-remediation-tracking", "Do not apply remediation statuses to findings")
+    .option("--ignore-file <file>", "Scoped ignore file path", DEFAULT_IGNORE_FILE)
+    .option("--no-ignore", "Disable a11y-ignore.json filtering")
     .option("--quiet", "Suppress progress and console summary output")
     .option("--json-summary", "Print the machine-readable JSON summary to stdout")
     .action(async (options: KeyboardOptions) => {
+      validateKeyboardComparisonOptions(options);
       const startedAt = Date.now();
       const config = await loadConfig({ cwd: options.cwd, config: options.config }, {
         framework: toFramework(options.framework),
@@ -63,16 +86,45 @@ export function registerKeyboardCommand(program: Command): void {
         version: standard.wcagVersion,
         includeUnmapped: true
       });
-      const issues = dedupeIssues(filtered);
-      const report = await writeReports(config.outputDir, issues, {
+      const uniqueIssues = dedupeIssues(filtered);
+      const ignoreResult = await applyIgnores(uniqueIssues, {
+        cwd: config.cwd,
+        enabled: options.ignore !== false,
+        ignoreFile: options.ignoreFile
+      });
+      const remediationResult = await applyRemediationTracking(ignoreResult.issues, {
+        cwd: config.cwd,
+        file: options.remediationFile,
+        enabled: options.remediationTracking !== false
+      });
+      const baselineEnabled = Boolean(options.baseline || options.updateBaseline);
+      const baselineResult = baselineEnabled
+        ? await applyBaseline(remediationResult.issues, {
+          cwd: config.cwd,
+          baselineFile: options.baselineFile || DEFAULT_KEYBOARD_BASELINE_FILE,
+          update: Boolean(options.updateBaseline)
+        })
+        : undefined;
+      const retestResult = options.retest
+        ? await applyRetest(remediationResult.issues, {
+          cwd: config.cwd,
+          previous: options.retest
+        })
+        : undefined;
+      const reportIssues = baselineResult?.issues || retestResult?.issues || remediationResult.issues;
+      const report = await writeReports(config.outputDir, reportIssues, {
         framework,
         cwd: config.cwd,
         urls: [options.url],
         standard,
+        baseline: baselineResult?.summary,
+        retest: retestResult?.summary,
+        remediationTracking: remediationResult.summary,
+        ignore: ignoreResult.summary,
         scanDurationMs: Date.now() - startedAt,
         rawCount: audit.issues.length,
-        uniqueCount: issues.length,
-        duplicateCount: filtered.length - issues.length
+        uniqueCount: ignoreResult.issues.length,
+        duplicateCount: filtered.length - uniqueIssues.length
       });
       await writeKeyboardReport(config.outputDir, { ...audit, issues: report.issues });
 
@@ -84,6 +136,12 @@ export function registerKeyboardCommand(program: Command): void {
 
       if (shouldFail(report.summary, config.failOn)) process.exitCode = 1;
     });
+}
+
+export function validateKeyboardComparisonOptions(options: Pick<KeyboardOptions, "retest" | "baseline" | "updateBaseline">): void {
+  if (options.retest && (options.baseline || options.updateBaseline)) {
+    throw new Error("Use either --retest or keyboard baseline mode, not both.");
+  }
 }
 
 export function keyboardSummary(audit: Pick<Awaited<ReturnType<typeof runKeyboardPlaywrightAdapter>>, "focusableCount" | "steps" | "backwardSteps" | "completedCycle" | "reverseOrderMatches" | "maxTabs">): {
