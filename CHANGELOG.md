@@ -14,6 +14,9 @@
 - Added optional `a11y-remediation.json` tracking. Fresh reports retain every
   finding while attaching team-owned status, owner, reason, update date, and
   review date, and summarize stale or invalid tracking entries.
+- Added `evidence pack` for preparing a checksummed local evidence directory.
+  It copies only known report artifacts, excludes visual evidence by default,
+  and records privacy warnings without uploading any files.
 - Added deterministic fix recommendations across non-visual reports: a new
   per-finding CSV export, keyboard Markdown guidance, and grouped latest-run
   recommendations in the local dashboard and dashboard PDF.

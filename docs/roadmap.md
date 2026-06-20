@@ -30,6 +30,8 @@ remain suitable for reproducible empirical validation.
   environment, evidence links, notes, date, and remediation ownership.
 - Overlay persistent team-owned remediation statuses on fresh findings without
   hiding accepted or in-progress accessibility risk from generated evidence.
+- Add a local, checksummed evidence package with a strict artifact allowlist,
+  privacy manifest, and opt-in visual reports and screenshots.
 
 ### 0.7.x Keyboard Audit Mode
 
@@ -84,9 +86,8 @@ remain suitable for reproducible empirical validation.
   reader, zoom, reflow, reduced-motion, cognitive, and task-flow reviews.
 - Add CLI helpers for creating and updating local remediation status files from
   report fingerprints while keeping generated scan artifacts immutable.
-- Add a local evidence-package command that bundles selected reports,
-  screenshots, manual-review records, and retest history without uploading
-  them.
+- Validate evidence packages across automated scans, manual reviews, keyboard
+  audits, visual exploration, and retest history before adding archive export.
 
 - Build on the practical review areas in the
   [MTS web accessibility guide](https://a11y.mts.ru/web) and

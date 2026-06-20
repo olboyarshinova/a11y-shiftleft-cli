@@ -577,6 +577,31 @@ The export groups findings by severity, rule, page, and target. It does not
 connect to Jira or Linear yet, so teams can review the draft before creating
 real tickets.
 
+## Local Evidence Package
+
+Collect the machine-readable reports, manual-review records, and keyboard or
+exploration metadata into a separate local directory:
+
+```bash
+npx a11y-shiftleft-cli evidence pack \
+  --reports reports \
+  --out a11y-evidence
+```
+
+The command copies only known report artifacts and writes
+`evidence-manifest.json` with file sizes, SHA-256 checksums, and privacy
+warnings. It never uploads the package and requires an empty output directory.
+
+Screenshots, visual HTML, and PDF reports are excluded by default. Include them
+only after reviewing the source application for personal or sensitive data:
+
+```bash
+npx a11y-shiftleft-cli evidence pack \
+  --reports reports \
+  --out a11y-evidence-with-visuals \
+  --include-visual
+```
+
 ## Keyboard Focus Audit
 
 Run a bounded keyboard-only traversal on a page:
