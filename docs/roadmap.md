@@ -42,7 +42,9 @@ remain suitable for reproducible empirical validation.
   shared findings plus dedicated Markdown and JSON focus-path artifacts.
 - Add page-state snapshots to the bidirectional focus path while preserving the
   existing selector, accessible name, role, visibility, bounding-box,
-  focus-indicator, and obscuration evidence.
+  focus-indicator, and obscuration evidence. Each focus step now references a
+  deduplicated semantic state with URL, title, H1, scroll, viewport, dialogs,
+  and expanded-control counts.
 - Detect common keyboard blockers: invisible focus, focus loss to `body`,
   repeated focus loops, unreachable interactive controls, positive tabindex
   risks, and focus traps that do not expose an escape path.

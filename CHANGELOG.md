@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Added deduplicated semantic page-state snapshots to forward and reverse
+  keyboard focus paths, including URL, title, H1, scroll position, viewport,
+  open dialog count, and expanded-control count.
+- Prevented keyboard focus evidence from treating user-entered text field
+  values as accessible names; associated labels and ARIA names are used instead.
+
 ### Added
 
 - Added `check --retest <report>` for comparing a new scan with a previous

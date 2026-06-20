@@ -25,11 +25,23 @@ npx a11y-shiftleft keyboard \
 ## Generated Files
 
 - `keyboard-path.md`: readable focus order, role, accessible name, visibility,
-  focus-indicator, and obscuration evidence.
+  focus-indicator, obscuration evidence, and deduplicated semantic page states.
 - `keyboard-report.json`: complete structured traversal data.
 - `a11y-comment.md`, `a11y-report.json`, `a11y-metrics.csv`, and
   `a11y-findings.csv`: findings and deterministic fix recommendations in the
   shared report format used by CI, dashboards, and later integrations.
+
+## Page State Evidence
+
+Every forward and reverse focus step references a stable state ID. Repeated
+states are listed once in `keyboard-path.md` with their URL, document title,
+H1, scroll position, viewport dimensions, open-dialog count, and
+expanded-control count. The state ID also reacts to common semantic UI changes
+such as opened dialogs, expanded disclosures, selected tabs, and pressed
+toggle buttons.
+
+These are compact semantic snapshots, not screenshots. The keyboard command
+does not store form values, page HTML, or visual captures in this mode.
 
 ## Current Checks
 

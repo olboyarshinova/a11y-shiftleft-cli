@@ -26,7 +26,19 @@ const result: KeyboardAuditResult = {
     visible: true,
     focusVisible: true,
     indicatorVisible: true,
-    obscured: false
+    obscured: false,
+    pageState: {
+      id: "state-settings",
+      url: "http://localhost:3000/settings",
+      title: "Account settings",
+      heading: "Settings",
+      scrollX: 0,
+      scrollY: 240,
+      viewportWidth: 1280,
+      viewportHeight: 720,
+      openDialogs: 0,
+      expandedControls: 1
+    }
   }],
   backwardSteps: [{
     index: 1,
@@ -39,7 +51,19 @@ const result: KeyboardAuditResult = {
     visible: true,
     focusVisible: true,
     indicatorVisible: true,
-    obscured: false
+    obscured: false,
+    pageState: {
+      id: "state-settings",
+      url: "http://localhost:3000/settings",
+      title: "Account settings",
+      heading: "Settings",
+      scrollX: 0,
+      scrollY: 240,
+      viewportWidth: 1280,
+      viewportHeight: 720,
+      openDialogs: 0,
+      expandedControls: 1
+    }
   }]
 };
 
@@ -51,6 +75,10 @@ test("toKeyboardMarkdown renders a readable focus path", () => {
   assert.match(markdown, /Completed focus cycle \| yes/);
   assert.match(markdown, /Reverse order matches \| yes/);
   assert.match(markdown, /Reverse Focus Path/);
+  assert.match(markdown, /Page States/);
+  assert.match(markdown, /state-settings/);
+  assert.match(markdown, /Account settings \/ Settings/);
+  assert.match(markdown, /0, 240/);
   assert.match(markdown, /bounded automated Tab and Shift\+Tab traversal/);
 });
 

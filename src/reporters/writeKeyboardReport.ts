@@ -13,6 +13,7 @@ export async function writeKeyboardReport(outputDir: string, result: KeyboardAud
 export function toKeyboardMarkdown(result: KeyboardAuditResult): string {
   const forwardRows = focusRows(result.steps, "No forward focus path recorded");
   const backwardRows = focusRows(result.backwardSteps, "Reverse path was not run because the forward path was incomplete");
+  const states = uniquePageStates(result);
 
   return `# Keyboard Focus Path
 
@@ -31,15 +32,21 @@ Generated: ${result.generatedAt}
 
 ## Focus Path
 
-| Step | Selector | Role | Accessible name | Visible | Indicator | Obscured |
-|---:|---|---|---|---:|---:|---:|
+| Step | State | Selector | Role | Accessible name | Visible | Indicator | Obscured |
+|---:|---|---|---|---|---:|---:|---:|
 ${forwardRows}
 
 ## Reverse Focus Path
 
-| Step | Selector | Role | Accessible name | Visible | Indicator | Obscured |
-|---:|---|---|---|---:|---:|---:|
+| Step | State | Selector | Role | Accessible name | Visible | Indicator | Obscured |
+|---:|---|---|---|---|---:|---:|---:|
 ${backwardRows}
+
+## Page States
+
+| State | URL | Title / H1 | Scroll | Viewport | Dialogs | Expanded |
+|---|---|---|---:|---:|---:|---:|
+${pageStateRows(states)}
 
 ## Findings And Recommendations
 
@@ -82,8 +89,21 @@ ${steps}${docs}${examples}`;
 }
 
 function focusRows(steps: KeyboardAuditResult["steps"], fallback: string): string {
-  if (steps.length === 0) return `| - | ${fallback} | - | - | - | - | - |`;
-  return steps.map((step) => `| ${step.index} | ${escapeCell(step.selector)} | ${escapeCell(step.role || step.tagName)} | ${escapeCell(step.accessibleName || "none")} | ${yesNo(step.visible)} | ${yesNo(step.indicatorVisible)} | ${yesNo(step.obscured)} |`).join("\n");
+  if (steps.length === 0) return `| - | - | ${fallback} | - | - | - | - | - |`;
+  return steps.map((step) => `| ${step.index} | ${escapeCell(step.pageState.id)} | ${escapeCell(step.selector)} | ${escapeCell(step.role || step.tagName)} | ${escapeCell(step.accessibleName || "none")} | ${yesNo(step.visible)} | ${yesNo(step.indicatorVisible)} | ${yesNo(step.obscured)} |`).join("\n");
+}
+
+function uniquePageStates(result: KeyboardAuditResult): KeyboardAuditResult["steps"][number]["pageState"][] {
+  const states = [...result.steps, ...result.backwardSteps].map((step) => step.pageState);
+  return [...new Map(states.map((state) => [state.id, state])).values()];
+}
+
+function pageStateRows(states: ReturnType<typeof uniquePageStates>): string {
+  if (states.length === 0) return "| - | No page states recorded | - | - | - | - | - |";
+  return states.map((state) => {
+    const label = [state.title, state.heading].filter(Boolean).join(" / ") || "none";
+    return `| ${escapeCell(state.id)} | ${escapeCell(state.url)} | ${escapeCell(label)} | ${state.scrollX}, ${state.scrollY} | ${state.viewportWidth}x${state.viewportHeight} | ${state.openDialogs} | ${state.expandedControls} |`;
+  }).join("\n");
 }
 
 function escapeCell(value: string): string {

@@ -83,6 +83,19 @@ export interface ElementBounds {
   coordinateSpace: "viewport" | "document";
 }
 
+export interface KeyboardPageStateSnapshot {
+  id: string;
+  url: string;
+  title: string;
+  heading: string;
+  scrollX: number;
+  scrollY: number;
+  viewportWidth: number;
+  viewportHeight: number;
+  openDialogs: number;
+  expandedControls: number;
+}
+
 export interface KeyboardFocusStep {
   index: number;
   direction: "forward" | "backward";
@@ -96,6 +109,7 @@ export interface KeyboardFocusStep {
   indicatorVisible: boolean;
   obscured: boolean;
   bounds?: ElementBounds;
+  pageState: KeyboardPageStateSnapshot;
 }
 
 export interface KeyboardAuditResult {

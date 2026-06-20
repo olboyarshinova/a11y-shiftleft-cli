@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { compareFocusPaths, issuesForFocusStep } from "../../dist/adapters/keyboardPlaywrightAdapter.js";
+import { compareFocusPaths, createKeyboardStateId, issuesForFocusStep } from "../../dist/adapters/keyboardPlaywrightAdapter.js";
 import type { KeyboardFocusStep } from "../../dist/types.js";
 
 function focusStep(overrides: Partial<KeyboardFocusStep> = {}): KeyboardFocusStep {
@@ -16,6 +16,18 @@ function focusStep(overrides: Partial<KeyboardFocusStep> = {}): KeyboardFocusSte
     focusVisible: true,
     indicatorVisible: true,
     obscured: false,
+    pageState: {
+      id: "state-example",
+      url: "http://localhost:3000",
+      title: "Example",
+      heading: "Settings",
+      scrollX: 0,
+      scrollY: 0,
+      viewportWidth: 1280,
+      viewportHeight: 720,
+      openDialogs: 0,
+      expandedControls: 0
+    },
     ...overrides
   };
 }
@@ -47,4 +59,13 @@ test("compareFocusPaths requires an exact reverse traversal", () => {
   assert.equal(compareFocusPaths(["#first", "#second", "#third"], ["#third", "#second", "#first"]), true);
   assert.equal(compareFocusPaths(["#first", "#second", "#third"], ["#third", "#first"]), false);
   assert.equal(compareFocusPaths(["#first", "#second"], ["#first", "#second"]), false);
+});
+
+test("createKeyboardStateId is stable and changes with semantic UI state", () => {
+  const { id: _id, ...state } = focusStep().pageState;
+  const initial = createKeyboardStateId(state, ["#menu|button|false"]);
+
+  assert.equal(initial, createKeyboardStateId(state, ["#menu|button|false"]));
+  assert.notEqual(initial, createKeyboardStateId(state, ["#menu|button|true"]));
+  assert.notEqual(initial, createKeyboardStateId({ ...state, scrollY: 400 }, ["#menu|button|false"]));
 });

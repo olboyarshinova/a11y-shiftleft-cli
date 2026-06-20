@@ -1,5 +1,6 @@
+import { createHash } from "node:crypto";
 import { chromium, type Page } from "playwright";
-import type { ElementBounds, Framework, Issue, KeyboardAuditResult, KeyboardFocusStep } from "../types.js";
+import type { ElementBounds, Framework, Issue, KeyboardAuditResult, KeyboardFocusStep, KeyboardPageStateSnapshot } from "../types.js";
 
 export interface KeyboardAuditOptions {
   url: string;
@@ -10,6 +11,10 @@ export interface KeyboardAuditOptions {
 }
 
 type PageKeyboardSnapshot = Omit<KeyboardFocusStep, "index" | "direction">;
+type RawKeyboardSnapshot = Omit<PageKeyboardSnapshot, "pageState"> & {
+  pageState: Omit<KeyboardPageStateSnapshot, "id">;
+  semanticState: string[];
+};
 
 export async function runKeyboardPlaywrightAdapter(options: KeyboardAuditOptions): Promise<KeyboardAuditResult> {
   const startedAt = Date.now();
@@ -272,7 +277,7 @@ async function collectKeyboardInventory(page: Page): Promise<{
 }
 
 async function collectFocusedElement(page: Page): Promise<PageKeyboardSnapshot | null> {
-  return page.evaluate(() => {
+  const snapshot = await page.evaluate((): RawKeyboardSnapshot | null => {
     const element = document.activeElement as HTMLElement | null;
     if (!element) return null;
     const rect = element.getBoundingClientRect();
@@ -301,7 +306,31 @@ async function collectFocusedElement(page: Page): Promise<PageKeyboardSnapshot |
         width: rect.width,
         height: rect.height,
         coordinateSpace: "viewport" as const
-      } : undefined
+      } : undefined,
+      pageState: {
+        url: location.href,
+        title: document.title,
+        heading: document.querySelector("h1")?.textContent?.trim() || "",
+        scrollX: Math.round(scrollX),
+        scrollY: Math.round(scrollY),
+        viewportWidth: innerWidth,
+        viewportHeight: innerHeight,
+        openDialogs: new Set([
+          ...document.querySelectorAll("dialog[open]"),
+          ...document.querySelectorAll('[role="dialog"]:not([aria-hidden="true"])')
+        ]).size,
+        expandedControls: document.querySelectorAll('[aria-expanded="true"]').length
+      },
+      semanticState: Array.from(document.querySelectorAll<HTMLElement>(
+        'dialog[open], [role="dialog"]:not([aria-hidden="true"]), [aria-expanded="true"], [aria-selected="true"], [aria-pressed="true"]'
+      )).map((target) => [
+        cssSelector(target),
+        target.getAttribute("role") || target.tagName.toLowerCase(),
+        target.getAttribute("aria-expanded") || "",
+        target.getAttribute("aria-selected") || "",
+        target.getAttribute("aria-pressed") || "",
+        accessibleName(target)
+      ].join("|"))
     };
 
     function accessibleName(target: HTMLElement): string {
@@ -310,9 +339,17 @@ async function collectFocusedElement(page: Page): Promise<PageKeyboardSnapshot |
         const label = labelledBy.split(/\s+/).map((id) => document.getElementById(id)?.textContent || "").join(" ").trim();
         if (label) return label;
       }
+      const associatedLabels = "labels" in target
+        ? Array.from((target as HTMLInputElement).labels || []).map((label) => label.textContent || "").join(" ").trim()
+        : "";
+      const inputType = target instanceof HTMLInputElement ? target.type : "";
+      const buttonValue = target instanceof HTMLInputElement && ["button", "submit", "reset"].includes(inputType)
+        ? target.value
+        : "";
       return target.getAttribute("aria-label")
+        || associatedLabels
         || target.getAttribute("alt")
-        || (target as HTMLInputElement).value
+        || buttonValue
         || target.textContent?.trim()
         || target.getAttribute("title")
         || "";
@@ -343,6 +380,35 @@ async function collectFocusedElement(page: Page): Promise<PageKeyboardSnapshot |
       return parts.join(" > ") || target.tagName.toLowerCase();
     }
   });
+
+  if (!snapshot) return null;
+  const { semanticState, ...focusSnapshot } = snapshot;
+  return {
+    ...focusSnapshot,
+    pageState: {
+      ...focusSnapshot.pageState,
+      id: createKeyboardStateId(focusSnapshot.pageState, semanticState)
+    }
+  };
+}
+
+export function createKeyboardStateId(
+  state: Omit<KeyboardPageStateSnapshot, "id">,
+  semanticState: string[] = []
+): string {
+  const signature = JSON.stringify({
+    url: state.url,
+    title: state.title,
+    heading: state.heading,
+    scrollX: state.scrollX,
+    scrollY: state.scrollY,
+    viewportWidth: state.viewportWidth,
+    viewportHeight: state.viewportHeight,
+    openDialogs: state.openDialogs,
+    expandedControls: state.expandedControls,
+    semanticState: [...semanticState].sort()
+  });
+  return `state-${createHash("sha256").update(signature).digest("hex").slice(0, 10)}`;
 }
 
 function normalizeMaxTabs(value = 40): number {
