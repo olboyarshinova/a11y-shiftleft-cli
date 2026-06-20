@@ -59,6 +59,44 @@ test("shouldFail uses only new findings when baseline mode is enabled", () => {
   }, "warning"), true);
 });
 
+test("shouldFail uses only new findings in retest mode", () => {
+  assert.equal(shouldFail({
+    critical: 4,
+    warning: 0,
+    info: 0,
+    retest: {
+      enabled: true,
+      file: "reports/before/a11y-report.json",
+      previousIssues: 5,
+      currentIssues: 4,
+      fixedIssues: 1,
+      remainingIssues: 4,
+      newIssues: 0,
+      newCritical: 0,
+      newWarning: 0,
+      newInfo: 0
+    }
+  }, "critical"), false);
+
+  assert.equal(shouldFail({
+    critical: 1,
+    warning: 1,
+    info: 0,
+    retest: {
+      enabled: true,
+      file: "reports/before/a11y-report.json",
+      previousIssues: 1,
+      currentIssues: 2,
+      fixedIssues: 0,
+      remainingIssues: 1,
+      newIssues: 1,
+      newCritical: 0,
+      newWarning: 1,
+      newInfo: 0
+    }
+  }, "warning"), true);
+});
+
 test("parseFormats defaults to all report formats", () => {
   assert.deepEqual(parseFormats(), ["json", "csv", "markdown"]);
   assert.deepEqual(parseFormats(["all"]), ["json", "csv", "markdown"]);

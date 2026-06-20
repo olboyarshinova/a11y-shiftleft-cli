@@ -11,6 +11,7 @@ import { detectFramework } from "../core/detectFramework.js";
 import { matchesWcagLevel, matchesWcagVersion } from "../core/wcagMap.js";
 import { resolveStandard } from "../core/standards.js";
 import { applyBaseline } from "../core/baseline.js";
+import { applyRetest } from "../core/retest.js";
 import { applyIgnores, DEFAULT_IGNORE_FILE } from "../core/ignore.js";
 import { applyReportRetention } from "../core/reportRetention.js";
 import type { A11yReport, ComplianceStandard, Framework, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel, WcagVersion } from "../types.js";
@@ -40,6 +41,7 @@ export interface CheckOptions {
   baseline?: boolean;
   baselineFile?: string;
   updateBaseline?: boolean;
+  retest?: string;
   ignore?: boolean;
   ignoreFile?: string;
   retention?: boolean;
@@ -91,6 +93,7 @@ export function registerCheckCommand(program: Command): void {
     .option("--baseline", "Compare against .a11y-baseline.json and fail only on new findings")
     .option("--baseline-file <file>", "Baseline file path")
     .option("--update-baseline", "Overwrite the baseline file with the current findings")
+    .option("--retest <report>", "Compare with a previous report file or directory and fail only on new findings")
     .option("--ignore-file <file>", "Scoped ignore file path", DEFAULT_IGNORE_FILE)
     .option("--no-ignore", "Disable a11y-ignore.json filtering")
     .option("--retention-max-runs <count>", "Keep at most this many report run directories including the current output")
@@ -107,6 +110,10 @@ export function registerCheckCommand(program: Command): void {
 }
 
 export async function runCheck(options: CheckOptions = {}): Promise<CheckResult> {
+  if (options.retest && (options.baseline || options.updateBaseline)) {
+    throw new Error("Use either --retest or baseline mode, not both.");
+  }
+
   const startedAt = Date.now();
   const urls = parseUrls(options.url);
   const staticOnly = Boolean(options.static && !options.dynamic);
@@ -229,7 +236,13 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
       update: Boolean(options.updateBaseline)
     })
     : undefined;
-  const reportIssues = baselineResult?.issues || ignoreResult.issues;
+  const retestResult = options.retest
+    ? await applyRetest(ignoreResult.issues, {
+      cwd: effectiveConfig.cwd,
+      previous: options.retest
+    })
+    : undefined;
+  const reportIssues = baselineResult?.issues || retestResult?.issues || ignoreResult.issues;
   const formats = parseFormats(options.format);
   const retentionSummary = await applyReportRetention(effectiveConfig.outputDir, effectiveConfig.retention);
   const report = await writeReports(effectiveConfig.outputDir, reportIssues, {
@@ -242,6 +255,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
       wcagLevel: effectiveConfig.wcagLevel
     },
     baseline: baselineResult?.summary,
+    retest: retestResult?.summary,
     ignore: ignoreResult.summary,
     retention: retentionSummary.enabled ? retentionSummary : undefined,
     scanDurationMs: Date.now() - startedAt,
@@ -428,6 +442,9 @@ export function formatCheckConsoleSummary(
   const standard = summary.standard
     ? `${summary.standard.label} (${summary.standard.wcagVersion} ${summary.standard.wcagLevel})`
     : "WCAG 2.2 Level AA support mode";
+  const retest = summary.retest?.enabled
+    ? `Retest: fixed ${summary.retest.fixedIssues} | remaining ${summary.retest.remainingIssues} | new ${summary.retest.newIssues}`
+    : undefined;
 
   return [
     "a11y-shiftleft check",
@@ -440,6 +457,7 @@ export function formatCheckConsoleSummary(
     `Color-scheme findings: ${formatCountMap(summary.byColorScheme)}`,
     `WCAG levels: ${formatCountMap(summary.byWcagLevel)}`,
     `Duplicates removed: ${summary.duplicateCount} of ${summary.rawCount} raw findings`,
+    ...(retest ? [retest] : []),
     `Duration: ${summary.scanDurationMs}ms`,
     "",
     "Top rules:",
@@ -624,11 +642,17 @@ export function parseUrls(urls?: string[]): string[] {
 }
 
 export function shouldFail(
-  summary: Pick<ReportSummary, "critical" | "warning" | "info" | "baseline">,
+  summary: Pick<ReportSummary, "critical" | "warning" | "info" | "baseline" | "retest">,
   failOn: Severity | "none" = "critical"
 ): boolean {
   if (failOn === "none") return false;
-  const counts = summary.baseline?.enabled
+  const counts = summary.retest?.enabled
+    ? {
+      critical: summary.retest.newCritical,
+      warning: summary.retest.newWarning,
+      info: summary.retest.newInfo
+    }
+    : summary.baseline?.enabled
     ? {
       critical: summary.baseline.newCritical,
       warning: summary.baseline.newWarning,

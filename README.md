@@ -419,6 +419,24 @@ npx a11y-shiftleft-cli check \
   --out reports
 ```
 
+## Retest A Previous Report
+
+Use retest mode after remediation to compare a new scan with an earlier report.
+Pass either its `a11y-report.json` file or the directory containing it:
+
+```bash
+npx a11y-shiftleft-cli check \
+  --dynamic \
+  --url $APP_URL \
+  --retest reports/before \
+  --fail-on warning \
+  --out reports/after
+```
+
+The new JSON, CSV, Markdown, and console summaries show how many findings were
+fixed, remain, or are new. With `--retest`, the severity gate applies only to
+new findings. Keep the previous and current runs in different directories.
+
 ## Temporary Ignores
 
 Use `a11y-ignore.json` only for reviewed temporary exceptions:

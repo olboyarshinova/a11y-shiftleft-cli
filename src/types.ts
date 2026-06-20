@@ -280,6 +280,7 @@ export interface DedupedIssue extends TriagedIssue {
   duplicateCount: number;
   sources?: string[];
   baselineStatus?: "new" | "existing";
+  retestStatus?: "new" | "remaining";
 }
 
 export interface IgnoreEntry {
@@ -342,6 +343,19 @@ export interface BaselineComparisonSummary {
   newInfo: number;
 }
 
+export interface RetestComparisonSummary {
+  enabled: boolean;
+  file: string;
+  previousIssues: number;
+  currentIssues: number;
+  remainingIssues: number;
+  newIssues: number;
+  fixedIssues: number;
+  newCritical: number;
+  newWarning: number;
+  newInfo: number;
+}
+
 export interface ReportRetentionEvidence {
   enabled: boolean;
   dryRun: boolean;
@@ -359,6 +373,7 @@ export interface ReportMetrics {
   urls?: string[];
   standard?: ComplianceStandardMetadata;
   baseline?: BaselineComparisonSummary;
+  retest?: RetestComparisonSummary;
   ignore?: IgnoreSummary;
   retention?: ReportRetentionEvidence;
   scanDurationMs?: number;
@@ -398,6 +413,7 @@ export interface ReportSummary {
   urls: string[];
   standard?: ComplianceStandardMetadata;
   baseline?: BaselineComparisonSummary;
+  retest?: RetestComparisonSummary;
   ignore?: IgnoreSummary;
   retention?: ReportRetentionEvidence;
   complianceEvidence: ComplianceEvidenceSummary;

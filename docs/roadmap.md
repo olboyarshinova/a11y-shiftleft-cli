@@ -24,6 +24,8 @@ remain suitable for reproducible empirical validation.
   versions can create or update issues only when explicit tokens are provided.
 - Keep Jira and Linear integrations optional so the core CLI stays useful
   without account setup, SaaS authorization, or extra installation weight.
+- Add report-to-report retesting so remediation runs identify fixed, remaining,
+  and new findings without changing the committed baseline.
 
 ### 0.7.x Keyboard Audit Mode
 
@@ -73,6 +75,14 @@ remain suitable for reproducible empirical validation.
   report generation must continue to work without an account or hosted service.
 
 ## Near Term
+
+- Extend the manual checklist with explicit keyboard-only, screen reader, zoom,
+  reflow, reduced-motion, cognitive, and task-flow evidence fields.
+- Add local remediation statuses with owner, reason, and review date while
+  keeping generated scan artifacts immutable.
+- Add a local evidence-package command that bundles selected reports,
+  screenshots, manual-review records, and retest history without uploading
+  them.
 
 - Build on the practical review areas in the
   [MTS web accessibility guide](https://a11y.mts.ru/web) and
@@ -198,9 +208,9 @@ remain suitable for reproducible empirical validation.
   privacy controls are stable enough to justify a browser-specific project.
 - Open selected external open-source pull requests after the docs, generated CI
   workflow, and sample reports are stable enough for maintainers to review.
-- Explore VPAT/evidence-binder export templates for organizations that need
-  Section 508 procurement documentation, while keeping legal review outside the
-  CLI scope.
+- Explore VPAT evidence-draft templates for organizations that need Section 508
+  procurement documentation. Keep unsupported criteria marked for manual
+  review and keep final conformance statements and legal review outside the CLI.
 
 ## Non-Goals
 

@@ -389,6 +389,59 @@ test("writeReports includes baseline comparison metadata", async () => {
   assert.match(markdown, /baseline: new/);
 });
 
+test("writeReports includes retest comparison metadata", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-retest-"));
+
+  const report = await writeReports(
+    outputDir,
+    [
+      {
+        source: "axe",
+        severity: "warning",
+        ruleId: "button-name",
+        wcag: [],
+        wcagCriteria: [],
+        tags: [],
+        selector: "button",
+        message: "Buttons must have discernible text",
+        fingerprint: "button-name::selector=button::warning",
+        duplicateCount: 0,
+        retestStatus: "new"
+      }
+    ],
+    {
+      framework: "react",
+      rawCount: 1,
+      uniqueCount: 1,
+      duplicateCount: 0,
+      retest: {
+        enabled: true,
+        file: "reports/before/a11y-report.json",
+        previousIssues: 4,
+        currentIssues: 1,
+        remainingIssues: 0,
+        newIssues: 1,
+        fixedIssues: 4,
+        newCritical: 0,
+        newWarning: 1,
+        newInfo: 0
+      }
+    }
+  );
+
+  const metricsCsv = await fs.readFile(path.join(outputDir, "a11y-metrics.csv"), "utf8");
+  const findingsCsv = await fs.readFile(path.join(outputDir, "a11y-findings.csv"), "utf8");
+  const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+
+  assert.equal(report.summary.retest?.fixedIssues, 4);
+  assert.match(metricsCsv, /retest\.fixedIssues,4/);
+  assert.match(findingsCsv, /retestStatus/);
+  assert.match(findingsCsv, /new/);
+  assert.match(markdown, /Fixed findings \| 4/);
+  assert.match(markdown, /Remaining findings \| 0/);
+  assert.match(markdown, /retest: new/);
+});
+
 test("writeReports includes ignore metadata", async () => {
   const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-ignore-"));
 

@@ -109,6 +109,7 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     urls: metrics.urls || [],
     standard: metrics.standard,
     baseline: metrics.baseline,
+    retest: metrics.retest,
     ignore: metrics.ignore,
     retention: summarizeRetention(metrics.retention),
     complianceEvidence: summarizeComplianceEvidence(issues, byPage, metrics.standard),
@@ -157,7 +158,8 @@ export function toFindingsCsv(issues: DedupedIssue[]): string {
     documentation: issue.remediation?.docs.join(" | ") || "",
     frameworkExamples: formatFrameworkExamplesForCsv(issue),
     duplicateCount: issue.duplicateCount,
-    baselineStatus: issue.baselineStatus || ""
+    baselineStatus: issue.baselineStatus || "",
+    retestStatus: issue.retestStatus || ""
   }));
 
   return stringify(records, {
@@ -183,7 +185,8 @@ export function toFindingsCsv(issues: DedupedIssue[]): string {
       "documentation",
       "frameworkExamples",
       "duplicateCount",
-      "baselineStatus"
+      "baselineStatus",
+      "retestStatus"
     ]
   });
 }
@@ -220,11 +223,12 @@ export function toMarkdown(report: A11yReport): string {
         : "";
       const screenshot = issue.screenshot ? ` screenshot: ${issue.screenshot}` : "";
       const baseline = issue.baselineStatus ? ` baseline: ${issue.baselineStatus}` : "";
+      const retest = issue.retestStatus ? ` retest: ${issue.retestStatus}` : "";
       const confidence = formatIssueConfidence(issue);
       const findingType = ` type: ${formatFindingType(issue.findingType)}`;
       const category = issue.category ? ` category: ${issue.category}` : "";
       const contrast = formatContrastEvidence(issue);
-      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}${state}${colorScheme}${screenshot}${baseline}${findingType}${category}${confidence}: ${issue.message}${contrast}${remediation}`;
+      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}${state}${colorScheme}${screenshot}${baseline}${retest}${findingType}${category}${confidence}: ${issue.message}${contrast}${remediation}`;
     })
     .join("\n");
 
@@ -242,7 +246,7 @@ export function toMarkdown(report: A11yReport): string {
 | Scan duration | ${report.summary.scanDurationMs}ms |
 | Framework | ${report.summary.framework} |
 | Standard | ${formatStandard(report.summary.standard)} |
-${formatBaselineRows(report.summary.baseline)}| Automated coverage | ${report.summary.standard?.automatedCoverage || "partial"} |
+${formatBaselineRows(report.summary.baseline)}${formatRetestRows(report.summary.retest)}| Automated coverage | ${report.summary.standard?.automatedCoverage || "partial"} |
 ${formatIgnoreRows(report.summary.ignore)}| Manual review required | ${complianceEvidence.requiresManualReview ? "yes" : "no"} |
 ${formatRetentionRows(report.summary.retention)}| Retention evidence | ${formatRetentionEvidenceStatus(report.summary.retention)} |
 | WCAG-mapped findings | ${complianceEvidence.wcagMappedFindings} |
@@ -468,6 +472,18 @@ function formatBaselineRows(baseline: ReportSummary["baseline"]): string {
     `| Existing baseline issues | ${baseline.existingIssues} |`,
     `| New findings | ${baseline.newIssues} |`,
     `| Resolved baseline findings | ${baseline.resolvedIssues} |`
+  ].join("\n")}\n`;
+}
+
+function formatRetestRows(retest: ReportSummary["retest"]): string {
+  if (!retest?.enabled) return "";
+
+  return `${[
+    `| Previous report | ${retest.file} |`,
+    `| Previous findings | ${retest.previousIssues} |`,
+    `| Fixed findings | ${retest.fixedIssues} |`,
+    `| Remaining findings | ${retest.remainingIssues} |`,
+    `| New findings | ${retest.newIssues} |`
   ].join("\n")}\n`;
 }
 
