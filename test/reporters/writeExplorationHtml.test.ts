@@ -255,11 +255,17 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /button-name/);
   assert.match(html, /dark color scheme/);
   assert.match(html, /Buttons must have discernible text/);
+  assert.match(html, /Grouped Fix Guidance/);
+  assert.match(html, /View grouped fix guidance/);
   assert.match(html, /<summary>How to fix<\/summary>/);
   assert.match(html, /Give every button an accessible name/);
   assert.match(html, /Use visible button text when possible/);
   assert.match(html, /react example/);
   assert.match(html, /aria-label/);
+  assert.match(html, /<th scope="col">Findings<\/th>/);
+  assert.match(html, /npx a11y-shiftleft-cli audit --url 'http:\/\/localhost:3000' --out reports/);
+  assert.doesNotMatch(html, /Run audit without --no-keyboard/);
+  assert.match(html, /class="coverage-findings">&mdash;<\/td>/);
   assert.match(html, /Guidance 1/);
   assert.match(html, /Triage Overview/);
   assert.match(html, /Most Affected States/);
@@ -292,6 +298,21 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /Skipped actions: 1/);
   assert.match(html, /Submit\/reset controls are blocked by safe mode/);
   assert.match(html, /Coverage Note/);
+});
+
+test("renderExplorationHtml groups repeated remediation by rule", () => {
+  const html = renderExplorationHtml(graph, [
+    issues[0],
+    {
+      ...issues[0],
+      selector: ".second-icon-button",
+      fingerprint: "button-name::state-1::second"
+    }
+  ]);
+
+  assert.match(html, /button-name<\/code>[\s\S]*?2 occurrences/);
+  assert.match(html, /Affected targets \(2\)/);
+  assert.equal((html.match(/<summary>How to fix<\/summary>/g) || []).length, 1);
 });
 
 test("renderExplorationHtml escapes dynamic content", () => {
@@ -344,19 +365,19 @@ test("renderExplorationHtml renders focused evidence crops for long pages", () =
     ...graph,
     states: [{
       ...graph.states[0],
-      screenshot: "screenshots/state-1-error-1.jpg",
+      screenshot: "screenshots/state-1-evidence-1.jpg",
       screenshotFullPage: false,
       screenshotEvidence: [
         {
-          path: "screenshots/state-1-error-1.jpg",
-          kind: "error-crop",
+          path: "screenshots/state-1-evidence-1.jpg",
+          kind: "evidence-crop",
           issueCount: 1,
           width: 1280,
           height: 900
         },
         {
-          path: "screenshots/state-1-error-2.jpg",
-          kind: "error-crop",
+          path: "screenshots/state-1-evidence-2.jpg",
+          kind: "evidence-crop",
           issueCount: 1,
           width: 1280,
           height: 900
@@ -367,22 +388,22 @@ test("renderExplorationHtml renders focused evidence crops for long pages", () =
   const focusedIssues = [
     {
       ...issues[0],
-      screenshot: "screenshots/state-1-error-1.jpg"
+      screenshot: "screenshots/state-1-evidence-1.jpg"
     },
     {
       ...issues[0],
       ruleId: "link-name",
       fingerprint: "link-name::state-1",
-      screenshot: "screenshots/state-1-error-2.jpg"
+      screenshot: "screenshots/state-1-evidence-2.jpg"
     }
   ];
   const html = renderExplorationHtml(focusedGraph, focusedIssues);
 
   assert.match(html, /2 focused evidence captures/);
-  assert.match(html, /state-1-error-1\.jpg/);
-  assert.match(html, /state-1-error-2\.jpg/);
-  assert.match(html, /Open error evidence 1/);
-  assert.match(html, /Open error evidence 2/);
+  assert.match(html, /state-1-evidence-1\.jpg/);
+  assert.match(html, /state-1-evidence-2\.jpg/);
+  assert.match(html, /Open focused evidence 1/);
+  assert.match(html, /Open focused evidence 2/);
   assert.match(html, /id="screenshot-state-1-2"/);
   assert.equal((html.match(/annotation annotation-critical/g) ?? []).length, 4);
 });
@@ -538,6 +559,16 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /Keyboard Audit/);
   assert.match(html, /Manual Review Checklist/);
   assert.match(html, /Audit Coverage/);
+  assert.match(html, /class="coverage-table"/);
+  assert.match(html, /class="coverage-status-cell"/);
+  assert.match(html, /\.coverage-row-review:not\(\.coverage-row-reviewed\):hover/);
+  assert.match(html, /Browser automation: evidence collected automatically/);
+  assert.match(html, /type="checkbox" checked disabled/);
+  assert.match(html, /data-coverage-review="screen-reader"/);
+  assert.match(html, /Screen reader: mark manual review complete/);
+  assert.match(html, /data-coverage-progress aria-live="polite"/);
+  assert.match(html, /a11y-shiftleft:coverage:/);
+  assert.match(html, /class="coverage-findings">0<\/td>/);
   assert.match(html, /Accessibility tree evidence/);
   assert.match(html, /Unnamed interactive/);
   assert.match(html, /Reflow evidence at 320 CSS pixels/);

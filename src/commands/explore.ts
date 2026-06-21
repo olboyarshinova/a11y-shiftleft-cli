@@ -298,6 +298,7 @@ export function registerExploreCommand(program: Command): void {
         duplicateCount: filtered.length - uniqueIssues.length
       }, {
         formats,
+        frameworkExample: config.framework === "auto" || config.framework === "unknown" ? undefined : config.framework,
         semiAuto: Boolean(options.semiAuto)
       });
       if (options.html !== false) {

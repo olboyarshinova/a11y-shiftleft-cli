@@ -5,12 +5,13 @@ import { enrichIssueEvidence } from "../core/classification.js";
 import { createManualChecklist, toManualChecklistMarkdown } from "../core/manualChecklist.js";
 import { getRemediationHint } from "../core/remediation.js";
 import { summarizeRootCauses } from "../core/rootCauses.js";
-import type { A11yReport, ComplianceEvidenceSummary, ComplianceStandardMetadata, DedupedIssue, PageSummary, ReportFormat, ReportMetrics, ReportSummary, RootCauseGroup, Severity } from "../types.js";
+import type { A11yReport, ComplianceEvidenceSummary, ComplianceStandardMetadata, DedupedIssue, Framework, PageSummary, RemediationHint, ReportFormat, ReportMetrics, ReportSummary, RootCauseGroup, Severity } from "../types.js";
 
 interface WriteReportOptions {
   formats?: ReportFormat[];
   semiAuto?: boolean;
   legacyMetrics?: boolean;
+  frameworkExample?: Framework;
   exploration?: A11yReport["exploration"];
   keyboard?: A11yReport["keyboard"];
   manualChecklist?: A11yReport["manualChecklist"];
@@ -30,18 +31,21 @@ export async function writeReports(
     const enrichedIssue = issue.confidence && issue.category && issue.findingType
       ? issue
       : enrichIssueEvidence(issue);
+    const remediation = enrichedIssue.remediation || getRemediationHint(
+      enrichedIssue.ruleId,
+      enrichedIssue.wcagCriteria,
+      enrichedIssue.framework,
+      { helpUrl: enrichedIssue.helpUrl }
+    );
 
-    return enrichedIssue.remediation
-      ? enrichedIssue
-      : {
-        ...enrichedIssue,
-        remediation: getRemediationHint(
-          enrichedIssue.ruleId,
-          enrichedIssue.wcagCriteria,
-          enrichedIssue.framework,
-          { helpUrl: enrichedIssue.helpUrl }
-        )
-      };
+    return {
+      ...enrichedIssue,
+      remediation: keepRelevantFrameworkExample(
+        remediation,
+        enrichedIssue,
+        options.frameworkExample
+      )
+    };
   });
 
   const manualChecklist = options.manualChecklist || (options.semiAuto
@@ -113,6 +117,28 @@ export async function writeReports(
   }
 
   return report;
+}
+
+function keepRelevantFrameworkExample(
+  remediation: RemediationHint,
+  issue: DedupedIssue,
+  explicitFramework?: Framework
+): RemediationHint {
+  const framework = isExampleFramework(explicitFramework)
+    ? explicitFramework
+    : issue.source === "eslint" && isExampleFramework(issue.framework)
+      ? issue.framework
+      : undefined;
+  const example = framework ? remediation.frameworkExamples?.[framework] : undefined;
+
+  return {
+    ...remediation,
+    frameworkExamples: framework && example ? { [framework]: example } : undefined
+  };
+}
+
+function isExampleFramework(framework: Framework | string | undefined): framework is "react" | "vue" | "angular" {
+  return framework === "react" || framework === "vue" || framework === "angular";
 }
 
 function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummary {

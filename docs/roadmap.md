@@ -67,6 +67,22 @@ remain suitable for reproducible empirical validation.
   reports skipped actions and observable state changes.
 - Add optional annotated focus screenshots to the existing
   `keyboard-report.json` and `keyboard-path.md` artifacts.
+- Add a numbered visual Tab-order path to the unified HTML report, inspired by
+  the visual keyboard helpers in
+  [Accessibility Insights](https://accessibilityinsights.io/docs/web/overview/)
+  and [ARC Toolkit](https://www.tpgi.com/arc-platform/arc-toolkit/). Keep the
+  underlying selector, role, accessible name, and focus evidence available
+  without relying on color or the visual path alone.
+- Add a compact quick-review section that combines high-impact automated
+  findings, the bounded Tab path, and a short set of assisted manual checks.
+  This should be a report view over the normal audit, not a second scanner or a
+  separate result format.
+- Turn manual review into an assisted queue: identify relevant instances such
+  as images, forms, dialogs, media, landmarks, and live regions; provide concise
+  test instructions; and persist `pass`, `fail`, `needs-review`, and
+  `not-tested` outcomes with evidence and reviewer context. Use the
+  [A11Y Project checklist](https://www.a11yproject.com/checklist/) as a practical
+  task source while keeping WCAG as the normative mapping source.
 - Surface keyboard findings in the same severity, WCAG, confidence, baseline,
   ignore, remediation, retest, dashboard, and PR-report pipeline used by
   `check` and `explore`. Keyboard mode now supports the shared finding policies
@@ -84,6 +100,9 @@ remain suitable for reproducible empirical validation.
 - Compare axe and Lighthouse disagreements in a separate report section,
   include Lighthouse suggested fixes where useful, and surface the comparison in
   `exploration.html` and the local dashboard.
+- Explain the Lighthouse score as a weighted summary rather than a conformance
+  percentage. Keep manual-review, keyboard, and unmapped coverage visible next
+  to the score so a high score cannot hide untested requirements.
 
 ### 0.9.x Secure Report Sharing
 
@@ -100,6 +119,22 @@ remain suitable for reproducible empirical validation.
   report generation must continue to work without an account or hosted service.
 
 ## Near Term
+
+- Add assertion-level coverage states to reports: `passed`, `failed`,
+  `needs-review`, `not-tested`, and `unavailable`. Show which page or UI state
+  produced the evidence and never infer WCAG conformance from an automated
+  pass alone.
+- Add report grouping controls for rule, page/state, affected element, WCAG
+  criterion, and POUR principle. Preserve the current root-cause grouping while
+  making element-first triage easier for developers reviewing one component.
+- Add a per-finding `Copy issue` action in the local HTML report. Reuse the
+  deterministic ticket-draft schema so the copied Markdown includes impact,
+  affected page and selector, WCAG metadata, evidence, and remediation guidance
+  without contacting an external service.
+- Extend readiness controls beyond a fixed delay with bounded declarative
+  conditions such as selector visible/hidden and URL or path reached. Keep
+  form entry, submission, authentication, and arbitrary scripts out of the
+  default workflow; automatic exploration remains the zero-config path.
 
 - Validate the structured manual-review records in real keyboard-only, screen
   reader, zoom, reflow, reduced-motion, cognitive, and task-flow reviews.
@@ -175,6 +210,18 @@ remain suitable for reproducible empirical validation.
 
 ## Mid Term
 
+- Publish a repeatable external-validation protocol that compares the same
+  pages and states with Accessibility Insights, ARC Toolkit,
+  [WAVE](https://wave.webaim.org/),
+  [Siteimprove](https://www.siteimprove.com/why-siteimprove/integrations/browser-extensions/),
+  [Lighthouse](https://developer.chrome.com/docs/lighthouse/accessibility/scoring/),
+  and [Pa11y](https://github.com/pa11y/pa11y). Record tool/version/date, unique
+  findings, overlaps, findings requiring review, and confirmed false positives.
+  Treat these tools as independent benchmarks, not bundled runtime dependencies.
+- Add an optional import format for manually confirmed external findings only
+  after the validation protocol is stable. Imported evidence must retain its
+  source and must not be presented as a finding produced by this CLI.
+
 - Add a `doctor` command that validates Node, Playwright, Chromium, target URL,
   config, and CI environment readiness.
 - Add deeper framework-specific remediation examples for common React, Vue, and
@@ -229,7 +276,9 @@ remain suitable for reproducible empirical validation.
   changed files to a small dynamic smoke-test URL set before broader scans.
 - Prototype a browser overlay mode after `watch` is stable, so local dev pages
   can highlight affected elements from accessibility findings without requiring
-  a full browser extension.
+  a full browser extension. Borrow WAVE's useful in-page context pattern with
+  numbered markers, outlines, and accessible text details, while keeping the
+  overlay local and optional.
 - Explore a DevTools-style local inspection layer after the overlay prototype,
   reusing the same core report schema to show rule, severity, WCAG metadata,
   confidence, and suggested remediation next to affected DOM elements.

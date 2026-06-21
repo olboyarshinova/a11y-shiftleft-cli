@@ -9,12 +9,16 @@ import {
   createMediaIssues,
   createEmbeddedContentIssues,
   createEvidenceClips,
+  exploreActionKey,
   getExploreActionSafety,
   isAdvertisingActionContext,
   isCookieConsentContext,
   isSafeExploreAction,
   isSafeExploreActionWithConfig,
+  normalizeScreenshotClip,
+  normalizeReflowOverflow,
   normalizeExploreUrl,
+  prioritizeExploreActions,
   prioritizeThemeActions,
   readScreenshotDimensions,
   SENSITIVE_SCREENSHOT_SELECTOR,
@@ -134,6 +138,16 @@ test("isSafeExploreAction blocks dangerous or external actions", () => {
     url: "https://example.com/",
     label: "Navigate: external docs",
     text: "external docs",
+    role: "a"
+  }, "http://localhost:3000/"), false);
+
+  assert.equal(isSafeExploreAction({
+    id: "current-page",
+    type: "navigate",
+    selector: "a[href='#main']",
+    url: "http://localhost:3000/#main",
+    label: "Navigate: Skip to main content",
+    text: "Skip to main content",
     role: "a"
   }, "http://localhost:3000/"), false);
 });
@@ -348,7 +362,8 @@ test("SENSITIVE_SCREENSHOT_SELECTOR covers common private form fields", () => {
 test("shouldCaptureFullPageScreenshot captures finding states automatically", () => {
   assert.equal(shouldCaptureFullPageScreenshot(false, 0), false);
   assert.equal(shouldCaptureFullPageScreenshot(false, 1), true);
-  assert.equal(shouldCaptureFullPageScreenshot(false, 1, 5000), false);
+  assert.equal(shouldCaptureFullPageScreenshot(false, 1, 5000), true);
+  assert.equal(shouldCaptureFullPageScreenshot(false, 1, 7000), false);
   assert.equal(shouldCaptureFullPageScreenshot(true, 0), true);
 });
 
@@ -369,6 +384,48 @@ test("createEvidenceClips groups nearby errors and separates distant regions", (
   assert.deepEqual(clips[1].issueIndexes, [2]);
   assert.ok(clips.every((clip) => clip.height <= 900));
   assert.ok(clips.every((clip) => clip.width <= 1600));
+});
+
+test("normalizeScreenshotClip clamps stale crops to the current document", () => {
+  assert.deepEqual(normalizeScreenshotClip({
+    x: 100,
+    y: 900,
+    width: 500,
+    height: 300,
+    issueIndexes: [2]
+  }, {
+    documentWidth: 400,
+    documentHeight: 1000,
+    viewportWidth: 400,
+    viewportHeight: 700
+  }), {
+    x: 100,
+    y: 900,
+    width: 300,
+    height: 100,
+    issueIndexes: [2]
+  });
+});
+
+test("normalizeScreenshotClip rejects crops outside a resized document", () => {
+  assert.equal(normalizeScreenshotClip({
+    x: 0,
+    y: 1600,
+    width: 400,
+    height: 300,
+    issueIndexes: [0]
+  }, {
+    documentWidth: 400,
+    documentHeight: 1000,
+    viewportWidth: 400,
+    viewportHeight: 700
+  }), undefined);
+});
+
+test("normalizeReflowOverflow ignores small layout bleed but preserves meaningful overflow", () => {
+  assert.equal(normalizeReflowOverflow(8), 0);
+  assert.equal(normalizeReflowOverflow(16), 0);
+  assert.equal(normalizeReflowOverflow(17), 17);
 });
 
 test("isThemeAction recognizes common theme toggles", () => {
@@ -398,6 +455,37 @@ test("prioritizeThemeActions keeps theme controls inside bounded exploration", (
     "#menu",
     "#details"
   ]);
+});
+
+test("prioritizeExploreActions keeps unique page navigation ahead of ordinary clicks", () => {
+  const actions = prioritizeExploreActions([
+    { type: "click" as const, label: "Open navigation", selector: "#menu" },
+    { type: "navigate" as const, label: "Products", selector: "#products", url: "http://localhost:3000/products" },
+    { type: "click" as const, label: "Switch to dark mode", selector: "#theme" },
+    { type: "navigate" as const, label: "About", selector: "#about", url: "http://localhost:3000/about" }
+  ]);
+
+  assert.deepEqual(actions.map((action) => action.selector), [
+    "#theme",
+    "#products",
+    "#about",
+    "#menu"
+  ]);
+});
+
+test("exploreActionKey deduplicates repeated links by destination URL", () => {
+  const headerLink = exploreActionKey({
+    type: "navigate",
+    selector: "header a.products",
+    url: "http://localhost:3000/Product-List.html"
+  });
+  const menuLink = exploreActionKey({
+    type: "navigate",
+    selector: "nav a.products",
+    url: "http://localhost:3000/Product-List.html"
+  });
+
+  assert.equal(headerLink, menuLink);
 });
 
 test("summarizeAccessibilityTreeNodes keeps compact semantic evidence", () => {

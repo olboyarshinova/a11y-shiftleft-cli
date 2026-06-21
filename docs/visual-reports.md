@@ -23,6 +23,14 @@ npx a11y-shiftleft explore --url $APP_URL --depth 2 --out reports
 same-origin links and low-risk UI expansion controls such as menu buttons,
 tabs, disclosure widgets, and modal triggers.
 
+`--depth` controls how many transitions may appear in one exploration path; it
+does not mean "visit this many pages." The state and per-state action limits
+also bound the run. Repeated links to the same normalized URL and links back to
+the current page are not queued, and unique same-origin destinations are
+prioritized before ordinary UI clicks. Compare `Pages visited`, `Rendered
+states`, and `Unique screenshots` in the report: screenshot deduplication can
+make the last number smaller without reducing scan coverage.
+
 For every discovered state, `explore` automatically compares light and dark
 system color schemes. When the rendered appearance changes, both variants are
 scanned and shown as separate labeled states. If they are visually equivalent,
@@ -54,6 +62,16 @@ bounded Chromium accessibility-tree summary for each explored state. The
 summary records exposed landmarks, headings, an interactive-node sample, and
 the number of unnamed interactive nodes without storing the entire tree. This
 is diagnostic evidence, not a substitute for NVDA, JAWS, or VoiceOver testing.
+
+The coverage matrix is a bordered working checklist. Green locked checkboxes
+identify evidence collected by the audit; yellow rows remain available for
+manual confirmation. Its Findings column shows the number of issues associated
+with a completed automated area; `0` means the area ran without a finding, while
+an em dash means no automated result is available. Missing optional checks show
+a copy-paste command in the next-step column. Manual selections are stored in
+browser local storage under an identifier unique to the generated report. They
+are not uploaded, written back into the report files, or treated as proof of
+WCAG conformance.
 
 Each explored state also receives a bounded 320 CSS pixel reflow pass. It
 records document width, horizontal overflow, and text containers that appear to

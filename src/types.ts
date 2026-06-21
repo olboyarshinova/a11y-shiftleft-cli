@@ -743,7 +743,7 @@ export interface EmbeddedContentEvidence {
 
 export interface ExplorationScreenshotEvidence {
   path: string;
-  kind: "full-page" | "viewport" | "error-crop";
+  kind: "full-page" | "viewport" | "evidence-crop";
   issueCount: number;
   width?: number;
   height?: number;
@@ -763,6 +763,7 @@ export interface ExplorationGraph {
   skippedActions: ExploreSkippedAction[];
   summary: {
     statesVisited: number;
+    pagesVisited?: number;
     uiStatesVisited?: number;
     actionsTried: number;
     skippedActions: number;

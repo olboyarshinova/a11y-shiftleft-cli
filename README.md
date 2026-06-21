@@ -21,16 +21,38 @@ preview URL, regardless of whether it was built with React, Vue, Angular,
 Next.js, Svelte, Astro, Rails, Django, or static HTML. Optional static adapters
 are currently available only for React, Vue, and Angular.
 
+## Built On Trusted Tools
+
+The current CLI combines established open-source tools instead of replacing
+their rule engines:
+
+- [axe-core through `@axe-core/playwright`](https://www.npmjs.com/package/@axe-core/playwright)
+  runs automated accessibility rules against the rendered page.
+- [Playwright](https://playwright.dev/) drives Chromium, explores bounded UI
+  states, captures screenshots, and collects keyboard and accessibility-tree
+  evidence.
+- [ESLint](https://eslint.org/) powers source checks through optional adapters
+  for [`eslint-plugin-jsx-a11y`](https://www.npmjs.com/package/eslint-plugin-jsx-a11y),
+  [`eslint-plugin-vue`](https://www.npmjs.com/package/eslint-plugin-vue), and
+  [Angular ESLint](https://www.npmjs.com/package/@angular-eslint/eslint-plugin-template).
+
+[Lighthouse](https://developer.chrome.com/docs/lighthouse/overview/) is not
+bundled in the current release. An optional comparison adapter is planned so
+teams can view its familiar accessibility score alongside detailed findings
+without making Lighthouse a required dependency.
+
 ## Why Use It?
 
 Most accessibility tools solve one part of the workflow:
 
 - axe-core finds browser-rendered issues.
 - ESLint plugins catch framework-specific patterns.
-- Lighthouse gives a score.
+- Lighthouse gives a familiar page-level score, but is not part of the current
+  CLI scan.
 - CI tells you whether a pull request should pass.
 
-This project connects those pieces into one repeatable developer workflow:
+This project connects automated checks, evidence, and reporting into one
+repeatable developer workflow:
 
 - Run static and dynamic checks from one command.
 - Deduplicate repeated findings.
@@ -100,6 +122,11 @@ checks, a bounded keyboard traversal, screenshots, and a manual-review
 checklist. Safe mode blocks recognized payment, account, cookie-consent,
 permission, advertising, and other high-risk controls.
 
+The audit writes screenshots while browser exploration is running. The combined
+`reports/a11y-report.html` file is created after exploration, keyboard checks,
+and report processing finish. Wait for the terminal to print `Open:
+reports/a11y-report.html` before opening the final report.
+
 4. Open the visual report:
 
 ```bash
@@ -155,20 +182,57 @@ npx a11y-shiftleft-cli audit --url http://localhost:4200 --out reports
 
 ## Copy-Paste Recipes
 
-| Goal | Command |
-|---|---|
-| Run the recommended full audit | `npx a11y-shiftleft-cli audit --url http://localhost:5173 --out reports` |
-| Add Excel and PDF exports | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports --excel --pdf` |
-| Run only a fast browser scan | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports` |
-| Scan several known pages | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL $APP_URL/settings $APP_URL/checkout --out reports` |
-| Let the CLI discover same-origin pages | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --crawl --crawl-depth 1 --crawl-limit 10 --out reports` |
-| Trigger lazy-loaded below-the-fold content | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --scroll-step 800 --scroll-max-steps 25 --out reports` |
-| Audit the keyboard focus path | `npx a11y-shiftleft-cli keyboard --url $APP_URL --out reports/keyboard` |
-| Create a visual state report | `npx a11y-shiftleft-cli explore --url $APP_URL --depth 2 --out reports` |
-| Force complete page screenshots | `npx a11y-shiftleft-cli explore --url $APP_URL --depth 2 --screenshot-full-page --out reports` |
-| Keep reports refreshed while coding | `npx a11y-shiftleft-cli watch --url $APP_URL --out reports/watch` |
-| Generate a fast PR workflow | `npx a11y-shiftleft-cli ci --url $APP_URL --start-command "npm run dev"` |
-| View historical trends | `npx a11y-shiftleft-cli dashboard --reports reports` |
+Not sure which command to choose? Start with `audit`. It produces the complete
+visual report and includes the other checks most teams need for local review.
+
+### Full Visual Audit
+
+Use `audit` for the normal end-to-end workflow. Its primary output is the
+graphical `reports/a11y-report.html` file.
+
+| Goal | Command | Main output |
+|---|---|---|
+| Run the recommended audit | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports` | `a11y-report.html` |
+| Add Excel and PDF exports | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports --excel --pdf` | HTML, CSV, and PDF |
+| Force complete page screenshots | `npx a11y-shiftleft-cli audit --url $APP_URL --screenshot-full-page --out reports` | Full-page visual evidence |
+| Audit a slower application | `npx a11y-shiftleft-cli audit --url $APP_URL --wait-ms 1000 --out reports` | Visual report after an extra settle wait |
+
+### Fast Checks For Terminal And CI
+
+Use `check` when speed and machine-readable output matter more than screenshots.
+It writes JSON, Markdown, and optional CSV reports; it does not create a visual
+HTML report.
+
+| Goal | Command | Main output |
+|---|---|---|
+| Run a fast browser scan | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports` | JSON and Markdown |
+| Run static source checks only | `npx a11y-shiftleft-cli check --static --out reports` | JSON and Markdown |
+| Scan several known pages | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL $APP_URL/settings $APP_URL/checkout --out reports` | Combined non-visual report |
+| Discover same-origin pages | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --crawl --crawl-depth 1 --crawl-limit 10 --out reports` | Bounded crawl results |
+| Compare only new findings | `npx a11y-shiftleft-cli check --url $APP_URL --baseline --out reports` | Baseline comparison |
+
+### Visual UI Exploration
+
+Use `explore` when you specifically need screenshots and a graph of safely
+discovered pages, modals, menus, themes, and other UI states without the combined
+keyboard and manual-review sections from `audit`.
+
+| Goal | Command | Main output |
+|---|---|---|
+| Explore visual UI states | `npx a11y-shiftleft-cli explore --url $APP_URL --depth 2 --out reports` | `exploration.html` |
+| Force complete page screenshots | `npx a11y-shiftleft-cli explore --url $APP_URL --depth 2 --screenshot-full-page --out reports` | Full-page exploration evidence |
+| Wait for a loaded-state selector | `npx a11y-shiftleft-cli explore --url $APP_URL --wait-for-selector "[data-page-ready]" --out reports` | Visual report after the page is ready |
+| Skip screenshots for private data | `npx a11y-shiftleft-cli explore --url $APP_URL --no-screenshots --out reports` | Exploration data without images |
+
+### Development And CI Tools
+
+| Goal | Command | Use it for |
+|---|---|---|
+| Verify local setup | `npx a11y-shiftleft-cli doctor --url $APP_URL` | Framework, adapter, browser, and URL diagnostics |
+| Audit only keyboard focus | `npx a11y-shiftleft-cli keyboard --url $APP_URL --out reports/keyboard` | Focus order and keyboard evidence |
+| Refresh reports while coding | `npx a11y-shiftleft-cli watch --url $APP_URL --out reports/watch` | Local development feedback |
+| Generate GitHub Actions workflows | `npx a11y-shiftleft-cli ci --url $APP_URL --start-command "npm run dev"` | Pull-request and scheduled CI |
+| View historical trends | `npx a11y-shiftleft-cli dashboard --reports reports` | Local metrics dashboard |
 
 ## What The Reports Mean
 
@@ -182,10 +246,12 @@ Each finding is labeled as a `WCAG violation`, `best practice`, or
 causes when the same rule and component state appear across routes. This grouping is
 heuristic: per-page evidence remains available for review.
 
-Every finding includes a deterministic `How to fix` recommendation. Known rules
-provide specific steps, official guidance links, and framework examples when
-available. Unknown rules still receive safe review steps instead of an empty
-recommendation; axe findings also preserve their rule-specific help link.
+The visual report groups repeated findings by rule and shows one deterministic
+`How to fix` guide for the group. Individual findings link to that shared guide.
+Known rules provide specific steps, official guidance links, and framework
+examples when available. Unknown rules still receive safe review steps instead
+of an empty recommendation; axe findings also preserve their rule-specific help
+link.
 
 | File | Use it for | Commit it? |
 |---|---|---|
@@ -299,7 +365,10 @@ npx a11y-shiftleft-cli audit --url $APP_URL --out reports
 The HTML report includes safely discovered pages and UI states, axe and static
 findings, annotated screenshots, keyboard focus evidence, and a manual-review
 checklist. Its coverage matrix separates completed automation from keyboard,
-screen-reader, and human-review work. Each explored state includes a compact
+screen-reader, and human-review work. Automatically collected areas appear as
+green rows with locked checked boxes. Areas that still need a person appear as
+yellow rows with interactive checkboxes; selections are stored only in the
+current browser for that generated report. Each explored state includes a compact
 browser accessibility-tree summary with landmarks, headings, interactive
 controls, and unnamed interactive-node counts. Add `--activation` to exercise
 bounded Enter, Space, Escape, and arrow-key behavior in isolated browser
@@ -385,6 +454,13 @@ and screenshots without the combined keyboard and manual-review sections:
 npx a11y-shiftleft-cli explore --url $APP_URL --depth 2 --out reports
 ```
 
+`--depth` limits the length of an interaction path; it is not a requested page
+count. Page discovery is also bounded by `--limit` and
+`--actions-per-state`. Unique same-origin destinations are prioritized and
+deduplicated by URL. Use the `Pages visited` metric in the report to measure
+route coverage; `Unique screenshots` can be lower because identical images are
+stored only once.
+
 Dynamic scans and visual exploration auto-scroll pages before running axe. This
 helps trigger lazy-loaded sections below the first viewport. The scan still
 stays bounded for CI with a default maximum of 25 scroll steps per page. Use
@@ -444,7 +520,7 @@ reports/exploration.html
 reports/exploration.pdf       # only when --pdf is used
 reports/exploration-graph.json
 reports/screenshots/state-*.jpg
-reports/screenshots/state-*-error-*.jpg   # focused crops on long pages
+reports/screenshots/state-*-evidence-*.jpg   # focused crops on long pages
 ```
 
 Screenshots are compressed, and sensitive form fields are masked by default.

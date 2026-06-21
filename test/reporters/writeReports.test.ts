@@ -74,6 +74,9 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
         requiresManualReview: true,
         disclaimer: "This report supports accessibility risk detection and remediation tracking. It does not certify legal compliance with ADA, Section 508, or WCAG. Manual review is required."
       }
+    },
+    {
+      frameworkExample: "react"
     }
   );
 
@@ -212,6 +215,44 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /Fix: Give every button an accessible name/);
   assert.match(markdown, /name-role-value/);
   assert.match(markdown, /react example: `<button type="button" aria-label="Open menu">/);
+});
+
+test("writeReports hides auto-detected framework examples from dynamic findings", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-generic-example-"));
+
+  await writeReports(outputDir, [{
+    source: "axe",
+    framework: "react",
+    severity: "critical",
+    ruleId: "button-name",
+    wcag: ["4.1.2"],
+    wcagCriteria: [],
+    tags: [],
+    selector: "button",
+    message: "Buttons must have discernible text",
+    remediation: {
+      summary: "Give every button an accessible name.",
+      howToFix: ["Use visible button text when possible."],
+      docs: [],
+      frameworkExamples: {
+        react: "<button aria-label=\"Open menu\"><MenuIcon /></button>"
+      }
+    },
+    fingerprint: "button-name::button",
+    duplicateCount: 0
+  }], {
+    framework: "react"
+  }, {
+    formats: ["json", "markdown"]
+  });
+
+  const json = JSON.parse(await fs.readFile(path.join(outputDir, "a11y-report.json"), "utf8"));
+  const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+
+  assert.equal(json.summary.framework, "react");
+  assert.equal(json.issues[0].remediation.frameworkExamples, undefined);
+  assert.doesNotMatch(markdown, /react example/i);
+  assert.match(markdown, /Use visible button text when possible/);
 });
 
 test("findings CSV neutralizes spreadsheet formulas in report text", async () => {

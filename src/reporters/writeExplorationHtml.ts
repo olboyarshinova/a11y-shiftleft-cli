@@ -142,6 +142,121 @@ export function renderExplorationHtml(
       overflow: hidden;
     }
 
+    .coverage-table-wrap {
+      overflow-x: auto;
+    }
+
+    .coverage-table {
+      border-collapse: collapse;
+      min-width: 820px;
+      width: 100%;
+    }
+
+    .coverage-table th,
+    .coverage-table td {
+      border: 1px solid #b8c0cc;
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .coverage-table thead th {
+      background: #e9edf2;
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .coverage-table tbody th {
+      width: 22%;
+    }
+
+    .coverage-table .coverage-check-cell {
+      text-align: center;
+      width: 76px;
+    }
+
+    .coverage-table .coverage-findings {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      text-align: center;
+      width: 84px;
+    }
+
+    .coverage-table .coverage-status-cell {
+      min-width: 180px;
+      width: 180px;
+    }
+
+    .coverage-table input[type="checkbox"] {
+      accent-color: var(--ok);
+      height: 20px;
+      margin: 0;
+      width: 20px;
+    }
+
+    .coverage-table input[type="checkbox"]:focus-visible {
+      outline: 3px solid var(--info);
+      outline-offset: 3px;
+    }
+
+    .coverage-table input[type="checkbox"]:disabled {
+      opacity: 1;
+    }
+
+    .coverage-row-automated {
+      background: #edf9f3;
+    }
+
+    .coverage-row-review {
+      background: #fff7e6;
+    }
+
+    .coverage-row-review:not(.coverage-row-reviewed):hover,
+    .coverage-row-review:not(.coverage-row-reviewed):focus-within {
+      background: #ffefc7;
+    }
+
+    .coverage-row-reviewed {
+      background: #edf9f3;
+    }
+
+    .coverage-status {
+      border: 1px solid currentColor;
+      border-radius: 4px;
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 2px 6px;
+    }
+
+    .coverage-status-automated {
+      color: #05603a;
+    }
+
+    .coverage-status-review {
+      color: #8a3b0a;
+    }
+
+    .coverage-progress {
+      color: #713b0b;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .coverage-progress-complete {
+      color: var(--ok);
+    }
+
+    .visually-hidden {
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      height: 1px;
+      overflow: hidden;
+      position: absolute;
+      white-space: nowrap;
+      width: 1px;
+    }
+
     .triage-grid {
       display: grid;
       gap: 16px;
@@ -582,7 +697,7 @@ export function renderExplorationHtml(
     }
   </style>
 </head>
-<body>
+<body data-coverage-report-id="${escapeAttribute(`${graph.startUrl}|${graph.generatedAt}`)}">
   <header>
     <h1>${escapeHtml(options.title || "a11y-shiftleft exploration report")}</h1>
     <p class="muted">Generated: <time datetime="${escapeAttribute(graph.generatedAt)}">${escapeHtml(formatReportDateUtc(graph.generatedAt))}</time><br>Start URL: ${escapeHtml(graph.startUrl)}</p>
@@ -590,6 +705,7 @@ export function renderExplorationHtml(
   <main>
     <section class="summary" aria-label="Exploration summary">
       ${metric("UI states explored", graph.summary.uiStatesVisited ?? graph.summary.statesVisited)}
+      ${metric("Pages visited", graph.summary.pagesVisited ?? new Set(graph.states.map((state) => state.url)).size)}
       ${metric("Rendered states", graph.summary.statesVisited)}
       ${metric("Actions tried", graph.summary.actionsTried)}
       ${metric("Actions skipped", graph.summary.skippedActions || 0)}
@@ -605,11 +721,13 @@ export function renderExplorationHtml(
       ${metric("Likely root causes", rootCauseGroups.length)}
     </section>
 
-    ${renderCoverageMatrix(graph, options)}
+    ${renderCoverageMatrix(graph, options, reportIssues)}
 
     <section class="panel triage" aria-label="Triage overview">
       ${renderTriageOverview(states, reportIssues, rootCauseGroups)}
     </section>
+
+    ${renderGroupedFixGuidance(reportIssues)}
 
     <section class="panel states" aria-label="Checked states">
       ${states.map(renderState).join("\n")}
@@ -631,6 +749,61 @@ export function renderExplorationHtml(
       <p class="muted">This report shows automated exploration evidence only. It does not certify WCAG, ADA, or Section 508 compliance. Manual keyboard, screen reader, content, and task-flow review is still required.</p>
     </section>
   </main>
+  <script>
+    (() => {
+      const rows = Array.from(document.querySelectorAll('[data-coverage-review]'));
+      const progress = document.querySelector('[data-coverage-progress]');
+      const reportId = document.body.dataset.coverageReportId || 'report';
+      const storageKey = 'a11y-shiftleft:coverage:' + reportId;
+      let saved = {};
+
+      try {
+        saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
+      } catch {
+        saved = {};
+      }
+
+      const update = () => {
+        const completed = {};
+        let remaining = 0;
+
+        for (const row of rows) {
+          const checkbox = row.querySelector('input[type="checkbox"]');
+          const status = row.querySelector('[data-coverage-status]');
+          if (!checkbox || !status) continue;
+          const checked = checkbox.checked;
+          row.classList.toggle('coverage-row-reviewed', checked);
+          status.textContent = checked ? 'Reviewed manually' : status.dataset.defaultStatus;
+          status.classList.toggle('coverage-status-automated', checked);
+          status.classList.toggle('coverage-status-review', !checked);
+          completed[row.dataset.coverageReview] = checked;
+          if (!checked) remaining += 1;
+        }
+
+        if (progress) {
+          progress.textContent = remaining === 0
+            ? 'Manual coverage review complete for this report.'
+            : 'Manual review remaining: ' + remaining + ' of ' + rows.length + ' areas.';
+          progress.classList.toggle('coverage-progress-complete', remaining === 0);
+        }
+
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(completed));
+        } catch {
+          // The report remains usable when storage is unavailable.
+        }
+      };
+
+      for (const row of rows) {
+        const checkbox = row.querySelector('input[type="checkbox"]');
+        if (!checkbox) continue;
+        checkbox.checked = saved[row.dataset.coverageReview] === true;
+        checkbox.addEventListener('change', update);
+      }
+
+      update();
+    })();
+  </script>
 </body>
 </html>
 `;
@@ -665,7 +838,11 @@ function renderKeyboardAudit(audit: KeyboardAuditResult): string {
   </section>`;
 }
 
-function renderCoverageMatrix(graph: ExplorationGraph, options: ExplorationHtmlOptions): string {
+function renderCoverageMatrix(
+  graph: ExplorationGraph,
+  options: ExplorationHtmlOptions,
+  issues: DedupedIssue[]
+): string {
   const themes = [...new Set(graph.states.map((state) => state.colorScheme).filter(Boolean))];
   const reflowStates = graph.states.filter((state) => state.reflow);
   const modalStates = graph.states.filter((state) => state.modalFocus);
@@ -685,28 +862,58 @@ function renderCoverageMatrix(graph: ExplorationGraph, options: ExplorationHtmlO
   const iframeCount = embeddedStates.reduce((total, state) => total + (state.embeddedContent?.iframeCount || 0), 0);
   const inaccessibleFrames = embeddedStates.reduce((total, state) => total + (state.embeddedContent?.inaccessibleIframeCount || 0), 0);
   const canvasGaps = embeddedStates.reduce((total, state) => total + (state.embeddedContent?.canvasWithoutAlternativeCount || 0), 0);
+  const countIssues = (predicate: (issue: DedupedIssue) => boolean) => issues.filter(predicate).length;
+  const dynamicFindingCount = countIssues((issue) => issue.source !== "eslint" && issue.source !== "keyboard");
+  const staticFindingCount = countIssues((issue) => issue.source === "eslint");
+  const staticAdapterFailed = issues.some((issue) => issue.ruleId === "adapter/eslint-error");
+  const keyboardFindingCount = countIssues((issue) => issue.source === "keyboard");
+  const keyboardCommand = `npx a11y-shiftleft-cli audit --url ${shellQuote(graph.startUrl)} --out reports`;
+  const rows = [
+    coverageRow("browser-automation", "Browser automation", "Automated", `${graph.summary.statesVisited} rendered state${graph.summary.statesVisited === 1 ? "" : "s"} scanned with axe`, true, dynamicFindingCount),
+    coverageRow("static-source", "Static source analysis", staticAdapterFailed ? "Setup required" : "Automated", staticAdapterFailed ? "Install or configure the detected framework adapter, then run the audit again" : "Project source files checked with the configured accessibility lint adapter", !staticAdapterFailed, staticFindingCount),
+    coverageRow("keyboard", "Keyboard traversal", options.keyboard ? "Automated evidence" : "Run keyboard audit", options.keyboard ? `${options.keyboard.steps.length} forward focus steps recorded; complete task testing may still be required` : `Run <code>${escapeHtml(keyboardCommand)}</code>`, Boolean(options.keyboard), options.keyboard ? keyboardFindingCount : undefined),
+    coverageRow("appearance", "Light and dark appearance", "Automated evidence", themes.length > 0 ? escapeHtml(themes.join(", ")) : "No distinct system color-scheme state detected", true, countIssues((issue) => issue.category === "contrast")),
+    coverageRow("reflow", "Reflow at 320 CSS pixels", reflowStates.length > 0 ? "Automated evidence" : "Review required", reflowStates.length > 0 ? `${reflowStates.length} state${reflowStates.length === 1 ? "" : "s"} checked for overflow and clipped text` : "No reflow evidence was collected", reflowStates.length > 0, reflowStates.length > 0 ? countIssues((issue) => issue.source === "layout") : undefined),
+    coverageRow("modal-focus", "Modal focus behavior", modalStates.length > 0 ? "Automated evidence" : "Review if applicable", modalStates.length > 0 ? `${modalStates.length} state${modalStates.length === 1 ? "" : "s"} checked for name, initial focus, Escape, and focus restoration` : "No opened modal was observed; open and review expected dialogs manually", modalStates.length > 0, modalStates.length > 0 ? countIssues((issue) => issue.source === "modal") : undefined),
+    coverageRow("announcements", "Dynamic announcements", announcementStates.length > 0 ? "Automated evidence" : "Review if applicable", `${announcementUpdates} meaningful live-region update${announcementUpdates === 1 ? "" : "s"} observed after ${announcementStates.length} action${announcementStates.length === 1 ? "" : "s"}`, announcementStates.length > 0, announcementStates.length > 0 ? 0 : undefined),
+    coverageRow("form-errors", "Form error states", formStates.length > 0 ? "Automated evidence" : "Review if applicable", formStates.length > 0 ? `${invalidFields} explicit invalid field${invalidFields === 1 ? "" : "s"}; ${unassociatedInvalidFields} without an exposed associated error` : "No rendered form error state was observed", formStates.length > 0, formStates.length > 0 ? countIssues((issue) => issue.category === "forms") : undefined),
+    coverageRow("image-alternatives", "Image alternatives", imageStates.length > 0 ? "Automated heuristics" : "No images observed", `${suspiciousImages} image alternative${suspiciousImages === 1 ? "" : "s"} flagged for human review across ${imageStates.length} state${imageStates.length === 1 ? "" : "s"}`, true, countIssues((issue) => issue.category === "images")),
+    coverageRow("media-motion", "Media and motion", mediaStates.length > 0 ? "Automated evidence" : "Review if applicable", `${mediaElements} audio/video element${mediaElements === 1 ? "" : "s"}; ${autoplayRisks} autoplay control risk${autoplayRisks === 1 ? "" : "s"}`, mediaStates.length > 0, mediaStates.length > 0 ? countIssues((issue) => issue.category === "media") : undefined),
+    coverageRow("embedded-content", "Embedded content", embeddedStates.length > 0 ? "Automated evidence" : "No embeds observed", `${iframeCount} iframe${iframeCount === 1 ? "" : "s"}; ${inaccessibleFrames} unavailable document${inaccessibleFrames === 1 ? "" : "s"}; ${canvasGaps} canvas alternative gap${canvasGaps === 1 ? "" : "s"}`, true, countIssues((issue) => issue.source === "embedded-content")),
+    coverageRow("screen-reader", "Screen reader", "Human review required", "Test representative tasks with NVDA, JAWS, or VoiceOver"),
+    coverageRow("content-usability", "Content and task usability", options.manualChecklist ? "Checklist ready" : "Human review required", "Record tester, environment, evidence, and outcome")
+  ];
   return `<section class="panel triage" aria-label="Audit coverage matrix">
     <h2>Audit Coverage</h2>
-    <p class="muted">This separates collected evidence from checks that still require a person and assistive technology.</p>
-    <table>
-      <thead><tr><th>Area</th><th>Status</th><th>Evidence or next step</th></tr></thead>
-      <tbody>
-        <tr><th scope="row">Browser automation</th><td>Completed</td><td>${graph.summary.statesVisited} rendered state${graph.summary.statesVisited === 1 ? "" : "s"} scanned with axe</td></tr>
-        <tr><th scope="row">Static source analysis</th><td>Configuration-dependent</td><td>Included when the detected framework adapter is installed</td></tr>
-        <tr><th scope="row">Keyboard traversal</th><td>${options.keyboard ? "Bounded evidence collected" : "Not included"}</td><td>${options.keyboard ? `${options.keyboard.steps.length} forward focus steps recorded` : "Run audit without --no-keyboard"}</td></tr>
-        <tr><th scope="row">Light and dark appearance</th><td>${themes.length > 1 ? "Both observed" : "Rendered appearance checked"}</td><td>${themes.length > 0 ? escapeHtml(themes.join(", ")) : "No distinct system color-scheme state detected"}</td></tr>
-        <tr><th scope="row">Reflow at 320 CSS pixels</th><td>${reflowStates.length > 0 ? "Heuristic evidence collected" : "Not included"}</td><td>${reflowStates.length} state${reflowStates.length === 1 ? "" : "s"} checked for page overflow and clipped text</td></tr>
-        <tr><th scope="row">Modal focus behavior</th><td>${modalStates.length > 0 ? "Heuristic evidence collected" : "No opened modal observed"}</td><td>${modalStates.length} state${modalStates.length === 1 ? "" : "s"} checked for name, initial focus, Escape, and focus restoration</td></tr>
-        <tr><th scope="row">Dynamic announcements</th><td>${announcementStates.length > 0 ? "Mutation evidence collected" : "No action evidence"}</td><td>${announcementUpdates} meaningful live-region update${announcementUpdates === 1 ? "" : "s"} observed after ${announcementStates.length} action${announcementStates.length === 1 ? "" : "s"}</td></tr>
-        <tr><th scope="row">Form error states</th><td>${formStates.length > 0 ? "Rendered-state evidence collected" : "No forms observed"}</td><td>${invalidFields} explicit invalid field${invalidFields === 1 ? "" : "s"}; ${unassociatedInvalidFields} without an exposed associated error</td></tr>
-        <tr><th scope="row">Image alternatives</th><td>${imageStates.length > 0 ? "Quality heuristics collected" : "No images observed"}</td><td>${suspiciousImages} image alternative${suspiciousImages === 1 ? "" : "s"} flagged for human review across ${imageStates.length} state${imageStates.length === 1 ? "" : "s"}</td></tr>
-        <tr><th scope="row">Media and motion</th><td>${mediaStates.length > 0 ? "Rendered-state evidence collected" : "No media or active motion observed"}</td><td>${mediaElements} audio/video element${mediaElements === 1 ? "" : "s"}; ${autoplayRisks} autoplay control risk${autoplayRisks === 1 ? "" : "s"}</td></tr>
-        <tr><th scope="row">Embedded content</th><td>${embeddedStates.length > 0 ? "Coverage evidence collected" : "No iframe or canvas observed"}</td><td>${iframeCount} iframe${iframeCount === 1 ? "" : "s"}; ${inaccessibleFrames} unavailable document${inaccessibleFrames === 1 ? "" : "s"}; ${canvasGaps} canvas alternative gap${canvasGaps === 1 ? "" : "s"}</td></tr>
-        <tr><th scope="row">Screen reader</th><td>Human review required</td><td>Test representative tasks with NVDA, JAWS, or VoiceOver</td></tr>
-        <tr><th scope="row">Content and task usability</th><td>${options.manualChecklist ? "Checklist ready" : "Not included"}</td><td>Record tester, environment, evidence, and outcome</td></tr>
-      </tbody>
-    </table>
+    <p class="muted">Green checked rows contain evidence collected by this audit. Complete the yellow rows manually; your selections stay in this browser for this generated report.</p>
+    <p class="coverage-progress" data-coverage-progress aria-live="polite"></p>
+    <div class="coverage-table-wrap">
+      <table class="coverage-table">
+        <thead><tr><th scope="col">Review</th><th scope="col">Area</th><th scope="col">Status</th><th scope="col">Findings</th><th scope="col">Evidence or next step</th></tr></thead>
+        <tbody>${rows.join("\n")}</tbody>
+      </table>
+    </div>
   </section>`;
+}
+
+function coverageRow(
+  id: string,
+  area: string,
+  status: string,
+  evidence: string,
+  automated = false,
+  findingCount?: number
+): string {
+  const checkboxLabel = automated
+    ? `${area}: evidence collected automatically`
+    : `${area}: mark manual review complete`;
+  return `<tr class="coverage-row-${automated ? "automated" : "review"}"${automated ? "" : ` data-coverage-review="${escapeAttribute(id)}"`}>
+    <td class="coverage-check-cell"><label><span class="visually-hidden">${escapeHtml(checkboxLabel)}</span><input type="checkbox"${automated ? " checked disabled" : ""}></label></td>
+    <th scope="row">${escapeHtml(area)}</th>
+    <td class="coverage-status-cell"><span class="coverage-status coverage-status-${automated ? "automated" : "review"}"${automated ? "" : ` data-coverage-status data-default-status="${escapeAttribute(status)}"`}>${escapeHtml(status)}</span></td>
+    <td class="coverage-findings">${findingCount === undefined ? "&mdash;" : findingCount}</td>
+    <td>${evidence}</td>
+  </tr>`;
 }
 
 function renderManualChecklist(checklist: ManualChecklist): string {
@@ -753,7 +960,7 @@ function renderState(state: StateViewModel): string {
       ${issueBadges}
       ${state.colorScheme ? `<span class="badge">${escapeHtml(state.colorScheme)} color scheme</span>` : ""}
       ${state.screenshotFullPage ? `<span class="badge">full-page evidence</span>` : ""}
-      ${state.screenshotEvidence?.some((evidence) => evidence.kind === "error-crop")
+      ${state.screenshotEvidence?.some((evidence) => evidence.kind === "evidence-crop")
         ? `<span class="badge">${state.screenshotEvidence.length} focused evidence capture${state.screenshotEvidence.length === 1 ? "" : "s"}</span>`
         : ""}
       ${state.visualDuplicateOf ? `<span class="badge">visual reused from ${escapeHtml(state.visualDuplicateOf)}</span>` : ""}
@@ -974,13 +1181,13 @@ function renderEvidenceFrame(
     : "screenshot-frame";
   const openLabel = fullPage
     ? "Open full-page evidence"
-    : evidence.kind === "error-crop"
-      ? `Open error evidence ${index + 1}`
+    : evidence.kind === "evidence-crop"
+      ? `Open focused evidence ${index + 1}`
       : "Open annotated screenshot";
   const screenshotAlt = fullPage
     ? `Full-page evidence for ${state.id}`
-    : evidence.kind === "error-crop"
-      ? `Focused error evidence ${index + 1} for ${state.id}`
+    : evidence.kind === "evidence-crop"
+      ? `Focused accessibility evidence ${index + 1} for ${state.id}`
       : `Screenshot for ${state.id}`;
 
   return `<div class="${frameClass}">
@@ -1230,7 +1437,7 @@ function renderIssues(issues: DedupedIssue[]): string {
       <div>${escapeHtml(issue.message)}</div>
       ${issue.selector ? `<div class="url">${escapeHtml(issue.selector)}</div>` : ""}
       ${renderContrastEvidence(issue)}
-      ${renderRemediation(issue)}
+      <div class="url"><a href="#${escapeAttribute(fixGuidanceAnchor(issue.ruleId))}">View grouped fix guidance</a></div>
     </li>`;
   const visibleIssues = issues.slice(0, 8);
   const remainingIssues = issues.slice(8);
@@ -1242,6 +1449,61 @@ function renderIssues(issues: DedupedIssue[]): string {
     <summary>Show ${remainingIssues.length} more finding${remainingIssues.length === 1 ? "" : "s"}</summary>
     <ul class="issue-list">${remainingIssues.map(renderIssue).join("\n")}</ul>
   </details>` : ""}`;
+}
+
+function renderGroupedFixGuidance(issues: DedupedIssue[]): string {
+  if (issues.length === 0) return "";
+
+  const groups = new Map<string, DedupedIssue[]>();
+  for (const issue of issues) {
+    const current = groups.get(issue.ruleId) || [];
+    current.push(issue);
+    groups.set(issue.ruleId, current);
+  }
+
+  const rankedGroups = [...groups.entries()].sort((left, right) => {
+    const scoreDifference = sumSeverityScore(right[1]) - sumSeverityScore(left[1]);
+    return scoreDifference || right[1].length - left[1].length || left[0].localeCompare(right[0]);
+  });
+
+  return `<section class="panel states" aria-label="Grouped fix guidance">
+    <h2>Grouped Fix Guidance</h2>
+    <p class="muted">Findings with the same rule share one remediation guide. Individual selectors and visual evidence remain in Checked States.</p>
+    <ul class="issue-list">
+      ${rankedGroups.map(([ruleId, groupIssues]) => renderFixGuidanceGroup(ruleId, groupIssues)).join("\n")}
+    </ul>
+  </section>`;
+}
+
+function renderFixGuidanceGroup(ruleId: string, issues: DedupedIssue[]): string {
+  const summary = summarizeIssues(issues);
+  const pages = [...new Set(issues.map((issue) => issue.url || issue.file).filter(Boolean))] as string[];
+  const states = [...new Set(issues.map((issue) => issue.stateId).filter(Boolean))] as string[];
+  const targets = [...new Set(issues.map((issue) => issue.selector || issue.file).filter(Boolean))] as string[];
+
+  return `<li class="issue" id="${escapeAttribute(fixGuidanceAnchor(ruleId))}">
+    <div class="triage-title">
+      <code>${escapeHtml(ruleId)}</code>
+      <span class="badge">${issues.length} occurrence${issues.length === 1 ? "" : "s"}</span>
+    </div>
+    <div class="badges">
+      ${summary.critical ? badge("critical", `${summary.critical} critical`) : ""}
+      ${summary.warning ? badge("warning", `${summary.warning} warning`) : ""}
+      ${summary.info ? badge("info", `${summary.info} info`) : ""}
+      ${pages.length ? `<span class="badge">${pages.length} page${pages.length === 1 ? "" : "s"}</span>` : ""}
+      ${states.length ? `<span class="badge">${states.length} state${states.length === 1 ? "" : "s"}</span>` : ""}
+    </div>
+    ${targets.length > 0 ? `<details>
+      <summary>Affected targets (${targets.length})</summary>
+      <ul>${targets.slice(0, 20).map((target) => `<li><code>${escapeHtml(target)}</code></li>`).join("")}</ul>
+      ${targets.length > 20 ? `<p class="muted">${targets.length - 20} additional targets remain in Checked States and the JSON report.</p>` : ""}
+    </details>` : ""}
+    ${renderRemediation(issues[0])}
+  </li>`;
+}
+
+function fixGuidanceAnchor(ruleId: string): string {
+  return `fix-${ruleId}`;
 }
 
 function renderRemediation(issue: DedupedIssue): string {
@@ -1510,4 +1772,8 @@ function escapeHtml(value: string | number | undefined): string {
 function escapeAttribute(value: string | undefined): string {
   return escapeHtml(value)
     .replace(/"/g, "&quot;");
+}
+
+function shellQuote(value: string): string {
+  return `'${value.replace(/'/g, `'"'"'`)}'`;
 }

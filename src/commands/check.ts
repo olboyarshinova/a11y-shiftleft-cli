@@ -275,6 +275,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
     duplicateCount: filtered.length - uniqueIssues.length
   }, {
     formats,
+    frameworkExample: config.framework === "auto" || config.framework === "unknown" ? undefined : config.framework,
     semiAuto: Boolean(options.semiAuto)
   });
 

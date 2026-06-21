@@ -189,6 +189,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
   }, {
     formats: [...formats],
     legacyMetrics: false,
+    frameworkExample: config.framework === "auto" || config.framework === "unknown" ? undefined : config.framework,
     exploration: exploration.graph,
     keyboard,
     manualChecklist

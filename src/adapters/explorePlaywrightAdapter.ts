@@ -46,11 +46,12 @@ const DEFAULT_WAIT_MS = 250;
 const DEFAULT_SCREENSHOT_FORMAT = "jpeg";
 const DEFAULT_SCREENSHOT_QUALITY = 70;
 const SCREENSHOT_REDACTION_COLOR = "#111827";
-const MAX_AUTO_FULL_PAGE_HEIGHT = 2400;
+const MAX_AUTO_FULL_PAGE_HEIGHT = 6000;
 const ERROR_CROP_PADDING_Y = 120;
 const MAX_ERROR_CROP_HEIGHT = 900;
 const ERROR_CROP_PADDING_X = 80;
 const MAX_ERROR_CROP_WIDTH = 1600;
+const REFLOW_OVERFLOW_TOLERANCE_PX = 16;
 
 const COOKIE_CONSENT_CONTEXT_PATTERNS = [
   /\b(cookie|cookies|cookiebot|onetrust|consent|tracking|privacy\s*(choices|preferences|settings))\b/i,
@@ -191,10 +192,11 @@ interface PageFingerprint {
 interface CapturedScreenshot {
   path: string;
   fingerprint: string;
-  kind: "full-page" | "viewport" | "error-crop";
+  kind: "full-page" | "viewport" | "evidence-crop";
   issueIndexes: number[];
   width: number;
   height: number;
+  clip?: EvidenceClip;
 }
 
 export interface DocumentRect {
@@ -295,6 +297,9 @@ export async function runExplorePlaywrightAdapter(
     }
     const queue: QueuedState[] = [{ path: [], depth: 0 }];
     const queuedPaths = new Set(["start"]);
+    const queuedNavigationUrls = new Set([
+      normalizeExploreUrl(options.url, options.url) || options.url
+    ]);
 
     while (queue.length > 0 && uniqueUiStates < maxStates) {
       const current = queue.shift();
@@ -515,10 +520,12 @@ export async function runExplorePlaywrightAdapter(
         const nextPath = [...current.path, action];
         const pathKey = nextPath.map((item) => item.id).join(">");
         if (queuedPaths.has(pathKey)) continue;
+        if (action.type === "navigate" && action.url && queuedNavigationUrls.has(action.url)) continue;
         if (current.depth + 1 > maxDepth) continue;
         if (uniqueUiStates + queue.length >= maxStates) continue;
 
         queuedPaths.add(pathKey);
+        if (action.type === "navigate" && action.url) queuedNavigationUrls.add(action.url);
         queue.push({
           path: nextPath,
           depth: current.depth + 1,
@@ -554,6 +561,7 @@ export async function runExplorePlaywrightAdapter(
       skippedActions,
       summary: {
         statesVisited: states.length,
+        pagesVisited: new Set(states.map((state) => state.url)).size,
         uiStatesVisited: uniqueUiStates,
         actionsTried,
         skippedActions: skippedActions.length,
@@ -686,12 +694,20 @@ export function getExploreActionSafety(
   }
 
   if (action.type === "navigate") {
-    return normalizeExploreUrl(action.url, baseUrl)
-      ? { safe: true }
-      : {
+    const target = normalizeExploreUrl(action.url, baseUrl);
+    const current = normalizeExploreUrl(baseUrl, baseUrl);
+    if (!target) {
+      return {
         safe: false,
         reason: "Navigation target is external, unsupported, or invalid."
       };
+    }
+    return target === current
+      ? {
+        safe: false,
+        reason: "Navigation target resolves to the current page."
+      }
+      : { safe: true };
   }
 
   return action.selector
@@ -1037,7 +1053,7 @@ async function auditReflow(
   try {
     await page.setViewportSize(viewport);
     await page.waitForTimeout(100);
-    const evidence = await page.evaluate(({ viewportWidth, viewportHeight }) => {
+    const measuredEvidence = await page.evaluate(({ viewportWidth, viewportHeight }) => {
       function selectorFor(element: Element): string {
         const id = element.getAttribute("id");
         if (id) return `[id="${id.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"]`;
@@ -1073,7 +1089,13 @@ async function auditReflow(
         const clipsOverflow = [style.overflow, style.overflowX, style.overflowY]
           .some((value) => value === "hidden" || value === "clip");
         const deliberateEllipsis = style.textOverflow === "ellipsis" && style.whiteSpace === "nowrap";
-        return hasDirectText && clipsOverflow && !deliberateEllipsis && rect.width > 0 && rect.height > 0 &&
+        const deliberatelyVisuallyHidden = rect.width <= 2 && rect.height <= 2 && (
+          style.position === "absolute" ||
+          style.clip !== "auto" ||
+          (style.clipPath !== "none" && style.clipPath !== "")
+        );
+        return hasDirectText && clipsOverflow && !deliberateEllipsis && !deliberatelyVisuallyHidden &&
+          rect.width > 0 && rect.height > 0 &&
           style.visibility !== "hidden" && style.display !== "none" &&
           (htmlElement.scrollWidth > htmlElement.clientWidth + 1 || htmlElement.scrollHeight > htmlElement.clientHeight + 1);
       }).slice(0, 10).map((element) => {
@@ -1095,6 +1117,10 @@ async function auditReflow(
         clippedTextSample: candidates
       };
     }, { viewportWidth: viewport.width, viewportHeight: viewport.height });
+    const evidence = {
+      ...measuredEvidence,
+      horizontalOverflowPx: normalizeReflowOverflow(measuredEvidence.horizontalOverflowPx)
+    };
     const common = {
       source: "layout",
       framework: config.framework,
@@ -1138,6 +1164,14 @@ async function auditReflow(
     await page.setViewportSize(originalViewport).catch(() => undefined);
     await page.waitForTimeout(50).catch(() => undefined);
   }
+}
+
+export function normalizeReflowOverflow(
+  overflowPx: number,
+  tolerancePx = REFLOW_OVERFLOW_TOLERANCE_PX
+): number {
+  if (!Number.isFinite(overflowPx) || overflowPx <= tolerancePx) return 0;
+  return Math.max(0, overflowPx);
 }
 
 async function inspectOpenModal(page: Page): Promise<ModalFocusEvidence | undefined> {
@@ -1981,9 +2015,9 @@ async function captureStateVisualEvidence(
       const captured = await captureStateScreenshot(page, {
         ...options,
         fullPage: false,
-        kind: "error-crop",
+        kind: "evidence-crop",
         issueIndexes: clip.issueIndexes,
-        filenameSuffix: `-error-${clipIndex + 1}`,
+        filenameSuffix: `-evidence-${clipIndex + 1}`,
         clip,
         imageWidth: clip.width,
         imageHeight: clip.height
@@ -1996,10 +2030,10 @@ async function captureStateVisualEvidence(
         preparedIssues[issueIndex] = {
           ...preparedIssues[issueIndex],
           screenshot: captured.path,
-          elementBounds: rect
+          elementBounds: rect && captured.clip
             ? toPercentBounds({
-              x: rect.x - clip.x,
-              y: rect.y - clip.y,
+              x: rect.x - captured.clip.x,
+              y: rect.y - captured.clip.y,
               width: rect.width,
               height: rect.height,
               containerWidth: captured.width,
@@ -2119,6 +2153,48 @@ export function createEvidenceClips(
       issueIndexes: group.map((item) => item.issueIndex)
     };
   });
+}
+
+export function normalizeScreenshotClip(
+  clip: EvidenceClip,
+  metrics: PageCaptureMetrics
+): EvidenceClip | undefined {
+  const documentWidth = Math.floor(metrics.documentWidth);
+  const documentHeight = Math.floor(metrics.documentHeight);
+  const values = [clip.x, clip.y, clip.width, clip.height, documentWidth, documentHeight];
+
+  if (
+    values.some((value) => !Number.isFinite(value)) ||
+    clip.width <= 0 ||
+    clip.height <= 0 ||
+    documentWidth <= 0 ||
+    documentHeight <= 0
+  ) {
+    return undefined;
+  }
+
+  const rawRight = clip.x + clip.width;
+  const rawBottom = clip.y + clip.height;
+  if (rawRight <= 0 || rawBottom <= 0 || clip.x >= documentWidth || clip.y >= documentHeight) {
+    return undefined;
+  }
+
+  const x = Math.max(0, Math.floor(clip.x));
+  const y = Math.max(0, Math.floor(clip.y));
+  const right = Math.min(documentWidth, Math.ceil(rawRight));
+  const bottom = Math.min(documentHeight, Math.ceil(rawBottom));
+  const width = right - x;
+  const height = bottom - y;
+
+  if (width < 1 || height < 1) return undefined;
+
+  return {
+    x,
+    y,
+    width,
+    height,
+    issueIndexes: [...clip.issueIndexes]
+  };
 }
 
 async function readPageCaptureMetrics(page: Page): Promise<PageCaptureMetrics> {
@@ -2523,7 +2599,7 @@ async function discoverSafeActions(
     )
   });
 
-  const rawActions = prioritizeThemeActions(discovery.actions);
+  const rawActions = prioritizeExploreActions(discovery.actions);
   const skippedActions = [...discovery.skipped];
   const seenSkipped = new Set(skippedActions.map((action) => [
     action.type,
@@ -2548,7 +2624,7 @@ async function discoverSafeActions(
         rawAction.label
       ].filter(Boolean).join("|"))
     };
-    const key = `${action.type}:${action.selector || action.url}`;
+    const key = exploreActionKey(action);
 
     if (seen.has(key)) continue;
 
@@ -2587,6 +2663,38 @@ export function prioritizeThemeActions<T extends {
   return [...actions].sort((left, right) =>
     Number(isThemeAction(right)) - Number(isThemeAction(left))
   );
+}
+
+export function prioritizeExploreActions<T extends {
+  type?: ExploreAction["type"];
+  label?: string;
+  text?: string;
+  selector?: string;
+}>(actions: T[]): T[] {
+  return actions
+    .map((action, index) => ({ action, index }))
+    .sort((left, right) => {
+      const rankDifference = exploreActionRank(left.action) - exploreActionRank(right.action);
+      return rankDifference || left.index - right.index;
+    })
+    .map(({ action }) => action);
+}
+
+export function exploreActionKey(action: Pick<ExploreAction, "type" | "selector" | "url">): string {
+  return action.type === "navigate"
+    ? `navigate:${action.url}`
+    : `${action.type}:${action.selector}`;
+}
+
+function exploreActionRank(action: {
+  type?: ExploreAction["type"];
+  label?: string;
+  text?: string;
+  selector?: string;
+}): number {
+  if (isThemeAction(action)) return 0;
+  if (action.type === "navigate") return 1;
+  return 2;
 }
 
 export function isThemeAction(action: {
@@ -2636,39 +2744,58 @@ async function captureStateScreenshot(
   const screenshotPath = path.join(screenshotsDir, filename);
 
   await fs.mkdir(screenshotsDir, { recursive: true });
-  const screenshotOptions: Parameters<Page["screenshot"]>[0] = {
+  let effectiveClip = options.clip
+    ? normalizeScreenshotClip(options.clip, await readPageCaptureMetrics(page))
+    : undefined;
+  let effectiveKind = options.clip && !effectiveClip ? "viewport" : options.kind;
+
+  const createScreenshotOptions = (
+    clip: EvidenceClip | undefined
+  ): Parameters<Page["screenshot"]>[0] => ({
     animations: "disabled",
     caret: "hide",
     path: screenshotPath,
-    fullPage: options.fullPage,
+    fullPage: clip ? false : options.fullPage && !options.clip,
     type: options.format,
-    ...(options.clip ? {
+    ...(clip ? {
       captureBeyondViewport: true,
       clip: {
-        x: options.clip.x,
-        y: options.clip.y,
-        width: options.clip.width,
-        height: options.clip.height
+        x: clip.x,
+        y: clip.y,
+        width: clip.width,
+        height: clip.height
       }
     } : {}),
+    ...(options.redactSensitiveFields ? {
+      mask: [page.locator(SENSITIVE_SCREENSHOT_SELECTOR)],
+      maskColor: SCREENSHOT_REDACTION_COLOR
+    } : {}),
     ...(options.format === "jpeg" ? { quality: options.quality } : {})
-  };
+  });
 
-  if (options.redactSensitiveFields) {
-    screenshotOptions.mask = [page.locator(SENSITIVE_SCREENSHOT_SELECTOR)];
-    screenshotOptions.maskColor = SCREENSHOT_REDACTION_COLOR;
+  let screenshotBuffer: Buffer;
+  try {
+    screenshotBuffer = await page.screenshot(createScreenshotOptions(effectiveClip));
+  } catch {
+    if (!effectiveClip) return undefined;
+
+    // The document can resize again while Playwright waits for fonts.
+    effectiveClip = undefined;
+    effectiveKind = "viewport";
+    const fallbackBuffer = await page.screenshot(createScreenshotOptions(undefined)).catch(() => undefined);
+    if (!fallbackBuffer) return undefined;
+    screenshotBuffer = fallbackBuffer;
   }
-
-  const screenshotBuffer = await page.screenshot(screenshotOptions);
   const dimensions = readScreenshotDimensions(screenshotBuffer, options.format);
 
   return {
     path: path.posix.join("screenshots", filename),
     fingerprint: hashBuffer(screenshotBuffer),
-    kind: options.kind,
+    kind: effectiveKind,
     issueIndexes: options.issueIndexes,
     width: dimensions?.width || options.imageWidth,
-    height: dimensions?.height || options.imageHeight
+    height: dimensions?.height || options.imageHeight,
+    clip: effectiveClip
   };
 }
 
