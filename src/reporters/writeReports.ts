@@ -62,6 +62,22 @@ export async function writeReports(
       fs.writeFile(
         path.join(outputDir, "a11y-findings.csv"),
         toFindingsCsv(report.issues)
+      ),
+      fs.writeFile(
+        path.join(outputDir, "a11y-summary.csv"),
+        toSummaryCsv(report)
+      ),
+      fs.writeFile(
+        path.join(outputDir, "a11y-pages.csv"),
+        toPagesCsv(report.summary.byPage)
+      ),
+      fs.writeFile(
+        path.join(outputDir, "a11y-rules.csv"),
+        toRulesCsv(report.issues)
+      ),
+      fs.writeFile(
+        path.join(outputDir, "a11y-remediation.csv"),
+        toRemediationCsv(report.issues)
       )
     ]);
   }
@@ -143,6 +159,104 @@ function toCsv(summary: ReportSummary): string {
   ].join("\n");
 }
 
+export function toSummaryCsv(report: A11yReport): string {
+  const summary = report.summary;
+  const compliance = summary.complianceEvidence;
+  return structuredCsv([{
+    generatedAt: report.generatedAt,
+    framework: summary.framework,
+    urls: summary.urls.join(" | "),
+    standard: summary.standard?.id || "wcag22-aa",
+    wcagVersion: summary.standard?.wcagVersion || "2.2",
+    wcagLevel: summary.standard?.wcagLevel || "AA",
+    total: summary.total,
+    critical: summary.critical,
+    warning: summary.warning,
+    info: summary.info,
+    rawFindings: summary.rawCount,
+    uniqueFindings: summary.uniqueCount,
+    duplicatesRemoved: summary.duplicateCount,
+    duplicateRate: summary.duplicateRate,
+    scanDurationMs: summary.scanDurationMs,
+    affectedPages: compliance.affectedPages,
+    wcagMappedFindings: compliance.wcagMappedFindings,
+    bestPracticeFindings: compliance.bestPracticeFindings || 0,
+    unmappedFindings: compliance.unmappedFindings,
+    likelyRootCauses: summary.rootCauseCount || 0,
+    baselineNew: summary.baseline?.newIssues ?? "",
+    baselineResolved: summary.baseline?.resolvedIssues ?? "",
+    retestNew: summary.retest?.newIssues ?? "",
+    retestFixed: summary.retest?.fixedIssues ?? "",
+    ignoredFindings: summary.ignore?.ignoredIssues ?? 0,
+    trackedRemediation: summary.remediationTracking?.matchedIssues ?? 0
+  }], [
+    "generatedAt", "framework", "urls", "standard", "wcagVersion", "wcagLevel",
+    "total", "critical", "warning", "info", "rawFindings", "uniqueFindings",
+    "duplicatesRemoved", "duplicateRate", "scanDurationMs", "affectedPages",
+    "wcagMappedFindings", "bestPracticeFindings", "unmappedFindings",
+    "likelyRootCauses", "baselineNew", "baselineResolved", "retestNew",
+    "retestFixed", "ignoredFindings", "trackedRemediation"
+  ]);
+}
+
+export function toPagesCsv(pages: PageSummary[]): string {
+  return structuredCsv(pages, [
+    "url", "total", "critical", "warning", "info", "severityScore"
+  ]);
+}
+
+export function toRulesCsv(issues: DedupedIssue[]): string {
+  const grouped = new Map<string, DedupedIssue[]>();
+  for (const issue of issues) {
+    grouped.set(issue.ruleId, [...(grouped.get(issue.ruleId) || []), issue]);
+  }
+
+  const records = [...grouped.entries()].map(([ruleId, ruleIssues]) => ({
+    ruleId,
+    highestSeverity: highestSeverity(ruleIssues),
+    findings: ruleIssues.length,
+    occurrences: ruleIssues.reduce((total, issue) => total + 1 + (issue.duplicateCount || 0), 0),
+    sources: uniqueJoined(ruleIssues.map((issue) => issue.source)),
+    findingTypes: uniqueJoined(ruleIssues.map((issue) => issue.findingType)),
+    categories: uniqueJoined(ruleIssues.map((issue) => issue.category)),
+    wcagCriteria: uniqueJoined(ruleIssues.flatMap((issue) => issue.wcagCriteria.map((criterion) => `${criterion.id} ${criterion.title} (${criterion.level})`))),
+    pages: uniqueJoined(ruleIssues.map((issue) => issue.url)),
+    fixSummary: ruleIssues[0].remediation?.summary || "",
+    documentation: uniqueJoined(ruleIssues.flatMap((issue) => issue.remediation?.docs || []))
+  })).sort((left, right) => {
+    const severityDifference = severityRank(right.highestSeverity) - severityRank(left.highestSeverity);
+    return severityDifference || right.occurrences - left.occurrences || left.ruleId.localeCompare(right.ruleId);
+  });
+
+  return structuredCsv(records, [
+    "ruleId", "highestSeverity", "findings", "occurrences", "sources",
+    "findingTypes", "categories", "wcagCriteria", "pages", "fixSummary",
+    "documentation"
+  ]);
+}
+
+export function toRemediationCsv(issues: DedupedIssue[]): string {
+  const records = issues.map((issue) => ({
+    fingerprint: issue.fingerprint || "",
+    severity: issue.severity,
+    ruleId: issue.ruleId,
+    target: issue.url || issue.file || issue.selector || "unknown",
+    status: issue.remediationTracking?.status || "untracked",
+    owner: issue.remediationTracking?.owner || "",
+    reason: issue.remediationTracking?.reason || "",
+    updatedAt: issue.remediationTracking?.updatedAt || "",
+    reviewBy: issue.remediationTracking?.reviewBy || "",
+    fixSummary: issue.remediation?.summary || "",
+    fixSteps: issue.remediation?.howToFix.join(" | ") || "",
+    documentation: issue.remediation?.docs.join(" | ") || ""
+  }));
+
+  return structuredCsv(records, [
+    "fingerprint", "severity", "ruleId", "target", "status", "owner",
+    "reason", "updatedAt", "reviewBy", "fixSummary", "fixSteps", "documentation"
+  ]);
+}
+
 export function toFindingsCsv(issues: DedupedIssue[]): string {
   const records = issues.map((issue) => sanitizeCsvRecord({
     severity: issue.severity,
@@ -206,13 +320,35 @@ export function toFindingsCsv(issues: DedupedIssue[]): string {
   });
 }
 
-function sanitizeCsvRecord(record: Record<string, string | number>): Record<string, string | number> {
+type CsvCell = string | number | boolean;
+
+function structuredCsv<T extends object>(records: T[], columns: string[]): string {
+  return stringify(records.map((record) => sanitizeCsvRecord(record as Record<string, CsvCell>)), { header: true, columns });
+}
+
+function sanitizeCsvRecord(record: Record<string, CsvCell>): Record<string, CsvCell> {
   return Object.fromEntries(Object.entries(record).map(([key, value]) => [
     key,
     typeof value === "string" && /^[\t\r ]*[=+\-@]/.test(value)
       ? `'${value}`
       : value
   ]));
+}
+
+function uniqueJoined(values: Array<string | undefined>): string {
+  return [...new Set(values.filter((value): value is string => Boolean(value)))].sort().join(" | ");
+}
+
+function highestSeverity(issues: DedupedIssue[]): Severity {
+  return issues.reduce<Severity>((highest, issue) => (
+    severityRank(issue.severity) > severityRank(highest) ? issue.severity : highest
+  ), "info");
+}
+
+function severityRank(severity: Severity): number {
+  if (severity === "critical") return 3;
+  if (severity === "warning") return 2;
+  return 1;
 }
 
 function formatFrameworkExamplesForCsv(issue: DedupedIssue): string {

@@ -111,8 +111,18 @@ The same run also creates:
 ```txt
 reports/a11y-report.json
 reports/a11y-metrics.csv
+reports/a11y-summary.csv
+reports/a11y-pages.csv
+reports/a11y-rules.csv
 reports/a11y-findings.csv
+reports/a11y-remediation.csv
 ```
+
+For Excel, start with `a11y-summary.csv`. Import `a11y-pages.csv`,
+`a11y-rules.csv`, `a11y-findings.csv`, and `a11y-remediation.csv` as separate
+worksheets when deeper analysis is needed. These files use stable columns and
+one entity per row. `a11y-metrics.csv` remains available only for compatibility
+with earlier metric collectors.
 
 ## Optional Project Setup
 
@@ -176,8 +186,12 @@ recommendation; axe findings also preserve their rule-specific help link.
 |---|---|---|
 | `reports/a11y-comment.md` | Human review and PR comments | Usually no |
 | `reports/a11y-report.json` | Automation, debugging, integrations | Usually no |
-| `reports/a11y-metrics.csv` | Trends and empirical validation | Usually no |
-| `reports/a11y-findings.csv` | Every finding with fix steps, guidance, and framework examples | Usually no |
+| `reports/a11y-summary.csv` | One Excel-friendly summary row | Usually no |
+| `reports/a11y-pages.csv` | One affected page per row | Usually no |
+| `reports/a11y-rules.csv` | One rule per row with counts and guidance | Usually no |
+| `reports/a11y-findings.csv` | One finding per row with fix steps and evidence | Usually no |
+| `reports/a11y-remediation.csv` | One remediation item per row with ownership and status | Usually no |
+| `reports/a11y-metrics.csv` | Backward-compatible raw metric/value export | Usually no |
 | `reports/exploration.html` | Visual review of explored UI states | Usually no |
 | `reports/exploration.pdf` | Portable visual report artifact when `--pdf` is used | Usually no |
 | `reports/keyboard-path.md` | Human-readable Tab order and focus evidence | Usually no |

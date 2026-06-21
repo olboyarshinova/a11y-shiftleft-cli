@@ -27,9 +27,10 @@ npx a11y-shiftleft keyboard \
 - `keyboard-path.md`: readable focus order, role, accessible name, visibility,
   focus-indicator, obscuration evidence, and deduplicated semantic page states.
 - `keyboard-report.json`: complete structured traversal data.
-- `a11y-comment.md`, `a11y-report.json`, `a11y-metrics.csv`, and
-  `a11y-findings.csv`: findings and deterministic fix recommendations in the
-  shared report format used by CI, dashboards, and later integrations.
+- `a11y-comment.md`, `a11y-report.json`, and the structured summary, page,
+  rule, finding, and remediation CSV tables: findings and deterministic fix
+  recommendations in the shared format used by CI, Excel, dashboards, and
+  later integrations.
 
 ## Page State Evidence
 

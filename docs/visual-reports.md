@@ -23,6 +23,10 @@ It saves:
 reports/a11y-report.json
 reports/a11y-comment.md
 reports/a11y-findings.csv
+reports/a11y-summary.csv
+reports/a11y-pages.csv
+reports/a11y-rules.csv
+reports/a11y-remediation.csv
 reports/exploration.html
 reports/exploration.pdf       # only when --pdf is used
 reports/exploration-graph.json

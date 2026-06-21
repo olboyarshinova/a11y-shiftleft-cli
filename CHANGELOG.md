@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added Excel-friendly CSV tables for scan summary, affected pages, rule
+  aggregation, findings, and remediation ownership while preserving the legacy
+  raw `a11y-metrics.csv` export.
 - Added deduplicated semantic page-state snapshots to forward and reverse
   keyboard focus paths, including URL, title, H1, scroll position, viewport,
   open dialog count, and expanded-control count.

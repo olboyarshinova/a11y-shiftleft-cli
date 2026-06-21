@@ -4,7 +4,11 @@ import path from "node:path";
 const REPORT_FILES = [
   "a11y-report.json",
   "a11y-metrics.csv",
+  "a11y-summary.csv",
+  "a11y-pages.csv",
+  "a11y-rules.csv",
   "a11y-findings.csv",
+  "a11y-remediation.csv",
   "a11y-comment.md",
   "a11y-manual-checklist.md",
   "a11y-manual-checklist.json",

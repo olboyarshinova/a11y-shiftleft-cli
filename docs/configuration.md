@@ -118,11 +118,13 @@ demos, or release evidence.
 
 ## Report Lifecycle
 
-- `check` overwrites `a11y-report.json`, `a11y-metrics.csv`,
-  `a11y-findings.csv`, and `a11y-comment.md` in the selected output directory.
+- `check` overwrites `a11y-report.json`, `a11y-comment.md`, and all generated
+  CSV tables (`a11y-summary.csv`, `a11y-pages.csv`, `a11y-rules.csv`,
+  `a11y-findings.csv`, `a11y-remediation.csv`, and the legacy
+  `a11y-metrics.csv`) in the selected output directory.
 - `explore` cleans stale generated artifacts before a new run, including
-  `a11y-report.json`, `a11y-findings.csv`, `a11y-comment.md`, `exploration.html`,
-  `exploration-graph.json`, and generated state screenshots.
+  `a11y-report.json`, all generated CSV tables, `a11y-comment.md`,
+  `exploration.html`, `exploration-graph.json`, and generated state screenshots.
 - After fixing an accessibility issue, rerun the same command. The fixed issue
   should disappear from the new report.
 - Use `--no-clean` only when you intentionally want to keep previous generated
