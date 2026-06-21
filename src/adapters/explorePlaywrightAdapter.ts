@@ -540,6 +540,10 @@ export function isSafeExploreAction(action: ExploreAction, baseUrl: string): boo
   return isSafeExploreActionWithConfig(action, baseUrl, defaultSafeMode());
 }
 
+export function getDefaultExploreActionSafety(action: ExploreAction, baseUrl: string): ActionSafetyResult {
+  return getExploreActionSafety(action, baseUrl, defaultSafeMode());
+}
+
 export function isSafeExploreActionWithConfig(
   action: ExploreAction,
   baseUrl: string,

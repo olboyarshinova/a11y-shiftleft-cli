@@ -11,6 +11,9 @@
   concrete controls skipped by a completed keyboard focus cycle.
 - Connected keyboard findings to baseline, retest, scoped ignore, and
   remediation tracking, using a dedicated `.a11y-keyboard-baseline.json` file.
+- Added opt-in, bounded keyboard activation evidence for Enter, Space, Escape,
+  and arrow keys. Attempts reuse exploration safe-mode, run in isolated browser
+  contexts, and block post-load navigation and data requests.
 
 ### Added
 

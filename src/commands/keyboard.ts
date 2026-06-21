@@ -22,6 +22,8 @@ interface KeyboardOptions {
   url: string;
   out?: string;
   maxTabs?: string;
+  activation?: boolean;
+  maxActivations?: string;
   waitMs?: string;
   failOn?: Severity | "none";
   quiet?: boolean;
@@ -48,6 +50,8 @@ export function registerKeyboardCommand(program: Command): void {
     .requiredOption("--url <url>", "Page URL to test")
     .option("--out <dir>", "Output directory")
     .option("--max-tabs <count>", "Maximum Tab key presses", "40")
+    .option("--activation", "Test bounded safe Enter, Space, Escape, and arrow-key interactions")
+    .option("--max-activations <count>", "Maximum isolated keyboard activation attempts", "6")
     .option("--wait-ms <ms>", "Extra page settle time before traversal", "250")
     .option("--fail-on <severity>", "critical, warning, info, or none")
     .option("--baseline", "Compare with the keyboard baseline and fail only on new findings")
@@ -75,6 +79,9 @@ export function registerKeyboardCommand(program: Command): void {
         url: options.url,
         framework,
         maxTabs: parseBoundedInteger(options.maxTabs, 40, 1, 200),
+        activation: Boolean(options.activation),
+        maxActivations: parseBoundedInteger(options.maxActivations, 6, 1, 20),
+        safeMode: config.explore.safeMode,
         waitMs: parseBoundedInteger(options.waitMs, 250, 0, 30_000),
         onProgress: options.quiet || options.jsonSummary || !process.stdout.isTTY
           ? undefined
@@ -144,7 +151,7 @@ export function validateKeyboardComparisonOptions(options: Pick<KeyboardOptions,
   }
 }
 
-export function keyboardSummary(audit: Pick<Awaited<ReturnType<typeof runKeyboardPlaywrightAdapter>>, "focusableCount" | "steps" | "backwardSteps" | "completedCycle" | "reverseOrderMatches" | "maxTabs">): {
+export function keyboardSummary(audit: Pick<Awaited<ReturnType<typeof runKeyboardPlaywrightAdapter>>, "focusableCount" | "steps" | "backwardSteps" | "completedCycle" | "reverseOrderMatches" | "maxTabs" | "activationAttempts">): {
   focusableCount: number;
   focusSteps: number;
   uniqueFocusTargets: number;
@@ -152,7 +159,11 @@ export function keyboardSummary(audit: Pick<Awaited<ReturnType<typeof runKeyboar
   reverseFocusSteps: number;
   reverseOrderMatches: boolean | null;
   maxTabs: number;
+  activationAttempts: number;
+  activationChanges: number;
+  activationSkipped: number;
 } {
+  const activationAttempts = audit.activationAttempts || [];
   return {
     focusableCount: audit.focusableCount,
     focusSteps: audit.steps.length,
@@ -160,7 +171,10 @@ export function keyboardSummary(audit: Pick<Awaited<ReturnType<typeof runKeyboar
     completedCycle: audit.completedCycle,
     reverseFocusSteps: audit.backwardSteps.length,
     reverseOrderMatches: audit.reverseOrderMatches,
-    maxTabs: audit.maxTabs
+    maxTabs: audit.maxTabs,
+    activationAttempts: activationAttempts.length,
+    activationChanges: activationAttempts.filter((attempt) => attempt.outcome === "changed").length,
+    activationSkipped: activationAttempts.filter((attempt) => attempt.outcome === "skipped").length
   };
 }
 
@@ -170,6 +184,9 @@ function formatKeyboardSummary(outputDir: string, audit: Awaited<ReturnType<type
     `Focus path: ${new Set(audit.steps.map((step) => step.selector)).size}/${audit.focusableCount} controls (${audit.steps.length} steps)`,
     `Completed cycle: ${audit.completedCycle ? "yes" : "no"}`,
     `Reverse order: ${audit.reverseOrderMatches === null ? "not tested" : audit.reverseOrderMatches ? "matches" : "mismatch"} (${audit.backwardSteps.length} steps)`,
+    ...(audit.activationEnabled
+      ? [`Activation: ${audit.activationAttempts?.length || 0} attempts | changed ${audit.activationAttempts?.filter((attempt) => attempt.outcome === "changed").length || 0} | skipped ${audit.activationAttempts?.filter((attempt) => attempt.outcome === "skipped").length || 0}`]
+      : []),
     `Findings: ${summary.total} | critical ${summary.critical} | warning ${summary.warning}`,
     `Reports: ${outputDir}/keyboard-path.md, ${outputDir}/keyboard-report.json, ${outputDir}/a11y-comment.md`
   ].join("\n");

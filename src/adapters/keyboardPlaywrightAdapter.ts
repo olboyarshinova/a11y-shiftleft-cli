@@ -1,11 +1,15 @@
 import { createHash } from "node:crypto";
-import { chromium, type Page } from "playwright";
-import type { ElementBounds, Framework, Issue, KeyboardAuditResult, KeyboardFocusStep, KeyboardPageStateSnapshot } from "../types.js";
+import { chromium, type Browser, type Page } from "playwright";
+import { getDefaultExploreActionSafety, getExploreActionSafety } from "./explorePlaywrightAdapter.js";
+import type { ElementBounds, ExploreAction, ExploreSafeModeConfig, Framework, Issue, KeyboardActivationAttempt, KeyboardActivationKey, KeyboardAuditResult, KeyboardFocusStep, KeyboardPageStateSnapshot } from "../types.js";
 
 export interface KeyboardAuditOptions {
   url: string;
   framework: Framework;
   maxTabs?: number;
+  activation?: boolean;
+  maxActivations?: number;
+  safeMode?: ExploreSafeModeConfig;
   waitMs?: number;
   onProgress?: (step: KeyboardFocusStep) => void;
 }
@@ -27,6 +31,7 @@ export async function runKeyboardPlaywrightAdapter(options: KeyboardAuditOptions
   let completedCycle = false;
   let reverseOrderMatches: boolean | null = null;
   let focusableSelectors: string[] = [];
+  let activationAttempts: KeyboardActivationAttempt[] = [];
 
   try {
     const context = await browser.newContext();
@@ -183,6 +188,19 @@ export async function runKeyboardPlaywrightAdapter(options: KeyboardAuditOptions
         wcag: ["2.1.1"]
       }));
     }
+
+    if (options.activation) {
+      const activationResult = await runKeyboardActivationAudit(browser, {
+        url: options.url,
+        framework: options.framework,
+        steps,
+        maxActivations: normalizeMaxActivations(options.maxActivations),
+        safeMode: options.safeMode,
+        waitMs: options.waitMs || 0
+      });
+      activationAttempts = activationResult.attempts;
+      issues.push(...activationResult.issues);
+    }
   } finally {
     await browser.close();
   }
@@ -197,6 +215,9 @@ export async function runKeyboardPlaywrightAdapter(options: KeyboardAuditOptions
     steps,
     backwardSteps,
     reverseOrderMatches,
+    activationEnabled: Boolean(options.activation),
+    maxActivations: normalizeMaxActivations(options.maxActivations),
+    activationAttempts,
     issues
   };
 }
@@ -402,7 +423,15 @@ async function collectFocusedElement(page: Page): Promise<PageKeyboardSnapshot |
       if (tag === "button") return "button";
       if (tag === "select") return "combobox";
       if (tag === "textarea") return "textbox";
-      if (tag === "input") return (target as HTMLInputElement).type === "checkbox" ? "checkbox" : "textbox";
+      if (tag === "input") {
+        const type = (target as HTMLInputElement).type;
+        if (type === "checkbox") return "checkbox";
+        if (type === "radio") return "radio";
+        if (["button", "submit", "reset", "image"].includes(type)) return "button";
+        if (type === "range") return "slider";
+        if (type === "number") return "spinbutton";
+        return "textbox";
+      }
       return "";
     }
 
@@ -452,8 +481,230 @@ export function createKeyboardStateId(
   return `state-${createHash("sha256").update(signature).digest("hex").slice(0, 10)}`;
 }
 
+interface KeyboardActivationAuditOptions {
+  url: string;
+  framework: Framework;
+  steps: KeyboardFocusStep[];
+  maxActivations: number;
+  waitMs: number;
+  safeMode?: ExploreSafeModeConfig;
+}
+
+export interface ActivationTargetMetadata {
+  tagName: string;
+  inputType: string;
+  buttonType: string;
+  inForm: boolean;
+  disabled: boolean;
+  href: string;
+  ariaExpanded: string;
+  ariaSelected: string;
+  ariaPressed: string;
+}
+
+interface ActivationControlState {
+  checked: boolean | null;
+  ariaExpanded: string;
+  ariaSelected: string;
+  ariaPressed: string;
+  openDialogs: number;
+}
+
+async function runKeyboardActivationAudit(
+  browser: Browser,
+  options: KeyboardActivationAuditOptions
+): Promise<{ attempts: KeyboardActivationAttempt[]; issues: Issue[] }> {
+  const candidates = uniqueActivationCandidates(options.steps).slice(0, options.maxActivations);
+  const attempts: KeyboardActivationAttempt[] = [];
+  const issues: Issue[] = [];
+
+  for (const candidate of candidates) {
+    const activationContext = await browser.newContext();
+    const page = await activationContext.newPage();
+    let initialLoadComplete = false;
+
+    try {
+      page.on("dialog", (dialog) => dialog.dismiss().catch(() => undefined));
+      await page.route("**/*", async (route) => {
+        if (!initialLoadComplete) return route.continue();
+        const request = route.request();
+        if (request.isNavigationRequest() || ["xhr", "fetch", "websocket", "eventsource"].includes(request.resourceType())) {
+          return route.abort("blockedbyclient");
+        }
+        return route.continue();
+      });
+      await page.goto(options.url, { waitUntil: "domcontentloaded", timeout: 15_000 });
+      await page.waitForLoadState("networkidle", { timeout: 3_000 }).catch(() => undefined);
+      if (options.waitMs > 0) await page.waitForTimeout(options.waitMs);
+      initialLoadComplete = true;
+
+      const locator = page.locator(candidate.step.selector).first();
+      if (await locator.count() === 0) {
+        attempts.push(toActivationAttempt(candidate, "target-missing", "The target was not present in the isolated initial page state."));
+        continue;
+      }
+
+      const metadata = await locator.evaluate((element): ActivationTargetMetadata => {
+        const htmlElement = element as HTMLElement;
+        return {
+          tagName: htmlElement.tagName.toLowerCase(),
+          inputType: element instanceof HTMLInputElement ? element.type : "",
+          buttonType: element instanceof HTMLButtonElement ? element.type : "",
+          inForm: Boolean(htmlElement.closest("form")),
+          disabled: "disabled" in htmlElement && Boolean((htmlElement as HTMLButtonElement).disabled),
+          href: element instanceof HTMLAnchorElement ? element.href : "",
+          ariaExpanded: htmlElement.getAttribute("aria-expanded") || "",
+          ariaSelected: htmlElement.getAttribute("aria-selected") || "",
+          ariaPressed: htmlElement.getAttribute("aria-pressed") || ""
+        };
+      });
+      const safety = getKeyboardActivationSafety(candidate.step, metadata, options.url, options.safeMode);
+      if (!safety.safe) {
+        attempts.push(toActivationAttempt(candidate, "skipped", safety.reason || "Blocked by keyboard safe mode."));
+        continue;
+      }
+
+      await locator.focus();
+      const beforeFocus = await collectFocusedElement(page);
+      const beforeControl = await collectActivationControlState(locator);
+      await page.keyboard.press(candidate.key);
+      await page.waitForTimeout(150);
+      const afterFocus = await collectFocusedElement(page);
+      const afterControl = await collectActivationControlState(locator).catch(() => null);
+      const changed = Boolean(
+        beforeFocus?.pageState.id !== afterFocus?.pageState.id ||
+        beforeFocus?.selector !== afterFocus?.selector ||
+        JSON.stringify(beforeControl) !== JSON.stringify(afterControl)
+      );
+
+      attempts.push({
+        selector: candidate.step.selector,
+        role: candidate.step.role || candidate.step.tagName,
+        key: candidate.key,
+        outcome: changed ? "changed" : "no-observable-change",
+        beforeStateId: beforeFocus?.pageState.id,
+        afterStateId: afterFocus?.pageState.id,
+        focusAfter: afterFocus?.selector
+      });
+
+      if (!changed && expectsObservableActivation(candidate.step, metadata, candidate.key)) {
+        issues.push(createKeyboardIssue({
+          framework: options.framework,
+          url: options.url,
+          ruleId: "keyboard-activation-no-effect",
+          selector: candidate.step.selector,
+          severity: "warning",
+          message: `${candidate.key} produced no observable state or focus change for this ${candidate.step.role || candidate.step.tagName}; verify its documented keyboard interaction.`,
+          wcag: ["2.1.1"]
+        }));
+      }
+    } catch (error) {
+      attempts.push(toActivationAttempt(candidate, "error", error instanceof Error ? error.message : String(error)));
+    } finally {
+      await activationContext.close();
+    }
+  }
+
+  return { attempts, issues };
+}
+
+export function activationKeysForStep(step: Pick<KeyboardFocusStep, "tagName" | "role" | "pageState">): KeyboardActivationKey[] {
+  const role = step.role.toLowerCase();
+  if (step.pageState.openDialogs > 0) return ["Escape"];
+  if (role === "checkbox" || role === "switch") return ["Space"];
+  if (role === "radio") return ["Space", "ArrowRight"];
+  if (role === "tab") return ["ArrowRight", "ArrowLeft"];
+  if (role === "combobox" || role === "listbox") return ["ArrowDown", "Escape"];
+  if (role === "button" || step.tagName === "button" || step.tagName === "summary") return ["Enter", "Space"];
+  if (role === "menuitem") return ["Enter"];
+  return [];
+}
+
+function uniqueActivationCandidates(steps: KeyboardFocusStep[]): Array<{ step: KeyboardFocusStep; key: KeyboardActivationKey }> {
+  const candidates = steps.flatMap((step) => activationKeysForStep(step).map((key) => ({ step, key })));
+  return [...new Map(candidates.map((candidate) => [`${candidate.step.selector}::${candidate.key}`, candidate])).values()];
+}
+
+export function getKeyboardActivationSafety(
+  step: KeyboardFocusStep,
+  metadata: ActivationTargetMetadata,
+  baseUrl: string,
+  safeMode?: ExploreSafeModeConfig
+): { safe: boolean; reason?: string } {
+  if (metadata.disabled) return { safe: false, reason: "Disabled controls are not activated." };
+  if (metadata.href || step.tagName === "a" || step.role === "link") {
+    return { safe: false, reason: "Links and navigation controls are not activated in keyboard safe mode." };
+  }
+  if (
+    metadata.inputType === "file" ||
+    (metadata.inForm && ["submit", "reset"].includes(metadata.buttonType)) ||
+    (metadata.inForm && ["submit", "reset", "image"].includes(metadata.inputType))
+  ) {
+    return { safe: false, reason: "File, submit, and reset controls are blocked in keyboard safe mode." };
+  }
+
+  const action: ExploreAction = {
+    id: `keyboard-${step.selector}`,
+    type: "click",
+    selector: step.selector,
+    label: step.accessibleName,
+    text: step.accessibleName,
+    role: step.role || step.tagName
+  };
+  return safeMode
+    ? getExploreActionSafety(action, baseUrl, safeMode)
+    : getDefaultExploreActionSafety(action, baseUrl);
+}
+
+function expectsObservableActivation(
+  step: KeyboardFocusStep,
+  metadata: ActivationTargetMetadata,
+  key: KeyboardActivationKey
+): boolean {
+  const role = step.role.toLowerCase();
+  if (["checkbox", "switch", "radio", "tab", "combobox", "listbox"].includes(role)) return true;
+  if (key === "Escape" && step.pageState.openDialogs > 0) return true;
+  return Boolean(metadata.ariaExpanded || metadata.ariaSelected || metadata.ariaPressed);
+}
+
+async function collectActivationControlState(locator: ReturnType<Page["locator"]>): Promise<ActivationControlState> {
+  return locator.evaluate((element): ActivationControlState => {
+    const htmlElement = element as HTMLElement;
+    return {
+      checked: element instanceof HTMLInputElement && ["checkbox", "radio"].includes(element.type)
+        ? element.checked
+        : null,
+      ariaExpanded: htmlElement.getAttribute("aria-expanded") || "",
+      ariaSelected: htmlElement.getAttribute("aria-selected") || "",
+      ariaPressed: htmlElement.getAttribute("aria-pressed") || "",
+      openDialogs: new Set([
+        ...document.querySelectorAll("dialog[open]"),
+        ...document.querySelectorAll('[role="dialog"]:not([aria-hidden="true"])')
+      ]).size
+    };
+  });
+}
+
+function toActivationAttempt(
+  candidate: { step: KeyboardFocusStep; key: KeyboardActivationKey },
+  outcome: KeyboardActivationAttempt["outcome"],
+  reason: string
+): KeyboardActivationAttempt {
+  return {
+    selector: candidate.step.selector,
+    role: candidate.step.role || candidate.step.tagName,
+    key: candidate.key,
+    outcome,
+    reason
+  };
+}
+
 function normalizeMaxTabs(value = 40): number {
   return Math.max(1, Math.min(200, Math.trunc(value)));
+}
+
+function normalizeMaxActivations(value = 6): number {
+  return Math.max(1, Math.min(20, Math.trunc(value)));
 }
 
 function uniqueSelectors(steps: KeyboardFocusStep[]): string[] {

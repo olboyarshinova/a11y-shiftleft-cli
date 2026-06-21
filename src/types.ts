@@ -96,6 +96,19 @@ export interface KeyboardPageStateSnapshot {
   expandedControls: number;
 }
 
+export type KeyboardActivationKey = "Enter" | "Space" | "Escape" | "ArrowLeft" | "ArrowRight" | "ArrowDown";
+
+export interface KeyboardActivationAttempt {
+  selector: string;
+  role: string;
+  key: KeyboardActivationKey;
+  outcome: "changed" | "no-observable-change" | "skipped" | "target-missing" | "error";
+  beforeStateId?: string;
+  afterStateId?: string;
+  focusAfter?: string;
+  reason?: string;
+}
+
 export interface KeyboardFocusStep {
   index: number;
   direction: "forward" | "backward";
@@ -122,6 +135,9 @@ export interface KeyboardAuditResult {
   steps: KeyboardFocusStep[];
   backwardSteps: KeyboardFocusStep[];
   reverseOrderMatches: boolean | null;
+  activationEnabled?: boolean;
+  maxActivations?: number;
+  activationAttempts?: KeyboardActivationAttempt[];
   issues: Issue[];
 }
 

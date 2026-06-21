@@ -670,6 +670,23 @@ replace the baseline used by `check`. It also applies `a11y-ignore.json` and
 `a11y-remediation.json`; use `--no-ignore` or `--no-remediation-tracking` when
 those policies should not apply.
 
+Run bounded activation checks when you also want to exercise safe stateful
+controls:
+
+```bash
+npx a11y-shiftleft-cli keyboard \
+  --url $APP_URL \
+  --activation \
+  --max-activations 6 \
+  --out reports/keyboard
+```
+
+Each attempt runs in a fresh browser context. Links, form submission, file
+controls, advertisements, account/payment/cookie/permission actions, later
+navigation, and post-load XHR/fetch are blocked. The first release keeps this
+mode opt-in because no automatic label-based safety policy can prove that an
+unknown application action is harmless.
+
 See [Keyboard focus audit](docs/keyboard-audit.md) for report details and
 current limits.
 

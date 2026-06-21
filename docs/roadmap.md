@@ -51,7 +51,9 @@ remain suitable for reproducible empirical validation.
 - Exercise basic keyboard activation on safe controls with `Enter`, `Space`,
   `Escape`, and arrow keys where the role implies expected keyboard behavior,
   while reusing `explore` safe-mode blocks for destructive actions such as
-  logout, delete, pay, upload, camera, microphone, and cookie changes.
+  logout, delete, pay, upload, camera, microphone, and cookie changes. The
+  initial opt-in runner isolates each attempt, blocks post-load requests, and
+  reports skipped actions and observable state changes.
 - Add optional annotated focus screenshots to the existing
   `keyboard-report.json` and `keyboard-path.md` artifacts.
 - Surface keyboard findings in the same severity, WCAG, confidence, baseline,

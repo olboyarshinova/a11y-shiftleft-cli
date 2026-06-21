@@ -14,6 +14,7 @@ export function toKeyboardMarkdown(result: KeyboardAuditResult): string {
   const forwardRows = focusRows(result.steps, "No forward focus path recorded");
   const backwardRows = focusRows(result.backwardSteps, "Reverse path was not run because the forward path was incomplete");
   const states = uniquePageStates(result);
+  const activationRows = formatActivationRows(result.activationAttempts || []);
 
   return `# Keyboard Focus Path
 
@@ -47,6 +48,14 @@ ${backwardRows}
 | State | URL | Title / H1 | Scroll | Viewport | Dialogs | Expanded |
 |---|---|---|---:|---:|---:|---:|
 ${pageStateRows(states)}
+
+## Activation Attempts
+
+${result.activationEnabled
+    ? `| Key | Target | Role | Outcome | Focus after / reason |
+|---|---|---|---|---|
+${activationRows}`
+    : "Activation testing was not requested. Use `keyboard --activation` for bounded safe interaction checks."}
 
 ## Findings And Recommendations
 
@@ -104,6 +113,11 @@ function pageStateRows(states: ReturnType<typeof uniquePageStates>): string {
     const label = [state.title, state.heading].filter(Boolean).join(" / ") || "none";
     return `| ${escapeCell(state.id)} | ${escapeCell(state.url)} | ${escapeCell(label)} | ${state.scrollX}, ${state.scrollY} | ${state.viewportWidth}x${state.viewportHeight} | ${state.openDialogs} | ${state.expandedControls} |`;
   }).join("\n");
+}
+
+function formatActivationRows(attempts: NonNullable<KeyboardAuditResult["activationAttempts"]>): string {
+  if (attempts.length === 0) return "| - | No eligible safe targets | - | - | - |";
+  return attempts.map((attempt) => `| ${attempt.key} | ${escapeCell(attempt.selector)} | ${escapeCell(attempt.role)} | ${attempt.outcome} | ${escapeCell(attempt.focusAfter || attempt.reason || "none")} |`).join("\n");
 }
 
 function escapeCell(value: string): string {

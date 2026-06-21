@@ -14,6 +14,17 @@ const result: KeyboardAuditResult = {
   focusableCount: 2,
   completedCycle: true,
   reverseOrderMatches: true,
+  activationEnabled: true,
+  maxActivations: 6,
+  activationAttempts: [{
+    selector: "#save",
+    role: "button",
+    key: "Enter",
+    outcome: "changed",
+    beforeStateId: "state-settings",
+    afterStateId: "state-saved",
+    focusAfter: "#save"
+  }],
   issues: [],
   steps: [{
     index: 1,
@@ -79,6 +90,8 @@ test("toKeyboardMarkdown renders a readable focus path", () => {
   assert.match(markdown, /state-settings/);
   assert.match(markdown, /Account settings \/ Settings/);
   assert.match(markdown, /0, 240/);
+  assert.match(markdown, /Activation Attempts/);
+  assert.match(markdown, /Enter.*#save.*button.*changed/);
   assert.match(markdown, /bounded automated Tab and Shift\+Tab traversal/);
 });
 

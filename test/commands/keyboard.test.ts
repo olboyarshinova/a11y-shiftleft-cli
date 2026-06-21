@@ -23,7 +23,10 @@ test("keyboardSummary reports bounded traversal coverage", () => {
     completedCycle: true,
     reverseFocusSteps: 2,
     reverseOrderMatches: true,
-    maxTabs: 10
+    maxTabs: 10,
+    activationAttempts: 0,
+    activationChanges: 0,
+    activationSkipped: 0
   });
 });
 

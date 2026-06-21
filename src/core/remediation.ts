@@ -464,6 +464,18 @@ const RULE_HINTS: Record<string, RemediationHint> = {
       "https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/tabindex"
     ]
   },
+  "keyboard-activation-no-effect": {
+    summary: "Implement the documented keyboard interaction for this stateful control.",
+    howToFix: [
+      "Prefer the native HTML control whose built-in keyboard behavior matches the interaction.",
+      "For a custom widget, follow the WAI-ARIA Authoring Practices keyboard pattern for its role.",
+      "Update focus and the relevant checked, selected, expanded, or pressed state when the key is handled."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html",
+      "https://www.w3.org/WAI/ARIA/apg/patterns/"
+    ]
+  },
   "region": {
     summary: "Place visible page content inside semantic landmarks.",
     howToFix: [

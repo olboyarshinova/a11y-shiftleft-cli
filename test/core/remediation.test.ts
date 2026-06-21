@@ -157,6 +157,13 @@ test("getRemediationHint explains keyboard focus loss and unreachable controls",
   assert.equal(unreachable.howToFix.some((step) => step.includes("tabindex")), true);
 });
 
+test("getRemediationHint explains stateful keyboard activation failures", () => {
+  const hint = getRemediationHint("keyboard-activation-no-effect", getWcagCriteria(["2.1.1"]), "unknown");
+
+  assert.match(hint.summary, /documented keyboard interaction/);
+  assert.equal(hint.docs.some((url) => url.includes("ARIA/apg")), true);
+});
+
 test("getRemediationHint explains document metadata findings", () => {
   const titleHint = getRemediationHint("document-title", getWcagCriteria(["2.4.2"]), "react");
   const langHint = getRemediationHint("html-has-lang", getWcagCriteria(["3.1.1"]), "react");

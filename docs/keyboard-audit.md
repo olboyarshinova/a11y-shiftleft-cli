@@ -77,15 +77,45 @@ matching statuses from `a11y-remediation.json`. These policies annotate or
 filter the shared finding report without removing raw focus-path evidence from
 `keyboard-report.json`.
 
+## Safe Activation Checks
+
+Add `--activation` to exercise a bounded set of role-specific keys:
+
+```bash
+npx a11y-shiftleft keyboard \
+  --url $APP_URL \
+  --activation \
+  --max-activations 6 \
+  --out reports/keyboard
+```
+
+The initial activation runner covers `Enter` and `Space` for buttons and
+stateful controls, horizontal arrows for tabs and radios, `ArrowDown` for
+combobox/listbox patterns, and `Escape` when a dialog state is already open.
+Each attempt reloads the initial URL inside a separate browser context so
+cookies and web storage do not leak into another attempt.
+
+The shared exploration safe-mode rejects links, submissions, file inputs,
+advertising, destructive or transactional labels, account/payment/cookie
+controls, media and permission controls, and configured blocked patterns.
+After initial rendering, navigation and XHR/fetch requests are aborted. Skipped
+targets remain visible in the activation evidence table with a reason.
+
+`keyboard-activation-no-effect` is emitted only when a stateful role is
+expected to change checked, selected, expanded, pressed, dialog, or focus state
+but no observable change occurs. A normal button with no visible DOM change is
+recorded as evidence without being treated as a failure.
+
 ## Safety And Limits
 
-The initial runner only presses `Tab` and `Shift+Tab`. Reverse traversal runs
+The default runner only presses `Tab` and `Shift+Tab`; `--activation` adds the
+bounded isolated interactions described above. Reverse traversal runs
 only after the forward path reaches every detected control and completes a
-cycle, avoiding unsupported conclusions from partial scans. It does not click,
-submit forms, accept
-cookies, upload files, use camera or microphone controls, or activate payment,
-delete, and logout actions. It also does not yet validate Enter, Space, Escape,
-arrow-key widget behavior, modal focus restoration, or complete task flows.
+cycle, avoiding unsupported conclusions from partial scans. Activation mode
+does not use pointer clicks, submit forms, accept cookies, upload files, request
+camera or microphone access, or activate payment, delete, and logout actions.
+It does not yet prove complete widget behavior, modal focus restoration, or
+complete task flows.
 
 Automated focus traversal supports WCAG review but does not certify keyboard
 accessibility. Confirm logical order and representative tasks manually.

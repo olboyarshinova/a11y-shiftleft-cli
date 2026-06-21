@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { compareFocusPaths, createKeyboardStateId, findUnreachableFocusableSelectors, issuesForFocusStep } from "../../dist/adapters/keyboardPlaywrightAdapter.js";
+import { activationKeysForStep, compareFocusPaths, createKeyboardStateId, findUnreachableFocusableSelectors, getKeyboardActivationSafety, issuesForFocusStep } from "../../dist/adapters/keyboardPlaywrightAdapter.js";
 import type { KeyboardFocusStep } from "../../dist/types.js";
 
 function focusStep(overrides: Partial<KeyboardFocusStep> = {}): KeyboardFocusStep {
@@ -75,4 +75,46 @@ test("findUnreachableFocusableSelectors returns unique inventory targets missing
     findUnreachableFocusableSelectors(["#first", "#second", "#second", "#third"], ["#first", "#third"]),
     ["#second"]
   );
+});
+
+test("activationKeysForStep selects bounded role-specific keyboard interactions", () => {
+  assert.deepEqual(activationKeysForStep(focusStep({ role: "button" })), ["Enter", "Space"]);
+  assert.deepEqual(activationKeysForStep(focusStep({ role: "switch" })), ["Space"]);
+  assert.deepEqual(activationKeysForStep(focusStep({ role: "tab" })), ["ArrowRight", "ArrowLeft"]);
+  assert.deepEqual(activationKeysForStep(focusStep({ role: "link", tagName: "a" })), []);
+  assert.deepEqual(activationKeysForStep(focusStep({ pageState: { ...focusStep().pageState, openDialogs: 1 } })), ["Escape"]);
+});
+
+test("getKeyboardActivationSafety reuses safe mode and blocks form and navigation side effects", () => {
+  const safeMetadata = {
+    tagName: "button",
+    inputType: "",
+    buttonType: "button",
+    inForm: false,
+    disabled: false,
+    href: "",
+    ariaExpanded: "",
+    ariaSelected: "",
+    ariaPressed: "false"
+  };
+
+  assert.equal(getKeyboardActivationSafety(focusStep({ selector: "#toggle", accessibleName: "Toggle menu" }), safeMetadata, "http://localhost:3000").safe, true);
+  assert.equal(getKeyboardActivationSafety(focusStep({ accessibleName: "Pay now" }), safeMetadata, "http://localhost:3000").safe, false);
+  assert.equal(getKeyboardActivationSafety(focusStep({ tagName: "a", role: "link" }), { ...safeMetadata, tagName: "a", href: "https://example.com" }, "http://localhost:3000").safe, false);
+  assert.equal(getKeyboardActivationSafety(focusStep(), { ...safeMetadata, inputType: "submit", inForm: true }, "http://localhost:3000").safe, false);
+  assert.equal(getKeyboardActivationSafety(
+    focusStep({ selector: "#toggle", accessibleName: "Toggle menu" }),
+    safeMetadata,
+    "http://localhost:3000",
+    {
+      enabled: true,
+      blockedText: ["toggle menu"],
+      blockedRoles: [],
+      blockedUrls: [],
+      blockedSelectors: [],
+      allowedSelectors: [],
+      dismissDialogs: true,
+      isolateCookies: true
+    }
+  ).safe, false);
 });
