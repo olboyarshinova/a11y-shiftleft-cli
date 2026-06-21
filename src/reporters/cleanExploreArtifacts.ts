@@ -15,7 +15,9 @@ const REPORT_FILES = [
   "exploration-graph.json",
   "exploration-visual-check.html",
   "exploration.html",
-  "exploration.pdf"
+  "exploration.pdf",
+  "a11y-report.html",
+  "a11y-report.pdf"
 ];
 
 export interface CleanExploreArtifactsResult {

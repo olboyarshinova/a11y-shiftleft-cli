@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { writeReports } from "../../dist/reporters/writeReports.js";
+import type { ManualChecklist } from "../../dist/types.js";
 
 test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-"));
@@ -160,7 +161,6 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   const summaryCsv = await fs.readFile(path.join(outputDir, "a11y-summary.csv"), "utf8");
   const pagesCsv = await fs.readFile(path.join(outputDir, "a11y-pages.csv"), "utf8");
   const rulesCsv = await fs.readFile(path.join(outputDir, "a11y-rules.csv"), "utf8");
-  const remediationCsv = await fs.readFile(path.join(outputDir, "a11y-remediation.csv"), "utf8");
   const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
 
   assert.equal(json.summary.framework, "react");
@@ -193,8 +193,6 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(pagesCsv, /http:\/\/localhost:3000\/settings,1,1,0,0,5/);
   assert.match(rulesCsv, /^ruleId,highestSeverity,findings,occurrences,sources,findingTypes,categories,wcagCriteria,pages,fixSummary,documentation/);
   assert.match(rulesCsv, /button-name,critical,1,1,axe,wcag,aria/);
-  assert.match(remediationCsv, /^fingerprint,severity,ruleId,target,status,owner,reason,updatedAt,reviewBy,fixSummary,fixSteps,documentation/);
-  assert.match(remediationCsv, /,critical,button-name,[^\n]*,untracked/);
   assert.match(markdown, /Scan duration \| 123ms/);
   assert.match(markdown, /ADA Title II web accessibility support mode \(2\.1 AA\)/);
   assert.match(markdown, /Compliance Note/);
@@ -231,11 +229,77 @@ test("findings CSV neutralizes spreadsheet formulas in report text", async () =>
   }], { framework: "unknown" });
 
   const findingsCsv = await fs.readFile(path.join(outputDir, "a11y-findings.csv"), "utf8");
-  const remediationCsv = await fs.readFile(path.join(outputDir, "a11y-remediation.csv"), "utf8");
 
   assert.match(findingsCsv, /'@dangerous-cell/);
   assert.match(findingsCsv, /'=HYPERLINK/);
-  assert.match(remediationCsv, /'@dangerous-cell/);
+});
+
+test("writeReports supports a compact audit profile without legacy or duplicate CSV files", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-audit-profile-"));
+  const manualChecklist: ManualChecklist = {
+    generatedAt: "2026-06-21T00:00:00.000Z",
+    framework: "react",
+    urls: ["http://localhost:3000"],
+    items: [{
+      id: "manual-keyboard",
+      title: "Complete the primary task with a keyboard",
+      principle: "operable",
+      wcag: ["2.1.1"],
+      whyManual: "Task completion requires human judgment.",
+      steps: ["Complete the primary task without a pointer."],
+      evidence: ["Keyboard test notes"],
+      review: {
+        status: "not-reviewed",
+        tester: "",
+        testedAt: "",
+        environment: "",
+        notes: "",
+        evidenceLinks: [],
+        remediationOwner: ""
+      }
+    }]
+  };
+
+  await writeReports(outputDir, [], { framework: "react" }, {
+    formats: ["json", "csv", "markdown"],
+    legacyMetrics: false,
+    keyboard: {
+      url: "http://localhost:3000",
+      generatedAt: "2026-06-21T00:00:00.000Z",
+      durationMs: 100,
+      maxTabs: 40,
+      focusableCount: 3,
+      completedCycle: true,
+      steps: [],
+      backwardSteps: [],
+      reverseOrderMatches: true,
+      activationEnabled: false,
+      maxActivations: 0,
+      activationAttempts: [],
+      issues: []
+    },
+    manualChecklist
+  });
+
+  const json = JSON.parse(await fs.readFile(path.join(outputDir, "a11y-report.json"), "utf8"));
+  const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+  assert.equal(json.manualChecklist.framework, "react");
+  assert.match(markdown, /## Keyboard Evidence/);
+  assert.match(markdown, /## Manual Review Checklist/);
+  assert.match(markdown, /## Audit Coverage/);
+  assert.match(markdown, /Screen reader \| Human review required/);
+  assert.match(markdown, /Dynamic announcements/);
+  assert.match(markdown, /Form error states/);
+  assert.match(markdown, /Image alternatives/);
+  assert.match(markdown, /Media and motion/);
+  assert.match(markdown, /Embedded content/);
+  assert.match(markdown, /Complete the primary task with a keyboard/);
+  assert.equal(await exists(path.join(outputDir, "a11y-summary.csv")), true);
+  assert.equal(await exists(path.join(outputDir, "a11y-pages.csv")), true);
+  assert.equal(await exists(path.join(outputDir, "a11y-rules.csv")), true);
+  assert.equal(await exists(path.join(outputDir, "a11y-findings.csv")), true);
+  assert.equal(await exists(path.join(outputDir, "a11y-metrics.csv")), false);
+  assert.equal(await exists(path.join(outputDir, "a11y-remediation.csv")), false);
 });
 
 test("writeReports includes structured contrast evidence in JSON and Markdown", async () => {
@@ -647,7 +711,8 @@ test("writeReports can generate a semi-automated manual checklist", async () => 
 
   assert.match(checklist, /Semi-Automated Accessibility Review Checklist/);
   assert.match(checklist, /Framework: react/);
-  assert.match(checklist, /Screen reader smoke test/);
+  assert.match(checklist, /Screen reader navigation and task smoke test/);
+  assert.match(checklist, /Screen reader forms, dialogs, and dynamic updates/);
   assert.equal(checklistJson.items[0].review.status, "not-reviewed");
   assert.equal(checklistJson.items[0].review.environment, "");
 });

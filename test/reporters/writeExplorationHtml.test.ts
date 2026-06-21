@@ -24,7 +24,110 @@ const graph = {
       screenshot: "screenshots/state-1.png",
       screenshotFullPage: true,
       issueCount: 1,
-      actionCount: 2
+      actionCount: 2,
+      accessibilityTree: {
+        totalNodes: 12,
+        namedNodes: 8,
+        interactiveNodes: 3,
+        unnamedInteractiveNodes: 1,
+        landmarks: [{ role: "main", name: "Main content" }],
+        headings: [{ role: "heading", name: "Demo", level: 1 }],
+        interactiveSample: [{ role: "button", name: "Open menu" }]
+      },
+      reflow: {
+        viewportWidth: 320,
+        viewportHeight: 800,
+        documentWidth: 360,
+        horizontalOverflowPx: 40,
+        clippedTextCount: 1,
+        clippedTextSample: [{
+          selector: ".clipped",
+          text: "Clipped account instructions",
+          horizontalOverflowPx: 24,
+          verticalOverflowPx: 0
+        }]
+      },
+      modalFocus: {
+        dialogCount: 1,
+        dialogSelector: "[role=\"dialog\"]",
+        accessibleName: "Account settings",
+        hasAccessibleName: true,
+        initialFocusSelector: "#close-dialog",
+        initialFocusInside: true,
+        triggerSelector: "#open-dialog",
+        escapeTested: true,
+        escapeClosed: true,
+        focusReturnedToTrigger: true
+      },
+      formErrors: {
+        formCount: 1,
+        fieldCount: 2,
+        invalidFieldCount: 1,
+        associatedErrorCount: 1,
+        unassociatedInvalidCount: 0,
+        errorSummaryCount: 1,
+        invalidFields: [{
+          selector: "#email",
+          accessibleName: "Email address",
+          errorReferenceIds: ["email-error"],
+          associatedErrorText: "Enter a valid email address",
+          focused: true
+        }]
+      },
+      imageAlternatives: {
+        imageCount: 3,
+        decorativeCount: 1,
+        informativeCount: 2,
+        suspiciousCount: 1,
+        repeatedAlternativeGroups: 0,
+        samples: [{
+          selector: "#hero",
+          alt: "hero-banner.png",
+          concerns: ["filename"]
+        }]
+      },
+      media: {
+        audioCount: 1,
+        videoCount: 1,
+        videosWithCaptions: 1,
+        audioWithTranscriptCandidate: 1,
+        autoplayRiskCount: 0,
+        activeAnimationCount: 2,
+        reducedMotionQueryDetected: true,
+        unreadableStylesheetCount: 0,
+        elements: [{
+          selector: "#demo-video",
+          kind: "video",
+          autoplay: false,
+          muted: false,
+          controls: true,
+          captionTrackCount: 1,
+          transcriptCandidate: true
+        }]
+      },
+      embeddedContent: {
+        iframeCount: 1,
+        sameOriginIframeCount: 1,
+        crossOriginIframeCount: 0,
+        inaccessibleIframeCount: 0,
+        canvasCount: 1,
+        canvasWithAlternativeCount: 0,
+        canvasWithoutAlternativeCount: 1,
+        iframes: [{
+          selector: "#help-frame",
+          url: "http://localhost:3000/help",
+          sameOrigin: true,
+          title: "Help",
+          browserAccessible: true
+        }],
+        canvases: [{
+          selector: "#sales-chart",
+          width: 600,
+          height: 400,
+          decorative: false,
+          hasAccessibleAlternative: false
+        }]
+      }
     },
     {
       id: "state-2",
@@ -35,7 +138,20 @@ const graph = {
       actionLabel: "Click: Open menu",
       screenshot: "screenshots/state-2.png",
       issueCount: 0,
-      actionCount: 0
+      actionCount: 0,
+      dynamicAnnouncements: {
+        actionLabel: "Click: Open menu",
+        regionsBefore: 1,
+        regionsAfter: 1,
+        updatesObserved: 1,
+        meaningfulUpdates: 1,
+        updates: [{
+          selector: "[role=\"status\"]",
+          role: "status",
+          politeness: "polite",
+          text: "Menu opened"
+        }]
+      }
     },
     {
       id: "state-3",
@@ -389,4 +505,57 @@ test("writeExplorationHtml writes exploration.html", async () => {
   const html = await fs.readFile(path.join(outputDir, "exploration.html"), "utf8");
   assert.match(html, /state-1/);
   assert.match(html, /button-name/);
+});
+
+test("writeExplorationHtml can create a unified audit report", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-audit-html-"));
+  await writeExplorationHtml(outputDir, graph, issues, {
+    fileName: "a11y-report.html",
+    title: "Accessibility Audit Report",
+    keyboard: {
+      url: "http://localhost:3000",
+      generatedAt: "2026-06-21T00:00:00.000Z",
+      durationMs: 10,
+      maxTabs: 40,
+      focusableCount: 0,
+      completedCycle: false,
+      steps: [],
+      backwardSteps: [],
+      reverseOrderMatches: null,
+      activationAttempts: [],
+      issues: []
+    },
+    manualChecklist: {
+      generatedAt: "2026-06-21T00:00:00.000Z",
+      framework: "react",
+      urls: ["http://localhost:3000"],
+      items: []
+    }
+  });
+
+  const html = await fs.readFile(path.join(outputDir, "a11y-report.html"), "utf8");
+  assert.match(html, /Accessibility Audit Report/);
+  assert.match(html, /Keyboard Audit/);
+  assert.match(html, /Manual Review Checklist/);
+  assert.match(html, /Audit Coverage/);
+  assert.match(html, /Accessibility tree evidence/);
+  assert.match(html, /Unnamed interactive/);
+  assert.match(html, /Reflow evidence at 320 CSS pixels/);
+  assert.match(html, /Clipped account instructions/);
+  assert.match(html, /Modal focus evidence/);
+  assert.match(html, /Account settings/);
+  assert.match(html, /returned to trigger/);
+  assert.match(html, /Dynamic announcement evidence/);
+  assert.match(html, /Menu opened/);
+  assert.match(html, /Form error evidence/);
+  assert.match(html, /Email address/);
+  assert.match(html, /Enter a valid email address/);
+  assert.match(html, /Image alternative-text evidence/);
+  assert.match(html, /hero-banner\.png/);
+  assert.match(html, /Media and motion evidence/);
+  assert.match(html, /#demo-video/);
+  assert.match(html, /Reduced-motion CSS query detected: yes/);
+  assert.match(html, /Iframe and canvas evidence/);
+  assert.match(html, /#sales-chart/);
+  assert.match(html, /Modern axe scans accessible frame documents recursively/);
 });

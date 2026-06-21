@@ -32,6 +32,8 @@ const REPORT_MARKERS = [
   "a11y-manual-checklist.json",
   "exploration.html",
   "exploration.pdf",
+  "a11y-report.html",
+  "a11y-report.pdf",
   "exploration-graph.json"
 ];
 

@@ -17,6 +17,8 @@ export type IssueCategory =
   | "images"
   | "keyboard"
   | "landmarks"
+  | "layout"
+  | "media"
   | "structure"
   | "widgets"
   | "best-practice"
@@ -512,6 +514,9 @@ export interface A11yReport {
   generatedAt: string;
   summary: ReportSummary;
   issues: DedupedIssue[];
+  exploration?: ExplorationGraph;
+  keyboard?: KeyboardAuditResult;
+  manualChecklist?: ManualChecklist;
 }
 
 export interface PageSummary {
@@ -574,6 +579,166 @@ export interface ExplorationState {
   visualDuplicateOf?: string;
   issueCount: number;
   actionCount: number;
+  accessibilityTree?: AccessibilityTreeEvidence;
+  reflow?: ReflowEvidence;
+  modalFocus?: ModalFocusEvidence;
+  dynamicAnnouncements?: DynamicAnnouncementEvidence;
+  formErrors?: FormErrorEvidence;
+  imageAlternatives?: ImageAlternativeEvidence;
+  media?: MediaEvidence;
+  embeddedContent?: EmbeddedContentEvidence;
+}
+
+export interface AccessibilityTreeNodeEvidence {
+  role: string;
+  name?: string;
+  level?: number;
+}
+
+export interface AccessibilityTreeEvidence {
+  totalNodes: number;
+  namedNodes: number;
+  interactiveNodes: number;
+  unnamedInteractiveNodes: number;
+  landmarks: AccessibilityTreeNodeEvidence[];
+  headings: AccessibilityTreeNodeEvidence[];
+  interactiveSample: AccessibilityTreeNodeEvidence[];
+}
+
+export interface ReflowClippedElement {
+  selector: string;
+  text: string;
+  horizontalOverflowPx: number;
+  verticalOverflowPx: number;
+}
+
+export interface ReflowEvidence {
+  viewportWidth: number;
+  viewportHeight: number;
+  documentWidth: number;
+  horizontalOverflowPx: number;
+  clippedTextCount: number;
+  clippedTextSample: ReflowClippedElement[];
+}
+
+export interface ModalFocusEvidence {
+  dialogCount: number;
+  dialogSelector: string;
+  accessibleName?: string;
+  hasAccessibleName: boolean;
+  initialFocusSelector?: string;
+  initialFocusInside: boolean;
+  triggerSelector?: string;
+  escapeTested: boolean;
+  escapeClosed?: boolean;
+  focusReturnedToTrigger?: boolean;
+}
+
+export interface DynamicAnnouncementUpdate {
+  selector: string;
+  role?: string;
+  politeness: "assertive" | "polite" | "off" | "implicit";
+  text: string;
+}
+
+export interface DynamicAnnouncementEvidence {
+  actionLabel: string;
+  regionsBefore: number;
+  regionsAfter: number;
+  updatesObserved: number;
+  meaningfulUpdates: number;
+  updates: DynamicAnnouncementUpdate[];
+}
+
+export interface FormErrorFieldEvidence {
+  selector: string;
+  accessibleName?: string;
+  errorReferenceIds: string[];
+  associatedErrorText?: string;
+  focused: boolean;
+}
+
+export interface FormErrorEvidence {
+  formCount: number;
+  fieldCount: number;
+  invalidFieldCount: number;
+  associatedErrorCount: number;
+  unassociatedInvalidCount: number;
+  errorSummaryCount: number;
+  invalidFields: FormErrorFieldEvidence[];
+}
+
+export type ImageAlternativeConcern =
+  | "filename"
+  | "generic"
+  | "nearby-text-duplicate"
+  | "repeated"
+  | "excessive-length";
+
+export interface ImageAlternativeSample {
+  selector: string;
+  alt: string;
+  concerns: ImageAlternativeConcern[];
+  repeatedCount?: number;
+}
+
+export interface ImageAlternativeEvidence {
+  imageCount: number;
+  decorativeCount: number;
+  informativeCount: number;
+  suspiciousCount: number;
+  repeatedAlternativeGroups: number;
+  samples: ImageAlternativeSample[];
+}
+
+export interface MediaElementEvidence {
+  selector: string;
+  kind: "audio" | "video";
+  autoplay: boolean;
+  muted: boolean;
+  controls: boolean;
+  captionTrackCount: number;
+  transcriptCandidate: boolean;
+}
+
+export interface MediaEvidence {
+  audioCount: number;
+  videoCount: number;
+  videosWithCaptions: number;
+  audioWithTranscriptCandidate: number;
+  autoplayRiskCount: number;
+  activeAnimationCount: number;
+  reducedMotionQueryDetected: boolean;
+  unreadableStylesheetCount: number;
+  elements: MediaElementEvidence[];
+}
+
+export interface IframeEvidence {
+  selector: string;
+  url: string;
+  sameOrigin: boolean;
+  title?: string;
+  browserAccessible: boolean;
+}
+
+export interface CanvasEvidence {
+  selector: string;
+  width: number;
+  height: number;
+  decorative: boolean;
+  hasAccessibleAlternative: boolean;
+}
+
+export interface EmbeddedContentEvidence {
+  iframeCount: number;
+  sameOriginIframeCount: number;
+  crossOriginIframeCount: number;
+  inaccessibleIframeCount: number;
+  canvasCount: number;
+  canvasWithAlternativeCount: number;
+  canvasWithoutAlternativeCount: number;
+  iframes: IframeEvidence[];
+  canvases: CanvasEvidence[];
 }
 
 export interface ExplorationScreenshotEvidence {

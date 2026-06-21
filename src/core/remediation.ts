@@ -1,6 +1,226 @@
 import type { Framework, RemediationHint, WcagCriterion } from "../types.js";
 
 const RULE_HINTS: Record<string, RemediationHint> = {
+  "canvas-alternative-not-detected": {
+    summary: "Provide an accessible equivalent when canvas content communicates information or supports interaction.",
+    howToFix: [
+      "Add concise fallback text or semantic HTML content inside the canvas element for the same information or function.",
+      "Use aria-label or aria-labelledby only when a short accessible name is sufficient; provide structured nearby content for charts or complex graphics.",
+      "Mark the canvas decorative only when it conveys no information, then verify the complete task without seeing it."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html",
+      "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas#alternative_content"
+    ]
+  },
+  "iframe-scan-unavailable": {
+    summary: "Test the embedded document directly because this audit could not inspect its frame content.",
+    howToFix: [
+      "Run the audit against the iframe source URL when you control or can access it.",
+      "Confirm the iframe has a descriptive title and that keyboard and screen-reader users can enter, use, and leave it.",
+      "Document third-party ownership and request an accessible alternative when the embedded service cannot be remediated."
+    ],
+    docs: ["https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"]
+  },
+  "frame-title": {
+    summary: "Give each iframe a concise title that identifies its embedded content or purpose.",
+    howToFix: [
+      "Add a unique title attribute to the iframe element.",
+      "Describe the frame purpose rather than its implementation or URL.",
+      "Confirm that multiple frames can be distinguished in a screen-reader frame list."
+    ],
+    docs: ["https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"]
+  },
+  "video-caption": {
+    summary: "Provide synchronized captions for prerecorded video that contains audio.",
+    howToFix: [
+      "Add an accurate captions track with kind=\"captions\", the correct language, and a useful label.",
+      "Synchronize dialogue and meaningful sounds, and identify speakers when needed.",
+      "Review caption accuracy, timing, readability, and player controls manually."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/captions-prerecorded.html",
+      "https://www.w3.org/WAI/media/av/captions/"
+    ]
+  },
+  "media-video-captions-not-detected": {
+    summary: "Confirm whether this video contains prerecorded audio and needs synchronized captions.",
+    howToFix: [
+      "If the video contains speech or meaningful audio, add a captions track with the correct language and label.",
+      "If the video is silent, document that decision and provide text for essential visual information when needed.",
+      "Check caption accuracy, timing, speaker identification, and sound descriptions manually."
+    ],
+    docs: ["https://www.w3.org/WAI/WCAG22/Understanding/captions-prerecorded.html"]
+  },
+  "audio-caption": {
+    summary: "Provide a text alternative for prerecorded audio-only content.",
+    howToFix: [
+      "Link to a transcript near the audio player and make the relationship clear.",
+      "Include dialogue, speakers, and meaningful non-speech sounds.",
+      "Review transcript completeness and accuracy manually."
+    ],
+    docs: ["https://www.w3.org/WAI/WCAG22/Understanding/audio-only-and-video-only-prerecorded.html"]
+  },
+  "media-audio-transcript-not-detected": {
+    summary: "Confirm whether this audio-only content needs a nearby text transcript.",
+    howToFix: [
+      "Provide a clearly named transcript link or adjacent transcript for prerecorded audio.",
+      "Include speech, speaker changes, and meaningful sounds.",
+      "Keep the transcript easy to find from the player."
+    ],
+    docs: ["https://www.w3.org/WAI/WCAG22/Understanding/audio-only-and-video-only-prerecorded.html"]
+  },
+  "no-autoplay-audio": {
+    summary: "Prevent uncontrolled audio from playing automatically for more than three seconds.",
+    howToFix: [
+      "Remove autoplay, start muted, or stop playback within three seconds.",
+      "Provide a keyboard-accessible pause, stop, or independent volume control.",
+      "Make the control easy to find before other page audio begins."
+    ],
+    docs: ["https://www.w3.org/WAI/WCAG22/Understanding/audio-control.html"]
+  },
+  "media-autoplay-control-risk": {
+    summary: "Avoid autoplay with sound unless users can quickly pause, stop, or control it.",
+    howToFix: [
+      "Remove autoplay or start the media muted.",
+      "Expose keyboard-accessible controls before playback starts.",
+      "Confirm whether audible playback lasts more than three seconds."
+    ],
+    docs: ["https://www.w3.org/WAI/WCAG22/Understanding/audio-control.html"]
+  },
+  "image-alt-filename": {
+    summary: "Replace filename-like alternative text with the image purpose in this context.",
+    howToFix: [
+      "Describe the information or function the image contributes instead of its file name.",
+      "Use alt=\"\" when the image is purely decorative and adjacent content already conveys its purpose.",
+      "Confirm the final announcement in context with a supported screen reader."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html",
+      "https://www.w3.org/WAI/tutorials/images/decision-tree/"
+    ]
+  },
+  "image-alt-generic": {
+    summary: "Replace generic alternative text with a concise description of the image purpose.",
+    howToFix: [
+      "Avoid alternatives that only say image, photo, icon, graphic, or logo.",
+      "Name the subject, information, brand, or action that matters in the current context.",
+      "Use an empty alternative only when the image is decorative."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html",
+      "https://www.w3.org/WAI/tutorials/images/informative/"
+    ]
+  },
+  "image-alt-duplicates-nearby-text": {
+    summary: "Avoid making assistive technology announce the same nearby label twice.",
+    howToFix: [
+      "When adjacent visible text already names the image or link, consider alt=\"\" for the image.",
+      "Keep one concise accessible name on the complete link or button.",
+      "Confirm that removing duplicate wording does not remove information unique to the image."
+    ],
+    docs: ["https://www.w3.org/WAI/tutorials/images/decorative/"]
+  },
+  "image-alt-repeated": {
+    summary: "Confirm that images with different sources genuinely have the same purpose before reusing alternative text.",
+    howToFix: [
+      "Describe each image's distinct information when the sources communicate different content.",
+      "Keep repeated alternatives only when the images have the same function and meaning in context.",
+      "Mark repeated decorative images with alt=\"\"."
+    ],
+    docs: ["https://www.w3.org/WAI/tutorials/images/informative/"]
+  },
+  "image-alt-excessive-length": {
+    summary: "Keep alternative text concise and move complex explanation into nearby content or a long description.",
+    howToFix: [
+      "Retain the essential purpose and information in a short alternative.",
+      "Describe complex charts, diagrams, or instructions in adjacent structured content.",
+      "Avoid repeating captions or surrounding prose in the alt attribute."
+    ],
+    docs: ["https://www.w3.org/WAI/tutorials/images/complex/"]
+  },
+  "form-invalid-error-not-associated": {
+    summary: "Associate the invalid field with a visible, specific error message.",
+    howToFix: [
+      "Give the error message an id and reference it from the field with aria-errormessage or aria-describedby.",
+      "Set aria-invalid only when the field is invalid, and keep the referenced message visible and exposed to assistive technology.",
+      "Explain what is wrong and how to correct it, then confirm the result with a supported screen reader."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/error-identification.html",
+      "https://www.w3.org/WAI/WCAG22/Understanding/labels-or-instructions.html"
+    ]
+  },
+  "modal-accessible-name-missing": {
+    summary: "Give the dialog a concise accessible name that identifies its purpose.",
+    howToFix: [
+      "Reference the visible dialog heading with aria-labelledby, or use aria-label when no visible heading is appropriate.",
+      "Keep the dialog role on the container that owns the modal content and focus behavior.",
+      "Verify the dialog name in the browser accessibility tree and with a supported screen reader."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html",
+      "https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/"
+    ]
+  },
+  "modal-initial-focus-outside": {
+    summary: "Move focus to a meaningful element inside the dialog when it opens.",
+    howToFix: [
+      "Focus the first task-relevant control, or a static heading with tabindex=\"-1\" when users need dialog context first.",
+      "Do not leave focus on obscured background content after the modal becomes visible.",
+      "Retest the opening sequence using only the keyboard and a screen reader."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html",
+      "https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/"
+    ]
+  },
+  "modal-focus-not-restored": {
+    summary: "Restore focus to the dialog trigger or the next logical control after closing.",
+    howToFix: [
+      "Store a reference to the element that opened the dialog and focus it after the dialog closes.",
+      "When the trigger no longer exists, move focus to the nearest logical workflow destination.",
+      "Verify focus restoration for Escape, close buttons, cancel actions, and successful completion."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html",
+      "https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/"
+    ]
+  },
+  "modal-escape-no-effect": {
+    summary: "Provide a predictable keyboard-operable way to dismiss the dialog.",
+    howToFix: [
+      "Support Escape for cancellable dialogs when it does not discard critical work without confirmation.",
+      "Always provide a clearly named keyboard-focusable close or cancel control.",
+      "Verify that closing the dialog restores focus to a logical location."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/"
+    ]
+  },
+  "layout-horizontal-overflow": {
+    summary: "Allow content to reflow at a 320 CSS pixel viewport without requiring two-dimensional scrolling.",
+    howToFix: [
+      "Replace fixed content widths with responsive max-width, minmax(), flex-wrap, or grid layouts that can shrink.",
+      "Keep essential text and controls inside the viewport; place genuinely two-dimensional content such as data tables in a clearly bounded scroll container.",
+      "Retest the complete task at 320 CSS pixels and at 400% browser zoom."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/reflow.html"
+    ]
+  },
+  "layout-clipped-text": {
+    summary: "Prevent meaningful text from being clipped when the page reflows to a narrow viewport.",
+    howToFix: [
+      "Remove fixed heights and hidden overflow from text containers unless the complete text remains available through an accessible control.",
+      "Allow text to wrap and containers to grow after zoom, localization, and user font changes.",
+      "Confirm manually that the flagged text is meaningful and unavailable, because intentional visual truncation can be acceptable when the full name remains accessible."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/reflow.html",
+      "https://www.w3.org/WAI/WCAG22/Understanding/resize-text.html"
+    ]
+  },
   "color-contrast": {
     summary: "Increase foreground/background contrast until the text meets the required WCAG ratio.",
     howToFix: [

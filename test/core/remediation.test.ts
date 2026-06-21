@@ -140,6 +140,67 @@ test("getRemediationHint explains page heading best-practice rules", () => {
   assert.equal(hint?.docs.some((url) => url.includes("headings")), true);
 });
 
+test("getRemediationHint explains reflow and clipped text findings", () => {
+  const overflow = getRemediationHint("layout-horizontal-overflow", getWcagCriteria(["1.4.10"]), "react");
+  const clipped = getRemediationHint("layout-clipped-text", getWcagCriteria(["1.4.10"]), "unknown");
+
+  assert.match(overflow.summary, /320 CSS pixel/);
+  assert.equal(overflow.docs.some((url) => url.includes("reflow")), true);
+  assert.match(clipped.summary, /clipped/);
+  assert.equal(clipped.howToFix.some((step) => step.includes("fixed heights")), true);
+});
+
+test("getRemediationHint explains invalid field error association", () => {
+  const hint = getRemediationHint(
+    "form-invalid-error-not-associated",
+    getWcagCriteria(["3.3.1", "3.3.2"]),
+    "unknown"
+  );
+
+  assert.match(hint.summary, /invalid field/);
+  assert.equal(hint.howToFix.some((step) => step.includes("aria-errormessage")), true);
+  assert.equal(hint.docs.some((url) => url.includes("error-identification")), true);
+});
+
+test("getRemediationHint explains alternative-text quality findings", () => {
+  const filename = getRemediationHint("image-alt-filename", getWcagCriteria(["1.1.1"]), "react");
+  const duplicate = getRemediationHint("image-alt-duplicates-nearby-text", getWcagCriteria(["1.1.1"]), "react");
+
+  assert.match(filename.summary, /filename/);
+  assert.equal(filename.docs.some((url) => url.includes("non-text-content")), true);
+  assert.match(duplicate.summary, /same nearby label twice/);
+});
+
+test("getRemediationHint explains media evidence findings", () => {
+  const captions = getRemediationHint("media-video-captions-not-detected", getWcagCriteria(["1.2.2"]), "unknown");
+  const autoplay = getRemediationHint("media-autoplay-control-risk", getWcagCriteria(["1.4.2"]), "unknown");
+
+  assert.match(captions.summary, /captions/);
+  assert.equal(captions.howToFix.some((step) => step.includes("captions track")), true);
+  assert.match(autoplay.summary, /autoplay/);
+});
+
+test("getRemediationHint explains embedded content findings", () => {
+  const canvas = getRemediationHint("canvas-alternative-not-detected", getWcagCriteria(["1.1.1"]), "unknown");
+  const frame = getRemediationHint("iframe-scan-unavailable", [], "unknown");
+
+  assert.match(canvas.summary, /canvas/);
+  assert.equal(canvas.howToFix.some((step) => step.includes("fallback")), true);
+  assert.match(frame.summary, /embedded document/);
+});
+
+test("getRemediationHint explains modal focus findings", () => {
+  const name = getRemediationHint("modal-accessible-name-missing", getWcagCriteria(["4.1.2"]), "react");
+  const initial = getRemediationHint("modal-initial-focus-outside", getWcagCriteria(["2.4.3"]), "react");
+  const restored = getRemediationHint("modal-focus-not-restored", getWcagCriteria(["2.4.3"]), "react");
+  const escape = getRemediationHint("modal-escape-no-effect", [], "react");
+
+  assert.match(name.summary, /accessible name/);
+  assert.match(initial.summary, /inside the dialog/);
+  assert.match(restored.summary, /Restore focus/);
+  assert.equal(escape.docs.some((url) => url.includes("dialog-modal")), true);
+});
+
 test("getRemediationHint explains Angular button type findings", () => {
   const hint = getRemediationHint("@angular-eslint/template/button-has-type", [], "angular");
 

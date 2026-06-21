@@ -4,27 +4,36 @@ import { enrichIssueEvidence } from "../core/classification.js";
 import { formatReportDateUtc } from "../core/reportDate.js";
 import { getRemediationHint } from "../core/remediation.js";
 import { summarizeRootCauses } from "../core/rootCauses.js";
-import type { DedupedIssue, ExplorationGraph, ExplorationState, RootCauseGroup, Severity } from "../types.js";
+import type { DedupedIssue, ExplorationGraph, ExplorationState, KeyboardAuditResult, ManualChecklist, RootCauseGroup, Severity } from "../types.js";
 
 interface StateViewModel extends ExplorationState {
   issues: DedupedIssue[];
 }
 
+interface ExplorationHtmlOptions {
+  fileName?: string;
+  title?: string;
+  keyboard?: KeyboardAuditResult;
+  manualChecklist?: ManualChecklist;
+}
+
 export async function writeExplorationHtml(
   outputDir: string,
   graph: ExplorationGraph,
-  issues: DedupedIssue[]
+  issues: DedupedIssue[],
+  options: ExplorationHtmlOptions = {}
 ): Promise<void> {
   await fs.mkdir(outputDir, { recursive: true });
   await fs.writeFile(
-    path.join(outputDir, "exploration.html"),
-    renderExplorationHtml(graph, issues)
+    path.join(outputDir, options.fileName || "exploration.html"),
+    renderExplorationHtml(graph, issues, options)
   );
 }
 
 export function renderExplorationHtml(
   graph: ExplorationGraph,
-  issues: DedupedIssue[]
+  issues: DedupedIssue[],
+  options: ExplorationHtmlOptions = {}
 ): string {
   const reportIssues = issues.map((issue) => issue.findingType
     ? issue
@@ -42,7 +51,7 @@ export function renderExplorationHtml(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>a11y-shiftleft exploration report</title>
+  <title>${escapeHtml(options.title || "a11y-shiftleft exploration report")}</title>
   <style>
     :root {
       color-scheme: light;
@@ -575,7 +584,7 @@ export function renderExplorationHtml(
 </head>
 <body>
   <header>
-    <h1>a11y-shiftleft exploration report</h1>
+    <h1>${escapeHtml(options.title || "a11y-shiftleft exploration report")}</h1>
     <p class="muted">Generated: <time datetime="${escapeAttribute(graph.generatedAt)}">${escapeHtml(formatReportDateUtc(graph.generatedAt))}</time><br>Start URL: ${escapeHtml(graph.startUrl)}</p>
   </header>
   <main>
@@ -596,6 +605,8 @@ export function renderExplorationHtml(
       ${metric("Likely root causes", rootCauseGroups.length)}
     </section>
 
+    ${renderCoverageMatrix(graph, options)}
+
     <section class="panel triage" aria-label="Triage overview">
       ${renderTriageOverview(states, reportIssues, rootCauseGroups)}
     </section>
@@ -603,6 +614,10 @@ export function renderExplorationHtml(
     <section class="panel states" aria-label="Checked states">
       ${states.map(renderState).join("\n")}
     </section>
+
+    ${options.keyboard ? renderKeyboardAudit(options.keyboard) : ""}
+
+    ${options.manualChecklist ? renderManualChecklist(options.manualChecklist) : ""}
 
     <section class="panel" aria-label="Exploration details">
       <h2>Exploration Details</h2>
@@ -619,6 +634,92 @@ export function renderExplorationHtml(
 </body>
 </html>
 `;
+}
+
+function renderKeyboardAudit(audit: KeyboardAuditResult): string {
+  const attempts = audit.activationAttempts || [];
+  return `<section class="panel" aria-label="Keyboard audit">
+    <h2>Keyboard Audit</h2>
+    <p class="muted">Bounded Tab and Shift+Tab evidence. This supports review but does not replace complete keyboard task testing.</p>
+    <div class="summary">
+      ${metric("Focusable controls", audit.focusableCount)}
+      ${metric("Forward steps", audit.steps.length)}
+      ${metric("Reverse steps", audit.backwardSteps.length)}
+      ${metric("Activation attempts", attempts.length)}
+    </div>
+    <details>
+      <summary>Focus path</summary>
+      <table>
+        <thead><tr><th>Step</th><th>Direction</th><th>Target</th><th>Role</th><th>Name</th><th>Indicator</th><th>Obscured</th></tr></thead>
+        <tbody>${[...audit.steps, ...audit.backwardSteps].map((step) => `<tr>
+          <td>${step.index}</td><td>${escapeHtml(step.direction)}</td><td><code>${escapeHtml(step.selector)}</code></td>
+          <td>${escapeHtml(step.role || step.tagName)}</td><td>${escapeHtml(step.accessibleName || "none")}</td>
+          <td>${step.indicatorVisible ? "yes" : "no"}</td><td>${step.obscured ? "yes" : "no"}</td>
+        </tr>`).join("") || '<tr><td colspan="7">No focus steps recorded.</td></tr>'}</tbody>
+      </table>
+    </details>
+    ${attempts.length > 0 ? `<details><summary>Activation evidence</summary><table>
+      <thead><tr><th>Key</th><th>Target</th><th>Role</th><th>Outcome</th><th>Reason or focus after</th></tr></thead>
+      <tbody>${attempts.map((attempt) => `<tr><td>${escapeHtml(attempt.key)}</td><td><code>${escapeHtml(attempt.selector)}</code></td><td>${escapeHtml(attempt.role)}</td><td>${escapeHtml(attempt.outcome)}</td><td>${escapeHtml(attempt.reason || attempt.focusAfter || "none")}</td></tr>`).join("")}</tbody>
+    </table></details>` : ""}
+  </section>`;
+}
+
+function renderCoverageMatrix(graph: ExplorationGraph, options: ExplorationHtmlOptions): string {
+  const themes = [...new Set(graph.states.map((state) => state.colorScheme).filter(Boolean))];
+  const reflowStates = graph.states.filter((state) => state.reflow);
+  const modalStates = graph.states.filter((state) => state.modalFocus);
+  const announcementStates = graph.states.filter((state) => state.dynamicAnnouncements);
+  const announcementUpdates = announcementStates.reduce((total, state) => (
+    total + (state.dynamicAnnouncements?.meaningfulUpdates || 0)
+  ), 0);
+  const formStates = graph.states.filter((state) => state.formErrors);
+  const invalidFields = formStates.reduce((total, state) => total + (state.formErrors?.invalidFieldCount || 0), 0);
+  const unassociatedInvalidFields = formStates.reduce((total, state) => total + (state.formErrors?.unassociatedInvalidCount || 0), 0);
+  const imageStates = graph.states.filter((state) => state.imageAlternatives);
+  const suspiciousImages = imageStates.reduce((total, state) => total + (state.imageAlternatives?.suspiciousCount || 0), 0);
+  const mediaStates = graph.states.filter((state) => state.media);
+  const mediaElements = mediaStates.reduce((total, state) => total + (state.media?.audioCount || 0) + (state.media?.videoCount || 0), 0);
+  const autoplayRisks = mediaStates.reduce((total, state) => total + (state.media?.autoplayRiskCount || 0), 0);
+  const embeddedStates = graph.states.filter((state) => state.embeddedContent);
+  const iframeCount = embeddedStates.reduce((total, state) => total + (state.embeddedContent?.iframeCount || 0), 0);
+  const inaccessibleFrames = embeddedStates.reduce((total, state) => total + (state.embeddedContent?.inaccessibleIframeCount || 0), 0);
+  const canvasGaps = embeddedStates.reduce((total, state) => total + (state.embeddedContent?.canvasWithoutAlternativeCount || 0), 0);
+  return `<section class="panel triage" aria-label="Audit coverage matrix">
+    <h2>Audit Coverage</h2>
+    <p class="muted">This separates collected evidence from checks that still require a person and assistive technology.</p>
+    <table>
+      <thead><tr><th>Area</th><th>Status</th><th>Evidence or next step</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Browser automation</th><td>Completed</td><td>${graph.summary.statesVisited} rendered state${graph.summary.statesVisited === 1 ? "" : "s"} scanned with axe</td></tr>
+        <tr><th scope="row">Static source analysis</th><td>Configuration-dependent</td><td>Included when the detected framework adapter is installed</td></tr>
+        <tr><th scope="row">Keyboard traversal</th><td>${options.keyboard ? "Bounded evidence collected" : "Not included"}</td><td>${options.keyboard ? `${options.keyboard.steps.length} forward focus steps recorded` : "Run audit without --no-keyboard"}</td></tr>
+        <tr><th scope="row">Light and dark appearance</th><td>${themes.length > 1 ? "Both observed" : "Rendered appearance checked"}</td><td>${themes.length > 0 ? escapeHtml(themes.join(", ")) : "No distinct system color-scheme state detected"}</td></tr>
+        <tr><th scope="row">Reflow at 320 CSS pixels</th><td>${reflowStates.length > 0 ? "Heuristic evidence collected" : "Not included"}</td><td>${reflowStates.length} state${reflowStates.length === 1 ? "" : "s"} checked for page overflow and clipped text</td></tr>
+        <tr><th scope="row">Modal focus behavior</th><td>${modalStates.length > 0 ? "Heuristic evidence collected" : "No opened modal observed"}</td><td>${modalStates.length} state${modalStates.length === 1 ? "" : "s"} checked for name, initial focus, Escape, and focus restoration</td></tr>
+        <tr><th scope="row">Dynamic announcements</th><td>${announcementStates.length > 0 ? "Mutation evidence collected" : "No action evidence"}</td><td>${announcementUpdates} meaningful live-region update${announcementUpdates === 1 ? "" : "s"} observed after ${announcementStates.length} action${announcementStates.length === 1 ? "" : "s"}</td></tr>
+        <tr><th scope="row">Form error states</th><td>${formStates.length > 0 ? "Rendered-state evidence collected" : "No forms observed"}</td><td>${invalidFields} explicit invalid field${invalidFields === 1 ? "" : "s"}; ${unassociatedInvalidFields} without an exposed associated error</td></tr>
+        <tr><th scope="row">Image alternatives</th><td>${imageStates.length > 0 ? "Quality heuristics collected" : "No images observed"}</td><td>${suspiciousImages} image alternative${suspiciousImages === 1 ? "" : "s"} flagged for human review across ${imageStates.length} state${imageStates.length === 1 ? "" : "s"}</td></tr>
+        <tr><th scope="row">Media and motion</th><td>${mediaStates.length > 0 ? "Rendered-state evidence collected" : "No media or active motion observed"}</td><td>${mediaElements} audio/video element${mediaElements === 1 ? "" : "s"}; ${autoplayRisks} autoplay control risk${autoplayRisks === 1 ? "" : "s"}</td></tr>
+        <tr><th scope="row">Embedded content</th><td>${embeddedStates.length > 0 ? "Coverage evidence collected" : "No iframe or canvas observed"}</td><td>${iframeCount} iframe${iframeCount === 1 ? "" : "s"}; ${inaccessibleFrames} unavailable document${inaccessibleFrames === 1 ? "" : "s"}; ${canvasGaps} canvas alternative gap${canvasGaps === 1 ? "" : "s"}</td></tr>
+        <tr><th scope="row">Screen reader</th><td>Human review required</td><td>Test representative tasks with NVDA, JAWS, or VoiceOver</td></tr>
+        <tr><th scope="row">Content and task usability</th><td>${options.manualChecklist ? "Checklist ready" : "Not included"}</td><td>Record tester, environment, evidence, and outcome</td></tr>
+      </tbody>
+    </table>
+  </section>`;
+}
+
+function renderManualChecklist(checklist: ManualChecklist): string {
+  return `<section class="panel" aria-label="Manual review checklist">
+    <h2>Manual Review Checklist</h2>
+    <p class="muted">Automated checks cover only part of accessibility. Record human review evidence for the areas below.</p>
+    ${checklist.items.map((item) => `<details>
+      <summary>${escapeHtml(item.title)} (${escapeHtml(item.wcag.join(", "))})</summary>
+      <p>${escapeHtml(item.whyManual)}</p>
+      <ol>${item.steps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}</ol>
+      <p class="muted">Suggested evidence: ${escapeHtml(item.evidence.join("; "))}</p>
+    </details>`).join("")}
+  </section>`;
 }
 
 function renderState(state: StateViewModel): string {
@@ -658,9 +759,174 @@ function renderState(state: StateViewModel): string {
       ${state.visualDuplicateOf ? `<span class="badge">visual reused from ${escapeHtml(state.visualDuplicateOf)}</span>` : ""}
       <span class="badge">${state.actionCount} actions queued</span>
     </div>
+    ${renderAccessibilityTreeEvidence(state)}
+    ${renderReflowEvidence(state)}
+    ${renderModalFocusEvidence(state)}
+    ${renderDynamicAnnouncementEvidence(state)}
+    ${renderFormErrorEvidence(state)}
+    ${renderImageAlternativeEvidence(state)}
+    ${renderMediaEvidence(state)}
+    ${renderEmbeddedContentEvidence(state)}
     ${renderIssues(state.issues)}
   </div>
 </article>`;
+}
+
+function renderDynamicAnnouncementEvidence(state: ExplorationState): string {
+  const evidence = state.dynamicAnnouncements;
+  if (!evidence) return "";
+  return `<details>
+    <summary>Dynamic announcement evidence</summary>
+    <p class="muted">Observed after: ${escapeHtml(evidence.actionLabel)}</p>
+    <div class="summary">
+      ${metric("Regions before", evidence.regionsBefore)}
+      ${metric("Regions after", evidence.regionsAfter)}
+      ${metric("Updates observed", evidence.updatesObserved)}
+      ${metric("Meaningful updates", evidence.meaningfulUpdates)}
+    </div>
+    ${evidence.updates.length > 0
+      ? `<table><thead><tr><th>Region</th><th>Role</th><th>Politeness</th><th>Observed text</th></tr></thead><tbody>${evidence.updates.map((update) => `<tr><td><code>${escapeHtml(update.selector)}</code></td><td>${escapeHtml(update.role || "none")}</td><td>${escapeHtml(update.politeness)}</td><td>${escapeHtml(update.text || "empty")}</td></tr>`).join("")}</tbody></table>`
+      : '<p class="muted">No aria-live, alert, or status mutation was observed for this action.</p>'}
+    <p class="muted">DOM mutation evidence does not prove how or when a supported screen reader announces the update.</p>
+  </details>`;
+}
+
+function renderFormErrorEvidence(state: ExplorationState): string {
+  const evidence = state.formErrors;
+  if (!evidence) return "";
+  return `<details>
+    <summary>Form error evidence</summary>
+    <div class="summary">
+      ${metric("Forms", evidence.formCount)}
+      ${metric("Fields", evidence.fieldCount)}
+      ${metric("Explicit invalid fields", evidence.invalidFieldCount)}
+      ${metric("Associated errors", evidence.associatedErrorCount)}
+      ${metric("Unassociated invalid", evidence.unassociatedInvalidCount, evidence.unassociatedInvalidCount > 0 ? "warning" : undefined)}
+      ${metric("Error summaries", evidence.errorSummaryCount)}
+    </div>
+    ${evidence.invalidFields.length > 0
+      ? `<table><thead><tr><th>Field</th><th>Name</th><th>Error references</th><th>Exposed error text</th><th>Focused</th></tr></thead><tbody>${evidence.invalidFields.map((field) => `<tr><td><code>${escapeHtml(field.selector)}</code></td><td>${escapeHtml(field.accessibleName || "unnamed")}</td><td>${escapeHtml(field.errorReferenceIds.join(", ") || "none")}</td><td>${escapeHtml(field.associatedErrorText || "none")}</td><td>${field.focused ? "yes" : "no"}</td></tr>`).join("")}</tbody></table>`
+      : '<p class="muted">No fields with explicit <code>aria-invalid="true"</code> were rendered in this state.</p>'}
+    <p class="muted">The audit does not submit forms or enter personal data. Review message quality, focus movement, error summaries, and correction workflows manually.</p>
+  </details>`;
+}
+
+function renderImageAlternativeEvidence(state: ExplorationState): string {
+  const evidence = state.imageAlternatives;
+  if (!evidence) return "";
+  return `<details>
+    <summary>Image alternative-text evidence</summary>
+    <div class="summary">
+      ${metric("Images", evidence.imageCount)}
+      ${metric("Informative alternatives", evidence.informativeCount)}
+      ${metric("Decorative alternatives", evidence.decorativeCount)}
+      ${metric("Flagged for review", evidence.suspiciousCount, evidence.suspiciousCount > 0 ? "warning" : undefined)}
+      ${metric("Repeated-alt groups", evidence.repeatedAlternativeGroups)}
+    </div>
+    ${evidence.samples.length > 0
+      ? `<table><thead><tr><th>Image</th><th>Current alternative</th><th>Review reasons</th></tr></thead><tbody>${evidence.samples.map((sample) => `<tr><td><code>${escapeHtml(sample.selector)}</code></td><td>${escapeHtml(sample.alt)}</td><td>${escapeHtml(sample.concerns.join(", "))}${sample.repeatedCount ? ` (${sample.repeatedCount} uses)` : ""}</td></tr>`).join("")}</tbody></table>`
+      : '<p class="muted">No deterministic alternative-text quality pattern was detected.</p>'}
+    <p class="muted">These are medium-confidence review signals. Only a person can decide whether an image is informative, decorative, or accurately described in context.</p>
+  </details>`;
+}
+
+function renderMediaEvidence(state: ExplorationState): string {
+  const evidence = state.media;
+  if (!evidence) return "";
+  return `<details>
+    <summary>Media and motion evidence</summary>
+    <div class="summary">
+      ${metric("Audio", evidence.audioCount)}
+      ${metric("Video", evidence.videoCount)}
+      ${metric("Videos with caption tracks", evidence.videosWithCaptions)}
+      ${metric("Audio with transcript candidate", evidence.audioWithTranscriptCandidate)}
+      ${metric("Autoplay control risks", evidence.autoplayRiskCount, evidence.autoplayRiskCount > 0 ? "warning" : undefined)}
+      ${metric("Active animations", evidence.activeAnimationCount)}
+    </div>
+    ${evidence.elements.length > 0
+      ? `<table><thead><tr><th>Element</th><th>Kind</th><th>Captions</th><th>Transcript candidate</th><th>Autoplay</th><th>Muted</th><th>Controls</th></tr></thead><tbody>${evidence.elements.map((element) => `<tr><td><code>${escapeHtml(element.selector)}</code></td><td>${element.kind}</td><td>${element.captionTrackCount}</td><td>${element.transcriptCandidate ? "yes" : "no"}</td><td>${element.autoplay ? "yes" : "no"}</td><td>${element.muted ? "yes" : "no"}</td><td>${element.controls ? "yes" : "no"}</td></tr>`).join("")}</tbody></table>`
+      : '<p class="muted">No rendered audio or video elements were observed.</p>'}
+    <p class="muted">Reduced-motion CSS query detected: ${evidence.reducedMotionQueryDetected ? "yes" : "no"}. Unreadable cross-origin stylesheets: ${evidence.unreadableStylesheetCount}. Caption, transcript, audio-description, motion, and flashing quality require human review.</p>
+  </details>`;
+}
+
+function renderEmbeddedContentEvidence(state: ExplorationState): string {
+  const evidence = state.embeddedContent;
+  if (!evidence) return "";
+  return `<details>
+    <summary>Iframe and canvas evidence</summary>
+    <div class="summary">
+      ${metric("Iframes", evidence.iframeCount)}
+      ${metric("Same-origin frames", evidence.sameOriginIframeCount)}
+      ${metric("Cross-origin frames", evidence.crossOriginIframeCount)}
+      ${metric("Unavailable frame documents", evidence.inaccessibleIframeCount, evidence.inaccessibleIframeCount > 0 ? "warning" : undefined)}
+      ${metric("Canvas elements", evidence.canvasCount)}
+      ${metric("Canvas alternative gaps", evidence.canvasWithoutAlternativeCount, evidence.canvasWithoutAlternativeCount > 0 ? "warning" : undefined)}
+    </div>
+    ${evidence.iframes.length > 0 ? `<h4>Frames</h4><table><thead><tr><th>Frame</th><th>Document</th><th>Origin</th><th>Title</th><th>DOM coverage</th></tr></thead><tbody>${evidence.iframes.map((frame) => `<tr><td><code>${escapeHtml(frame.selector)}</code></td><td>${escapeHtml(frame.url)}</td><td>${frame.sameOrigin ? "same" : "cross"}</td><td>${escapeHtml(frame.title || "missing")}</td><td>${frame.browserAccessible ? "available" : "unavailable"}</td></tr>`).join("")}</tbody></table>` : ""}
+    ${evidence.canvases.length > 0 ? `<h4>Canvas</h4><table><thead><tr><th>Canvas</th><th>Size</th><th>Decorative</th><th>Accessible alternative</th></tr></thead><tbody>${evidence.canvases.map((canvas) => `<tr><td><code>${escapeHtml(canvas.selector)}</code></td><td>${canvas.width} x ${canvas.height}</td><td>${canvas.decorative ? "yes" : "no"}</td><td>${canvas.hasAccessibleAlternative ? "detected" : "not detected"}</td></tr>`).join("")}</tbody></table>` : ""}
+    <p class="muted">Modern axe scans accessible frame documents recursively. Unavailable frames need a separate audit. Canvas pixels are not interpreted, so meaningful graphics still require contextual human review.</p>
+  </details>`;
+}
+
+function renderModalFocusEvidence(state: ExplorationState): string {
+  const modal = state.modalFocus;
+  if (!modal) return "";
+  const outcome = (value: boolean | undefined, yes: string, no: string, pending: string): string => (
+    value === true ? yes : value === false ? no : pending
+  );
+
+  return `<details>
+    <summary>Modal focus evidence</summary>
+    <table>
+      <tbody>
+        <tr><th scope="row">Dialog</th><td><code>${escapeHtml(modal.dialogSelector)}</code></td></tr>
+        <tr><th scope="row">Accessible name</th><td>${escapeHtml(modal.accessibleName || "missing")}</td></tr>
+        <tr><th scope="row">Initial focus</th><td>${modal.initialFocusInside ? "inside dialog" : "outside dialog"}${modal.initialFocusSelector ? ` at <code>${escapeHtml(modal.initialFocusSelector)}</code>` : ""}</td></tr>
+        <tr><th scope="row">Escape</th><td>${outcome(modal.escapeClosed, "closed dialog", "did not close dialog", "not tested")}</td></tr>
+        <tr><th scope="row">Focus restoration</th><td>${outcome(modal.focusReturnedToTrigger, "returned to trigger", "did not return to trigger", "not applicable or not tested")}</td></tr>
+      </tbody>
+    </table>
+    <p class="muted">This isolated heuristic does not prove a complete focus trap or screen-reader workflow. Confirm every close path manually.</p>
+  </details>`;
+}
+
+function renderReflowEvidence(state: ExplorationState): string {
+  const reflow = state.reflow;
+  if (!reflow) return "";
+  return `<details>
+    <summary>Reflow evidence at ${reflow.viewportWidth} CSS pixels</summary>
+    <div class="summary">
+      ${metric("Document width", reflow.documentWidth)}
+      ${metric("Horizontal overflow px", reflow.horizontalOverflowPx, reflow.horizontalOverflowPx > 1 ? "warning" : undefined)}
+      ${metric("Clipped text candidates", reflow.clippedTextCount, reflow.clippedTextCount > 0 ? "warning" : undefined)}
+    </div>
+    ${reflow.clippedTextSample.length > 0
+      ? `<ul>${reflow.clippedTextSample.map((item) => `<li><code>${escapeHtml(item.selector)}</code>: ${escapeHtml(item.text || "unnamed text")} (${item.horizontalOverflowPx}px horizontal, ${item.verticalOverflowPx}px vertical overflow)</li>`).join("")}</ul>`
+      : '<p class="muted">No clipped text candidates were detected by the bounded heuristic.</p>'}
+    <p class="muted">Review flagged content manually at 400% zoom. Intentional truncation is not automatically a WCAG failure when the complete information remains available.</p>
+  </details>`;
+}
+
+function renderAccessibilityTreeEvidence(state: ExplorationState): string {
+  const tree = state.accessibilityTree;
+  if (!tree) return "";
+  const nodes = (items: typeof tree.headings) => items.length > 0
+    ? `<ul>${items.map((item) => `<li><code>${escapeHtml(item.role)}</code>${item.level ? ` level ${item.level}` : ""}: ${escapeHtml(item.name || "unnamed")}</li>`).join("")}</ul>`
+    : '<p class="muted">None exposed in this state.</p>';
+
+  return `<details>
+    <summary>Accessibility tree evidence</summary>
+    <div class="summary">
+      ${metric("Exposed nodes", tree.totalNodes)}
+      ${metric("Named nodes", tree.namedNodes)}
+      ${metric("Interactive nodes", tree.interactiveNodes)}
+      ${metric("Unnamed interactive", tree.unnamedInteractiveNodes, tree.unnamedInteractiveNodes > 0 ? "warning" : undefined)}
+    </div>
+    <h4>Landmarks</h4>${nodes(tree.landmarks)}
+    <h4>Headings</h4>${nodes(tree.headings)}
+    <h4>Interactive sample</h4>${nodes(tree.interactiveSample)}
+  </details>`;
 }
 
 function renderStateScreenshot(state: StateViewModel): string {

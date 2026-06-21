@@ -10,7 +10,6 @@ const TEXT_EVIDENCE_FILES = [
   "a11y-pages.csv",
   "a11y-rules.csv",
   "a11y-findings.csv",
-  "a11y-remediation.csv",
   "a11y-manual-checklist.md",
   "a11y-manual-checklist.json",
   "keyboard-report.json",
@@ -19,6 +18,8 @@ const TEXT_EVIDENCE_FILES = [
 ] as const;
 
 const VISUAL_EVIDENCE_FILES = [
+  "a11y-report.html",
+  "a11y-report.pdf",
   "exploration.html",
   "exploration.pdf"
 ] as const;

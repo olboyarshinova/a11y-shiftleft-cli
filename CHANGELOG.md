@@ -2,9 +2,46 @@
 
 ## Unreleased
 
+- Added a unified `audit` command that creates one primary visual report with
+  static and dynamic findings, safe UI exploration, screenshots, keyboard
+  evidence, recommendations, and an embedded manual-review checklist.
+- Added an audit coverage matrix and compact Chromium accessibility-tree
+  evidence for explored states, including landmarks, headings, interactive
+  samples, and unnamed interactive-node counts.
+- Expanded manual review with representative NVDA, JAWS, and VoiceOver task,
+  form, dialog, focus-restoration, and dynamic-announcement scenarios.
+- Added bounded 320 CSS pixel reflow evidence for every explored state,
+  including document overflow and clipped-text candidates mapped to WCAG
+  1.4.10 with explicit heuristic confidence and remediation guidance.
+- Added isolated modal evidence for accessible names, initial focus, Escape,
+  and trigger focus restoration. WCAG-related focus/name risks and
+  best-practice Escape behavior share the normal triage and remediation
+  pipeline.
+- Added bounded dynamic-announcement evidence after safe explored clicks,
+  including live-region role, politeness, observed text, and explicit
+  no-mutation results without treating silence as an automatic failure.
+- Added rendered form-error evidence for explicit invalid fields, exposed
+  `aria-errormessage` and `aria-describedby` associations, summaries, and focus.
+  Missing, hidden, or empty referenced errors are reported without submitting
+  forms or entering user data.
+- Added rendered image alternative-text evidence and medium-confidence quality
+  heuristics for filenames, generic labels, nearby duplication, reuse across
+  different sources, and excessive length. Decorative empty alternatives stay
+  unflagged, and contextual meaning remains a manual review.
+- Added media and motion evidence for audio/video players, caption tracks,
+  transcript candidates, autoplay/muted/controls state, active animations, and
+  detectable reduced-motion CSS. Equivalent axe findings are suppressed, while
+  content quality, audio description, and flashing remain manual reviews.
+- Added embedded-content evidence for recursive iframe audit availability,
+  sanitized same-origin/cross-origin frame URLs, and canvas fallback/name
+  signals. Unavailable frames are explicit coverage gaps rather than hidden
+  passes, and meaningful canvas content remains a contextual review.
+- Made audit output compact by default: HTML, JSON, Markdown, and screenshots.
+  Structured summary, page, rule, and finding CSV tables are opt-in with
+  `--excel`; PDF and raw exploration data are opt-in with `--pdf` and `--raw`.
 - Added Excel-friendly CSV tables for scan summary, affected pages, rule
-  aggregation, findings, and remediation ownership while preserving the legacy
-  raw `a11y-metrics.csv` export.
+  aggregation, and findings while preserving the legacy raw
+  `a11y-metrics.csv` export for focused commands.
 - Added deduplicated semantic page-state snapshots to forward and reverse
   keyboard focus paths, including URL, title, H1, scroll position, viewport,
   open dialog count, and expanded-control count.

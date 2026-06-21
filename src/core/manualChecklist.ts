@@ -67,18 +67,38 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
   },
   {
     id: "screen-reader-smoke",
-    title: "Screen reader smoke test",
+    title: "Screen reader navigation and task smoke test",
     principle: "robust",
-    wcag: ["4.1.2"],
-    whyManual: "Automated tools cannot verify the complete assistive technology experience.",
+    wcag: ["1.3.1", "2.4.1", "2.4.6", "4.1.2"],
+    whyManual: "Automated tools cannot verify announcements, navigation efficiency, or complete task usability with assistive technology.",
     steps: [
-      "Run a short screen reader walkthrough on the main user path.",
-      "Confirm page title, headings, buttons, links, forms, and live updates are announced meaningfully.",
-      "Record confusing announcements or missing state changes."
+      "Choose a representative supported combination: NVDA with Chrome or Firefox on Windows, JAWS with Chrome or Edge on Windows, or VoiceOver with Safari on macOS.",
+      "Navigate the primary page by landmarks, headings, links, buttons, and form controls before completing one representative task.",
+      "Confirm the page title, heading hierarchy, control names, roles, states, instructions, and validation errors are announced meaningfully.",
+      "Repeat the highest-risk task with a second screen reader/browser combination when the product audience or procurement requirements justify it."
+    ],
+    evidence: [
+      "Operating system, browser, screen reader, and version",
+      "Task attempted and completion outcome",
+      "Observed announcement or navigation issues"
+    ]
+  },
+  {
+    id: "screen-reader-dynamic-content",
+    title: "Screen reader forms, dialogs, and dynamic updates",
+    principle: "robust",
+    wcag: ["3.3.1", "3.3.2", "4.1.2", "4.1.3"],
+    whyManual: "A scanner can inspect markup but cannot reliably confirm the timing, usefulness, and focus behavior of announcements during real interaction.",
+    steps: [
+      "Submit one representative form with an error and confirm the error summary or field error is announced and associated with the affected control.",
+      "Open and close a dialog, menu, or disclosure and confirm its name and state are announced, focus enters appropriately, and focus returns to the trigger.",
+      "Trigger loading, success, error, cart, search-result, or other important asynchronous updates and confirm meaningful status messages are announced without moving focus unexpectedly.",
+      "Confirm repeated announcements are not noisy and hidden or background content is not read as active dialog content."
     ],
     evidence: [
       "Screen reader/browser combination used",
-      "Observed announcement issues"
+      "Form, dialog, and live-region scenarios tested",
+      "Announcement transcript or concise observed-result notes"
     ]
   },
   {

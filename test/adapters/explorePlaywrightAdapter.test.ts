@@ -2,6 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   attachExplorePopupGuard,
+  analyzeImageAlternativeEvidence,
+  analyzeMediaEvidence,
+  createFormErrorIssues,
+  createImageAlternativeIssues,
+  createMediaIssues,
+  createEmbeddedContentIssues,
   createEvidenceClips,
   getExploreActionSafety,
   isAdvertisingActionContext,
@@ -13,7 +19,9 @@ import {
   readScreenshotDimensions,
   SENSITIVE_SCREENSHOT_SELECTOR,
   isThemeAction,
-  shouldCaptureFullPageScreenshot
+  shouldCaptureFullPageScreenshot,
+  summarizeEmbeddedContentEvidence,
+  summarizeAccessibilityTreeNodes
 } from "../../dist/adapters/explorePlaywrightAdapter.js";
 
 test("readScreenshotDimensions reads PNG and JPEG dimensions", () => {
@@ -390,4 +398,211 @@ test("prioritizeThemeActions keeps theme controls inside bounded exploration", (
     "#menu",
     "#details"
   ]);
+});
+
+test("summarizeAccessibilityTreeNodes keeps compact semantic evidence", () => {
+  const evidence = summarizeAccessibilityTreeNodes([
+    { role: { value: "RootWebArea" }, name: { value: "Demo" } },
+    { role: { value: "main" }, name: { value: "Main content" } },
+    { role: { value: "heading" }, name: { value: "Account" }, properties: [{ name: "level", value: { value: 1 } }] },
+    { role: { value: "button" }, name: { value: "Save" } },
+    { role: { value: "button" }, name: { value: "" } },
+    { ignored: true, role: { value: "link" }, name: { value: "Ignored" } }
+  ]);
+
+  assert.equal(evidence.totalNodes, 5);
+  assert.equal(evidence.interactiveNodes, 2);
+  assert.equal(evidence.unnamedInteractiveNodes, 1);
+  assert.deepEqual(evidence.landmarks[0], { role: "main", name: "Main content", level: undefined });
+  assert.equal(evidence.headings[0].level, 1);
+});
+
+test("createFormErrorIssues reports only invalid fields without exposed associated errors", () => {
+  const issues = createFormErrorIssues("react", "http://localhost:3000/checkout", {
+    stateId: "state-1",
+    stateLabel: "Initial page",
+    colorScheme: "light"
+  }, {
+    formCount: 1,
+    fieldCount: 2,
+    invalidFieldCount: 2,
+    associatedErrorCount: 1,
+    unassociatedInvalidCount: 1,
+    errorSummaryCount: 0,
+    invalidFields: [{
+      selector: "#email",
+      accessibleName: "Email",
+      errorReferenceIds: ["email-error"],
+      associatedErrorText: "Email is required",
+      focused: true
+    }, {
+      selector: "#zip",
+      accessibleName: "ZIP code",
+      errorReferenceIds: ["missing-error"],
+      focused: false
+    }]
+  });
+
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].selector, "#zip");
+  assert.deepEqual(issues[0].wcag, ["3.3.1", "3.3.2"]);
+  assert.equal(issues[0].severity, "warning");
+  assert.match(issues[0].message, /ZIP code/);
+});
+
+test("analyzeImageAlternativeEvidence detects deterministic quality patterns without flagging decorative images", () => {
+  const evidence = analyzeImageAlternativeEvidence([
+    { selector: "#decorative", alt: "", sourceKey: "divider.svg", nearbyText: "" },
+    { selector: "#filename", alt: "IMG_2048.jpg", sourceKey: "IMG_2048.jpg", nearbyText: "" },
+    { selector: "#generic", alt: "Image", sourceKey: "product.webp", nearbyText: "" },
+    { selector: "#brand", alt: "Acme", sourceKey: "logo-a.svg", nearbyText: "Acme" },
+    { selector: "#brand-footer", alt: "Acme", sourceKey: "logo-b.svg", nearbyText: "" },
+    { selector: "#good", alt: "Customer reviewing an order summary", sourceKey: "review.webp", nearbyText: "" }
+  ]);
+
+  assert.equal(evidence.imageCount, 6);
+  assert.equal(evidence.decorativeCount, 1);
+  assert.equal(evidence.suspiciousCount, 4);
+  assert.equal(evidence.repeatedAlternativeGroups, 1);
+  assert.deepEqual(evidence.samples.find((sample) => sample.selector === "#filename")?.concerns, ["filename"]);
+  assert.deepEqual(evidence.samples.find((sample) => sample.selector === "#generic")?.concerns, ["generic"]);
+  assert.deepEqual(evidence.samples.find((sample) => sample.selector === "#brand")?.concerns, ["nearby-text-duplicate", "repeated"]);
+  assert.equal(evidence.samples.some((sample) => sample.selector === "#decorative"), false);
+  assert.equal(evidence.samples.some((sample) => sample.selector === "#good"), false);
+});
+
+test("createImageAlternativeIssues keeps quality heuristics review-oriented", () => {
+  const evidence = analyzeImageAlternativeEvidence([
+    { selector: "#hero", alt: "hero-banner.png", sourceKey: "hero-banner.png", nearbyText: "" }
+  ]);
+  const issues = createImageAlternativeIssues("react", "http://localhost:3000", {
+    stateId: "state-1",
+    stateLabel: "Initial page",
+    colorScheme: undefined
+  }, evidence);
+
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].ruleId, "image-alt-filename");
+  assert.equal(issues[0].findingType, "best-practice");
+  assert.equal(issues[0].confidence, "medium");
+  assert.deepEqual(issues[0].wcag, ["1.1.1"]);
+});
+
+test("analyzeMediaEvidence summarizes captions, transcripts, autoplay, and motion", () => {
+  const evidence = analyzeMediaEvidence({
+    elements: [{
+      selector: "#video",
+      kind: "video",
+      autoplay: true,
+      muted: false,
+      controls: false,
+      captionTrackCount: 1,
+      transcriptCandidate: false
+    }, {
+      selector: "#audio",
+      kind: "audio",
+      autoplay: false,
+      muted: false,
+      controls: true,
+      captionTrackCount: 0,
+      transcriptCandidate: true
+    }],
+    activeAnimationCount: 2,
+    reducedMotionQueryDetected: true,
+    unreadableStylesheetCount: 1
+  });
+
+  assert.equal(evidence.audioCount, 1);
+  assert.equal(evidence.videoCount, 1);
+  assert.equal(evidence.videosWithCaptions, 1);
+  assert.equal(evidence.audioWithTranscriptCandidate, 1);
+  assert.equal(evidence.autoplayRiskCount, 1);
+  assert.equal(evidence.activeAnimationCount, 2);
+  assert.equal(evidence.reducedMotionQueryDetected, true);
+});
+
+test("createMediaIssues avoids duplicating equivalent axe findings", () => {
+  const evidence = analyzeMediaEvidence({
+    elements: [{
+      selector: "#video",
+      kind: "video",
+      autoplay: true,
+      muted: false,
+      controls: false,
+      captionTrackCount: 0,
+      transcriptCandidate: false
+    }],
+    activeAnimationCount: 0,
+    reducedMotionQueryDetected: false,
+    unreadableStylesheetCount: 0
+  });
+  const state = { stateId: "state-1", stateLabel: "Initial page", colorScheme: undefined };
+  const standalone = createMediaIssues("react", "http://localhost:3000", state, evidence);
+  const covered = createMediaIssues("react", "http://localhost:3000", state, evidence, new Set([
+    "video-caption",
+    "no-autoplay-audio"
+  ]));
+
+  assert.deepEqual(standalone.map((issue) => issue.ruleId), [
+    "media-video-captions-not-detected",
+    "media-autoplay-control-risk"
+  ]);
+  assert.equal(covered.length, 0);
+});
+
+test("summarizeEmbeddedContentEvidence separates frame coverage and canvas alternatives", () => {
+  const evidence = summarizeEmbeddedContentEvidence({
+    iframes: [{
+      selector: "#local-frame",
+      url: "http://localhost:3000/help",
+      sameOrigin: true,
+      title: "Help",
+      browserAccessible: true
+    }, {
+      selector: "#external-frame",
+      url: "https://example.com/widget",
+      sameOrigin: false,
+      browserAccessible: false
+    }],
+    canvases: [{
+      selector: "#chart",
+      width: 600,
+      height: 400,
+      decorative: false,
+      hasAccessibleAlternative: false
+    }, {
+      selector: "#decoration",
+      width: 20,
+      height: 20,
+      decorative: true,
+      hasAccessibleAlternative: false
+    }]
+  });
+
+  assert.equal(evidence.iframeCount, 2);
+  assert.equal(evidence.sameOriginIframeCount, 1);
+  assert.equal(evidence.crossOriginIframeCount, 1);
+  assert.equal(evidence.inaccessibleIframeCount, 1);
+  assert.equal(evidence.canvasWithoutAlternativeCount, 1);
+  assert.equal(evidence.canvasWithAlternativeCount, 1);
+});
+
+test("createEmbeddedContentIssues separates coverage gaps from canvas review signals", () => {
+  const evidence = summarizeEmbeddedContentEvidence({
+    iframes: [{ selector: "#frame", url: "https://example.com/widget", sameOrigin: false, browserAccessible: false }],
+    canvases: [{ selector: "#chart", width: 600, height: 400, decorative: false, hasAccessibleAlternative: false }]
+  });
+  const issues = createEmbeddedContentIssues("react", "http://localhost:3000", {
+    stateId: "state-1",
+    stateLabel: "Initial page",
+    colorScheme: undefined
+  }, evidence);
+
+  assert.deepEqual(issues.map((issue) => issue.ruleId), [
+    "iframe-scan-unavailable",
+    "canvas-alternative-not-detected"
+  ]);
+  assert.equal(issues[0].findingType, "unmapped");
+  assert.equal(issues[1].findingType, "best-practice");
+  assert.deepEqual(issues[1].wcag, ["1.1.1"]);
 });

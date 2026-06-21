@@ -49,9 +49,9 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
 
 | Criterion | Level | Current coverage | Current source or limitation |
 |---|---|---|---|
-| 1.1.1 Non-text Content | A | Automated + mapped; manual checklist | axe image/ARIA alternative rules, framework lint, alternative-text and logo-purpose review |
-| 1.2.1 Audio-only and Video-only (Prerecorded) | A | Automated + mapped; manual checklist | axe `audio-caption`; media checklist cannot validate transcript quality automatically |
-| 1.2.2 Captions (Prerecorded) | A | Automated + mapped; manual checklist | axe `video-caption`; manual caption accuracy review |
+| 1.1.1 Non-text Content | A | Automated + quality heuristics + manual checklist | axe/framework rules, image quality patterns, and canvas fallback/name evidence; visual meaning and logo/canvas purpose remain manual |
+| 1.2.1 Audio-only and Video-only (Prerecorded) | A | Automated + rendered evidence + manual checklist | axe `audio-caption` plus nearby transcript-candidate evidence; transcript need and quality remain manual |
+| 1.2.2 Captions (Prerecorded) | A | Automated + rendered evidence + manual checklist | axe `video-caption` plus caption-track evidence; audio presence and caption accuracy remain manual |
 | 1.2.3 Audio Description or Media Alternative (Prerecorded) | A | Gap | No dedicated mapped review |
 | 1.2.4 Captions (Live) | AA | Gap | Live caption presence and quality are not tested |
 | 1.2.5 Audio Description (Prerecorded) | AA | Gap | No dedicated mapped review |
@@ -66,7 +66,7 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
 | 1.3.5 Identify Input Purpose | AA | Automated + mapped | axe `autocomplete-valid` |
 | 1.3.6 Identify Purpose | AAA | Gap | Outside current target |
 | 1.4.1 Use of Color | A | Automated + mapped | axe `link-in-text-block` detects only a subset |
-| 1.4.2 Audio Control | A | Automated + mapped | axe `no-autoplay-audio` |
+| 1.4.2 Audio Control | A | Automated + rendered evidence | axe `no-autoplay-audio` plus autoplay, muted, and controls state without duplicate findings |
 | 1.4.3 Contrast (Minimum) | AA | Automated + mapped | axe `color-contrast` with measured and required ratios |
 | 1.4.4 Resize Text | AA | Automated + mapped; manual checklist | axe viewport signal plus 200% zoom review |
 | 1.4.5 Images of Text | AA | Gap | Image purpose and rendered text require review |
@@ -95,7 +95,7 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
 | 2.2.6 Timeouts | AAA | Gap | Outside current target |
 | 2.3.1 Three Flashes or Below Threshold | A | Manual checklist | No flash-frequency analysis |
 | 2.3.2 Three Flashes | AAA | Gap | Outside current target |
-| 2.3.3 Animation from Interactions | AAA | Gap | Outside current target |
+| 2.3.3 Animation from Interactions | AAA | Diagnostic evidence | Active animation count and detectable reduced-motion CSS only; outside current target and requires manual review |
 | 2.4.1 Bypass Blocks | A | Automated + mapped; manual checklist | axe `bypass` plus landmark and skip-link review |
 | 2.4.2 Page Titled | A | Automated + mapped | axe title rule plus duplicate and placeholder title analysis across URLs |
 | 2.4.3 Focus Order | A | Partial automated + mapped; manual checklist | Angular tabindex/focus lint plus recorded bounded Tab and Shift+Tab paths; logical task order still requires review |
@@ -134,7 +134,7 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
 | 3.2.4 Consistent Identification | AA | Gap | Same-purpose component naming is not compared across pages |
 | 3.2.5 Change on Request | AAA | Automated, metadata gap | axe meta-refresh signal only; outside current target |
 | 3.2.6 Consistent Help | A | Gap | Help mechanisms are not identified and compared across pages |
-| 3.3.1 Error Identification | A | Manual checklist | Representative task review only; form errors are not triggered systematically |
+| 3.3.1 Error Identification | A | Rendered-state heuristic + manual checklist | Existing `aria-invalid` fields are checked for exposed associated errors; triggering validation and judging message quality remain manual |
 | 3.3.2 Labels or Instructions | A | Automated + mapped; manual checklist | axe/framework label rules plus quality review |
 | 3.3.3 Error Suggestion | AA | Manual checklist | Representative task review only |
 | 3.3.4 Error Prevention (Legal, Financial, Data) | AA | Gap | Safe mode intentionally avoids completing these transactions |

@@ -37,6 +37,17 @@ remain suitable for reproducible empirical validation.
 
 ### 0.7.x Keyboard Audit Mode
 
+- Make `audit --url <url>` the recommended entry point with one visual HTML
+  report that embeds browser states, static and dynamic findings, screenshots,
+  keyboard traversal, fix guidance, and manual-review work.
+- Include a coverage matrix and compact browser accessibility-tree evidence for
+  landmarks, headings, interactive nodes, and controls exposed without names.
+- Provide representative US screen-reader review scenarios for NVDA, JAWS, and
+  VoiceOver, including forms, dialogs, focus restoration, and live regions.
+- Keep JSON and Markdown alongside the visual report for integrations and pull
+  requests; make Excel, PDF, and raw graph exports explicit options.
+- Retain `check`, `explore`, and `keyboard` as focused commands for CI,
+  debugging, and specialized evidence workflows.
 - Stabilize the initial `a11y-shiftleft keyboard --url <url>` workflow, which
   now performs bounded forward-Tab and reverse Shift+Tab traversal and writes
   shared findings plus dedicated Markdown and JSON focus-path artifacts.
@@ -101,12 +112,31 @@ remain suitable for reproducible empirical validation.
   [MTS web accessibility guide](https://a11y.mts.ru/web) and
   [MTS testing guide](https://a11y.mts.ru/qa) without treating any single guide
   as a conformance standard. Keep WCAG as the normative mapping source.
-- Prototype a bounded zoom and reflow audit that checks 200% browser zoom,
-  narrow 320 CSS pixel layouts, horizontal overflow, clipped content, and
-  overlapping fixed or sticky controls.
-- Add media evidence summaries for captions, transcripts, autoplay controls,
-  reduced-motion behavior, and flashing risk while keeping content quality in
-  the manual checklist.
+- Extend the initial 320 CSS pixel reflow evidence, which now reports document
+  overflow and clipped-text candidates, with explicit 200%/400% zoom and
+  overlapping fixed or sticky control checks.
+- Extend the initial isolated modal checks for accessible name, initial focus,
+  Escape, and trigger restoration with bounded focus-containment traversal and
+  coverage of close, cancel, and successful-completion paths.
+- Extend the initial bounded `aria-live`, alert, status, log, timer, and marquee
+  mutation evidence with validation-error and loading-state correlation while
+  continuing to require screen-reader confirmation of actual announcements.
+- Extend the initial deterministic alternative-text quality evidence for
+  filenames, generic labels, duplicate nearby text, repeated alternatives, and
+  excessive length with contextual figure/caption and complex-image review.
+- Extend the initial rendered-state form evidence for `aria-invalid`, described
+  errors, error summaries, and current focus with safe validation-state
+  correlation and non-sensitive correction workflows that never submit data.
+- Extend the initial media evidence for caption tracks, transcript candidates,
+  autoplay controls, active animations, and reduced-motion CSS with isolated
+  behavior comparison. Keep caption quality, audio description, and flashing
+  risk in manual review.
+- Extend the initial recursive axe frame coverage evidence and unavailable-frame
+  reporting with clearer ownership workflows for third-party embeds. Extend the
+  initial canvas fallback/name heuristic with contextual complex-graphic review.
+- Approximate voice-control readiness with visible-label-in-accessible-name and
+  unique control-name checks while keeping real voice and switch-control tasks
+  in manual review.
 - Add an optional usability-test worksheet that records task completion,
   assistive technology and browser context, blockers, and remediation owners
   without collecting unnecessary personal information.

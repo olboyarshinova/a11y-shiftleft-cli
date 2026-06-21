@@ -42,6 +42,22 @@ test("mapRuleToWcag maps exact known rules", () => {
   assert.deepEqual(mapRuleToWcag("keyboard-focus-indicator-missing"), ["2.4.7"]);
   assert.deepEqual(mapRuleToWcag("keyboard-focus-obscured"), ["2.4.11"]);
   assert.deepEqual(mapRuleToWcag("keyboard-reverse-order-mismatch"), ["2.4.3"]);
+  assert.deepEqual(mapRuleToWcag("layout-horizontal-overflow"), ["1.4.10"]);
+  assert.deepEqual(mapRuleToWcag("layout-clipped-text"), ["1.4.10"]);
+  assert.deepEqual(mapRuleToWcag("modal-accessible-name-missing"), ["4.1.2"]);
+  assert.deepEqual(mapRuleToWcag("modal-initial-focus-outside"), ["2.4.3"]);
+  assert.deepEqual(mapRuleToWcag("modal-focus-not-restored"), ["2.4.3"]);
+  assert.deepEqual(mapRuleToWcag("form-invalid-error-not-associated"), ["3.3.1", "3.3.2"]);
+  assert.deepEqual(mapRuleToWcag("image-alt-filename"), ["1.1.1"]);
+  assert.deepEqual(mapRuleToWcag("image-alt-generic"), ["1.1.1"]);
+  assert.deepEqual(mapRuleToWcag("image-alt-duplicates-nearby-text"), ["1.1.1"]);
+  assert.deepEqual(mapRuleToWcag("image-alt-repeated"), ["1.1.1"]);
+  assert.deepEqual(mapRuleToWcag("image-alt-excessive-length"), ["1.1.1"]);
+  assert.deepEqual(mapRuleToWcag("media-video-captions-not-detected"), ["1.2.2"]);
+  assert.deepEqual(mapRuleToWcag("media-audio-transcript-not-detected"), ["1.2.1"]);
+  assert.deepEqual(mapRuleToWcag("media-autoplay-control-risk"), ["1.4.2"]);
+  assert.deepEqual(mapRuleToWcag("canvas-alternative-not-detected"), ["1.1.1"]);
+  assert.deepEqual(mapRuleToWcag("frame-title"), ["4.1.2"]);
 });
 
 test("mapRuleToWcag maps rule ids that contain known tokens", () => {
@@ -94,6 +110,22 @@ test("getWcagCriteria includes WCAG 2.1 input purpose criteria", () => {
 
   assert.equal(criterion.id, "1.3.5");
   assert.equal(criterion.title, "Identify Input Purpose");
+  assert.equal(criterion.level, "AA");
+  assert.equal(criterion.introducedIn, "2.1");
+});
+
+test("getWcagCriteria includes form error identification", () => {
+  const [criterion] = getWcagCriteria(["3.3.1"]);
+
+  assert.equal(criterion.title, "Error Identification");
+  assert.equal(criterion.level, "A");
+  assert.equal(criterion.principle, "understandable");
+});
+
+test("getWcagCriteria includes WCAG 2.1 reflow criteria", () => {
+  const [criterion] = getWcagCriteria(["1.4.10"]);
+
+  assert.equal(criterion.title, "Reflow");
   assert.equal(criterion.level, "AA");
   assert.equal(criterion.introducedIn, "2.1");
 });

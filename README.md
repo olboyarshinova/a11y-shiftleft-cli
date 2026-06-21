@@ -36,16 +36,20 @@ This project connects those pieces into one repeatable developer workflow:
 - Deduplicate repeated findings.
 - Map findings to WCAG metadata when available.
 - Prioritize by severity and confidence.
-- Export Markdown, JSON, CSV, visual HTML, and dashboard reports.
+- Create one visual report that combines screenshots, findings, keyboard
+  evidence, and a manual-review checklist.
+- Show an audit coverage matrix and compact browser accessibility-tree evidence
+  for explored states.
+- Export compact Markdown and JSON by default, with optional Excel and PDF.
 - Add bounded checks to pull requests.
 - Track whether accessibility is getting better or worse over time.
 
 ## See The Visual Report
 
-The `explore` command creates one local HTML report with summary metrics,
-WCAG-aware triage, likely root causes, screenshots, and fix recommendations.
-It also records safely discovered UI states, including opened dialogs with
-annotated accessibility findings.
+The `audit` command creates one local HTML report with summary metrics,
+WCAG-aware triage, likely root causes, screenshots, keyboard evidence, manual
+review steps, and fix recommendations. It safely discovers UI states, including
+opened dialogs with annotated accessibility findings.
 
 [![Demo exploration report showing summary metrics, affected states, top accessibility rules, and likely root causes](docs/assets/demo-report-overview.png)](docs/assets/demo-report-overview.png)
 
@@ -85,43 +89,42 @@ Common dev server URLs by framework or tool:
 
 When in doubt, use the URL your terminal prints after `npm run dev`.
 
-3. Run your first scan. Replace the URL with the URL printed by your dev server:
+3. Run your first audit. Replace the URL with the URL printed by your dev server:
 
 ```bash
-npx a11y-shiftleft-cli check --dynamic --url http://localhost:5173 --out reports
+npx a11y-shiftleft-cli audit --url http://localhost:5173 --out reports
 ```
 
-4. Open the human-readable report with your editor, or use the command for your
-operating system:
+The command combines available static analysis, browser exploration, axe
+checks, a bounded keyboard traversal, screenshots, and a manual-review
+checklist. Safe mode blocks recognized payment, account, cookie-consent,
+permission, advertising, and other high-risk controls.
+
+4. Open the visual report:
 
 ```bash
 # macOS
-open reports/a11y-comment.md
+open reports/a11y-report.html
 
 # Linux
-xdg-open reports/a11y-comment.md
+xdg-open reports/a11y-report.html
 
 # Windows PowerShell
-start reports/a11y-comment.md
+start reports/a11y-report.html
 ```
 
-The same run also creates:
+The default audit stays compact:
 
 ```txt
+reports/a11y-report.html
 reports/a11y-report.json
-reports/a11y-metrics.csv
-reports/a11y-summary.csv
-reports/a11y-pages.csv
-reports/a11y-rules.csv
-reports/a11y-findings.csv
-reports/a11y-remediation.csv
+reports/a11y-comment.md
+reports/screenshots/
 ```
 
-For Excel, start with `a11y-summary.csv`. Import `a11y-pages.csv`,
-`a11y-rules.csv`, `a11y-findings.csv`, and `a11y-remediation.csv` as separate
-worksheets when deeper analysis is needed. These files use stable columns and
-one entity per row. `a11y-metrics.csv` remains available only for compatibility
-with earlier metric collectors.
+Add `--excel` for four structured CSV tables, `--pdf` for a portable visual
+report, or `--raw` for the exploration graph. These files are optional so a
+normal local audit remains easy to navigate.
 
 ## Optional Project Setup
 
@@ -137,7 +140,7 @@ shell syntax:
 ```bash
 export APP_URL=http://localhost:5173
 npx a11y-shiftleft-cli doctor --url $APP_URL
-npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports
+npx a11y-shiftleft-cli audit --url $APP_URL --out reports
 ```
 
 In Windows PowerShell, set `$env:APP_URL = "http://localhost:5173"` and use
@@ -147,14 +150,16 @@ and pass the URL directly on every operating system.
 `APP_URL` is only a shortcut. You can always pass the URL directly:
 
 ```bash
-npx a11y-shiftleft-cli check --dynamic --url http://localhost:4200 --out reports
+npx a11y-shiftleft-cli audit --url http://localhost:4200 --out reports
 ```
 
 ## Copy-Paste Recipes
 
 | Goal | Command |
 |---|---|
-| Scan one running app URL | `npx a11y-shiftleft-cli check --dynamic --url http://localhost:5173 --out reports` |
+| Run the recommended full audit | `npx a11y-shiftleft-cli audit --url http://localhost:5173 --out reports` |
+| Add Excel and PDF exports | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports --excel --pdf` |
+| Run only a fast browser scan | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports` |
 | Scan several known pages | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL $APP_URL/settings $APP_URL/checkout --out reports` |
 | Let the CLI discover same-origin pages | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --crawl --crawl-depth 1 --crawl-limit 10 --out reports` |
 | Trigger lazy-loaded below-the-fold content | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --scroll-step 800 --scroll-max-steps 25 --out reports` |
@@ -167,9 +172,10 @@ npx a11y-shiftleft-cli check --dynamic --url http://localhost:4200 --out reports
 
 ## What The Reports Mean
 
-After a scan, start with `reports/a11y-comment.md`. It contains a compact table
-and a list of findings with severity, WCAG metadata, confidence, and remediation
-hints.
+After an audit, start with `reports/a11y-report.html`. It combines visual states,
+annotated screenshots, severity and WCAG metadata, fix recommendations, keyboard
+evidence, and the manual checks that automation cannot complete. Use
+`a11y-comment.md` for pull requests and `a11y-report.json` for integrations.
 
 Each finding is labeled as a `WCAG violation`, `best practice`, or
 `unmapped review`. Reports also group repeated occurrences into likely root
@@ -183,19 +189,16 @@ recommendation; axe findings also preserve their rule-specific help link.
 
 | File | Use it for | Commit it? |
 |---|---|---|
+| `reports/a11y-report.html` | Primary visual review | Usually no |
 | `reports/a11y-comment.md` | Human review and PR comments | Usually no |
 | `reports/a11y-report.json` | Automation, debugging, integrations | Usually no |
-| `reports/a11y-summary.csv` | One Excel-friendly summary row | Usually no |
-| `reports/a11y-pages.csv` | One affected page per row | Usually no |
-| `reports/a11y-rules.csv` | One rule per row with counts and guidance | Usually no |
-| `reports/a11y-findings.csv` | One finding per row with fix steps and evidence | Usually no |
-| `reports/a11y-remediation.csv` | One remediation item per row with ownership and status | Usually no |
-| `reports/a11y-metrics.csv` | Backward-compatible raw metric/value export | Usually no |
-| `reports/exploration.html` | Visual review of explored UI states | Usually no |
-| `reports/exploration.pdf` | Portable visual report artifact when `--pdf` is used | Usually no |
-| `reports/keyboard-path.md` | Human-readable Tab order and focus evidence | Usually no |
-| `reports/keyboard-report.json` | Structured keyboard traversal data | Usually no |
 | `reports/screenshots/` | Screenshots from visual exploration | No |
+| `reports/a11y-summary.csv` | Optional Excel summary from `audit --excel` | Usually no |
+| `reports/a11y-pages.csv` | Optional page table from `audit --excel` | Usually no |
+| `reports/a11y-rules.csv` | Optional rule table from `audit --excel` | Usually no |
+| `reports/a11y-findings.csv` | Optional finding table from `audit --excel` | Usually no |
+| `reports/a11y-report.pdf` | Optional portable report from `audit --pdf` | Usually no |
+| `reports/exploration-graph.json` | Optional debugging data from `audit --raw` | Usually no |
 | `.a11y-shiftleft.json` | Shared project config | Usually yes |
 | `.a11y-baseline.json` | Accepted known findings | Yes, when using baseline mode |
 | `a11y-ignore.json` | Temporary reviewed exceptions | Yes, when intentionally used |
@@ -285,15 +288,98 @@ Run static and dynamic checks together:
 npx a11y-shiftleft-cli check --url $APP_URL --out reports
 ```
 
-## Visual Exploration
+## Full Audit
+
+Use `audit` for the normal local workflow:
+
+```bash
+npx a11y-shiftleft-cli audit --url $APP_URL --out reports
+```
+
+The HTML report includes safely discovered pages and UI states, axe and static
+findings, annotated screenshots, keyboard focus evidence, and a manual-review
+checklist. Its coverage matrix separates completed automation from keyboard,
+screen-reader, and human-review work. Each explored state includes a compact
+browser accessibility-tree summary with landmarks, headings, interactive
+controls, and unnamed interactive-node counts. Add `--activation` to exercise
+bounded Enter, Space, Escape, and arrow-key behavior in isolated browser
+contexts.
+
+Every explored state is also rendered at 320 CSS pixels. The report records
+document-level horizontal overflow and bounded clipped-text candidates as
+heuristic WCAG 1.4.10 evidence. Because intentional truncation can be valid,
+flagged text still requires human confirmation at browser zoom.
+
+When safe exploration opens a modal, audit checks its accessible name and
+initial focus. In an isolated browser page it also presses Escape and records
+whether the dialog closes and focus returns to its trigger. Escape support is
+reported as best-practice evidence; complete focus containment, every close
+path, and screen-reader behavior still require manual testing.
+
+For each safe click that produces a new explored state, audit observes bounded
+mutations in `aria-live`, `alert`, `status`, `log`, `timer`, and `marquee`
+regions. It records the region, politeness, and text without treating a missing
+announcement as an automatic failure. A supported screen reader must still
+confirm timing, interruption, duplication, and usefulness.
+
+For rendered forms, audit records explicit `aria-invalid="true"` fields,
+`aria-errormessage` and `aria-describedby` associations, exposed error text,
+error summaries, and current focus. It reports an invalid field when its
+referenced message is missing, hidden, or empty. The audit never submits forms
+or enters personal data; message quality and complete correction workflows
+still require human and screen-reader review.
+
+For rendered images, audit also reviews non-empty alternative text for
+deterministic quality patterns: filenames, one-word generic labels, exact
+duplication of nearby text, reuse across different image sources, and unusually
+long alternatives. These are medium-confidence review signals with fix
+guidance, not automatic judgments about image meaning. Missing alternatives
+remain covered by axe and framework linting; decorative `alt=""` images are not
+flagged by the quality heuristic.
+
+Media evidence records rendered audio and video players, caption tracks,
+nearby transcript candidates, autoplay/muted/controls state, active browser
+animations, and detectable `prefers-reduced-motion` CSS. Equivalent axe media
+findings are not duplicated. The report cannot determine whether media contains
+speech, whether captions or transcripts are accurate, whether audio description
+is sufficient, or whether animation flashes exceed a threshold; those remain
+explicit manual-review tasks.
+
+Embedded-content evidence lists iframe origin and document availability without
+storing URL query strings or fragments. Modern `@axe-core/playwright` scans
+accessible frame documents recursively; unavailable frames are reported as
+coverage gaps with a recommendation to audit their source URL separately.
+Canvas elements are checked for an accessible name, fallback text/content, or
+an explicit decorative treatment. Because the CLI cannot interpret canvas
+pixels, missing alternatives remain medium-confidence review signals.
+
+Use `--no-keyboard` or `--no-manual-review` only when you deliberately need a
+smaller run. Use `--no-screenshots` for sensitive applications. Optional export
+files are explicit:
+
+```bash
+npx a11y-shiftleft-cli audit \
+  --url $APP_URL \
+  --out reports \
+  --excel \
+  --pdf \
+  --raw
+```
+
+For a slow page, add a short bounded wait such as `--wait-ms 1000`, or prefer
+`--wait-for-selector "[data-page-ready]"` when the app exposes a reliable loaded
+state. Audit auto-scrolls before scanning by default; the step size and bound can
+be tuned with `--scroll-step` and `--scroll-max-steps`.
+
+## Focused Visual Exploration
 
 **Screenshot privacy:** `explore` captures screenshots of every page it visits.
 If the app you are scanning contains personal data, login screens, payment details,
 or production customer records, use `--no-screenshots` to skip them entirely.
 See [Visual reports](docs/visual-reports.md) for privacy and safe-mode details.
 
-Use `explore` when you do not want to list every route manually or when you
-want screenshots of checked states:
+Use the lower-level `explore` command when you need only browser state discovery
+and screenshots without the combined keyboard and manual-review sections:
 
 ```bash
 npx a11y-shiftleft-cli explore --url $APP_URL --depth 2 --out reports
@@ -637,7 +723,12 @@ npx a11y-shiftleft-cli evidence pack \
   --include-visual
 ```
 
-## Keyboard Focus Audit
+## Focused Keyboard Audit
+
+The recommended `audit` command already embeds keyboard evidence in
+`a11y-report.html` and `a11y-report.json`. Use the standalone `keyboard` command
+when you need to tune focus traversal, maintain a keyboard-specific baseline, or
+run keyboard checks without screenshots and visual exploration.
 
 Run a bounded keyboard-only traversal on a page:
 
@@ -705,8 +796,18 @@ current limits.
 
 ## Manual Review Checklist
 
-Automated tools do not catch every accessibility issue. Generate a manual
-review checklist when you need human follow-up:
+Automated tools do not catch every accessibility issue. `audit` embeds a manual
+review checklist directly in the primary HTML and JSON reports. It covers
+keyboard flow, screen-reader smoke testing, form labels, content clarity, zoom
+and reflow, alternative-text and logo quality, media and motion, skip links, and
+representative-user tasks.
+
+The screen-reader steps use representative US desktop combinations: NVDA with
+Chrome or Firefox, JAWS with Chrome or Edge, and VoiceOver with Safari. Teams
+can select combinations that match their supported platforms and risk profile;
+the CLI does not claim to automate screen-reader testing.
+
+For the standalone Markdown and JSON checklist workflow, run:
 
 ```bash
 npx a11y-shiftleft-cli check --url $APP_URL --semi-auto --out reports
@@ -719,10 +820,7 @@ reports/a11y-manual-checklist.md
 reports/a11y-manual-checklist.json
 ```
 
-The checklist covers areas such as keyboard flow, screen reader smoke testing,
-form labels, content clarity, 200% zoom and reflow, alternative-text and logo quality,
-media and motion, skip links, and representative-user task testing that
-automated tools cannot fully judge. Each item includes fields for review status,
+Each item includes fields for review status,
 tester, date, test environment, notes, evidence links, and remediation owner.
 Use Markdown for human review and JSON when the evidence needs to be processed
 or aggregated later.
@@ -780,7 +878,7 @@ In another terminal:
 
 ```bash
 nvm use
-node bin/cli.js check --dynamic --url http://localhost:5173 --out reports
+node bin/cli.js audit --url http://localhost:5173 --out reports
 ```
 
 ## More Documentation

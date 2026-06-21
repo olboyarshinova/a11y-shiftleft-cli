@@ -10,6 +10,10 @@ import type { A11yReport, ComplianceEvidenceSummary, ComplianceStandardMetadata,
 interface WriteReportOptions {
   formats?: ReportFormat[];
   semiAuto?: boolean;
+  legacyMetrics?: boolean;
+  exploration?: A11yReport["exploration"];
+  keyboard?: A11yReport["keyboard"];
+  manualChecklist?: A11yReport["manualChecklist"];
 }
 
 type SummaryValue = string | number | boolean | null | undefined;
@@ -40,10 +44,20 @@ export async function writeReports(
       };
   });
 
-  const report = {
+  const manualChecklist = options.manualChecklist || (options.semiAuto
+    ? createManualChecklist({
+      framework: metrics.framework || "unknown",
+      urls: metrics.urls || [],
+      issues: reportIssues
+    })
+    : undefined);
+  const report: A11yReport = {
     generatedAt: new Date().toISOString(),
     summary: summarize(reportIssues, metrics),
-    issues: reportIssues
+    issues: reportIssues,
+    exploration: options.exploration,
+    keyboard: options.keyboard,
+    manualChecklist
   };
 
   if (formats.has("json")) {
@@ -55,10 +69,10 @@ export async function writeReports(
 
   if (formats.has("csv")) {
     await Promise.all([
-      fs.writeFile(
+      ...(options.legacyMetrics === false ? [] : [fs.writeFile(
         path.join(outputDir, "a11y-metrics.csv"),
         toCsv(report.summary)
-      ),
+      )]),
       fs.writeFile(
         path.join(outputDir, "a11y-findings.csv"),
         toFindingsCsv(report.issues)
@@ -74,10 +88,6 @@ export async function writeReports(
       fs.writeFile(
         path.join(outputDir, "a11y-rules.csv"),
         toRulesCsv(report.issues)
-      ),
-      fs.writeFile(
-        path.join(outputDir, "a11y-remediation.csv"),
-        toRemediationCsv(report.issues)
       )
     ]);
   }
@@ -89,21 +99,15 @@ export async function writeReports(
     );
   }
 
-  if (options.semiAuto) {
-    const checklist = createManualChecklist({
-      framework: report.summary.framework,
-      urls: report.summary.urls,
-      issues: reportIssues
-    });
-
+  if (options.semiAuto && manualChecklist) {
     await Promise.all([
       fs.writeFile(
         path.join(outputDir, "a11y-manual-checklist.md"),
-        toManualChecklistMarkdown(checklist)
+        toManualChecklistMarkdown(manualChecklist)
       ),
       fs.writeFile(
         path.join(outputDir, "a11y-manual-checklist.json"),
-        `${JSON.stringify(checklist, null, 2)}\n`
+        `${JSON.stringify(manualChecklist, null, 2)}\n`
       )
     ]);
   }
@@ -232,28 +236,6 @@ export function toRulesCsv(issues: DedupedIssue[]): string {
     "ruleId", "highestSeverity", "findings", "occurrences", "sources",
     "findingTypes", "categories", "wcagCriteria", "pages", "fixSummary",
     "documentation"
-  ]);
-}
-
-export function toRemediationCsv(issues: DedupedIssue[]): string {
-  const records = issues.map((issue) => ({
-    fingerprint: issue.fingerprint || "",
-    severity: issue.severity,
-    ruleId: issue.ruleId,
-    target: issue.url || issue.file || issue.selector || "unknown",
-    status: issue.remediationTracking?.status || "untracked",
-    owner: issue.remediationTracking?.owner || "",
-    reason: issue.remediationTracking?.reason || "",
-    updatedAt: issue.remediationTracking?.updatedAt || "",
-    reviewBy: issue.remediationTracking?.reviewBy || "",
-    fixSummary: issue.remediation?.summary || "",
-    fixSteps: issue.remediation?.howToFix.join(" | ") || "",
-    documentation: issue.remediation?.docs.join(" | ") || ""
-  }));
-
-  return structuredCsv(records, [
-    "fingerprint", "severity", "ruleId", "target", "status", "owner",
-    "reason", "updatedAt", "reviewBy", "fixSummary", "fixSteps", "documentation"
   ]);
 }
 
@@ -415,11 +397,17 @@ ${formatRetentionRows(report.summary.retention)}| Retention evidence | ${formatR
 | Categories | ${formatCountMap(report.summary.byCategory)} |
 | Rules without WCAG mapping | ${formatCountMap(report.summary.byUnmappedRule)} |
 
+${formatCoverageMatrix(report)}
+
 ${formatPageSummary(report.summary.byPage || [])}
 
 ${formatComplianceEvidence(complianceEvidence)}
 
 ${formatRootCauseGroups(report.summary.rootCauseGroups || [])}
+
+${formatKeyboardEvidence(report)}
+
+${formatManualReviewSummary(report)}
 
 ## Top Findings And Recommendations
 
@@ -429,6 +417,88 @@ ${report.issues.length > 10 ? `Showing 10 of ${report.issues.length} findings. S
 
 ${formatDisclaimer(report.summary.standard)}
 `;
+}
+
+function formatKeyboardEvidence(report: A11yReport): string {
+  const audit = report.keyboard;
+  if (!audit) return "";
+  const path = audit.steps.slice(0, 20).map((step) =>
+    `| ${step.index} | ${markdownCell(step.role || step.tagName)} | ${markdownCell(step.accessibleName || "none")} | ${step.indicatorVisible ? "yes" : "no"} | ${step.obscured ? "yes" : "no"} |`
+  ).join("\n");
+
+  return `## Keyboard Evidence
+
+| Metric | Value |
+|---|---:|
+| Focusable controls | ${audit.focusableCount} |
+| Forward steps | ${audit.steps.length} |
+| Reverse steps | ${audit.backwardSteps.length} |
+| Complete cycle | ${audit.completedCycle ? "yes" : "no"} |
+| Activation attempts | ${audit.activationAttempts?.length || 0} |
+
+| Step | Role | Accessible name | Focus indicator | Obscured |
+|---:|---|---|---|---|
+${path || "| - | - | No focus steps recorded | - | - |"}
+
+${audit.steps.length > 20 ? `Showing 20 of ${audit.steps.length} forward focus steps. See \`a11y-report.json\` for the complete path.` : ""}`;
+}
+
+function formatCoverageMatrix(report: A11yReport): string {
+  const stateCount = report.exploration?.summary.statesVisited || 0;
+  const reflowCount = report.exploration?.states.filter((state) => state.reflow).length || 0;
+  const modalCount = report.exploration?.states.filter((state) => state.modalFocus).length || 0;
+  const announcementStates = report.exploration?.states.filter((state) => state.dynamicAnnouncements) || [];
+  const announcementUpdates = announcementStates.reduce((total, state) => total + (state.dynamicAnnouncements?.meaningfulUpdates || 0), 0);
+  const formStates = report.exploration?.states.filter((state) => state.formErrors) || [];
+  const invalidFields = formStates.reduce((total, state) => total + (state.formErrors?.invalidFieldCount || 0), 0);
+  const unassociatedInvalidFields = formStates.reduce((total, state) => total + (state.formErrors?.unassociatedInvalidCount || 0), 0);
+  const imageStates = report.exploration?.states.filter((state) => state.imageAlternatives) || [];
+  const suspiciousImages = imageStates.reduce((total, state) => total + (state.imageAlternatives?.suspiciousCount || 0), 0);
+  const mediaStates = report.exploration?.states.filter((state) => state.media) || [];
+  const mediaElements = mediaStates.reduce((total, state) => total + (state.media?.audioCount || 0) + (state.media?.videoCount || 0), 0);
+  const autoplayRisks = mediaStates.reduce((total, state) => total + (state.media?.autoplayRiskCount || 0), 0);
+  const embeddedStates = report.exploration?.states.filter((state) => state.embeddedContent) || [];
+  const iframeCount = embeddedStates.reduce((total, state) => total + (state.embeddedContent?.iframeCount || 0), 0);
+  const inaccessibleFrames = embeddedStates.reduce((total, state) => total + (state.embeddedContent?.inaccessibleIframeCount || 0), 0);
+  const canvasGaps = embeddedStates.reduce((total, state) => total + (state.embeddedContent?.canvasWithoutAlternativeCount || 0), 0);
+  return `## Audit Coverage
+
+| Area | Status | Evidence or next step |
+|---|---|---|
+| Browser automation | ${stateCount > 0 ? "Completed" : "Not included"} | ${stateCount > 0 ? `${stateCount} rendered states scanned` : "Run the audit command"} |
+| Static source analysis | Configuration-dependent | Install the adapter for the detected framework |
+| Keyboard traversal | ${report.keyboard ? "Bounded evidence collected" : "Not included"} | ${report.keyboard ? `${report.keyboard.steps.length} forward focus steps` : "Run audit without --no-keyboard"} |
+| Reflow at 320 CSS pixels | ${reflowCount > 0 ? "Heuristic evidence collected" : "Not included"} | ${reflowCount} rendered state${reflowCount === 1 ? "" : "s"} checked for overflow and clipped text |
+| Modal focus behavior | ${modalCount > 0 ? "Heuristic evidence collected" : "No opened modal observed"} | ${modalCount} state${modalCount === 1 ? "" : "s"} checked for name, initial focus, Escape, and restoration |
+| Dynamic announcements | ${announcementStates.length > 0 ? "Mutation evidence collected" : "No action evidence"} | ${announcementUpdates} meaningful live-region update${announcementUpdates === 1 ? "" : "s"} observed after ${announcementStates.length} action${announcementStates.length === 1 ? "" : "s"} |
+| Form error states | ${formStates.length > 0 ? "Rendered-state evidence collected" : "No forms observed"} | ${invalidFields} explicit invalid field${invalidFields === 1 ? "" : "s"}; ${unassociatedInvalidFields} without an exposed associated error |
+| Image alternatives | ${imageStates.length > 0 ? "Quality heuristics collected" : "No images observed"} | ${suspiciousImages} alternative${suspiciousImages === 1 ? "" : "s"} flagged for contextual human review |
+| Media and motion | ${mediaStates.length > 0 ? "Rendered-state evidence collected" : "No media or active motion observed"} | ${mediaElements} audio/video element${mediaElements === 1 ? "" : "s"}; ${autoplayRisks} autoplay control risk${autoplayRisks === 1 ? "" : "s"} |
+| Embedded content | ${embeddedStates.length > 0 ? "Coverage evidence collected" : "No iframe or canvas observed"} | ${iframeCount} iframe${iframeCount === 1 ? "" : "s"}; ${inaccessibleFrames} unavailable; ${canvasGaps} canvas alternative gap${canvasGaps === 1 ? "" : "s"} |
+| Screen reader | Human review required | Test representative tasks with NVDA, JAWS, or VoiceOver |
+| Content and task usability | ${report.manualChecklist ? "Checklist ready" : "Not included"} | Record human evidence and outcome |`;
+}
+
+function formatManualReviewSummary(report: A11yReport): string {
+  const checklist = report.manualChecklist;
+  if (!checklist) return "";
+  const items = checklist.items.map((item) =>
+    `- [ ] **${markdownInline(item.title)}** (WCAG ${markdownInline(item.wcag.join(", "))})`
+  ).join("\n");
+
+  return `## Manual Review Checklist
+
+Automation cannot complete these checks. Record the full status, evidence, and notes in the visual or JSON report.
+
+${items}`;
+}
+
+function markdownCell(value: string): string {
+  return value.replace(/\|/g, "\\|").replace(/[\r\n]+/g, " ").trim();
+}
+
+function markdownInline(value: string): string {
+  return value.replace(/[\r\n]+/g, " ").replace(/\*/g, "\\*").trim();
 }
 
 function countBy(items: DedupedIssue[], field: "source" | "severity" | "confidence" | "findingType" | "category"): Record<string, number> {

@@ -2,18 +2,28 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { AxeBuilder } from "@axe-core/playwright";
-import { chromium, type BrowserContext, type Page } from "playwright";
+import { chromium, type Browser, type BrowserContext, type Page } from "playwright";
 import { applyColorScheme, detectPageColorSchemes, getPageAppearanceSignature, normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig } from "../core/pageScroll.js";
 import { extractContrastEvidence } from "../core/contrast.js";
 import { analyzePageTitles } from "../core/pageTitles.js";
 import type {
   A11yConfig,
+  AccessibilityTreeEvidence,
+  DynamicAnnouncementEvidence,
+  EmbeddedContentEvidence,
   ExplorationGraph,
   ExplorationState,
   ExploreAction,
   ExploreSafeModeConfig,
   ExploreSkippedAction,
-  Issue
+  FormErrorEvidence,
+  ImageAlternativeConcern,
+  ImageAlternativeEvidence,
+  Issue,
+  MediaElementEvidence,
+  MediaEvidence,
+  ModalFocusEvidence,
+  ReflowEvidence
 } from "../types.js";
 import type { ElementBounds } from "../types.js";
 
@@ -289,13 +299,14 @@ export async function runExplorePlaywrightAdapter(
     while (queue.length > 0 && uniqueUiStates < maxStates) {
       const current = queue.shift();
       if (!current) continue;
+      let dynamicAnnouncements: DynamicAnnouncementEvidence | undefined;
 
       try {
         await applyColorScheme(page, "light");
         if (safeMode.isolateCookies) {
           await clearContextCookies(context);
         }
-        await replayPath(page, options.url, current.path, {
+        dynamicAnnouncements = await replayPath(page, options.url, current.path, {
           waitMs,
           waitForSelector
         });
@@ -306,6 +317,13 @@ export async function runExplorePlaywrightAdapter(
       }
 
       const initialPageState = await fingerprintPage(page);
+      const openModal = await inspectOpenModal(page);
+      const modalFocus = openModal
+        ? await auditModalFocusInIsolation(browser, options.url, current.path, {
+          waitMs,
+          waitForSelector
+        }, openModal)
+        : undefined;
       const discovery = current.depth >= maxDepth
         ? { actions: [], skipped: [] }
         : await discoverSafeActions(page, initialPageState.url, maxActionsPerState, safeMode);
@@ -334,8 +352,36 @@ export async function runExplorePlaywrightAdapter(
           stateLabel: actionLabel,
           colorScheme: reportedColorScheme
         });
+        const accessibilityTree = await captureAccessibilityTree(page);
+        const formErrors = await auditFormErrors(page, config, {
+          stateId,
+          stateLabel: actionLabel,
+          colorScheme: reportedColorScheme
+        });
+        const imageAlternatives = await auditImageAlternatives(page, config, {
+          stateId,
+          stateLabel: actionLabel,
+          colorScheme: reportedColorScheme
+        });
+        const media = await auditMedia(page, config, {
+          stateId,
+          stateLabel: actionLabel,
+          colorScheme: reportedColorScheme
+        }, scannedIssues);
+        const embeddedContent = await auditEmbeddedContent(page, config, {
+          stateId,
+          stateLabel: actionLabel,
+          colorScheme: reportedColorScheme
+        });
+        const renderedIssues = [
+          ...scannedIssues,
+          ...formErrors.issues,
+          ...imageAlternatives.issues,
+          ...media.issues,
+          ...embeddedContent.issues
+        ];
         const visualEvidence = screenshots
-          ? await captureStateVisualEvidence(page, scannedIssues, {
+          ? await captureStateVisualEvidence(page, renderedIssues, {
             outputDir: options.outputDir,
             stateId,
             format: screenshotFormat,
@@ -344,7 +390,7 @@ export async function runExplorePlaywrightAdapter(
             redactSensitiveFields: screenshotRedaction
           })
           : {
-            issues: scannedIssues,
+            issues: renderedIssues,
             captures: [],
             fullPage: false
           };
@@ -389,12 +435,23 @@ export async function runExplorePlaywrightAdapter(
           }
         }
 
-        const stateIssues = visualEvidence.issues.map((issue) => ({
+        const reflow = await auditReflow(page, config, {
+          stateId,
+          stateLabel: actionLabel,
+          colorScheme: reportedColorScheme
+        });
+        const modalIssues = modalFocusIssues(config, modalFocus, {
+          stateId,
+          stateLabel: actionLabel,
+          colorScheme: reportedColorScheme,
+          url: page.url()
+        });
+        const stateIssues = [...visualEvidence.issues.map((issue) => ({
           ...issue,
           screenshot: issue.screenshot
             ? screenshotPathReplacements.get(issue.screenshot) || issue.screenshot
             : undefined
-        }));
+        })), ...reflow.issues, ...modalIssues];
         const screenshot = screenshotEvidence[0]?.path;
         issues.push(...stateIssues);
 
@@ -411,7 +468,15 @@ export async function runExplorePlaywrightAdapter(
           screenshotFullPage: screenshot ? visualEvidence.fullPage : undefined,
           visualDuplicateOf,
           issueCount: stateIssues.length,
-          actionCount: actions.length
+          actionCount: actions.length,
+          accessibilityTree,
+          reflow: reflow.evidence,
+          modalFocus,
+          dynamicAnnouncements,
+          formErrors: formErrors.evidence,
+          imageAlternatives: imageAlternatives.evidence,
+          media: media.evidence,
+          embeddedContent: embeddedContent.evidence
         };
 
         states.push(state);
@@ -646,10 +711,11 @@ async function replayPath(
   startUrl: string,
   actions: ExploreAction[],
   wait: ExploreWaitOptions
-): Promise<void> {
+): Promise<DynamicAnnouncementEvidence | undefined> {
   await gotoAndSettle(page, startUrl, wait);
+  let dynamicAnnouncements: DynamicAnnouncementEvidence | undefined;
 
-  for (const action of actions) {
+  for (const [index, action] of actions.entries()) {
     if (action.type === "navigate" && action.url) {
       await gotoAndSettle(page, action.url, wait);
       continue;
@@ -657,11 +723,135 @@ async function replayPath(
 
     if (!action.selector) continue;
 
+    const observeAnnouncements = index === actions.length - 1;
+    if (observeAnnouncements) await startDynamicAnnouncementMonitor(page);
+
     await page.locator(action.selector).first().click({
       timeout: 1500
     });
     await settle(page, wait);
+    if (observeAnnouncements) {
+      dynamicAnnouncements = await finishDynamicAnnouncementMonitor(page, action.label);
+    }
   }
+
+  return dynamicAnnouncements;
+}
+
+async function startDynamicAnnouncementMonitor(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    type MonitorUpdate = {
+      selector: string;
+      role?: string;
+      politeness: "assertive" | "polite" | "off" | "implicit";
+      text: string;
+    };
+    type MonitorState = {
+      observer: MutationObserver;
+      regionsBefore: number;
+      updates: MonitorUpdate[];
+    };
+    const monitorWindow = window as typeof window & { __a11yAnnouncementMonitor?: MonitorState };
+    monitorWindow.__a11yAnnouncementMonitor?.observer.disconnect();
+    const regionSelector = "[aria-live], [role='alert'], [role='status'], [role='log'], [role='timer'], [role='marquee']";
+
+    function selectorFor(element: Element): string {
+      const id = element.getAttribute("id");
+      if (id) return `[id="${id.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"]`;
+      const role = element.getAttribute("role");
+      if (role) return `[role="${role}"]`;
+      const live = element.getAttribute("aria-live");
+      if (live) return `[aria-live="${live}"]`;
+      return element.tagName.toLowerCase();
+    }
+
+    function updateFor(region: Element): MonitorUpdate {
+      const role = region.getAttribute("role") || undefined;
+      const ariaLive = region.getAttribute("aria-live");
+      const politeness = ariaLive === "assertive" || ariaLive === "polite" || ariaLive === "off"
+        ? ariaLive
+        : role === "alert"
+          ? "assertive"
+          : role === "status" || role === "log"
+            ? "polite"
+            : "implicit";
+      return {
+        selector: selectorFor(region),
+        role,
+        politeness,
+        text: (region.textContent || "").replace(/\s+/g, " ").trim().slice(0, 300)
+      };
+    }
+
+    const updates: MonitorUpdate[] = [];
+    const record = (region: Element | null): void => {
+      if (!region || updates.length >= 50) return;
+      updates.push(updateFor(region));
+    };
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        const target = mutation.target.nodeType === Node.ELEMENT_NODE
+          ? mutation.target as Element
+          : mutation.target.parentElement;
+        record(target?.closest(regionSelector) || null);
+        if (mutation.type === "childList") {
+          for (const node of mutation.addedNodes) {
+            if (node.nodeType !== Node.ELEMENT_NODE) continue;
+            const element = node as Element;
+            record(element.matches(regionSelector) ? element : element.querySelector(regionSelector));
+          }
+        }
+      }
+    });
+    observer.observe(document.body, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ["aria-live", "role", "aria-atomic", "aria-relevant"]
+    });
+    monitorWindow.__a11yAnnouncementMonitor = {
+      observer,
+      regionsBefore: document.querySelectorAll(regionSelector).length,
+      updates
+    };
+  });
+}
+
+async function finishDynamicAnnouncementMonitor(
+  page: Page,
+  actionLabel: string
+): Promise<DynamicAnnouncementEvidence | undefined> {
+  return page.evaluate((label) => {
+    type MonitorUpdate = DynamicAnnouncementEvidence["updates"][number];
+    type MonitorState = {
+      observer: MutationObserver;
+      regionsBefore: number;
+      updates: MonitorUpdate[];
+    };
+    const monitorWindow = window as typeof window & { __a11yAnnouncementMonitor?: MonitorState };
+    const state = monitorWindow.__a11yAnnouncementMonitor;
+    if (!state) return undefined;
+    state.observer.disconnect();
+    delete monitorWindow.__a11yAnnouncementMonitor;
+    const selector = "[aria-live], [role='alert'], [role='status'], [role='log'], [role='timer'], [role='marquee']";
+    const seen = new Set<string>();
+    const updates = state.updates.filter((update) => {
+      const key = `${update.selector}|${update.role || ""}|${update.politeness}|${update.text}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).slice(0, 20);
+
+    return {
+      actionLabel: label,
+      regionsBefore: state.regionsBefore,
+      regionsAfter: document.querySelectorAll(selector).length,
+      updatesObserved: updates.length,
+      meaningfulUpdates: updates.filter((update) => update.text.length > 0 && update.politeness !== "off").length,
+      updates
+    };
+  }, actionLabel);
 }
 
 interface ExploreWaitOptions {
@@ -765,6 +955,949 @@ async function scanState(
   } catch (error) {
     return [createExploreErrorIssue(config, page.url(), error)];
   }
+}
+
+interface RawAccessibilityValue {
+  value?: string | number | boolean;
+}
+
+interface RawAccessibilityNode {
+  ignored?: boolean;
+  role?: RawAccessibilityValue;
+  name?: RawAccessibilityValue;
+  properties?: Array<{ name?: string; value?: RawAccessibilityValue }>;
+}
+
+export function summarizeAccessibilityTreeNodes(
+  nodes: RawAccessibilityNode[]
+): AccessibilityTreeEvidence {
+  const visibleNodes = nodes.filter((node) => !node.ignored && typeof node.role?.value === "string");
+  const normalized = visibleNodes.map((node) => {
+    const role = String(node.role?.value || "unknown").toLowerCase();
+    const name = typeof node.name?.value === "string" ? node.name.value.trim() : "";
+    const levelProperty = node.properties?.find((property) => property.name === "level");
+    const levelValue = Number(levelProperty?.value?.value);
+    return {
+      role,
+      name: name || undefined,
+      level: Number.isFinite(levelValue) && levelValue > 0 ? levelValue : undefined
+    };
+  });
+  const interactiveRoles = new Set([
+    "button", "checkbox", "combobox", "link", "listbox", "menuitem",
+    "menuitemcheckbox", "menuitemradio", "option", "radio", "searchbox",
+    "slider", "spinbutton", "switch", "tab", "textbox", "treeitem"
+  ]);
+  const landmarkRoles = new Set([
+    "banner", "complementary", "contentinfo", "form", "main", "navigation",
+    "region", "search"
+  ]);
+  const interactive = normalized.filter((node) => interactiveRoles.has(node.role));
+
+  return {
+    totalNodes: normalized.length,
+    namedNodes: normalized.filter((node) => node.name).length,
+    interactiveNodes: interactive.length,
+    unnamedInteractiveNodes: interactive.filter((node) => !node.name).length,
+    landmarks: normalized.filter((node) => landmarkRoles.has(node.role)).slice(0, 20),
+    headings: normalized.filter((node) => node.role === "heading").slice(0, 30),
+    interactiveSample: interactive.slice(0, 30)
+  };
+}
+
+async function captureAccessibilityTree(page: Page): Promise<AccessibilityTreeEvidence | undefined> {
+  const session = await page.context().newCDPSession(page).catch(() => undefined);
+  if (!session) return undefined;
+
+  try {
+    await session.send("Accessibility.enable");
+    const result = await session.send("Accessibility.getFullAXTree") as unknown as {
+      nodes?: RawAccessibilityNode[];
+    };
+    return summarizeAccessibilityTreeNodes(result.nodes || []);
+  } catch {
+    return undefined;
+  } finally {
+    await session.detach().catch(() => undefined);
+  }
+}
+
+async function auditReflow(
+  page: Page,
+  config: A11yConfig,
+  state: {
+    stateId: string;
+    stateLabel: string;
+    colorScheme: Issue["colorScheme"];
+  }
+): Promise<{ evidence: ReflowEvidence; issues: Issue[] }> {
+  const originalViewport = page.viewportSize() || { width: 1280, height: 720 };
+  const viewport = { width: 320, height: 800 };
+
+  try {
+    await page.setViewportSize(viewport);
+    await page.waitForTimeout(100);
+    const evidence = await page.evaluate(({ viewportWidth, viewportHeight }) => {
+      function selectorFor(element: Element): string {
+        const id = element.getAttribute("id");
+        if (id) return `[id="${id.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"]`;
+        const testId = element.getAttribute("data-testid");
+        if (testId) return `[data-testid="${testId.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"]`;
+
+        const parts: string[] = [];
+        let current: Element | null = element;
+        while (current && current !== document.body && parts.length < 5) {
+          const tag = current.tagName.toLowerCase();
+          const parent: Element | null = current.parentElement;
+          if (!parent) {
+            parts.unshift(tag);
+            break;
+          }
+          const siblings = Array.from(parent.children).filter((sibling) => sibling.tagName === current?.tagName);
+          const index = siblings.indexOf(current) + 1;
+          parts.unshift(siblings.length > 1 ? `${tag}:nth-of-type(${index})` : tag);
+          current = parent;
+        }
+        return parts.join(" > ") || element.tagName.toLowerCase();
+      }
+
+      const root = document.documentElement;
+      const documentWidth = Math.max(root.scrollWidth, document.body?.scrollWidth || 0, window.innerWidth);
+      const candidates = Array.from(document.body?.querySelectorAll("*") || []).filter((element) => {
+        const htmlElement = element as HTMLElement;
+        const style = window.getComputedStyle(htmlElement);
+        const rect = htmlElement.getBoundingClientRect();
+        const hasDirectText = Array.from(element.childNodes).some((node) => (
+          node.nodeType === Node.TEXT_NODE && Boolean(node.textContent?.trim())
+        ));
+        const clipsOverflow = [style.overflow, style.overflowX, style.overflowY]
+          .some((value) => value === "hidden" || value === "clip");
+        const deliberateEllipsis = style.textOverflow === "ellipsis" && style.whiteSpace === "nowrap";
+        return hasDirectText && clipsOverflow && !deliberateEllipsis && rect.width > 0 && rect.height > 0 &&
+          style.visibility !== "hidden" && style.display !== "none" &&
+          (htmlElement.scrollWidth > htmlElement.clientWidth + 1 || htmlElement.scrollHeight > htmlElement.clientHeight + 1);
+      }).slice(0, 10).map((element) => {
+        const htmlElement = element as HTMLElement;
+        return {
+          selector: selectorFor(element),
+          text: (element.textContent || "").replace(/\s+/g, " ").trim().slice(0, 120),
+          horizontalOverflowPx: Math.max(0, htmlElement.scrollWidth - htmlElement.clientWidth),
+          verticalOverflowPx: Math.max(0, htmlElement.scrollHeight - htmlElement.clientHeight)
+        };
+      });
+
+      return {
+        viewportWidth,
+        viewportHeight,
+        documentWidth,
+        horizontalOverflowPx: Math.max(0, documentWidth - root.clientWidth),
+        clippedTextCount: candidates.length,
+        clippedTextSample: candidates
+      };
+    }, { viewportWidth: viewport.width, viewportHeight: viewport.height });
+    const common = {
+      source: "layout",
+      framework: config.framework,
+      wcag: ["1.4.10"],
+      tags: ["wcag1410", "heuristic"],
+      severity: "warning" as const,
+      confidence: "medium" as const,
+      confidenceScore: 80,
+      category: "layout" as const,
+      findingType: "wcag" as const,
+      url: page.url(),
+      stateId: state.stateId,
+      stateLabel: state.stateLabel,
+      colorScheme: state.colorScheme
+    };
+    const issues: Issue[] = [];
+
+    if (evidence.horizontalOverflowPx > 1) {
+      issues.push({
+        ...common,
+        ruleId: "layout-horizontal-overflow",
+        selector: "html",
+        confidenceReason: "The rendered document exceeded a 320 CSS pixel viewport; horizontally scrolling content can indicate a WCAG 1.4.10 reflow failure.",
+        message: `Page content is ${evidence.horizontalOverflowPx}px wider than the 320px reflow viewport.`
+      });
+    }
+
+    for (const clipped of evidence.clippedTextSample) {
+      issues.push({
+        ...common,
+        ruleId: "layout-clipped-text",
+        selector: clipped.selector,
+        confidenceScore: 70,
+        confidenceReason: "Rendered text exceeded an element that clips overflow at 320 CSS pixels; review whether meaningful content becomes unavailable.",
+        message: `Text may be clipped at 320px: "${clipped.text || clipped.selector}"`
+      });
+    }
+
+    return { evidence, issues };
+  } finally {
+    await page.setViewportSize(originalViewport).catch(() => undefined);
+    await page.waitForTimeout(50).catch(() => undefined);
+  }
+}
+
+async function inspectOpenModal(page: Page): Promise<ModalFocusEvidence | undefined> {
+  return page.evaluate(() => {
+    function isVisible(element: Element): boolean {
+      const rect = element.getBoundingClientRect();
+      const style = window.getComputedStyle(element);
+      return rect.width > 0 && rect.height > 0 && style.display !== "none" && style.visibility !== "hidden";
+    }
+
+    function selectorFor(element: Element): string {
+      const id = element.getAttribute("id");
+      if (id) return `[id="${id.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"]`;
+      const role = element.getAttribute("role");
+      if (role === "dialog" || role === "alertdialog") return `[role="${role}"]`;
+      if (element.tagName.toLowerCase() === "dialog") return "dialog[open]";
+      return element.tagName.toLowerCase();
+    }
+
+    function accessibleName(element: Element): string {
+      const ariaLabel = element.getAttribute("aria-label")?.trim();
+      if (ariaLabel) return ariaLabel;
+      const labelledBy = element.getAttribute("aria-labelledby")?.trim().split(/\s+/).filter(Boolean) || [];
+      const label = labelledBy.map((id) => document.getElementById(id)?.textContent?.trim() || "")
+        .filter(Boolean).join(" ");
+      if (label) return label;
+      return element.getAttribute("title")?.trim() || "";
+    }
+
+    const dialogs = Array.from(document.querySelectorAll("dialog[open], [role='dialog'], [role='alertdialog']"))
+      .filter(isVisible);
+    const dialog = dialogs.at(-1);
+    if (!dialog) return undefined;
+    const active = document.activeElement;
+    const name = accessibleName(dialog);
+
+    return {
+      dialogCount: dialogs.length,
+      dialogSelector: selectorFor(dialog),
+      accessibleName: name || undefined,
+      hasAccessibleName: Boolean(name),
+      initialFocusSelector: active && active !== document.body && active !== document.documentElement
+        ? selectorFor(active)
+        : undefined,
+      initialFocusInside: Boolean(active && dialog.contains(active)),
+      escapeTested: false
+    };
+  });
+}
+
+async function auditModalFocusInIsolation(
+  browser: Browser,
+  startUrl: string,
+  path: ExploreAction[],
+  wait: ExploreWaitOptions,
+  fallback: ModalFocusEvidence
+): Promise<ModalFocusEvidence> {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  attachExplorePopupGuard(page);
+
+  try {
+    const trigger = path.at(-1);
+    const prefix = trigger ? path.slice(0, -1) : [];
+    await replayPath(page, startUrl, prefix, wait);
+
+    if (trigger?.type === "navigate" && trigger.url) {
+      await gotoAndSettle(page, trigger.url, wait);
+    } else if (trigger?.selector) {
+      const locator = page.locator(trigger.selector).first();
+      await locator.focus({ timeout: 1500 }).catch(() => undefined);
+      await locator.click({ timeout: 1500 });
+      await settle(page, wait);
+    }
+
+    const beforeEscape = await inspectOpenModal(page);
+    if (!beforeEscape) return fallback;
+    await page.keyboard.press("Escape");
+    await settle(page, { ...wait, waitForSelector: undefined });
+    const afterEscape = await inspectOpenModal(page);
+    const escapeClosed = !afterEscape;
+    const focusReturnedToTrigger = escapeClosed && trigger?.selector
+      ? await page.locator(trigger.selector).first().evaluate((element) => document.activeElement === element)
+        .catch(() => false)
+      : undefined;
+
+    return {
+      ...beforeEscape,
+      triggerSelector: trigger?.selector,
+      escapeTested: true,
+      escapeClosed,
+      focusReturnedToTrigger
+    };
+  } catch {
+    return fallback;
+  } finally {
+    await context.close();
+  }
+}
+
+function modalFocusIssues(
+  config: A11yConfig,
+  evidence: ModalFocusEvidence | undefined,
+  state: {
+    stateId: string;
+    stateLabel: string;
+    colorScheme: Issue["colorScheme"];
+    url: string;
+  }
+): Issue[] {
+  if (!evidence) return [];
+  const common = {
+    source: "modal",
+    framework: config.framework,
+    severity: "warning" as const,
+    confidence: "medium" as const,
+    category: "focus" as const,
+    url: state.url,
+    stateId: state.stateId,
+    stateLabel: state.stateLabel,
+    colorScheme: state.colorScheme,
+    selector: evidence.dialogSelector
+  };
+  const issues: Issue[] = [];
+
+  if (!evidence.hasAccessibleName) {
+    issues.push({
+      ...common,
+      ruleId: "modal-accessible-name-missing",
+      wcag: ["4.1.2"],
+      tags: ["wcag412", "heuristic"],
+      category: "aria",
+      confidenceScore: 85,
+      confidenceReason: "A visible dialog was exposed without aria-label, aria-labelledby, or a title-based accessible name.",
+      message: "Open dialog does not expose an accessible name."
+    });
+  }
+
+  if (!evidence.initialFocusInside) {
+    issues.push({
+      ...common,
+      ruleId: "modal-initial-focus-outside",
+      wcag: ["2.4.3"],
+      tags: ["wcag243", "heuristic"],
+      confidenceScore: 80,
+      confidenceReason: "Focus remained outside the visible modal after its trigger was activated.",
+      message: "Initial focus did not move inside the opened dialog."
+    });
+  }
+
+  if (evidence.escapeTested && evidence.escapeClosed === false) {
+    issues.push({
+      ...common,
+      ruleId: "modal-escape-no-effect",
+      wcag: [],
+      tags: ["best-practice", "heuristic"],
+      severity: "info",
+      findingType: "best-practice",
+      confidenceScore: 70,
+      confidenceReason: "Escape did not close the isolated dialog; verify that another clearly named keyboard-operable close action is available.",
+      message: "Escape did not close the dialog in the isolated interaction check."
+    });
+  }
+
+  if (evidence.escapeTested && evidence.escapeClosed && evidence.triggerSelector && evidence.focusReturnedToTrigger === false) {
+    issues.push({
+      ...common,
+      ruleId: "modal-focus-not-restored",
+      wcag: ["2.4.3"],
+      tags: ["wcag243", "heuristic"],
+      confidenceScore: 80,
+      confidenceReason: "The dialog closed with Escape but focus did not return to the control that opened it.",
+      message: "Focus was not restored to the dialog trigger after closing."
+    });
+  }
+
+  return issues;
+}
+
+async function auditFormErrors(
+  page: Page,
+  config: A11yConfig,
+  state: {
+    stateId: string;
+    stateLabel: string;
+    colorScheme: Issue["colorScheme"];
+  }
+): Promise<{ evidence?: FormErrorEvidence; issues: Issue[] }> {
+  const evidence = await page.evaluate(() => {
+    function selectorFor(element: Element): string {
+      const id = element.getAttribute("id");
+      if (id) return `[id="${id.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"]`;
+      const name = element.getAttribute("name");
+      if (name) return `${element.tagName.toLowerCase()}[name="${name.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"]`;
+      return element.tagName.toLowerCase();
+    }
+
+    function accessibleName(element: Element): string {
+      const ariaLabel = element.getAttribute("aria-label")?.trim();
+      if (ariaLabel) return ariaLabel;
+      const labelledBy = element.getAttribute("aria-labelledby")?.trim().split(/\s+/).filter(Boolean) || [];
+      const labelledText = labelledBy.map((id) => document.getElementById(id)?.textContent?.trim() || "")
+        .filter(Boolean).join(" ");
+      if (labelledText) return labelledText;
+      const id = element.getAttribute("id");
+      if (id) {
+        const label = Array.from(document.querySelectorAll("label"))
+          .find((candidate) => candidate.htmlFor === id)?.textContent?.trim();
+        if (label) return label;
+      }
+      return element.getAttribute("placeholder")?.trim() || "";
+    }
+
+    function referenceText(id: string): string {
+      const element = document.getElementById(id);
+      if (!element || element.hidden || element.getAttribute("aria-hidden") === "true") return "";
+      const style = window.getComputedStyle(element);
+      if (style.display === "none" || style.visibility === "hidden") return "";
+      return (element.textContent || "").replace(/\s+/g, " ").trim();
+    }
+
+    const fields = Array.from(document.querySelectorAll("input:not([type='hidden']), select, textarea"));
+    const invalidFields = fields.filter((field) => field.getAttribute("aria-invalid")?.toLowerCase() === "true")
+      .slice(0, 30).map((field) => {
+        const ids = [...new Set([
+          ...(field.getAttribute("aria-errormessage") || "").split(/\s+/),
+          ...(field.getAttribute("aria-describedby") || "").split(/\s+/)
+        ].map((value) => value.trim()).filter(Boolean))];
+        const associatedErrorText = ids.map(referenceText).filter(Boolean).join(" ");
+        return {
+          selector: selectorFor(field),
+          accessibleName: accessibleName(field) || undefined,
+          errorReferenceIds: ids,
+          associatedErrorText: associatedErrorText || undefined,
+          focused: document.activeElement === field
+        };
+      });
+    const errorSummaryCount = Array.from(document.querySelectorAll("[role='alert'], [aria-live]"))
+      .filter((element) => (element.textContent || "").trim().length > 0).length;
+
+    if (document.querySelectorAll("form").length === 0 && fields.length === 0) return undefined;
+    return {
+      formCount: document.querySelectorAll("form").length,
+      fieldCount: fields.length,
+      invalidFieldCount: invalidFields.length,
+      associatedErrorCount: invalidFields.filter((field) => field.associatedErrorText).length,
+      unassociatedInvalidCount: invalidFields.filter((field) => !field.associatedErrorText).length,
+      errorSummaryCount,
+      invalidFields
+    };
+  });
+  if (!evidence) return { issues: [] };
+  const issues = createFormErrorIssues(config.framework, page.url(), state, evidence);
+
+  return { evidence, issues };
+}
+
+interface RawImageAlternative {
+  selector: string;
+  alt: string | null;
+  sourceKey: string;
+  nearbyText: string;
+}
+
+export function analyzeImageAlternativeEvidence(images: RawImageAlternative[]): ImageAlternativeEvidence {
+  const informative = images.filter((image) => typeof image.alt === "string" && image.alt.trim().length > 0);
+  const repeated = new Map<string, { sources: Set<string>; count: number }>();
+
+  for (const image of informative) {
+    const key = normalizeAlternativeText(image.alt || "");
+    const group = repeated.get(key) || { sources: new Set<string>(), count: 0 };
+    group.sources.add(image.sourceKey);
+    group.count += 1;
+    repeated.set(key, group);
+  }
+
+  const samples: ImageAlternativeEvidence["samples"] = [];
+  for (const image of informative) {
+    const alt = image.alt?.trim() || "";
+    const normalizedAlt = normalizeAlternativeText(alt);
+    const sourceName = normalizeAlternativeText(image.sourceKey.replace(/\.[a-z0-9]{2,5}$/i, ""));
+    const concerns: ImageAlternativeConcern[] = [];
+    const repeatedGroup = repeated.get(normalizedAlt);
+    const genericAlternatives = new Set(["image", "photo", "picture", "graphic", "icon", "logo"]);
+
+    if (
+      normalizedAlt === normalizeAlternativeText(image.sourceKey) ||
+      normalizedAlt === sourceName ||
+      /^(?:img|image|photo|dsc|screenshot)[-_ ]?\d+(?:\.[a-z0-9]+)?$/i.test(alt)
+    ) concerns.push("filename");
+    if (genericAlternatives.has(normalizedAlt)) concerns.push("generic");
+    if (image.nearbyText && normalizeAlternativeText(image.nearbyText) === normalizedAlt) {
+      concerns.push("nearby-text-duplicate");
+    }
+    if (repeatedGroup && repeatedGroup.count > 1 && repeatedGroup.sources.size > 1) {
+      concerns.push("repeated");
+    }
+    if (alt.length > 150) concerns.push("excessive-length");
+
+    if (concerns.length > 0) {
+      samples.push({
+        selector: image.selector,
+        alt,
+        concerns,
+        ...(concerns.includes("repeated") ? { repeatedCount: repeatedGroup?.count } : {})
+      });
+    }
+  }
+
+  return {
+    imageCount: images.length,
+    decorativeCount: images.filter((image) => image.alt === "").length,
+    informativeCount: informative.length,
+    suspiciousCount: samples.length,
+    repeatedAlternativeGroups: [...repeated.values()].filter((group) => group.count > 1 && group.sources.size > 1).length,
+    samples: samples.slice(0, 30)
+  };
+}
+
+async function auditImageAlternatives(
+  page: Page,
+  config: A11yConfig,
+  state: {
+    stateId: string;
+    stateLabel: string;
+    colorScheme: Issue["colorScheme"];
+  }
+): Promise<{ evidence?: ImageAlternativeEvidence; issues: Issue[] }> {
+  const images = await page.evaluate(() => {
+    function selectorFor(element: HTMLImageElement): string {
+      if (element.id) return `[id="${element.id.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"]`;
+      const alt = element.getAttribute("alt");
+      if (alt) return `img[alt="${alt.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"]`;
+      return "img";
+    }
+
+    function sourceKey(element: HTMLImageElement): string {
+      const source = element.currentSrc || element.src || "unknown-image";
+      if (source.startsWith("data:")) return "inline-data";
+      try {
+        const pathname = new URL(source, document.baseURI).pathname;
+        return decodeURIComponent(pathname.split("/").pop() || "unknown-image");
+      } catch {
+        return source.split(/[/?#]/).filter(Boolean).pop() || "unknown-image";
+      }
+    }
+
+    function nearbyText(element: HTMLImageElement): string {
+      const container = element.closest("a, button, figure") || element.parentElement;
+      if (!container) return "";
+      const clone = container.cloneNode(true) as HTMLElement;
+      clone.querySelectorAll("img, svg").forEach((node) => node.remove());
+      return (clone.textContent || "").replace(/\s+/g, " ").trim().slice(0, 300);
+    }
+
+    return Array.from(document.querySelectorAll("img")).slice(0, 100).map((element) => ({
+      selector: selectorFor(element),
+      alt: element.getAttribute("alt"),
+      sourceKey: sourceKey(element),
+      nearbyText: nearbyText(element)
+    }));
+  });
+  if (images.length === 0) return { issues: [] };
+
+  const evidence = analyzeImageAlternativeEvidence(images);
+  const issues = createImageAlternativeIssues(config.framework, page.url(), state, evidence);
+  return { evidence, issues };
+}
+
+export function createImageAlternativeIssues(
+  framework: A11yConfig["framework"],
+  url: string,
+  state: { stateId: string; stateLabel: string; colorScheme: Issue["colorScheme"] },
+  evidence: ImageAlternativeEvidence
+): Issue[] {
+  const ruleForConcern: Record<ImageAlternativeConcern, string> = {
+    filename: "image-alt-filename",
+    generic: "image-alt-generic",
+    "nearby-text-duplicate": "image-alt-duplicates-nearby-text",
+    repeated: "image-alt-repeated",
+    "excessive-length": "image-alt-excessive-length"
+  };
+  const messageForConcern: Record<ImageAlternativeConcern, string> = {
+    filename: "Alternative text appears to expose an image filename instead of its purpose.",
+    generic: "Alternative text is too generic to communicate the image purpose.",
+    "nearby-text-duplicate": "Alternative text duplicates nearby visible text and may be announced twice.",
+    repeated: "The same alternative text is used for images with different sources; confirm that their purposes are identical.",
+    "excessive-length": "Alternative text is unusually long; keep it concise or provide a longer description in nearby content."
+  };
+
+  return evidence.samples.flatMap((sample) => sample.concerns.map<Issue>((concern) => ({
+    source: "image-quality",
+    framework,
+    ruleId: ruleForConcern[concern],
+    wcag: ["1.1.1"],
+    tags: ["wcag111", "best-practice", "heuristic"],
+    severity: concern === "filename" || concern === "generic" ? "warning" : "info",
+    confidence: "medium",
+    confidenceScore: 75,
+    confidenceReason: "The rendered alternative matches a deterministic quality pattern, but image purpose still requires human judgment.",
+    category: "images",
+    findingType: "best-practice",
+    selector: sample.selector,
+    url,
+    stateId: state.stateId,
+    stateLabel: state.stateLabel,
+    colorScheme: state.colorScheme,
+    message: `${messageForConcern[concern]} Current alt: "${sample.alt}"`
+  })));
+}
+
+function normalizeAlternativeText(value: string): string {
+  return value.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+interface RawMediaEvidence {
+  elements: MediaElementEvidence[];
+  activeAnimationCount: number;
+  reducedMotionQueryDetected: boolean;
+  unreadableStylesheetCount: number;
+}
+
+export function analyzeMediaEvidence(raw: RawMediaEvidence): MediaEvidence {
+  return {
+    audioCount: raw.elements.filter((element) => element.kind === "audio").length,
+    videoCount: raw.elements.filter((element) => element.kind === "video").length,
+    videosWithCaptions: raw.elements.filter((element) => element.kind === "video" && element.captionTrackCount > 0).length,
+    audioWithTranscriptCandidate: raw.elements.filter((element) => element.kind === "audio" && element.transcriptCandidate).length,
+    autoplayRiskCount: raw.elements.filter((element) => element.autoplay && !element.muted && !element.controls).length,
+    activeAnimationCount: raw.activeAnimationCount,
+    reducedMotionQueryDetected: raw.reducedMotionQueryDetected,
+    unreadableStylesheetCount: raw.unreadableStylesheetCount,
+    elements: raw.elements.slice(0, 30)
+  };
+}
+
+async function auditMedia(
+  page: Page,
+  config: A11yConfig,
+  state: { stateId: string; stateLabel: string; colorScheme: Issue["colorScheme"] },
+  scannedIssues: Issue[]
+): Promise<{ evidence?: MediaEvidence; issues: Issue[] }> {
+  const raw = await page.evaluate(() => {
+    function selectorFor(element: Element): string {
+      const id = element.getAttribute("id");
+      if (id) return `[id="${id.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"]`;
+      const parts: string[] = [];
+      let current: Element | null = element;
+      while (current && current !== document.body && parts.length < 4) {
+        const tag = current.tagName.toLowerCase();
+        const parent: Element | null = current.parentElement;
+        if (!parent) break;
+        const siblings = Array.from(parent.children).filter((sibling) => sibling.tagName === current?.tagName);
+        parts.unshift(siblings.length > 1 ? `${tag}:nth-of-type(${siblings.indexOf(current) + 1})` : tag);
+        current = parent;
+      }
+      return parts.join(" > ") || element.tagName.toLowerCase();
+    }
+
+    function hasTranscriptCandidate(element: Element): boolean {
+      const container = element.closest("figure, article, section") || document.body;
+      return Array.from(container.querySelectorAll("a[href], [data-transcript]"))
+        .some((candidate) => /\b(transcript|text alternative)\b/i.test([
+          candidate.textContent || "",
+          candidate.getAttribute("href") || "",
+          candidate.getAttribute("aria-label") || ""
+        ].join(" ")));
+    }
+
+    let reducedMotionQueryDetected = false;
+    let unreadableStylesheetCount = 0;
+    for (const stylesheet of Array.from(document.styleSheets)) {
+      try {
+        const rules = Array.from(stylesheet.cssRules || []);
+        if (rules.some((rule) => /prefers-reduced-motion/i.test(rule.cssText))) {
+          reducedMotionQueryDetected = true;
+        }
+      } catch {
+        unreadableStylesheetCount += 1;
+      }
+    }
+
+    const elements = Array.from(document.querySelectorAll("audio, video")).slice(0, 30).map((element) => {
+      const media = element as HTMLMediaElement;
+      return {
+        selector: selectorFor(element),
+        kind: element.tagName.toLowerCase() as "audio" | "video",
+        autoplay: media.autoplay,
+        muted: media.muted || media.defaultMuted,
+        controls: media.controls,
+        captionTrackCount: element.querySelectorAll("track[kind='captions' i]").length,
+        transcriptCandidate: hasTranscriptCandidate(element)
+      };
+    });
+
+    return {
+      elements,
+      activeAnimationCount: document.getAnimations().filter((animation) => animation.playState === "running").length,
+      reducedMotionQueryDetected,
+      unreadableStylesheetCount
+    };
+  });
+  const evidence = analyzeMediaEvidence(raw);
+  if (evidence.audioCount === 0 && evidence.videoCount === 0 && evidence.activeAnimationCount === 0 && !evidence.reducedMotionQueryDetected) {
+    return { issues: [] };
+  }
+  const coveredRules = new Set(scannedIssues.map((issue) => issue.ruleId).filter((ruleId): ruleId is string => Boolean(ruleId)));
+  return {
+    evidence,
+    issues: createMediaIssues(config.framework, page.url(), state, evidence, coveredRules)
+  };
+}
+
+export function createMediaIssues(
+  framework: A11yConfig["framework"],
+  url: string,
+  state: { stateId: string; stateLabel: string; colorScheme: Issue["colorScheme"] },
+  evidence: MediaEvidence,
+  coveredRules = new Set<string>()
+): Issue[] {
+  const issues: Issue[] = [];
+  const common = {
+    source: "media-evidence",
+    framework,
+    tags: ["best-practice", "heuristic"],
+    confidence: "medium" as const,
+    confidenceScore: 70,
+    confidenceReason: "Rendered markup provides a deterministic media signal, but media content, duration, and alternative quality require human review.",
+    category: "media" as const,
+    findingType: "best-practice" as const,
+    url,
+    stateId: state.stateId,
+    stateLabel: state.stateLabel,
+    colorScheme: state.colorScheme
+  };
+
+  for (const element of evidence.elements) {
+    if (element.kind === "video" && element.captionTrackCount === 0 && !coveredRules.has("video-caption")) {
+      issues.push({
+        ...common,
+        ruleId: "media-video-captions-not-detected",
+        wcag: ["1.2.2"],
+        severity: "info",
+        selector: element.selector,
+        message: "No captions track was detected for this video. Confirm whether it contains prerecorded audio and requires captions."
+      });
+    }
+    if (element.kind === "audio" && !element.transcriptCandidate && !coveredRules.has("audio-caption")) {
+      issues.push({
+        ...common,
+        ruleId: "media-audio-transcript-not-detected",
+        wcag: ["1.2.1"],
+        severity: "info",
+        selector: element.selector,
+        message: "No nearby transcript candidate was detected for this audio element. Confirm whether a text alternative is required."
+      });
+    }
+    if (element.autoplay && !element.muted && !element.controls && !coveredRules.has("no-autoplay-audio")) {
+      issues.push({
+        ...common,
+        ruleId: "media-autoplay-control-risk",
+        wcag: ["1.4.2"],
+        severity: "warning",
+        selector: element.selector,
+        message: "This media can autoplay with sound and exposes no native controls. Confirm that audio stops within three seconds or provide a pause or stop control."
+      });
+    }
+  }
+
+  return issues;
+}
+
+export function summarizeEmbeddedContentEvidence(input: {
+  iframes: EmbeddedContentEvidence["iframes"];
+  canvases: EmbeddedContentEvidence["canvases"];
+}): EmbeddedContentEvidence {
+  return {
+    iframeCount: input.iframes.length,
+    sameOriginIframeCount: input.iframes.filter((frame) => frame.sameOrigin).length,
+    crossOriginIframeCount: input.iframes.filter((frame) => !frame.sameOrigin).length,
+    inaccessibleIframeCount: input.iframes.filter((frame) => !frame.browserAccessible).length,
+    canvasCount: input.canvases.length,
+    canvasWithAlternativeCount: input.canvases.filter((canvas) => canvas.decorative || canvas.hasAccessibleAlternative).length,
+    canvasWithoutAlternativeCount: input.canvases.filter((canvas) => !canvas.decorative && !canvas.hasAccessibleAlternative).length,
+    iframes: input.iframes.slice(0, 30),
+    canvases: input.canvases.slice(0, 30)
+  };
+}
+
+async function auditEmbeddedContent(
+  page: Page,
+  config: A11yConfig,
+  state: { stateId: string; stateLabel: string; colorScheme: Issue["colorScheme"] }
+): Promise<{ evidence?: EmbeddedContentEvidence; issues: Issue[] }> {
+  const frameAccess = await Promise.all(page.frames().filter((frame) => frame !== page.mainFrame()).map(async (frame) => {
+    const url = sanitizeEvidenceUrl(frame.url());
+    const browserAccessible = await frame.evaluate(() => Boolean(document.documentElement)).then(() => true).catch(() => false);
+    return { url, browserAccessible };
+  }));
+  const raw = await page.evaluate(() => {
+    function selectorFor(element: Element): string {
+      const id = element.getAttribute("id");
+      if (id) return `[id="${id.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"]`;
+      const tag = element.tagName.toLowerCase();
+      const siblings = Array.from(document.querySelectorAll(tag));
+      return siblings.length > 1 ? `${tag}:nth-of-type(${siblings.indexOf(element) + 1})` : tag;
+    }
+
+    function accessibleText(element: Element): string {
+      const labelledBy = (element.getAttribute("aria-labelledby") || "").split(/\s+/).filter(Boolean)
+        .map((id) => document.getElementById(id)?.textContent || "").join(" ");
+      return [
+        element.getAttribute("aria-label") || "",
+        labelledBy,
+        element.getAttribute("title") || "",
+        element.textContent || ""
+      ].join(" ").replace(/\s+/g, " ").trim();
+    }
+
+    const baseOrigin = location.origin;
+    const iframes = Array.from(document.querySelectorAll("iframe")).slice(0, 30).map((iframe) => {
+      let resolved = "about:blank";
+      try {
+        const parsed = new URL(iframe.getAttribute("src") || "about:blank", document.baseURI);
+        parsed.search = "";
+        parsed.hash = "";
+        resolved = parsed.href;
+      } catch {
+        resolved = "invalid-url";
+      }
+      let sameOrigin = resolved === "about:blank";
+      try {
+        sameOrigin ||= new URL(resolved).origin === baseOrigin;
+      } catch {
+        sameOrigin = false;
+      }
+      return {
+        selector: selectorFor(iframe),
+        url: resolved,
+        sameOrigin,
+        title: iframe.getAttribute("title")?.trim() || undefined
+      };
+    });
+    const canvases = Array.from(document.querySelectorAll("canvas")).slice(0, 30).map((canvas) => {
+      const role = canvas.getAttribute("role")?.toLowerCase();
+      const decorative = canvas.getAttribute("aria-hidden") === "true" || role === "presentation" || role === "none";
+      return {
+        selector: selectorFor(canvas),
+        width: canvas.width,
+        height: canvas.height,
+        decorative,
+        hasAccessibleAlternative: accessibleText(canvas).length > 0
+      };
+    });
+    return { iframes, canvases };
+  });
+
+  const accessByUrl = new Map<string, boolean>();
+  for (const frame of frameAccess) {
+    accessByUrl.set(frame.url, (accessByUrl.get(frame.url) || false) || frame.browserAccessible);
+  }
+  const iframes = raw.iframes.map((frame) => ({
+    ...frame,
+    browserAccessible: accessByUrl.get(frame.url) ?? false
+  }));
+  const evidence = summarizeEmbeddedContentEvidence({ iframes, canvases: raw.canvases });
+  if (evidence.iframeCount === 0 && evidence.canvasCount === 0) return { issues: [] };
+  return {
+    evidence,
+    issues: createEmbeddedContentIssues(config.framework, page.url(), state, evidence)
+  };
+}
+
+export function createEmbeddedContentIssues(
+  framework: A11yConfig["framework"],
+  url: string,
+  state: { stateId: string; stateLabel: string; colorScheme: Issue["colorScheme"] },
+  evidence: EmbeddedContentEvidence
+): Issue[] {
+  const common = {
+    framework,
+    url,
+    stateId: state.stateId,
+    stateLabel: state.stateLabel,
+    colorScheme: state.colorScheme
+  };
+  return [
+    ...evidence.iframes.filter((frame) => !frame.browserAccessible).map<Issue>((frame) => ({
+      ...common,
+      source: "embedded-content",
+      ruleId: "iframe-scan-unavailable",
+      tags: ["coverage-gap"],
+      severity: "info",
+      confidence: "high",
+      confidenceScore: 90,
+      confidenceReason: "The browser exposed the iframe element but its document could not be evaluated during this run.",
+      category: "adapter",
+      findingType: "unmapped",
+      selector: frame.selector,
+      message: `Iframe document coverage was unavailable for ${frame.url}. Test the embedded content separately.`
+    })),
+    ...evidence.canvases.filter((canvas) => !canvas.decorative && !canvas.hasAccessibleAlternative).map<Issue>((canvas) => ({
+      ...common,
+      source: "embedded-content",
+      ruleId: "canvas-alternative-not-detected",
+      wcag: ["1.1.1"],
+      tags: ["wcag111", "best-practice", "heuristic"],
+      severity: "warning",
+      confidence: "medium",
+      confidenceScore: 70,
+      confidenceReason: "The rendered canvas has dimensions and is not marked decorative, but its visual purpose cannot be inferred automatically.",
+      category: "images",
+      findingType: "best-practice",
+      selector: canvas.selector,
+      message: "No accessible name, fallback text, or fallback content was detected for this canvas. Confirm whether it conveys meaningful information."
+    }))
+  ];
+}
+
+function sanitizeEvidenceUrl(value: string): string {
+  if (!value || value === "about:blank") return "about:blank";
+  try {
+    const url = new URL(value);
+    url.search = "";
+    url.hash = "";
+    return url.href;
+  } catch {
+    return "invalid-url";
+  }
+}
+
+export function createFormErrorIssues(
+  framework: A11yConfig["framework"],
+  url: string,
+  state: {
+    stateId: string;
+    stateLabel: string;
+    colorScheme: Issue["colorScheme"];
+  },
+  evidence: FormErrorEvidence
+): Issue[] {
+  return evidence.invalidFields.filter((field) => !field.associatedErrorText).map<Issue>((field) => ({
+    source: "form",
+    framework,
+    ruleId: "form-invalid-error-not-associated",
+    wcag: ["3.3.1", "3.3.2"],
+    tags: ["wcag331", "wcag332", "heuristic"],
+    severity: "warning",
+    confidence: "medium",
+    confidenceScore: 80,
+    confidenceReason: "The rendered field is explicitly aria-invalid but has no existing, exposed, non-empty aria-errormessage or aria-describedby target.",
+    category: "forms",
+    findingType: "wcag",
+    selector: field.selector,
+    url,
+    stateId: state.stateId,
+    stateLabel: state.stateLabel,
+    colorScheme: state.colorScheme,
+    message: `${field.accessibleName || "Invalid field"} does not reference an accessible error message.`
+  }));
 }
 
 export function shouldCaptureFullPageScreenshot(

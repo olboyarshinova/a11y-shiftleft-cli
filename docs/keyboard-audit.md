@@ -1,5 +1,10 @@
 # Keyboard Focus Audit
 
+The recommended `audit --url $APP_URL --out reports` workflow embeds keyboard
+evidence in the primary `a11y-report.html` and `a11y-report.json`. Use the
+standalone command below for a keyboard-only run, keyboard-specific baselines,
+or detailed traversal tuning.
+
 The `keyboard` command records bounded Tab and Shift+Tab paths through one rendered page and
 sends detected problems through the same WCAG, severity, confidence,
 deduplication, and remediation pipeline as other checks.

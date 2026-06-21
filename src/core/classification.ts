@@ -31,6 +31,10 @@ const CATEGORY_HINTS: Array<{
     hints: ["alt", "image", "img", "non-text"]
   },
   {
+    category: "media",
+    hints: ["audio", "video", "caption", "transcript", "autoplay", "media-evidence"]
+  },
+  {
     category: "headings",
     hints: ["heading", "h1"]
   },
@@ -41,6 +45,10 @@ const CATEGORY_HINTS: Array<{
   {
     category: "contrast",
     hints: ["contrast", "color"]
+  },
+  {
+    category: "layout",
+    hints: ["layout", "reflow", "overflow", "clipped"]
   },
   {
     category: "aria",
@@ -62,8 +70,12 @@ const CATEGORY_HINTS: Array<{
 
 const WCAG_CATEGORY_MAP: Record<string, IssueCategory> = {
   "1.1.1": "images",
+  "1.2.1": "media",
+  "1.2.2": "media",
+  "1.4.2": "media",
   "1.3.1": "structure",
   "1.4.3": "contrast",
+  "1.4.10": "layout",
   "2.1.1": "keyboard",
   "2.1.2": "keyboard",
   "2.4.1": "landmarks",
@@ -73,6 +85,7 @@ const WCAG_CATEGORY_MAP: Record<string, IssueCategory> = {
   "2.4.7": "focus",
   "2.4.11": "focus",
   "2.5.8": "widgets",
+  "3.3.1": "forms",
   "3.3.2": "forms",
   "4.1.2": "aria"
 };

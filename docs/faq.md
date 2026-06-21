@@ -41,7 +41,7 @@ Use the URL printed by your development server when you run `npm run dev` (or eq
 Pass the URL with `--url`:
 
 ```bash
-npx a11y-shiftleft check --dynamic --url http://localhost:5173 --out reports
+npx a11y-shiftleft audit --url http://localhost:5173 --out reports
 ```
 
 Not sure? Check your terminal output after starting the dev server — it always prints the port.
@@ -77,25 +77,23 @@ npx a11y-shiftleft check --dynamic --url http://localhost:5173 \
 
 ### Where is the report after a scan?
 
-After a scan, the output folder you specified with `--out` contains several files:
+The recommended `audit` command keeps its default output small:
 
 ```
-reports/a11y-comment.md   ← start here
+reports/a11y-report.html  ← start here
 reports/a11y-report.json
-reports/a11y-metrics.csv
-reports/a11y-summary.csv
-reports/a11y-pages.csv
-reports/a11y-rules.csv
-reports/a11y-findings.csv
-reports/a11y-remediation.csv
+reports/a11y-comment.md
+reports/screenshots/
 ```
 
-Open `reports/a11y-comment.md` in your editor or any Markdown viewer. It contains a compact table of findings with severity, WCAG metadata, confidence score, and remediation hints.
+Open `reports/a11y-report.html` in a browser. It combines annotated visual
+states, findings, keyboard evidence, recommendations, and the manual-review
+checklist. Add `--excel`, `--pdf`, or `--raw` only when those exports are needed.
 
 ### Should I commit generated reports to my repository?
 
 Usually no. Report files (`a11y-comment.md`, `a11y-report.json`, generated CSV
-tables, `exploration.html`, and `screenshots/`) change on every run and quickly
+tables, visual HTML, and `screenshots/`) change on every run and quickly
 inflate repository size. Add the reports folder to `.gitignore`:
 
 ```

@@ -64,6 +64,7 @@
     "collect:adoption": "node scripts/collect-adoption-metrics.js",
     "collect:adoption:snapshot": "node scripts/collect-adoption-snapshot.js",
     "prepack": "npm test",
+    "audit": "node bin/cli.js audit",
     "check": "node bin/cli.js check",
     "init": "node bin/cli.js init",
     "ci": "node bin/cli.js ci",

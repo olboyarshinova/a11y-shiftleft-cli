@@ -1,7 +1,19 @@
 # Visual Reports
 
+For a complete report, use `audit`. It adds keyboard evidence and a manual
+review checklist to the visual exploration results:
+
+```bash
+npx a11y-shiftleft audit --url $APP_URL --out reports
+```
+
+Open `reports/a11y-report.html`. Add `--excel`, `--pdf`, or `--raw` when those
+optional exports are needed. Slow applications can use `--wait-ms 1000` or
+`--wait-for-selector "[data-page-ready]"`; audit auto-scrolls before scanning
+unless `--no-scroll` is passed.
+
 Use `explore` when you want the CLI to walk safe parts of a running app and
-produce a visual report:
+produce only the lower-level visual exploration artifacts:
 
 ```bash
 npx a11y-shiftleft explore --url $APP_URL --depth 2 --out reports
@@ -26,7 +38,6 @@ reports/a11y-findings.csv
 reports/a11y-summary.csv
 reports/a11y-pages.csv
 reports/a11y-rules.csv
-reports/a11y-remediation.csv
 reports/exploration.html
 reports/exploration.pdf       # only when --pdf is used
 reports/exploration-graph.json
@@ -37,6 +48,56 @@ reports/screenshots/state-*-error-*.jpg   # focused crops on long pages
 `exploration.html` shows summary metrics, checked states, screenshots, top
 findings, recorded transitions, skipped actions, and reviewable overlays around
 affected elements when Playwright can resolve their bounds.
+
+The unified `a11y-report.html` also includes an audit coverage matrix and a
+bounded Chromium accessibility-tree summary for each explored state. The
+summary records exposed landmarks, headings, an interactive-node sample, and
+the number of unnamed interactive nodes without storing the entire tree. This
+is diagnostic evidence, not a substitute for NVDA, JAWS, or VoiceOver testing.
+
+Each explored state also receives a bounded 320 CSS pixel reflow pass. It
+records document width, horizontal overflow, and text containers that appear to
+clip meaningful content. These are heuristic WCAG 1.4.10 signals: confirm them
+at 400% zoom before treating intentional truncation as a defect.
+
+For modals reached through safe exploration, the report records the dialog
+name, initial focused element, isolated Escape result, and focus restoration to
+the trigger. The isolated page prevents the close test from changing the main
+exploration path. This bounded evidence does not prove a complete focus trap or
+all dialog workflows.
+
+Safe click transitions also collect bounded dynamic-announcement evidence from
+`aria-live` and implicit live-region roles such as `alert` and `status`. The
+report records text and politeness when mutations occur, and explicitly records
+actions with no observed live-region update. Absence is evidence, not an
+automatic defect, because many visual changes do not require an announcement.
+
+Rendered form states include counts and details for explicit invalid fields,
+their `aria-errormessage` or `aria-describedby` references, exposed error text,
+error summaries, and focus. The scanner does not submit forms or enter data.
+It flags only explicit invalid fields whose referenced error is missing, hidden,
+or empty; message usefulness and end-to-end correction remain manual checks.
+
+Rendered image states summarize informative and decorative alternatives and
+surface deterministic quality patterns such as filename-like text, exact
+generic labels, nearby-text duplication, reuse across different sources, and
+excessive length. The report labels these as medium-confidence review signals.
+It cannot decide whether an image is informative or whether the alternative is
+accurate in context, so WCAG 1.1.1 still requires human review.
+
+Media and motion evidence lists rendered players with caption-track,
+transcript-candidate, autoplay, muted, and controls state. It also records
+active Web Animations and whether readable CSS contains
+`prefers-reduced-motion`. Cross-origin stylesheets may be unreadable, so a
+missing query is not reported as a failure. Caption accuracy, transcripts,
+audio description, flashing, and motion comfort still require human review.
+
+Iframe and canvas evidence records same-origin/cross-origin counts, whether the
+browser could inspect each frame document, and whether canvas elements expose
+fallback content or an accessible name. Frame URLs are stored without query
+strings or fragments. Modern axe scans available frame documents recursively;
+unavailable frames need a separate audit, and meaningful canvas pixels always
+need contextual human review.
 
 Findings are identified as WCAG violations, best-practice guidance, or unmapped
 review items. The report also groups repeated occurrences into likely root
