@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.7.0 - 2026-06-23
+
 - Added a unified `audit` command that creates one primary visual report with
   static and dynamic findings, safe UI exploration, screenshots, keyboard
   evidence, recommendations, and an embedded manual-review checklist.

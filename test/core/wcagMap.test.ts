@@ -47,6 +47,7 @@ test("mapRuleToWcag maps exact known rules", () => {
   assert.deepEqual(mapRuleToWcag("modal-accessible-name-missing"), ["4.1.2"]);
   assert.deepEqual(mapRuleToWcag("modal-initial-focus-outside"), ["2.4.3"]);
   assert.deepEqual(mapRuleToWcag("modal-focus-not-restored"), ["2.4.3"]);
+  assert.deepEqual(mapRuleToWcag("modal-focus-escapes"), ["2.4.3"]);
   assert.deepEqual(mapRuleToWcag("form-invalid-error-not-associated"), ["3.3.1", "3.3.2"]);
   assert.deepEqual(mapRuleToWcag("image-alt-filename"), ["1.1.1"]);
   assert.deepEqual(mapRuleToWcag("image-alt-generic"), ["1.1.1"]);

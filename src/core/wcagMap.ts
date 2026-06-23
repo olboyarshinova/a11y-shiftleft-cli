@@ -60,6 +60,7 @@ const RULE_TO_WCAG: Record<string, string[]> = {
   "modal-accessible-name-missing": ["4.1.2"],
   "modal-initial-focus-outside": ["2.4.3"],
   "modal-focus-not-restored": ["2.4.3"],
+  "modal-focus-escapes": ["2.4.3"],
   "no-autoplay-audio": ["1.4.2"],
   "keyboard": ["2.1.1"],
   "keyboard-focus-not-reached": ["2.1.1"],

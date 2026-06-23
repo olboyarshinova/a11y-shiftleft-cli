@@ -494,7 +494,7 @@ function formatCoverageMatrix(report: A11yReport): string {
 | Browser automation | ${stateCount > 0 ? "Completed" : "Not included"} | ${stateCount > 0 ? `${stateCount} rendered states scanned` : "Run the audit command"} |
 | Static source analysis | Configuration-dependent | Install the adapter for the detected framework |
 | Keyboard traversal | ${report.keyboard ? "Bounded evidence collected" : "Not included"} | ${report.keyboard ? `${report.keyboard.steps.length} forward focus steps` : "Run audit without --no-keyboard"} |
-| Reflow at 320 CSS pixels | ${reflowCount > 0 ? "Heuristic evidence collected" : "Not included"} | ${reflowCount} rendered state${reflowCount === 1 ? "" : "s"} checked for overflow and clipped text |
+| Reflow at 400% (320 CSS px simulation) | ${reflowCount > 0 ? "Heuristic evidence collected" : "Not included"} | ${reflowCount} rendered state${reflowCount === 1 ? "" : "s"} checked for overflow and clipped text |
 | Modal focus behavior | ${modalCount > 0 ? "Heuristic evidence collected" : "No opened modal observed"} | ${modalCount} state${modalCount === 1 ? "" : "s"} checked for name, initial focus, Escape, and restoration |
 | Dynamic announcements | ${announcementStates.length > 0 ? "Mutation evidence collected" : "No action evidence"} | ${announcementUpdates} meaningful live-region update${announcementUpdates === 1 ? "" : "s"} observed after ${announcementStates.length} action${announcementStates.length === 1 ? "" : "s"} |
 | Form error states | ${formStates.length > 0 ? "Rendered-state evidence collected" : "No forms observed"} | ${invalidFields} explicit invalid field${invalidFields === 1 ? "" : "s"}; ${unassociatedInvalidFields} without an exposed associated error |

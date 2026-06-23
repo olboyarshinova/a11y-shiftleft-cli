@@ -15,6 +15,7 @@ import { applyRetest } from "../core/retest.js";
 import { applyRemediationTracking, DEFAULT_REMEDIATION_FILE } from "../core/remediationTracking.js";
 import { applyIgnores, DEFAULT_IGNORE_FILE } from "../core/ignore.js";
 import { applyReportRetention } from "../core/reportRetention.js";
+import { filterReportFindings } from "../core/findingFilter.js";
 import type { A11yReport, ComplianceStandard, Framework, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel, WcagVersion } from "../types.js";
 
 export interface CheckOptions {
@@ -38,6 +39,7 @@ export interface CheckOptions {
   standard?: string;
   wcagFilter?: string;
   wcagVersion?: string;
+  wcagOnly?: boolean;
   semiAuto?: boolean;
   baseline?: boolean;
   baselineFile?: string;
@@ -92,6 +94,7 @@ export function registerCheckCommand(program: Command): void {
     .option("--standard <standard>", "Compliance support preset: wcag22-aa, ada-title-ii, or section508")
     .option("--wcag-filter <level>", "Only report findings mapped to WCAG level A, AA, or AAA")
     .option("--wcag-version <version>", "Limit mapped findings to WCAG version 2.0, 2.1, or 2.2")
+    .option("--wcag-only", "Only report findings mapped to WCAG; exclude best practices and unmapped review signals")
     .option("--semi-auto", "Generate a Markdown manual review checklist alongside automated reports")
     .option("--baseline", "Compare against .a11y-baseline.json and fail only on new findings")
     .option("--baseline-file <file>", "Baseline file path")
@@ -227,7 +230,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
     version: effectiveConfig.wcagVersion,
     includeUnmapped: !explicitWcagFilter
   });
-  const uniqueIssues = dedupeIssues(filtered);
+  const uniqueIssues = dedupeIssues(filterReportFindings(filtered, { wcagOnly: options.wcagOnly }));
   const ignoreResult = await applyIgnores(uniqueIssues, {
     cwd: effectiveConfig.cwd,
     enabled: options.ignore !== false,

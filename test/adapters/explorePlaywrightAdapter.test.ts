@@ -7,6 +7,7 @@ import {
   createFormErrorIssues,
   createImageAlternativeIssues,
   createMediaIssues,
+  createModalFocusIssues,
   createEmbeddedContentIssues,
   createEvidenceClips,
   exploreActionKey,
@@ -27,6 +28,60 @@ import {
   summarizeEmbeddedContentEvidence,
   summarizeAccessibilityTreeNodes
 } from "../../dist/adapters/explorePlaywrightAdapter.js";
+
+test("createModalFocusIssues reports focus escaping a modal", () => {
+  const issues = createModalFocusIssues("react", {
+    dialogCount: 1,
+    dialogSelector: "#checkout-dialog",
+    isModal: true,
+    accessibleName: "Checkout",
+    hasAccessibleName: true,
+    initialFocusInside: true,
+    escapeTested: true,
+    escapeClosed: true,
+    focusReturnedToTrigger: true,
+    containmentTested: true,
+    containmentSteps: 4,
+    forwardFocusContained: false,
+    backwardFocusContained: true,
+    escapedFocusSelector: "#site-search"
+  }, {
+    stateId: "state-2",
+    stateLabel: "Open checkout",
+    colorScheme: "light",
+    url: "http://localhost:3000/checkout"
+  });
+
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].ruleId, "modal-focus-escapes");
+  assert.deepEqual(issues[0].wcag, ["2.4.3"]);
+  assert.match(issues[0].message || "", /#site-search/);
+});
+
+test("createModalFocusIssues accepts contained modal traversal", () => {
+  const issues = createModalFocusIssues("react", {
+    dialogCount: 1,
+    dialogSelector: "#dialog",
+    isModal: true,
+    accessibleName: "Preferences",
+    hasAccessibleName: true,
+    initialFocusInside: true,
+    escapeTested: true,
+    escapeClosed: true,
+    focusReturnedToTrigger: true,
+    containmentTested: true,
+    containmentSteps: 3,
+    forwardFocusContained: true,
+    backwardFocusContained: true
+  }, {
+    stateId: "state-2",
+    stateLabel: "Open preferences",
+    colorScheme: undefined,
+    url: "http://localhost:3000"
+  });
+
+  assert.equal(issues.length, 0);
+});
 
 test("readScreenshotDimensions reads PNG and JPEG dimensions", () => {
   const png = Buffer.alloc(24);

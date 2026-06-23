@@ -67,6 +67,11 @@ h1 {
   margin: 0;
 }
 
+.audit-grid form {
+  display: grid;
+  gap: 10px;
+}
+
 .muted {
   color: #5f6b66;
 }
@@ -190,9 +195,51 @@ article img {
   flex: 0 0 auto;
 }
 
+.no-focus-button:focus,
+.no-focus-button:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.tiny-target {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  color: #ffffff;
+  background: #283d35;
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.tiny-targets {
+  display: flex;
+  gap: 0;
+  align-items: center;
+}
+
+.field-error {
+  margin: 0;
+  color: #b42318;
+  font-size: 0.9rem;
+}
+
+.reflow-problem {
+  margin: 0;
+}
+
 @media (max-width: 760px) {
   .hero,
   .audit-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 400px) {
+  .reflow-problem {
+    width: 520px;
+    overflow: hidden;
+    white-space: nowrap;
   }
 }

@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { AxeBuilder } from "@axe-core/playwright";
+import { getAxeRunOptions } from "../core/axeOptions.js";
 import { chromium, type Browser, type BrowserContext, type Page } from "playwright";
 import { applyColorScheme, detectPageColorSchemes, getPageAppearanceSignature, normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig } from "../core/pageScroll.js";
 import { extractContrastEvidence } from "../core/contrast.js";
@@ -445,7 +446,7 @@ export async function runExplorePlaywrightAdapter(
           stateLabel: actionLabel,
           colorScheme: reportedColorScheme
         });
-        const modalIssues = modalFocusIssues(config, modalFocus, {
+        const modalIssues = createModalFocusIssues(config.framework, modalFocus, {
           stateId,
           stateLabel: actionLabel,
           colorScheme: reportedColorScheme,
@@ -941,7 +942,9 @@ async function scanState(
   }
 ): Promise<Issue[]> {
   try {
-    const results = await new AxeBuilder({ page }).analyze();
+    const results = await new AxeBuilder({ page })
+      .options(getAxeRunOptions())
+      .analyze();
     const issues: Issue[] = [];
 
     for (const violation of results.violations) {
@@ -1211,6 +1214,9 @@ async function inspectOpenModal(page: Page): Promise<ModalFocusEvidence | undefi
     return {
       dialogCount: dialogs.length,
       dialogSelector: selectorFor(dialog),
+      isModal: dialog.getAttribute("aria-modal") === "true" || (
+        dialog.tagName.toLowerCase() === "dialog" && dialog.matches(":modal")
+      ),
       accessibleName: name || undefined,
       hasAccessibleName: Boolean(name),
       initialFocusSelector: active && active !== document.body && active !== document.documentElement
@@ -1249,6 +1255,9 @@ async function auditModalFocusInIsolation(
 
     const beforeEscape = await inspectOpenModal(page);
     if (!beforeEscape) return fallback;
+    const containment = beforeEscape.isModal
+      ? await auditModalFocusContainment(page, beforeEscape)
+      : { containmentTested: false };
     await page.keyboard.press("Escape");
     await settle(page, { ...wait, waitForSelector: undefined });
     const afterEscape = await inspectOpenModal(page);
@@ -1261,6 +1270,7 @@ async function auditModalFocusInIsolation(
     return {
       ...beforeEscape,
       triggerSelector: trigger?.selector,
+      ...containment,
       escapeTested: true,
       escapeClosed,
       focusReturnedToTrigger
@@ -1272,8 +1282,96 @@ async function auditModalFocusInIsolation(
   }
 }
 
-function modalFocusIssues(
-  config: A11yConfig,
+async function auditModalFocusContainment(
+  page: Page,
+  evidence: ModalFocusEvidence
+): Promise<Pick<ModalFocusEvidence,
+  "containmentTested" | "containmentSteps" | "forwardFocusContained" | "backwardFocusContained" | "escapedFocusSelector">> {
+  const dialog = page.locator(evidence.dialogSelector).last();
+  const focusableCount = await dialog.locator([
+    "a[href]",
+    "button:not([disabled])",
+    "input:not([disabled])",
+    "select:not([disabled])",
+    "textarea:not([disabled])",
+    "[tabindex]:not([tabindex='-1'])"
+  ].join(",")).count().catch(() => 0);
+  if (focusableCount === 0) {
+    return {
+      containmentTested: true,
+      containmentSteps: 0,
+      forwardFocusContained: undefined,
+      backwardFocusContained: undefined
+    };
+  }
+
+  const steps = Math.min(focusableCount + 1, 20);
+  const initialSelector = evidence.initialFocusSelector;
+  const resetFocus = async (): Promise<void> => {
+    if (initialSelector) {
+      const restored = await page.locator(initialSelector).first().focus({ timeout: 500 })
+        .then(() => true).catch(() => false);
+      if (restored) return;
+    }
+    await dialog.locator([
+      "a[href]",
+      "button:not([disabled])",
+      "input:not([disabled])",
+      "select:not([disabled])",
+      "textarea:not([disabled])",
+      "[tabindex]:not([tabindex='-1'])"
+    ].join(",")).first().focus({ timeout: 500 }).catch(() => undefined);
+  };
+  const focusInside = async (): Promise<{ inside: boolean; selector?: string }> => page.evaluate((selector) => {
+    const matches = document.querySelectorAll(selector);
+    const modal = matches.item(matches.length - 1);
+    const active = document.activeElement;
+    if (modal?.contains(active)) return { inside: true };
+    if (!active) return { inside: false };
+    const id = active.getAttribute("id");
+    return {
+      inside: false,
+      selector: id ? `[id="${id.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"]` : active.tagName.toLowerCase()
+    };
+  }, evidence.dialogSelector).catch(() => ({ inside: false, selector: "unknown" }));
+
+  await resetFocus();
+  let forwardFocusContained = true;
+  let backwardFocusContained = true;
+  let escapedFocusSelector: string | undefined;
+
+  for (let index = 0; index < steps; index += 1) {
+    await page.keyboard.press("Tab");
+    const focused = await focusInside();
+    if (!focused.inside) {
+      forwardFocusContained = false;
+      escapedFocusSelector = focused.selector;
+      break;
+    }
+  }
+
+  await resetFocus();
+  for (let index = 0; index < steps; index += 1) {
+    await page.keyboard.press("Shift+Tab");
+    const focused = await focusInside();
+    if (!focused.inside) {
+      backwardFocusContained = false;
+      escapedFocusSelector ||= focused.selector;
+      break;
+    }
+  }
+
+  return {
+    containmentTested: true,
+    containmentSteps: steps,
+    forwardFocusContained,
+    backwardFocusContained,
+    ...(escapedFocusSelector ? { escapedFocusSelector } : {})
+  };
+}
+
+export function createModalFocusIssues(
+  framework: A11yConfig["framework"],
   evidence: ModalFocusEvidence | undefined,
   state: {
     stateId: string;
@@ -1285,7 +1383,7 @@ function modalFocusIssues(
   if (!evidence) return [];
   const common = {
     source: "modal",
-    framework: config.framework,
+    framework,
     severity: "warning" as const,
     confidence: "medium" as const,
     category: "focus" as const,
@@ -1345,6 +1443,20 @@ function modalFocusIssues(
       confidenceScore: 80,
       confidenceReason: "The dialog closed with Escape but focus did not return to the control that opened it.",
       message: "Focus was not restored to the dialog trigger after closing."
+    });
+  }
+
+  if (evidence.containmentTested && (
+    evidence.forwardFocusContained === false || evidence.backwardFocusContained === false
+  )) {
+    issues.push({
+      ...common,
+      ruleId: "modal-focus-escapes",
+      wcag: ["2.4.3"],
+      tags: ["wcag243", "heuristic"],
+      confidenceScore: 75,
+      confidenceReason: "Bounded Tab or Shift+Tab traversal moved focus outside an open modal dialog.",
+      message: `Keyboard focus escaped the modal dialog${evidence.escapedFocusSelector ? ` to ${evidence.escapedFocusSelector}` : ""}.`
     });
   }
 

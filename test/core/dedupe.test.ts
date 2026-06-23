@@ -109,3 +109,64 @@ test("dedupeIssues keeps matching static rules on different lines separate", () 
 
   assert.equal(issues.length, 2);
 });
+
+test("dedupeIssues preserves browser evidence from a later duplicate", () => {
+  const issues = dedupeIssues([
+    {
+      source: "eslint",
+      framework: "react",
+      ruleId: "button-name",
+      message: "Button has no accessible name",
+      wcag: [],
+      wcagCriteria: [],
+      tags: [],
+      severity: "critical",
+      confidence: "high",
+      confidenceScore: 95,
+      confidenceReason: "Static rule",
+      findingType: "wcag",
+      category: "aria",
+      selector: ".icon-button",
+      url: "http://localhost:3000/"
+    },
+    {
+      source: "axe",
+      framework: "react",
+      ruleId: "button-name",
+      message: "Button has no accessible name",
+      wcag: [],
+      wcagCriteria: [],
+      tags: [],
+      severity: "critical",
+      confidence: "high",
+      confidenceScore: 95,
+      confidenceReason: "Rendered DOM rule",
+      findingType: "wcag",
+      category: "aria",
+      selector: ".icon-button",
+      url: "http://localhost:3000/",
+      stateId: "state-1",
+      stateLabel: "Initial page",
+      screenshot: "screenshots/state-1.jpg",
+      elementBounds: {
+        x: 10,
+        y: 20,
+        width: 30,
+        height: 40,
+        coordinateSpace: "document"
+      }
+    }
+  ]);
+
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].stateId, "state-1");
+  assert.equal(issues[0].screenshot, "screenshots/state-1.jpg");
+  assert.deepEqual(issues[0].elementBounds, {
+    x: 10,
+    y: 20,
+    width: 30,
+    height: 40,
+    coordinateSpace: "document"
+  });
+  assert.deepEqual(issues[0].sources?.sort(), ["axe", "eslint"]);
+});

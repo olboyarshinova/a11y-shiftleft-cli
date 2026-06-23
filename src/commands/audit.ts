@@ -4,6 +4,7 @@ import { runExplorePlaywrightAdapter, writeExplorationGraph } from "../adapters/
 import { runKeyboardPlaywrightAdapter } from "../adapters/keyboardPlaywrightAdapter.js";
 import { loadConfig } from "../config/loadConfig.js";
 import { createManualChecklist } from "../core/manualChecklist.js";
+import { filterReportFindings } from "../core/findingFilter.js";
 import { dedupeIssues } from "../core/dedupe.js";
 import { detectFramework } from "../core/detectFramework.js";
 import { applyIgnores, DEFAULT_IGNORE_FILE } from "../core/ignore.js";
@@ -15,7 +16,7 @@ import { cleanExploreArtifacts } from "../reporters/cleanExploreArtifacts.js";
 import { writeExplorationHtml } from "../reporters/writeExplorationHtml.js";
 import { writeExplorationPdf } from "../reporters/writeExplorationPdf.js";
 import { writeReports } from "../reporters/writeReports.js";
-import type { ComplianceStandard, Framework, Severity } from "../types.js";
+import type { ComplianceStandard, Framework, Issue, KeyboardAuditResult, Severity } from "../types.js";
 import { filterByWcagConformance, shouldFail } from "./check.js";
 
 interface AuditOptions {
@@ -30,6 +31,7 @@ interface AuditOptions {
   maxTabs?: string;
   failOn?: Severity | "none";
   standard?: string;
+  wcagOnly?: boolean;
   keyboard?: boolean;
   manualReview?: boolean;
   activation?: boolean;
@@ -67,6 +69,7 @@ export function registerAuditCommand(program: Command): void {
     .option("--max-tabs <count>", "Maximum Tab presses for keyboard traversal", "40")
     .option("--fail-on <severity>", "critical, warning, info, or none")
     .option("--standard <standard>", "wcag22-aa, ada-title-ii, or section508")
+    .option("--wcag-only", "Only report findings mapped to WCAG; exclude best practices and unmapped review signals")
     .option("--no-keyboard", "Skip the bounded keyboard focus traversal")
     .option("--no-manual-review", "Do not embed the manual review checklist")
     .option("--activation", "Add isolated safe Enter, Space, Escape, and arrow-key checks")
@@ -122,7 +125,21 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
   };
   await cleanExploreArtifacts(effectiveConfig.outputDir);
 
-  const [staticIssues, exploration] = await Promise.all([
+  const keyboardPromise: Promise<{ result?: KeyboardAuditResult; issues: Issue[] }> = options.keyboard === false
+    ? Promise.resolve({ issues: [] })
+    : runKeyboardPlaywrightAdapter({
+      url: options.url,
+      framework,
+      maxTabs: boundedInteger(options.maxTabs, 40, 1, 200),
+      waitMs: effectiveConfig.explore.waitMs,
+      activation: Boolean(options.activation),
+      maxActivations: 6,
+      safeMode: effectiveConfig.explore.safeMode
+    }).then((result) => ({ result, issues: [] })).catch((error: unknown) => ({
+      issues: [createAuditAdapterIssue(framework, options.url, "keyboard", error)]
+    }));
+
+  const [staticIssues, exploration, keyboardOutcome] = await Promise.all([
     runEslintAdapter(effectiveConfig),
     runExplorePlaywrightAdapter(effectiveConfig, {
       url: options.url,
@@ -137,21 +154,19 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
       waitForSelector: effectiveConfig.explore.waitForSelector,
       scroll: effectiveConfig.explore.scroll,
       safeMode: effectiveConfig.explore.safeMode
-    })
+    }),
+    keyboardPromise
   ]);
-  const keyboard = options.keyboard === false
-    ? undefined
-    : await runKeyboardPlaywrightAdapter({
-      url: options.url,
-      framework,
-      maxTabs: boundedInteger(options.maxTabs, 40, 1, 200),
-      waitMs: effectiveConfig.explore.waitMs,
-      activation: Boolean(options.activation),
-      maxActivations: 6,
-      safeMode: effectiveConfig.explore.safeMode
-    });
+  const keyboard = keyboardOutcome.result;
 
-  const rawIssues = [...staticIssues, ...exploration.issues, ...(keyboard?.issues || [])];
+  // Browser evidence comes first so a duplicate static finding cannot replace
+  // its state, screenshot, and element bounds in the unified visual report.
+  const rawIssues = [
+    ...exploration.issues,
+    ...staticIssues,
+    ...(keyboard?.issues || []),
+    ...keyboardOutcome.issues
+  ];
   const normalized = rawIssues.map(normalizeIssue);
   const triaged = triageIssues(normalized);
   const filtered = filterByWcagConformance(triaged, {
@@ -159,7 +174,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
     version: standard.wcagVersion,
     includeUnmapped: true
   });
-  const uniqueIssues = dedupeIssues(filtered);
+  const uniqueIssues = dedupeIssues(filterReportFindings(filtered, { wcagOnly: options.wcagOnly }));
   const ignoreResult = await applyIgnores(uniqueIssues, {
     cwd: effectiveConfig.cwd,
     enabled: options.ignore !== false,
@@ -173,7 +188,12 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
   const urls = [...new Set(exploration.graph.states.map((state) => state.url))];
   const manualChecklist = options.manualReview === false
     ? undefined
-    : createManualChecklist({ framework, urls, issues: remediationResult.issues });
+    : createManualChecklist({
+      framework,
+      urls,
+      issues: remediationResult.issues,
+      exploration: exploration.graph
+    });
   const formats = options.excel ? ["json", "markdown", "csv"] as const : ["json", "markdown"] as const;
   const report = await writeReports(effectiveConfig.outputDir, remediationResult.issues, {
     framework,
@@ -247,4 +267,21 @@ function toFramework(value: string | undefined): Framework | undefined {
 function toStandard(value: string | undefined): ComplianceStandard | undefined {
   if (value === "wcag22-aa" || value === "ada-title-ii" || value === "section508") return value;
   return undefined;
+}
+
+function createAuditAdapterIssue(
+  framework: Framework,
+  url: string,
+  adapter: string,
+  error: unknown
+): Issue {
+  const message = error instanceof Error ? error.message : String(error);
+  return {
+    source: adapter,
+    framework,
+    ruleId: `adapter/${adapter}-scan-error`,
+    severity: "warning",
+    url,
+    message: `${adapter} audit failed: ${message}`
+  };
 }

@@ -54,6 +54,12 @@ const graph = {
         hasAccessibleName: true,
         initialFocusSelector: "#close-dialog",
         initialFocusInside: true,
+        isModal: true,
+        containmentTested: true,
+        containmentSteps: 3,
+        forwardFocusContained: true,
+        backwardFocusContained: false,
+        escapedFocusSelector: "#background-link",
         triggerSelector: "#open-dialog",
         escapeTested: true,
         escapeClosed: true,
@@ -244,6 +250,7 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /a11y-shiftleft exploration report/);
   assert.match(html, /Generated: <time datetime="2026-06-09T00:00:00.000Z">9 June 2026, 00:00 UTC<\/time>/);
   assert.doesNotMatch(html, />Generated 2026-06-09T/);
+  assert.match(html, /Scan scope: depth 2, up to 20 states, 3 rendered/);
   assert.match(html, /UI states explored/);
   assert.match(html, /Rendered states/);
   assert.match(html, /screenshots\/state-1\.png/);
@@ -253,11 +260,17 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /visual reused from state-1/);
   assert.match(html, /Open this state's annotated evidence/);
   assert.match(html, /button-name/);
+  assert.match(html, /WCAG Level A/);
+  assert.match(html, /WCAG 4\.1\.2 Name, Role, Value/);
   assert.match(html, /dark color scheme/);
   assert.match(html, /Buttons must have discernible text/);
-  assert.match(html, /Grouped Fix Guidance/);
-  assert.match(html, /View grouped fix guidance/);
+  assert.doesNotMatch(html, /1 occurrence/);
+  assert.match(html, /button-name[\s\S]*?<span class="badge">WCAG violation<\/span>[\s\S]*?WCAG Level A/);
+  assert.doesNotMatch(html, /finding-occurrence">\s*<div><span class="badge badge-critical">critical<\/span> <span class="badge">WCAG violation<\/span><\/div>/);
+  assert.doesNotMatch(html, /Grouped Fix Guidance/);
   assert.match(html, /<summary>How to fix<\/summary>/);
+  assert.match(html, /<details class="remediation">\s*<summary>How to fix<\/summary>/);
+  assert.doesNotMatch(html, /<details class="remediation" open>/);
   assert.match(html, /Give every button an accessible name/);
   assert.match(html, /Use visible button text when possible/);
   assert.match(html, /react example/);
@@ -279,10 +292,27 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /screenshot-frame screenshot-frame-full/);
   assert.match(html, /Open full-page evidence/);
   assert.match(html, /screenshot-frame-full[\s\S]*?object-fit: contain/);
+  assert.match(html, /screenshot-frame-full[\s\S]*?aspect-ratio: auto/);
+  assert.match(html, /screenshot-frame-full[\s\S]*?overflow: hidden/);
+  assert.match(html, /screenshot-frame-full \.screenshot-scroll[\s\S]*?overflow: auto/);
+  assert.match(html, /<div class="screenshot-scroll">\s*<div class="screenshot-stage">/);
   assert.match(html, /full-page evidence/);
   assert.match(html, /class="state state-critical" id="state-1"/);
-  assert.match(html, /class="state state-ok" id="state-2"/);
+  assert.match(html, /class="state state-ok state-compact" id="state-2"/);
+  assert.match(html, /state-compact-summary/);
+  assert.match(html, /No automated findings in this state\./);
   assert.match(html, /\.state-critical/);
+  assert.doesNotMatch(html, /\.states \{[^}]*align-items: start/);
+  assert.match(html, /grid-template-rows: auto auto/);
+  assert.match(html, /min-height: 0/);
+  assert.match(html, /summary::before/);
+  assert.match(html, /flex: 0 0 24px/);
+  assert.match(html, /summary::-webkit-details-marker/);
+  assert.match(html, /\.issue:has\(details\[open\]\)/);
+  assert.match(html, /\.remediation\[open\] \.remediation-body/);
+  assert.match(html, /\.contrast-guidance\[open\] \.contrast-guidance-body/);
+  assert.match(html, /position: absolute/);
+  assert.match(html, /max-height: min\(380px, 60vh\)/);
   assert.match(html, /background: rgb\(180 35 24 \/ 10%\)/);
   assert.match(html, /--warning-marker: #f97316/);
   assert.match(html, /border-color: var\(--warning-marker\)/);
@@ -311,8 +341,24 @@ test("renderExplorationHtml groups repeated remediation by rule", () => {
   ]);
 
   assert.match(html, /button-name<\/code>[\s\S]*?2 occurrences/);
-  assert.match(html, /Affected targets \(2\)/);
+  assert.match(html, /Affected findings \(2\)/);
   assert.equal((html.match(/<summary>How to fix<\/summary>/g) || []).length, 1);
+});
+
+test("renderExplorationHtml keeps source findings outside visual state groups", () => {
+  const html = renderExplorationHtml(graph, [{
+    ...issues[0],
+    source: "eslint",
+    stateId: undefined,
+    screenshot: undefined,
+    selector: undefined,
+    file: "src/components/IconButton.tsx",
+    fingerprint: "jsx-a11y/button-has-type::IconButton"
+  }]);
+
+  assert.match(html, /Non-visual Findings/);
+  assert.match(html, /src\/components\/IconButton\.tsx/);
+  assert.match(html, /<summary>How to fix<\/summary>/);
 });
 
 test("renderExplorationHtml escapes dynamic content", () => {
@@ -354,10 +400,49 @@ test("renderExplorationHtml renders color contrast evidence and suggestions", ()
   assert.match(html, /Text <code>#aaaaaa<\/code>/);
   assert.match(html, /Background <code>#ffffff<\/code>/);
   assert.match(html, /Keep background #ffffff and change the text color/);
+  assert.match(html, /<details class="contrast-evidence contrast-guidance">\s*<summary>Color recommendations<\/summary>/);
+  assert.match(html, /<div class="contrast-guidance-body">\s*<div class="contrast-measurement">/);
+  assert.match(html, /<summary>Color recommendations<\/summary>[\s\S]*?Contrast 2\.32:1[\s\S]*?Suggested accessible colors/);
   assert.match(html, /Minimum change: <code>#767676<\/code> → 4\.54:1/);
   assert.match(html, /Recommended: <code>#6F6F6F<\/code> → 5\.02:1/);
   assert.match(html, /Enhanced contrast: <code>#595959<\/code> → 7:1/);
   assert.match(html, /background-color: #767676/);
+});
+
+test("renderExplorationHtml shows identical contrast guidance once per screenshot", () => {
+  const contrast = {
+    actualRatio: 2.32,
+    requiredRatio: 4.5,
+    foreground: "#aaaaaa",
+    background: "#ffffff",
+    fontSize: "12.0pt (16px)",
+    fontWeight: "normal",
+    suggestions: [
+      { target: "foreground" as const, purpose: "minimum" as const, color: "#767676", contrastRatio: 4.54 },
+      { target: "foreground" as const, purpose: "recommended" as const, color: "#6F6F6F", contrastRatio: 5.02 }
+    ]
+  };
+  const html = renderExplorationHtml(graph, [
+    {
+      ...issues[0],
+      ruleId: "color-contrast",
+      selector: ".first-muted-label",
+      fingerprint: "color-contrast::first",
+      contrast
+    },
+    {
+      ...issues[0],
+      ruleId: "color-contrast",
+      selector: ".second-muted-label",
+      fingerprint: "color-contrast::second",
+      contrast
+    }
+  ]);
+
+  assert.equal((html.match(/Contrast 2\.32:1/g) || []).length, 1);
+  assert.equal((html.match(/Suggested accessible colors/g) || []).length, 1);
+  assert.equal((html.match(/Minimum change: <code>#767676<\/code>/g) || []).length, 1);
+  assert.match(html, /Shared recommendation for 2 findings/);
 });
 
 test("renderExplorationHtml renders focused evidence crops for long pages", () => {
@@ -426,6 +511,16 @@ test("transformBoundsForContainedPreview aligns annotations on tall screenshots"
   });
 });
 
+test("renderExplorationHtml keeps full-page preview annotations in document coordinates", () => {
+  const html = renderExplorationHtml(graph, issues);
+  const frameStart = html.indexOf('<div class="screenshot-frame screenshot-frame-full">');
+  const frameEnd = html.indexOf('<a class="screenshot-open"', frameStart);
+  const frameHtml = html.slice(frameStart, frameEnd);
+
+  assert.match(frameHtml, /left: 10%; top: 20%; width: 30%; height: 12%/);
+  assert.doesNotMatch(frameHtml, /left: 38%; top: 20%; width: 9%; height: 12%/);
+});
+
 test("transformBoundsForContainedPreview aligns annotations on wide screenshots", () => {
   const transformed = transformBoundsForContainedPreview({
     x: 10,
@@ -463,7 +558,7 @@ test("renderExplorationHtml labels best practices separately from WCAG findings"
 
   assert.match(html, /Best practices<\/span>/);
   assert.match(html, /best practice<\/span>/);
-  assert.match(html, /Likely Root Causes/);
+  assert.doesNotMatch(html, /Likely Root Causes/);
   assert.doesNotMatch(html, /WCAG 1\.3\.1/);
 });
 
@@ -510,7 +605,7 @@ test("renderExplorationHtml keeps overflow report data in collapsed sections", (
     skippedActions: overflowActions
   }, overflowIssues);
 
-  assert.match(html, /Show 1 more finding/);
+  assert.match(html, /Show 1 more rule group/);
   assert.match(html, /Finding 9/);
   assert.match(html, /Show 1 more transition/);
   assert.match(html, /Transition 13/);
@@ -538,9 +633,57 @@ test("writeExplorationHtml can create a unified audit report", async () => {
       generatedAt: "2026-06-21T00:00:00.000Z",
       durationMs: 10,
       maxTabs: 40,
-      focusableCount: 0,
+      focusableCount: 2,
       completedCycle: false,
-      steps: [],
+      steps: [{
+        index: 1,
+        direction: "forward",
+        selector: "#search",
+        tagName: "input",
+        role: "searchbox",
+        accessibleName: "Search products",
+        tabIndex: 0,
+        visible: true,
+        focusVisible: true,
+        indicatorVisible: true,
+        obscured: false,
+        pageState: {
+          id: "keyboard-state-1",
+          url: "http://localhost:3000",
+          title: "Demo",
+          heading: "Demo",
+          scrollX: 0,
+          scrollY: 0,
+          viewportWidth: 1280,
+          viewportHeight: 720,
+          openDialogs: 0,
+          expandedControls: 0
+        }
+      }, {
+        index: 2,
+        direction: "forward",
+        selector: "#buy",
+        tagName: "button",
+        role: "button",
+        accessibleName: "Buy now",
+        tabIndex: 0,
+        visible: true,
+        focusVisible: false,
+        indicatorVisible: false,
+        obscured: true,
+        pageState: {
+          id: "keyboard-state-1",
+          url: "http://localhost:3000",
+          title: "Demo",
+          heading: "Demo",
+          scrollX: 0,
+          scrollY: 0,
+          viewportWidth: 1280,
+          viewportHeight: 720,
+          openDialogs: 0,
+          expandedControls: 0
+        }
+      }],
       backwardSteps: [],
       reverseOrderMatches: null,
       activationAttempts: [],
@@ -550,14 +693,58 @@ test("writeExplorationHtml can create a unified audit report", async () => {
       generatedAt: "2026-06-21T00:00:00.000Z",
       framework: "react",
       urls: ["http://localhost:3000"],
-      items: []
+      items: [{
+        id: "form-label-quality",
+        title: "Meaningful form labels and instructions",
+        principle: "understandable",
+        wcag: ["1.3.1", "3.3.2"],
+        whyManual: "Label quality requires human review.",
+        steps: ["Review each form label."],
+        evidence: ["Form review notes"],
+        targets: [{
+          id: "state-1:form:#email",
+          kind: "form",
+          label: "Email address",
+          url: "http://localhost:3000",
+          stateId: "state-1",
+          selector: "#email",
+          evidence: "1 invalid field without an exposed associated error"
+        }],
+        review: {
+          status: "not-reviewed",
+          tester: "",
+          testedAt: "",
+          environment: "",
+          notes: "",
+          evidenceLinks: [],
+          remediationOwner: ""
+        }
+      }]
     }
   });
 
   const html = await fs.readFile(path.join(outputDir, "a11y-report.html"), "utf8");
   assert.match(html, /Accessibility Audit Report/);
+  assert.match(html, /Quick Review/);
+  assert.match(html, /Fix First/);
+  assert.match(html, /First Tab Stops/);
+  assert.match(html, /Human Review Next/);
+  assert.match(html, /WCAG Level A/);
+  assert.match(html, /1\. Search products/);
+  assert.match(html, /review focus visibility/);
+  assert.match(html, /1 observed target/);
   assert.match(html, /Keyboard Audit/);
+  assert.match(html, /Visual Tab Order/);
+  assert.match(html, /Search products/);
+  assert.match(html, /Buy now/);
+  assert.match(html, /focus indicator not detected; control may be obscured/);
+  assert.match(html, /class="focus-path-item focus-path-item-risk"/);
+  assert.match(html, /Complete focus path data/);
   assert.match(html, /Manual Review Checklist/);
+  assert.match(html, /Observed review targets/);
+  assert.match(html, /form: Email address/);
+  assert.match(html, /href="#state-1">Open state-1/);
+  assert.match(html, /1 review area has observed targets from this audit/);
   assert.match(html, /Audit Coverage/);
   assert.match(html, /class="coverage-table"/);
   assert.match(html, /class="coverage-status-cell"/);
@@ -566,18 +753,22 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /type="checkbox" checked disabled/);
   assert.match(html, /data-coverage-review="screen-reader"/);
   assert.match(html, /Screen reader: mark manual review complete/);
+  assert.ok(html.indexOf("Browser automation") < html.indexOf("Screen reader"));
   assert.match(html, /data-coverage-progress aria-live="polite"/);
   assert.match(html, /a11y-shiftleft:coverage:/);
   assert.match(html, /class="coverage-findings">0<\/td>/);
   assert.match(html, /Accessibility tree evidence/);
   assert.match(html, /Unnamed interactive/);
-  assert.match(html, /Reflow evidence at 320 CSS pixels/);
+  assert.match(html, /Reflow evidence at 400% \(320 CSS px simulation\)/);
   assert.match(html, /Clipped account instructions/);
   assert.match(html, /Modal focus evidence/);
   assert.match(html, /Account settings/);
   assert.match(html, /returned to trigger/);
-  assert.match(html, /Dynamic announcement evidence/);
-  assert.match(html, /Menu opened/);
+  assert.match(html, /Modal semantics/);
+  assert.match(html, /forward contained; reverse escaped \(3 bounded steps per direction\)/);
+  assert.match(html, /#background-link/);
+  assert.doesNotMatch(html, /Dynamic announcement evidence/);
+  assert.doesNotMatch(html, /Menu opened/);
   assert.match(html, /Form error evidence/);
   assert.match(html, /Email address/);
   assert.match(html, /Enter a valid email address/);
@@ -589,4 +780,48 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /Iframe and canvas evidence/);
   assert.match(html, /#sales-chart/);
   assert.match(html, /Modern axe scans accessible frame documents recursively/);
+});
+
+test("renderExplorationHtml hides successful per-state diagnostic details", () => {
+  const cleanGraph = {
+    ...graph,
+    states: [{
+      ...graph.states[0],
+      accessibilityTree: {
+        ...graph.states[0].accessibilityTree,
+        unnamedInteractiveNodes: 0
+      },
+      reflow: {
+        ...graph.states[0].reflow,
+        documentWidth: 320,
+        horizontalOverflowPx: 0,
+        clippedTextCount: 0,
+        clippedTextSample: []
+      },
+      formErrors: {
+        ...graph.states[0].formErrors,
+        invalidFieldCount: 0,
+        associatedErrorCount: 0,
+        unassociatedInvalidCount: 0,
+        errorSummaryCount: 0,
+        invalidFields: []
+      },
+      imageAlternatives: {
+        ...graph.states[0].imageAlternatives,
+        suspiciousCount: 0,
+        repeatedAlternativeGroups: 0,
+        samples: []
+      }
+    }]
+  };
+
+  const html = renderExplorationHtml(cleanGraph, []);
+
+  assert.doesNotMatch(html, /<summary>Accessibility tree evidence<\/summary>/);
+  assert.doesNotMatch(html, /<summary>Reflow evidence at 400% \(320 CSS px simulation\)<\/summary>/);
+  assert.doesNotMatch(html, /<summary>Form error evidence<\/summary>/);
+  assert.doesNotMatch(html, /<summary>Image alternative-text evidence<\/summary>/);
+  assert.match(html, /Audit Coverage/);
+  assert.match(html, /1 state checked for overflow and clipped text/);
+  assert.match(html, /0 image alternatives flagged for human review/);
 });

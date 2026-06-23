@@ -465,7 +465,18 @@ export interface ManualReviewRecord {
   remediationOwner: string;
 }
 
+export interface ManualReviewTarget {
+  id: string;
+  kind: "dialog" | "form" | "image" | "live-region" | "media" | "landmark" | "reflow";
+  label: string;
+  url: string;
+  stateId: string;
+  selector?: string;
+  evidence: string;
+}
+
 export interface ManualChecklistEntry extends ManualCheckItem {
+  targets?: ManualReviewTarget[];
   review: ManualReviewRecord;
 }
 
@@ -624,6 +635,7 @@ export interface ReflowEvidence {
 export interface ModalFocusEvidence {
   dialogCount: number;
   dialogSelector: string;
+  isModal?: boolean;
   accessibleName?: string;
   hasAccessibleName: boolean;
   initialFocusSelector?: string;
@@ -632,6 +644,11 @@ export interface ModalFocusEvidence {
   escapeTested: boolean;
   escapeClosed?: boolean;
   focusReturnedToTrigger?: boolean;
+  containmentTested?: boolean;
+  containmentSteps?: number;
+  forwardFocusContained?: boolean;
+  backwardFocusContained?: boolean;
+  escapedFocusSelector?: string;
 }
 
 export interface DynamicAnnouncementUpdate {

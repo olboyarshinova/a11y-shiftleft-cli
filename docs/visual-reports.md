@@ -73,7 +73,7 @@ browser local storage under an identifier unique to the generated report. They
 are not uploaded, written back into the report files, or treated as proof of
 WCAG conformance.
 
-Each explored state also receives a bounded 320 CSS pixel reflow pass. It
+Each explored state also receives a bounded 400% reflow proxy at 320 CSS pixels. It
 records document width, horizontal overflow, and text containers that appear to
 clip meaningful content. These are heuristic WCAG 1.4.10 signals: confirm them
 at 400% zoom before treating intentional truncation as a defect.

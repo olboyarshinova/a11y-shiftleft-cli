@@ -72,17 +72,25 @@ remain suitable for reproducible empirical validation.
   [Accessibility Insights](https://accessibilityinsights.io/docs/web/overview/)
   and [ARC Toolkit](https://www.tpgi.com/arc-platform/arc-toolkit/). Keep the
   underlying selector, role, accessible name, and focus evidence available
-  without relying on color or the visual path alone.
+  without relying on color or the visual path alone. The initial report view
+  now renders the bounded forward Tab sequence as numbered controls and flags
+  missing indicators, obscured controls, and invisible targets while retaining
+  the complete accessible table.
 - Add a compact quick-review section that combines high-impact automated
   findings, the bounded Tab path, and a short set of assisted manual checks.
   This should be a report view over the normal audit, not a second scanner or a
-  separate result format.
+  separate result format. The unified HTML report now starts with three
+  high-impact findings, five forward Tab stops, and three prioritized human
+  review tasks linked to captured states where available.
 - Turn manual review into an assisted queue: identify relevant instances such
   as images, forms, dialogs, media, landmarks, and live regions; provide concise
   test instructions; and persist `pass`, `fail`, `needs-review`, and
   `not-tested` outcomes with evidence and reviewer context. Use the
   [A11Y Project checklist](https://www.a11yproject.com/checklist/) as a practical
-  task source while keeping WCAG as the normative mapping source.
+  task source while keeping WCAG as the normative mapping source. The initial
+  queue now links discovered forms, dialogs, live regions, suspicious image
+  alternatives, media, landmarks, and reflow states to focused instructions in
+  the HTML, Markdown, and JSON reports.
 - Surface keyboard findings in the same severity, WCAG, confidence, baseline,
   ignore, remediation, retest, dashboard, and PR-report pipeline used by
   `check` and `explore`. Keyboard mode now supports the shared finding policies
@@ -120,6 +128,32 @@ remain suitable for reproducible empirical validation.
 
 ## Near Term
 
+- Add an evaluation-scope manifest inspired by WCAG-EM: target standard and
+  level, included technologies, discovered pages and states, representative
+  and random samples, unavailable content, exclusions, and the exact tool and
+  browser versions used. Keep it as reproducibility evidence, not a conformance
+  certificate.
+- Represent complete user processes separately from individual pages. Let a
+  reviewer group discovered states into journeys such as sign-in, search,
+  checkout, or form submission and record whether every step was evaluated;
+  never report a process as covered because only its first page was scanned.
+- Record manual-test environment metadata for browser, operating system,
+  assistive technology and version, input method, zoom, and color mode. Provide
+  suggested NVDA, JAWS, VoiceOver, TalkBack, keyboard-only, and switch/voice
+  scenarios without pretending that browser automation executed those tools.
+- Add a bounded forced-colors diagnostic that compares normal rendering with
+  `forced-colors: active` and flags controls, focus indicators, SVGs, and
+  information-bearing backgrounds that disappear or become indistinguishable.
+  Treat the result as review evidence because browser emulation is not a
+  substitute for Windows High Contrast Mode testing.
+- Add cross-page consistency analysis for repeated navigation, help mechanisms,
+  page titles, and same-purpose control names. Use discovered page/state
+  fingerprints to surface differences for review rather than asserting that
+  every difference is a WCAG failure.
+- Separate user impact from technical severity and confidence. Add a compact
+  impact field such as `blocker`, `significant`, `workaround`, or `minor`, plus
+  affected-page and repeated-component counts, so teams can prioritize task
+  completion barriers without weakening the existing evidence model.
 - Add assertion-level coverage states to reports: `passed`, `failed`,
   `needs-review`, `not-tested`, and `unavailable`. Show which page or UI state
   produced the evidence and never infer WCAG conformance from an automated
@@ -152,7 +186,10 @@ remain suitable for reproducible empirical validation.
   overlapping fixed or sticky control checks.
 - Extend the initial isolated modal checks for accessible name, initial focus,
   Escape, and trigger restoration with bounded focus-containment traversal and
-  coverage of close, cancel, and successful-completion paths.
+  coverage of close, cancel, and successful-completion paths. Native modal
+  dialogs and elements with `aria-modal="true"` now receive bounded forward and
+  reverse containment checks; non-modal dialogs and additional completion paths
+  remain explicit manual-review work.
 - Extend the initial bounded `aria-live`, alert, status, log, timer, and marquee
   mutation evidence with validation-error and loading-state correlation while
   continuing to require screen-reader confirmation of actual announcements.
@@ -162,6 +199,12 @@ remain suitable for reproducible empirical validation.
 - Extend the initial rendered-state form evidence for `aria-invalid`, described
   errors, error summaries, and current focus with safe validation-state
   correlation and non-sensitive correction workflows that never submit data.
+- Add safe diagnostics for unexpected context changes on focus or input, while
+  isolating every attempt and blocking navigation, submission, downloads, and
+  other destructive effects by default.
+- Add assisted checks for hover/focus content: whether it can be dismissed,
+  remains available while hovered, and persists long enough to inspect. Keep
+  visual meaning and usability in the manual-review queue.
 - Extend the initial media evidence for caption tracks, transcript candidates,
   autoplay controls, active animations, and reduced-motion CSS with isolated
   behavior comparison. Keep caption quality, audio description, and flashing

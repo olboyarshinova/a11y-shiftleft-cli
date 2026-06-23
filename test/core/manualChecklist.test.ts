@@ -49,6 +49,68 @@ test("createManualChecklist prioritizes form review when form issues exist", () 
   assert.equal(checklist.items[0].id, "form-label-quality");
 });
 
+test("createManualChecklist creates an assisted queue from exploration evidence", () => {
+  const checklist = createManualChecklist({
+    framework: "react",
+    exploration: {
+      generatedAt: "2026-06-22T00:00:00.000Z",
+      startUrl: "http://localhost:3000",
+      states: [{
+        id: "state-2",
+        url: "http://localhost:3000/contact",
+        depth: 1,
+        fingerprint: "contact",
+        actionLabel: "Contact",
+        issueCount: 1,
+        actionCount: 0,
+        formErrors: {
+          formCount: 1,
+          fieldCount: 2,
+          invalidFieldCount: 1,
+          associatedErrorCount: 0,
+          unassociatedInvalidCount: 1,
+          errorSummaryCount: 0,
+          invalidFields: [{
+            selector: "#email",
+            accessibleName: "Email address",
+            errorReferenceIds: [],
+            focused: false
+          }]
+        },
+        imageAlternatives: {
+          imageCount: 1,
+          decorativeCount: 0,
+          informativeCount: 1,
+          suspiciousCount: 1,
+          repeatedAlternativeGroups: 0,
+          samples: [{ selector: "#hero", alt: "hero.png", concerns: ["filename"] }]
+        }
+      }],
+      edges: [],
+      skippedActions: [],
+      summary: {
+        statesVisited: 1,
+        actionsTried: 0,
+        skippedActions: 0,
+        screenshots: 0,
+        duplicateScreenshots: 0,
+        maxDepth: 1,
+        maxStates: 10
+      }
+    },
+    generatedAt: "2026-06-22T00:00:00.000Z"
+  });
+
+  const formReview = checklist.items.find((item) => item.id === "form-label-quality");
+  const imageReview = checklist.items.find((item) => item.id === "alternative-text-quality");
+  assert.equal(formReview?.targets?.[0].selector, "#email");
+  assert.equal(formReview?.targets?.[0].stateId, "state-2");
+  assert.equal(imageReview?.targets?.[0].kind, "image");
+  assert.equal(checklist.items[0].id, "form-label-quality");
+  assert.match(toManualChecklistMarkdown(checklist), /Observed targets:\n- \[ \] form: Email address/);
+  assert.match(toManualChecklistMarkdown(checklist), /state-2, #email/);
+});
+
 test("toManualChecklistMarkdown renders actionable Markdown checkboxes", () => {
   const checklist = createManualChecklist({
     framework: "vue",

@@ -187,12 +187,13 @@ visual report and includes the other checks most teams need for local review.
 
 ### Full Visual Audit
 
-Use `audit` for the normal end-to-end workflow. Its primary output is the
-graphical `reports/a11y-report.html` file.
+Use `audit` for the normal end-to-end workflow. Its primary output is the visual
+HTML report.
 
 | Goal | Command | Main output |
 |---|---|---|
 | Run the recommended audit | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports` | `a11y-report.html` |
+| Show only WCAG-mapped findings | `npx a11y-shiftleft-cli audit --url $APP_URL --wcag-only --out reports` | Report without best-practice or unmapped review signals |
 | Add Excel and PDF exports | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports --excel --pdf` | HTML, CSV, and PDF |
 | Force complete page screenshots | `npx a11y-shiftleft-cli audit --url $APP_URL --screenshot-full-page --out reports` | Full-page visual evidence |
 | Audit a slower application | `npx a11y-shiftleft-cli audit --url $APP_URL --wait-ms 1000 --out reports` | Visual report after an extra settle wait |
@@ -246,12 +247,11 @@ Each finding is labeled as a `WCAG violation`, `best practice`, or
 causes when the same rule and component state appear across routes. This grouping is
 heuristic: per-page evidence remains available for review.
 
-The visual report groups repeated findings by rule and shows one deterministic
-`How to fix` guide for the group. Individual findings link to that shared guide.
-Known rules provide specific steps, official guidance links, and framework
-examples when available. Unknown rules still receive safe review steps instead
-of an empty recommendation; axe findings also preserve their rule-specific help
-link.
+Under each screenshot, the visual report groups repeated findings by rule and
+shows one deterministic `How to fix` guide for that state-level group. Known
+rules provide specific steps, official guidance links, and framework examples
+when available. Unknown rules still receive safe review steps instead of an
+empty recommendation; axe findings also preserve their rule-specific help link.
 
 | File | Use it for | Commit it? |
 |---|---|---|
@@ -364,7 +364,12 @@ npx a11y-shiftleft-cli audit --url $APP_URL --out reports
 
 The HTML report includes safely discovered pages and UI states, axe and static
 findings, annotated screenshots, keyboard focus evidence, and a manual-review
-checklist. Its coverage matrix separates completed automation from keyboard,
+checklist. A compact Quick Review at the start combines the three highest-impact
+findings, the first five Tab stops, and the next three human-review tasks. The
+keyboard section includes a numbered visual Tab-order path and
+flags steps where a visible focus indicator was not detected or a control may
+be obscured; the complete selector data remains available in an accessible
+table. Its coverage matrix separates completed automation from keyboard,
 screen-reader, and human-review work. Automatically collected areas appear as
 green rows with locked checked boxes. Areas that still need a person appear as
 yellow rows with interactive checkboxes; selections are stored only in the
@@ -374,7 +379,18 @@ controls, and unnamed interactive-node counts. Add `--activation` to exercise
 bounded Enter, Space, Escape, and arrow-key behavior in isolated browser
 contexts.
 
-Every explored state is also rendered at 320 CSS pixels. The report records
+For native modal dialogs and elements with `aria-modal="true"`, the isolated
+check also performs up to 20 `Tab` and `Shift+Tab` steps in each direction. It
+reports focus that escapes to background content, then checks Escape dismissal
+and focus restoration. Non-modal dialogs remain manual-review targets.
+
+The manual-review checklist is context-aware. When the audit observes forms,
+dialogs, live regions, suspicious image alternatives, media, landmarks, or
+reflow states, it places up to six concrete targets under the relevant review
+task with the captured state, selector, and evidence. General checks remain
+available when no safe target was discovered automatically.
+
+Every explored state also receives a 400% reflow proxy at 320 CSS pixels. The report records
 document-level horizontal overflow and bounded clipped-text candidates as
 heuristic WCAG 1.4.10 evidence. Because intentional truncation can be valid,
 flagged text still requires human confirmation at browser zoom.
@@ -818,7 +834,9 @@ records selectors, roles, accessible names, visibility, focus indicators, and
 obscuration for up to 40 steps. Each step also references a deduplicated
 semantic page state containing the URL, title, H1, scroll position, viewport,
 and counts of open dialogs and expanded controls. These state snapshots do not
-capture screenshots, form values, or page HTML. It reports common positive `tabindex`, stuck or
+capture screenshots, form values, or page HTML. In the unified audit report,
+the forward path is also shown as a numbered visual sequence without relying on
+color alone. It reports common positive `tabindex`, stuck or
 incomplete focus cycles, specific controls skipped by a completed cycle,
 focus loss to the document body, forward/reverse order mismatches, missing visible
 focus, and focus hidden behind other content, with mappings to WCAG 2.1.1,
@@ -993,10 +1011,11 @@ node bin/cli.js audit --url http://localhost:5173 --out reports
 
 Current release:
 
-- [v0.6.3](docs/release-notes-v0.6.3.md)
+- [v0.7.0](docs/release-notes-v0.7.0.md)
 
 Previous releases:
 
+- [v0.6.3](docs/release-notes-v0.6.3.md)
 - [v0.6.2](docs/release-notes-v0.6.2.md)
 - [v0.6.1](docs/release-notes-v0.6.1.md)
 - [v0.6.0](docs/release-notes-v0.6.0.md)

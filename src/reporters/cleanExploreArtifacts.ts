@@ -55,7 +55,7 @@ async function cleanStateScreenshots(screenshotsDir: string): Promise<number> {
   let removed = 0;
 
   for (const entry of entries) {
-    if (!/^state-\d+(?:-error-\d+)?\.(png|jpe?g)$/.test(entry)) continue;
+    if (!/^state-\d+(?:-(?:error|evidence)-\d+)?\.(png|jpe?g)$/.test(entry)) continue;
     if (await removeIfExists(path.join(screenshotsDir, entry))) {
       removed += 1;
     }

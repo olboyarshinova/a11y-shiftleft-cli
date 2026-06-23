@@ -187,6 +187,18 @@ const RULE_HINTS: Record<string, RemediationHint> = {
       "https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/"
     ]
   },
+  "modal-focus-escapes": {
+    summary: "Keep keyboard focus inside the modal until the user closes it.",
+    howToFix: [
+      "Make background content inert while the modal is open and keep the active focus cycle within the dialog.",
+      "Move Tab from the last focusable control to the first, and Shift+Tab from the first control to the last.",
+      "Retest forward and reverse traversal, every close path, and focus restoration without a pointer."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html",
+      "https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/"
+    ]
+  },
   "modal-escape-no-effect": {
     summary: "Provide a predictable keyboard-operable way to dismiss the dialog.",
     howToFix: [

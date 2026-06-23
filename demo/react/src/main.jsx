@@ -4,6 +4,7 @@ import "./styles.css";
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showFormError, setShowFormError] = useState(false);
 
   return (
     <main className="page">
@@ -31,6 +32,13 @@ function App() {
         <h2 id="audit-title">Seeded issues</h2>
 
         <article>
+          <h4>Skipped heading level</h4>
+          <p className="muted">
+            This heading intentionally skips from level two to level four as best-practice guidance.
+          </p>
+        </article>
+
+        <article>
           <h3>Stateful modal issue</h3>
           <p className="muted">Explore mode can open this dialog and scan the new UI state.</p>
           <button
@@ -41,6 +49,27 @@ function App() {
           >
             Open audit modal
           </button>
+        </article>
+
+        <article>
+          <h3>Unassociated form error</h3>
+          <form onSubmit={(event) => event.preventDefault()}>
+            <label htmlFor="account-code">Account code</label>
+            <input
+              id="account-code"
+              type="text"
+              aria-invalid={showFormError ? "true" : undefined}
+            />
+            {showFormError && <p className="field-error">Enter an account code.</p>}
+            <button
+              className="secondary-button"
+              type="button"
+              data-a11y-explore
+              onClick={() => setShowFormError(true)}
+            >
+              Validate code
+            </button>
+          </form>
         </article>
 
         <article>
@@ -58,6 +87,32 @@ function App() {
         <article>
           <h3>Icon-only action with no name</h3>
           <button className="icon-button" type="button"></button>
+        </article>
+
+        <article>
+          <h3>Missing keyboard focus indicator</h3>
+          <button className="secondary-button no-focus-button" type="button">
+            Review keyboard path
+          </button>
+        </article>
+
+        <article>
+          <h3>Small pointer target</h3>
+          <div className="tiny-targets">
+            <button className="tiny-target" type="button" aria-label="Previous tip">
+              −
+            </button>
+            <button className="tiny-target" type="button" aria-label="Next tip">
+              +
+            </button>
+          </div>
+        </article>
+
+        <article>
+          <h3>Reflow problem</h3>
+          <p className="reflow-problem">
+            This fixed-width content becomes clipped in the 400% reflow simulation.
+          </p>
         </article>
       </section>
 

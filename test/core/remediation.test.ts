@@ -194,11 +194,14 @@ test("getRemediationHint explains modal focus findings", () => {
   const initial = getRemediationHint("modal-initial-focus-outside", getWcagCriteria(["2.4.3"]), "react");
   const restored = getRemediationHint("modal-focus-not-restored", getWcagCriteria(["2.4.3"]), "react");
   const escape = getRemediationHint("modal-escape-no-effect", [], "react");
+  const containment = getRemediationHint("modal-focus-escapes", getWcagCriteria(["2.4.3"]), "react");
 
   assert.match(name.summary, /accessible name/);
   assert.match(initial.summary, /inside the dialog/);
   assert.match(restored.summary, /Restore focus/);
   assert.equal(escape.docs.some((url) => url.includes("dialog-modal")), true);
+  assert.match(containment.summary, /inside the modal/);
+  assert.equal(containment.howToFix.some((step) => step.includes("Shift+Tab")), true);
 });
 
 test("getRemediationHint explains Angular button type findings", () => {

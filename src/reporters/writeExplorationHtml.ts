@@ -3,8 +3,7 @@ import path from "node:path";
 import { enrichIssueEvidence } from "../core/classification.js";
 import { formatReportDateUtc } from "../core/reportDate.js";
 import { getRemediationHint } from "../core/remediation.js";
-import { summarizeRootCauses } from "../core/rootCauses.js";
-import type { DedupedIssue, ExplorationGraph, ExplorationState, KeyboardAuditResult, ManualChecklist, RootCauseGroup, Severity } from "../types.js";
+import type { DedupedIssue, ExplorationGraph, ExplorationState, KeyboardAuditResult, ManualChecklist, Severity } from "../types.js";
 
 interface StateViewModel extends ExplorationState {
   issues: DedupedIssue[];
@@ -15,6 +14,11 @@ interface ExplorationHtmlOptions {
   title?: string;
   keyboard?: KeyboardAuditResult;
   manualChecklist?: ManualChecklist;
+}
+
+interface CoverageMatrixRow {
+  automated: boolean;
+  html: string;
 }
 
 export async function writeExplorationHtml(
@@ -42,9 +46,10 @@ export function renderExplorationHtml(
     ...state,
     issues: reportIssues.filter((issue) => issue.stateId === state.id)
   }));
+  const visualStateIds = new Set(graph.states.map((state) => state.id));
+  const nonVisualIssues = reportIssues.filter((issue) => !issue.stateId || !visualStateIds.has(issue.stateId));
   const totals = summarizeIssues(reportIssues);
   const findingTypes = countFindingTypes(reportIssues);
-  const rootCauseGroups = summarizeRootCauses(reportIssues);
 
   return `<!doctype html>
 <html lang="en">
@@ -139,7 +144,98 @@ export function renderExplorationHtml(
 
     .panel {
       padding: 16px;
-      overflow: hidden;
+      overflow: visible;
+    }
+
+    .focus-path {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+      margin: 16px 0 8px;
+      overflow-x: auto;
+      padding: 4px 4px 14px;
+    }
+
+    .focus-path-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      flex: 0 0 190px;
+      min-height: 112px;
+      padding: 12px;
+      position: relative;
+    }
+
+    .focus-path-item:not(:last-child)::after {
+      border-top: 2px solid #98a2b3;
+      content: "";
+      position: absolute;
+      right: -25px;
+      top: 25px;
+      width: 24px;
+    }
+
+    .focus-path-item-risk {
+      background: #fff8f1;
+      border-color: var(--warning-marker);
+    }
+
+    .focus-path-number {
+      align-items: center;
+      background: var(--info);
+      border-radius: 50%;
+      color: #fff;
+      display: inline-flex;
+      font-size: 12px;
+      font-weight: 700;
+      height: 28px;
+      justify-content: center;
+      margin-bottom: 8px;
+      width: 28px;
+    }
+
+    .focus-path-item-risk .focus-path-number {
+      background: var(--warning);
+    }
+
+    .focus-path-name,
+    .focus-path-meta {
+      display: block;
+      overflow-wrap: anywhere;
+    }
+
+    .focus-path-name {
+      font-weight: 700;
+    }
+
+    .focus-path-meta {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .manual-targets {
+      display: grid;
+      gap: 8px;
+      list-style: none;
+      margin: 12px 0;
+      padding: 0;
+    }
+
+    .manual-target {
+      background: #f7faff;
+      border: 1px solid #b8d2f5;
+      border-radius: 6px;
+      padding: 10px;
+    }
+
+    .manual-target strong,
+    .manual-target span {
+      display: block;
+    }
+
+    .manual-target a {
+      color: var(--info);
+      font-weight: 700;
     }
 
     .coverage-table-wrap {
@@ -263,6 +359,38 @@ export function renderExplorationHtml(
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     }
 
+    .quick-review-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    .quick-review-list {
+      display: grid;
+      gap: 8px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .quick-review-item {
+      border-left: 3px solid var(--line);
+      padding: 6px 8px;
+    }
+
+    .quick-review-item-critical {
+      border-left-color: var(--critical);
+    }
+
+    .quick-review-item-warning {
+      border-left-color: var(--warning-marker);
+    }
+
+    .quick-review-item a {
+      color: var(--info);
+      font-weight: 700;
+    }
+
     .triage-list {
       display: grid;
       gap: 10px;
@@ -299,9 +427,10 @@ export function renderExplorationHtml(
 
     .state {
       display: grid;
-      grid-template-rows: auto 1fr;
-      min-height: 340px;
-      overflow: hidden;
+      grid-template-rows: auto auto;
+      min-height: 0;
+      overflow: visible;
+      position: relative;
     }
 
     .state-critical {
@@ -336,6 +465,10 @@ export function renderExplorationHtml(
       box-shadow: inset 4px 0 0 var(--ok);
     }
 
+    .state-compact {
+      min-height: 0;
+    }
+
     .screenshot-frame {
       aspect-ratio: 16 / 9;
       background: #eef1f5;
@@ -361,6 +494,11 @@ export function renderExplorationHtml(
       width: 100%;
     }
 
+    .screenshot-scroll {
+      height: 100%;
+      overflow: hidden;
+    }
+
     .screenshot-frame .screenshot-stage {
       height: 100%;
     }
@@ -375,8 +513,27 @@ export function renderExplorationHtml(
     }
 
     .screenshot-frame-full .screenshot-stage > img {
+      height: auto;
+      min-height: 220px;
       object-fit: contain;
-      object-position: center;
+      object-position: top center;
+    }
+
+    .screenshot-frame-full {
+      aspect-ratio: auto;
+      height: clamp(260px, 70vh, 560px);
+      min-height: 260px;
+      overflow: hidden;
+    }
+
+    .screenshot-frame-full .screenshot-scroll {
+      height: 100%;
+      overflow: auto;
+    }
+
+    .screenshot-frame-full .screenshot-stage {
+      height: auto;
+      min-height: 260px;
     }
 
     .screenshot-open {
@@ -488,6 +645,31 @@ export function renderExplorationHtml(
       padding: 12px;
     }
 
+    .state-compact .state-body {
+      gap: 6px;
+      padding: 10px 12px;
+    }
+
+    .state-compact-summary {
+      align-items: center;
+      display: grid;
+      gap: 8px;
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .state-compact-summary h3 {
+      font-size: 14px;
+      margin-bottom: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .state-compact-meta {
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
     .state-title {
       align-items: start;
       display: flex;
@@ -554,12 +736,33 @@ export function renderExplorationHtml(
       padding-top: 8px;
     }
 
+    .issue {
+      position: relative;
+    }
+
+    .issue:has(details[open]) {
+      z-index: 6;
+    }
+
     .issue code,
     .edge code {
       background: #eef1f5;
       border-radius: 4px;
       padding: 2px 4px;
       word-break: break-word;
+    }
+
+    .finding-occurrences {
+      display: grid;
+      gap: 8px;
+      list-style: none;
+      margin: 8px 0 0;
+      padding: 0;
+    }
+
+    .finding-occurrence + .finding-occurrence {
+      border-top: 1px solid var(--line);
+      padding-top: 8px;
     }
 
     .contrast-evidence {
@@ -576,6 +779,11 @@ export function renderExplorationHtml(
       display: flex;
       flex-wrap: wrap;
       gap: 7px 14px;
+    }
+
+    .contrast-measurement {
+      display: grid;
+      gap: 7px;
     }
 
     .contrast-color {
@@ -629,6 +837,33 @@ export function renderExplorationHtml(
       gap: 6px 12px;
     }
 
+    .remediation,
+    .contrast-guidance {
+      position: relative;
+    }
+
+    .remediation-body,
+    .contrast-guidance-body {
+      display: grid;
+      gap: 8px;
+    }
+
+    .remediation[open] .remediation-body,
+    .contrast-guidance[open] .contrast-guidance-body {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      box-shadow: 0 12px 32px rgb(30 36 48 / 18%);
+      left: 0;
+      max-height: min(380px, 60vh);
+      overflow: auto;
+      padding: 12px;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      z-index: 8;
+    }
+
     details {
       border-top: 1px solid var(--line);
       padding-top: 10px;
@@ -639,9 +874,40 @@ export function renderExplorationHtml(
     }
 
     summary {
+      align-items: center;
       cursor: pointer;
+      display: flex;
+      gap: 8px;
       font-weight: 700;
-      list-style-position: outside;
+      list-style: none;
+      min-height: 32px;
+    }
+
+    summary::-webkit-details-marker {
+      display: none;
+    }
+
+    summary::before {
+      align-items: center;
+      background: #eef1f5;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      color: var(--ink);
+      content: "›";
+      display: inline-flex;
+      flex: 0 0 24px;
+      font-size: 20px;
+      font-weight: 800;
+      height: 24px;
+      justify-content: center;
+      line-height: 1;
+      transform: rotate(0deg);
+      transition: transform 120ms ease;
+      width: 24px;
+    }
+
+    details[open] > summary::before {
+      transform: rotate(90deg);
     }
 
     summary + .muted,
@@ -690,6 +956,7 @@ export function renderExplorationHtml(
       }
 
       .summary,
+      .quick-review,
       .triage,
       .states {
         grid-column: 1 / -1;
@@ -700,7 +967,7 @@ export function renderExplorationHtml(
 <body data-coverage-report-id="${escapeAttribute(`${graph.startUrl}|${graph.generatedAt}`)}">
   <header>
     <h1>${escapeHtml(options.title || "a11y-shiftleft exploration report")}</h1>
-    <p class="muted">Generated: <time datetime="${escapeAttribute(graph.generatedAt)}">${escapeHtml(formatReportDateUtc(graph.generatedAt))}</time><br>Start URL: ${escapeHtml(graph.startUrl)}</p>
+    <p class="muted">Generated: <time datetime="${escapeAttribute(graph.generatedAt)}">${escapeHtml(formatReportDateUtc(graph.generatedAt))}</time><br>Start URL: ${escapeHtml(graph.startUrl)}<br>Scan scope: depth ${graph.summary.maxDepth}, up to ${graph.summary.maxStates} states, ${graph.summary.statesVisited} rendered</p>
   </header>
   <main>
     <section class="summary" aria-label="Exploration summary">
@@ -718,20 +985,21 @@ export function renderExplorationHtml(
       ${metric("Info", totals.info, "info")}
       ${metric("WCAG findings", findingTypes.wcag)}
       ${metric("Best practices", findingTypes["best-practice"])}
-      ${metric("Likely root causes", rootCauseGroups.length)}
     </section>
+
+    ${renderQuickReview(reportIssues, options)}
 
     ${renderCoverageMatrix(graph, options, reportIssues)}
 
     <section class="panel triage" aria-label="Triage overview">
-      ${renderTriageOverview(states, reportIssues, rootCauseGroups)}
+      ${renderTriageOverview(states, reportIssues)}
     </section>
-
-    ${renderGroupedFixGuidance(reportIssues)}
 
     <section class="panel states" aria-label="Checked states">
       ${states.map(renderState).join("\n")}
     </section>
+
+    ${renderNonVisualIssues(nonVisualIssues)}
 
     ${options.keyboard ? renderKeyboardAudit(options.keyboard) : ""}
 
@@ -809,6 +1077,80 @@ export function renderExplorationHtml(
 `;
 }
 
+function renderQuickReview(issues: DedupedIssue[], options: ExplorationHtmlOptions): string {
+  if (!options.keyboard && !options.manualChecklist) return "";
+
+  const highImpact = [...issues]
+    .sort((left, right) => (
+      severityValue(right.severity) - severityValue(left.severity)
+        || left.ruleId.localeCompare(right.ruleId)
+    ))
+    .slice(0, 3);
+  const tabSteps = options.keyboard?.steps.slice(0, 5) || [];
+  const manualTasks = [...(options.manualChecklist?.items || [])]
+    .sort((left, right) => (right.targets?.length || 0) - (left.targets?.length || 0))
+    .slice(0, 3);
+
+  return `<section class="panel quick-review" aria-label="Quick review">
+    <h2>Quick Review</h2>
+    <p class="muted">Start here for a compact review of high-impact findings, keyboard order, and human checks. Full evidence remains in the sections below.</p>
+    <div class="quick-review-grid">
+      <div>
+        <h3>Fix First</h3>
+        ${renderQuickFindings(highImpact)}
+      </div>
+      <div>
+        <h3>First Tab Stops</h3>
+        ${renderQuickTabStops(tabSteps, Boolean(options.keyboard))}
+      </div>
+      <div>
+        <h3>Human Review Next</h3>
+        ${renderQuickManualTasks(manualTasks)}
+      </div>
+    </div>
+  </section>`;
+}
+
+function renderQuickFindings(issues: DedupedIssue[]): string {
+  if (issues.length === 0) return `<p class="muted">No automated findings to prioritize.</p>`;
+  return `<ol class="quick-review-list">${issues.map((issue) => {
+    const target = issue.stateId ? ` href="#${escapeAttribute(issue.stateId)}"` : "";
+    const label = issue.stateId ? `<a${target}>${escapeHtml(issue.ruleId)}</a>` : `<strong>${escapeHtml(issue.ruleId)}</strong>`;
+    const level = [...new Set(issue.wcagCriteria.map((criterion) => criterion.level))].join("/");
+    return `<li class="quick-review-item quick-review-item-${issue.severity}">
+      ${label} ${severityBadge(issue.severity)}
+      <span class="focus-path-meta">${escapeHtml(issue.message)}</span>
+      ${level ? `<span class="focus-path-meta">WCAG Level ${escapeHtml(level)}</span>` : ""}
+    </li>`;
+  }).join("")}</ol>`;
+}
+
+function renderQuickTabStops(steps: KeyboardAuditResult["steps"], included: boolean): string {
+  if (!included) return `<p class="muted">Keyboard evidence was not included.</p>`;
+  if (steps.length === 0) return `<p class="muted">No forward Tab stops were recorded.</p>`;
+  return `<ol class="quick-review-list">${steps.map((step, index) => {
+    const risk = !step.indicatorVisible || step.obscured || !step.visible;
+    return `<li class="quick-review-item${risk ? " quick-review-item-warning" : ""}">
+      <strong>${index + 1}. ${escapeHtml(step.accessibleName || step.selector || "Unnamed control")}</strong>
+      <span class="focus-path-meta">${escapeHtml(step.role || step.tagName)}${risk ? " · review focus visibility" : ""}</span>
+    </li>`;
+  }).join("")}</ol>`;
+}
+
+function renderQuickManualTasks(items: ManualChecklist["items"]): string {
+  if (items.length === 0) return `<p class="muted">No manual-review checklist was included.</p>`;
+  return `<ol class="quick-review-list">${items.map((item) => {
+    const firstTarget = item.targets?.[0];
+    const title = firstTarget
+      ? `<a href="#${escapeAttribute(firstTarget.stateId)}">${escapeHtml(item.title)}</a>`
+      : `<strong>${escapeHtml(item.title)}</strong>`;
+    return `<li class="quick-review-item">
+      ${title}
+      <span class="focus-path-meta">${item.targets?.length ? `${item.targets.length} observed target${item.targets.length === 1 ? "" : "s"}` : "Choose a representative target"}</span>
+    </li>`;
+  }).join("")}</ol>`;
+}
+
 function renderKeyboardAudit(audit: KeyboardAuditResult): string {
   const attempts = audit.activationAttempts || [];
   return `<section class="panel" aria-label="Keyboard audit">
@@ -820,8 +1162,9 @@ function renderKeyboardAudit(audit: KeyboardAuditResult): string {
       ${metric("Reverse steps", audit.backwardSteps.length)}
       ${metric("Activation attempts", attempts.length)}
     </div>
+    ${renderKeyboardFocusPath(audit.steps)}
     <details>
-      <summary>Focus path</summary>
+      <summary>Complete focus path data</summary>
       <table>
         <thead><tr><th>Step</th><th>Direction</th><th>Target</th><th>Role</th><th>Name</th><th>Indicator</th><th>Obscured</th></tr></thead>
         <tbody>${[...audit.steps, ...audit.backwardSteps].map((step) => `<tr>
@@ -836,6 +1179,42 @@ function renderKeyboardAudit(audit: KeyboardAuditResult): string {
       <tbody>${attempts.map((attempt) => `<tr><td>${escapeHtml(attempt.key)}</td><td><code>${escapeHtml(attempt.selector)}</code></td><td>${escapeHtml(attempt.role)}</td><td>${escapeHtml(attempt.outcome)}</td><td>${escapeHtml(attempt.reason || attempt.focusAfter || "none")}</td></tr>`).join("")}</tbody>
     </table></details>` : ""}
   </section>`;
+}
+
+function renderKeyboardFocusPath(steps: KeyboardAuditResult["steps"]): string {
+  if (steps.length === 0) {
+    return `<div aria-label="Visual Tab order"><h3>Visual Tab Order</h3><p class="muted">No forward focus steps were recorded.</p></div>`;
+  }
+
+  const visibleSteps = steps.slice(0, 20);
+  const items = visibleSteps.map((step, index) => {
+    const risks = [
+      !step.indicatorVisible ? "focus indicator not detected" : "",
+      step.obscured ? "control may be obscured" : "",
+      !step.visible ? "control is not visibly rendered" : ""
+    ].filter(Boolean);
+    const className = risks.length > 0 ? "focus-path-item focus-path-item-risk" : "focus-path-item";
+    const name = step.accessibleName || step.selector || "Unnamed control";
+    const role = step.role || step.tagName || "control";
+
+    return `<li class="${className}">
+      <span class="focus-path-number" aria-hidden="true">${index + 1}</span>
+      <span class="visually-hidden">Tab step ${index + 1}: </span>
+      <span class="focus-path-name">${escapeHtml(name)}</span>
+      <span class="focus-path-meta">${escapeHtml(role)}</span>
+      ${risks.length > 0 ? `<span class="focus-path-meta">Review: ${escapeHtml(risks.join("; "))}</span>` : ""}
+    </li>`;
+  }).join("");
+  const truncated = steps.length > visibleSteps.length
+    ? `<p class="muted">Showing the first ${visibleSteps.length} of ${steps.length} forward steps. Complete selector data remains in the table below.</p>`
+    : "";
+
+  return `<div aria-label="Visual Tab order">
+    <h3>Visual Tab Order</h3>
+    <p class="muted">Follow the numbered controls from left to right. Orange steps require review.</p>
+    <ol class="focus-path">${items}</ol>
+    ${truncated}
+  </div>`;
 }
 
 function renderCoverageMatrix(
@@ -873,7 +1252,7 @@ function renderCoverageMatrix(
     coverageRow("static-source", "Static source analysis", staticAdapterFailed ? "Setup required" : "Automated", staticAdapterFailed ? "Install or configure the detected framework adapter, then run the audit again" : "Project source files checked with the configured accessibility lint adapter", !staticAdapterFailed, staticFindingCount),
     coverageRow("keyboard", "Keyboard traversal", options.keyboard ? "Automated evidence" : "Run keyboard audit", options.keyboard ? `${options.keyboard.steps.length} forward focus steps recorded; complete task testing may still be required` : `Run <code>${escapeHtml(keyboardCommand)}</code>`, Boolean(options.keyboard), options.keyboard ? keyboardFindingCount : undefined),
     coverageRow("appearance", "Light and dark appearance", "Automated evidence", themes.length > 0 ? escapeHtml(themes.join(", ")) : "No distinct system color-scheme state detected", true, countIssues((issue) => issue.category === "contrast")),
-    coverageRow("reflow", "Reflow at 320 CSS pixels", reflowStates.length > 0 ? "Automated evidence" : "Review required", reflowStates.length > 0 ? `${reflowStates.length} state${reflowStates.length === 1 ? "" : "s"} checked for overflow and clipped text` : "No reflow evidence was collected", reflowStates.length > 0, reflowStates.length > 0 ? countIssues((issue) => issue.source === "layout") : undefined),
+    coverageRow("reflow", "Reflow at 400% (320 CSS px simulation)", reflowStates.length > 0 ? "Automated evidence" : "Review required", reflowStates.length > 0 ? `${reflowStates.length} state${reflowStates.length === 1 ? "" : "s"} checked for overflow and clipped text` : "No reflow evidence was collected", reflowStates.length > 0, reflowStates.length > 0 ? countIssues((issue) => issue.source === "layout") : undefined),
     coverageRow("modal-focus", "Modal focus behavior", modalStates.length > 0 ? "Automated evidence" : "Review if applicable", modalStates.length > 0 ? `${modalStates.length} state${modalStates.length === 1 ? "" : "s"} checked for name, initial focus, Escape, and focus restoration` : "No opened modal was observed; open and review expected dialogs manually", modalStates.length > 0, modalStates.length > 0 ? countIssues((issue) => issue.source === "modal") : undefined),
     coverageRow("announcements", "Dynamic announcements", announcementStates.length > 0 ? "Automated evidence" : "Review if applicable", `${announcementUpdates} meaningful live-region update${announcementUpdates === 1 ? "" : "s"} observed after ${announcementStates.length} action${announcementStates.length === 1 ? "" : "s"}`, announcementStates.length > 0, announcementStates.length > 0 ? 0 : undefined),
     coverageRow("form-errors", "Form error states", formStates.length > 0 ? "Automated evidence" : "Review if applicable", formStates.length > 0 ? `${invalidFields} explicit invalid field${invalidFields === 1 ? "" : "s"}; ${unassociatedInvalidFields} without an exposed associated error` : "No rendered form error state was observed", formStates.length > 0, formStates.length > 0 ? countIssues((issue) => issue.category === "forms") : undefined),
@@ -883,6 +1262,10 @@ function renderCoverageMatrix(
     coverageRow("screen-reader", "Screen reader", "Human review required", "Test representative tasks with NVDA, JAWS, or VoiceOver"),
     coverageRow("content-usability", "Content and task usability", options.manualChecklist ? "Checklist ready" : "Human review required", "Record tester, environment, evidence, and outcome")
   ];
+  const orderedRows = rows
+    .sort((left, right) => Number(right.automated) - Number(left.automated))
+    .map((row) => row.html);
+
   return `<section class="panel triage" aria-label="Audit coverage matrix">
     <h2>Audit Coverage</h2>
     <p class="muted">Green checked rows contain evidence collected by this audit. Complete the yellow rows manually; your selections stay in this browser for this generated report.</p>
@@ -890,7 +1273,7 @@ function renderCoverageMatrix(
     <div class="coverage-table-wrap">
       <table class="coverage-table">
         <thead><tr><th scope="col">Review</th><th scope="col">Area</th><th scope="col">Status</th><th scope="col">Findings</th><th scope="col">Evidence or next step</th></tr></thead>
-        <tbody>${rows.join("\n")}</tbody>
+        <tbody>${orderedRows.join("\n")}</tbody>
       </table>
     </div>
   </section>`;
@@ -903,30 +1286,49 @@ function coverageRow(
   evidence: string,
   automated = false,
   findingCount?: number
-): string {
+): CoverageMatrixRow {
   const checkboxLabel = automated
     ? `${area}: evidence collected automatically`
     : `${area}: mark manual review complete`;
-  return `<tr class="coverage-row-${automated ? "automated" : "review"}"${automated ? "" : ` data-coverage-review="${escapeAttribute(id)}"`}>
+  const html = `<tr class="coverage-row-${automated ? "automated" : "review"}"${automated ? "" : ` data-coverage-review="${escapeAttribute(id)}"`}>
     <td class="coverage-check-cell"><label><span class="visually-hidden">${escapeHtml(checkboxLabel)}</span><input type="checkbox"${automated ? " checked disabled" : ""}></label></td>
     <th scope="row">${escapeHtml(area)}</th>
     <td class="coverage-status-cell"><span class="coverage-status coverage-status-${automated ? "automated" : "review"}"${automated ? "" : ` data-coverage-status data-default-status="${escapeAttribute(status)}"`}>${escapeHtml(status)}</span></td>
     <td class="coverage-findings">${findingCount === undefined ? "&mdash;" : findingCount}</td>
     <td>${evidence}</td>
   </tr>`;
+
+  return {
+    automated,
+    html
+  };
 }
 
 function renderManualChecklist(checklist: ManualChecklist): string {
+  const targetedItems = checklist.items.filter((item) => item.targets?.length).length;
   return `<section class="panel" aria-label="Manual review checklist">
     <h2>Manual Review Checklist</h2>
-    <p class="muted">Automated checks cover only part of accessibility. Record human review evidence for the areas below.</p>
+    <p class="muted">Automated checks cover only part of accessibility. ${targetedItems > 0 ? `${targetedItems} review area${targetedItems === 1 ? " has" : "s have"} observed targets from this audit.` : "Choose representative targets for the areas below."} Record human review evidence and outcomes.</p>
     ${checklist.items.map((item) => `<details>
-      <summary>${escapeHtml(item.title)} (${escapeHtml(item.wcag.join(", "))})</summary>
+      <summary>${escapeHtml(item.title)} (${escapeHtml(item.wcag.join(", "))})${item.targets?.length ? ` — ${item.targets.length} target${item.targets.length === 1 ? "" : "s"}` : ""}</summary>
       <p>${escapeHtml(item.whyManual)}</p>
+      ${renderManualTargets(item.targets)}
       <ol>${item.steps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}</ol>
       <p class="muted">Suggested evidence: ${escapeHtml(item.evidence.join("; "))}</p>
     </details>`).join("")}
   </section>`;
+}
+
+function renderManualTargets(targets: ManualChecklist["items"][number]["targets"]): string {
+  if (!targets?.length) {
+    return `<p class="muted">No specific target was collected automatically. Choose a representative instance from the tested task.</p>`;
+  }
+
+  return `<h3>Observed review targets</h3><ul class="manual-targets">${targets.map((target) => `<li class="manual-target">
+    <strong>${escapeHtml(target.kind)}: ${escapeHtml(target.label)}</strong>
+    <span>${escapeHtml(target.evidence)}</span>
+    <span><a href="#${escapeAttribute(target.stateId)}">Open ${escapeHtml(target.stateId)}</a>${target.selector ? ` · <code>${escapeHtml(target.selector)}</code>` : ""}</span>
+  </li>`).join("")}</ul>`;
 }
 
 function renderState(state: StateViewModel): string {
@@ -945,6 +1347,10 @@ function renderState(state: StateViewModel): string {
       issueSummary.info ? badge("info", `${issueSummary.info} info`) : ""
     ].filter(Boolean).join("")
     : badge("ok", "no findings");
+
+  if (state.issues.length === 0) {
+    return renderCompactState(state, stateSeverity, issueBadges);
+  }
 
   return `<article class="state state-${stateSeverity}" id="${escapeAttribute(state.id)}">
   ${renderStateScreenshot(state)}
@@ -966,6 +1372,7 @@ function renderState(state: StateViewModel): string {
       ${state.visualDuplicateOf ? `<span class="badge">visual reused from ${escapeHtml(state.visualDuplicateOf)}</span>` : ""}
       <span class="badge">${state.actionCount} actions queued</span>
     </div>
+    ${renderIssues(state.issues)}
     ${renderAccessibilityTreeEvidence(state)}
     ${renderReflowEvidence(state)}
     ${renderModalFocusEvidence(state)}
@@ -974,7 +1381,29 @@ function renderState(state: StateViewModel): string {
     ${renderImageAlternativeEvidence(state)}
     ${renderMediaEvidence(state)}
     ${renderEmbeddedContentEvidence(state)}
-    ${renderIssues(state.issues)}
+  </div>
+</article>`;
+}
+
+function renderCompactState(state: StateViewModel, stateSeverity: string, issueBadges: string): string {
+  return `<article class="state state-${stateSeverity} state-compact" id="${escapeAttribute(state.id)}">
+  ${renderStateScreenshot(state)}
+  <div class="state-body">
+    <div class="state-compact-summary">
+      <div>
+        <h3>${escapeHtml(state.id)}: ${escapeHtml(state.actionLabel)}</h3>
+        <div class="url">${escapeHtml(state.url)}</div>
+      </div>
+      ${issueBadges}
+    </div>
+    <div class="state-compact-meta">
+      <span class="badge">depth ${state.depth}</span>
+      ${state.colorScheme ? `<span class="badge">${escapeHtml(state.colorScheme)} color scheme</span>` : ""}
+      ${state.screenshotFullPage ? `<span class="badge">full-page evidence</span>` : ""}
+      ${state.visualDuplicateOf ? `<span class="badge">visual reused from ${escapeHtml(state.visualDuplicateOf)}</span>` : ""}
+      <span class="badge">${state.actionCount} actions queued</span>
+    </div>
+    <p class="muted">No automated findings in this state.</p>
   </div>
 </article>`;
 }
@@ -1000,7 +1429,7 @@ function renderDynamicAnnouncementEvidence(state: ExplorationState): string {
 
 function renderFormErrorEvidence(state: ExplorationState): string {
   const evidence = state.formErrors;
-  if (!evidence) return "";
+  if (!evidence || evidence.invalidFieldCount === 0) return "";
   return `<details>
     <summary>Form error evidence</summary>
     <div class="summary">
@@ -1020,7 +1449,7 @@ function renderFormErrorEvidence(state: ExplorationState): string {
 
 function renderImageAlternativeEvidence(state: ExplorationState): string {
   const evidence = state.imageAlternatives;
-  if (!evidence) return "";
+  if (!evidence || (evidence.suspiciousCount === 0 && evidence.repeatedAlternativeGroups === 0)) return "";
   return `<details>
     <summary>Image alternative-text evidence</summary>
     <div class="summary">
@@ -1088,21 +1517,25 @@ function renderModalFocusEvidence(state: ExplorationState): string {
     <table>
       <tbody>
         <tr><th scope="row">Dialog</th><td><code>${escapeHtml(modal.dialogSelector)}</code></td></tr>
+        <tr><th scope="row">Modal semantics</th><td>${modal.isModal ? "modal" : "non-modal or not declared"}</td></tr>
         <tr><th scope="row">Accessible name</th><td>${escapeHtml(modal.accessibleName || "missing")}</td></tr>
         <tr><th scope="row">Initial focus</th><td>${modal.initialFocusInside ? "inside dialog" : "outside dialog"}${modal.initialFocusSelector ? ` at <code>${escapeHtml(modal.initialFocusSelector)}</code>` : ""}</td></tr>
+        <tr><th scope="row">Focus containment</th><td>${modal.containmentTested
+          ? `${outcome(modal.forwardFocusContained, "forward contained", "forward escaped", "forward not tested")}; ${outcome(modal.backwardFocusContained, "reverse contained", "reverse escaped", "reverse not tested")} (${modal.containmentSteps || 0} bounded steps per direction)${modal.escapedFocusSelector ? `; escaped to <code>${escapeHtml(modal.escapedFocusSelector)}</code>` : ""}`
+          : "not applicable or not tested"}</td></tr>
         <tr><th scope="row">Escape</th><td>${outcome(modal.escapeClosed, "closed dialog", "did not close dialog", "not tested")}</td></tr>
         <tr><th scope="row">Focus restoration</th><td>${outcome(modal.focusReturnedToTrigger, "returned to trigger", "did not return to trigger", "not applicable or not tested")}</td></tr>
       </tbody>
     </table>
-    <p class="muted">This isolated heuristic does not prove a complete focus trap or screen-reader workflow. Confirm every close path manually.</p>
+    <p class="muted">This isolated bounded heuristic checks modal focus in both directions but does not prove every interaction or screen-reader workflow. Confirm every close and completion path manually.</p>
   </details>`;
 }
 
 function renderReflowEvidence(state: ExplorationState): string {
   const reflow = state.reflow;
-  if (!reflow) return "";
+  if (!reflow || (reflow.horizontalOverflowPx <= 1 && reflow.clippedTextCount === 0)) return "";
   return `<details>
-    <summary>Reflow evidence at ${reflow.viewportWidth} CSS pixels</summary>
+    <summary>Reflow evidence at 400% (${reflow.viewportWidth} CSS px simulation)</summary>
     <div class="summary">
       ${metric("Document width", reflow.documentWidth)}
       ${metric("Horizontal overflow px", reflow.horizontalOverflowPx, reflow.horizontalOverflowPx > 1 ? "warning" : undefined)}
@@ -1117,7 +1550,7 @@ function renderReflowEvidence(state: ExplorationState): string {
 
 function renderAccessibilityTreeEvidence(state: ExplorationState): string {
   const tree = state.accessibilityTree;
-  if (!tree) return "";
+  if (!tree || tree.unnamedInteractiveNodes === 0) return "";
   const nodes = (items: typeof tree.headings) => items.length > 0
     ? `<ul>${items.map((item) => `<li><code>${escapeHtml(item.role)}</code>${item.level ? ` level ${item.level}` : ""}: ${escapeHtml(item.name || "unnamed")}</li>`).join("")}</ul>`
     : '<p class="muted">None exposed in this state.</p>';
@@ -1191,9 +1624,11 @@ function renderEvidenceFrame(
       : `Screenshot for ${state.id}`;
 
   return `<div class="${frameClass}">
-    <div class="screenshot-stage">
-      <img src="${escapeAttribute(evidence.path)}" alt="${escapeAttribute(screenshotAlt)}">
-      ${renderAnnotationLayer(previewAnnotations)}
+    <div class="screenshot-scroll">
+      <div class="screenshot-stage">
+        <img src="${escapeAttribute(evidence.path)}" alt="${escapeAttribute(screenshotAlt)}">
+        ${renderAnnotationLayer(previewAnnotations)}
+      </div>
     </div>
     <a class="screenshot-open" href="#${escapeAttribute(targetId)}">${openLabel}</a>
   </div>
@@ -1253,7 +1688,7 @@ function renderAnnotation(
   const bounds = issue.elementBounds;
   if (!bounds) return "";
 
-  const renderedBounds = evidence?.width && evidence.height
+  const renderedBounds = evidence?.width && evidence.height && evidence.kind !== "full-page"
     ? transformBoundsForContainedPreview(bounds, evidence.width, evidence.height)
     : bounds;
 
@@ -1314,8 +1749,7 @@ function formatBoundsStyle(bounds: NonNullable<DedupedIssue["elementBounds"]>): 
 
 function renderTriageOverview(
   states: StateViewModel[],
-  issues: DedupedIssue[],
-  rootCauseGroups: RootCauseGroup[]
+  issues: DedupedIssue[]
 ): string {
   return `<h2>Triage Overview</h2>
   <div class="triage-grid">
@@ -1327,41 +1761,7 @@ function renderTriageOverview(
       <h3>Top Rules</h3>
       ${renderTopRules(issues)}
     </div>
-    <div>
-      <h3>Likely Root Causes</h3>
-      ${renderRootCauseGroups(rootCauseGroups)}
-    </div>
   </div>`;
-}
-
-function renderRootCauseGroups(groups: RootCauseGroup[]): string {
-  if (groups.length === 0) {
-    return `<p class="muted">No root-cause candidates were generated.</p>`;
-  }
-
-  const renderGroup = (group: RootCauseGroup): string => `<li class="triage-item">
-      <div class="triage-title">
-        <code>${escapeHtml(group.ruleId)}</code>
-        <span class="badge">${group.occurrenceCount} occurrence${group.occurrenceCount === 1 ? "" : "s"}</span>
-      </div>
-      <div class="badges">
-        ${findingTypeBadge(group.findingType)}
-        <span class="badge">${group.affectedPages.length} page${group.affectedPages.length === 1 ? "" : "s"}</span>
-        ${(group.affectedColorSchemes || []).map((scheme) => `<span class="badge">${escapeHtml(scheme)} color scheme</span>`).join("")}
-      </div>
-      <div class="url">${escapeHtml(group.targetPattern)}</div>
-    </li>`;
-  const visibleGroups = groups.slice(0, 8);
-  const remainingGroups = groups.slice(8);
-
-  return `<ol class="triage-list">
-    ${visibleGroups.map(renderGroup).join("\n")}
-  </ol>
-  ${remainingGroups.length > 0 ? `<details>
-    <summary>Show ${remainingGroups.length} more root cause${remainingGroups.length === 1 ? "" : "s"}</summary>
-    <ol class="triage-list">${remainingGroups.map(renderGroup).join("\n")}</ol>
-  </details>` : ""}
-  <p class="muted">Groups are heuristic and keep individual page evidence below.</p>`;
 }
 
 function renderTopStates(states: StateViewModel[]): string {
@@ -1431,29 +1831,6 @@ function renderIssues(issues: DedupedIssue[]): string {
     return `<p class="muted">No automated findings in this state.</p>`;
   }
 
-  const renderIssue = (issue: DedupedIssue): string => `<li class="issue">
-      <div>${severityBadge(issue.severity)} ${findingTypeBadge(issue.findingType)} <code>${escapeHtml(issue.ruleId)}</code></div>
-      ${issue.colorScheme ? `<div class="badges"><span class="badge">${escapeHtml(issue.colorScheme)} color scheme</span></div>` : ""}
-      <div>${escapeHtml(issue.message)}</div>
-      ${issue.selector ? `<div class="url">${escapeHtml(issue.selector)}</div>` : ""}
-      ${renderContrastEvidence(issue)}
-      <div class="url"><a href="#${escapeAttribute(fixGuidanceAnchor(issue.ruleId))}">View grouped fix guidance</a></div>
-    </li>`;
-  const visibleIssues = issues.slice(0, 8);
-  const remainingIssues = issues.slice(8);
-
-  return `<ul class="issue-list">
-    ${visibleIssues.map(renderIssue).join("\n")}
-  </ul>
-  ${remainingIssues.length > 0 ? `<details>
-    <summary>Show ${remainingIssues.length} more finding${remainingIssues.length === 1 ? "" : "s"}</summary>
-    <ul class="issue-list">${remainingIssues.map(renderIssue).join("\n")}</ul>
-  </details>` : ""}`;
-}
-
-function renderGroupedFixGuidance(issues: DedupedIssue[]): string {
-  if (issues.length === 0) return "";
-
   const groups = new Map<string, DedupedIssue[]>();
   for (const issue of issues) {
     const current = groups.get(issue.ruleId) || [];
@@ -1465,45 +1842,84 @@ function renderGroupedFixGuidance(issues: DedupedIssue[]): string {
     const scoreDifference = sumSeverityScore(right[1]) - sumSeverityScore(left[1]);
     return scoreDifference || right[1].length - left[1].length || left[0].localeCompare(right[0]);
   });
+  const visibleGroups = rankedGroups.slice(0, 8);
+  const remainingGroups = rankedGroups.slice(8);
 
-  return `<section class="panel states" aria-label="Grouped fix guidance">
-    <h2>Grouped Fix Guidance</h2>
-    <p class="muted">Findings with the same rule share one remediation guide. Individual selectors and visual evidence remain in Checked States.</p>
-    <ul class="issue-list">
-      ${rankedGroups.map(([ruleId, groupIssues]) => renderFixGuidanceGroup(ruleId, groupIssues)).join("\n")}
-    </ul>
+  return `<ul class="issue-list">
+    ${visibleGroups.map(([ruleId, groupIssues]) => renderStateIssueGroup(ruleId, groupIssues)).join("\n")}
+  </ul>
+  ${remainingGroups.length > 0 ? `<details>
+    <summary>Show ${remainingGroups.length} more rule group${remainingGroups.length === 1 ? "" : "s"}</summary>
+    <ul class="issue-list">${remainingGroups.map(([ruleId, groupIssues]) => renderStateIssueGroup(ruleId, groupIssues)).join("\n")}</ul>
+  </details>` : ""}`;
+}
+
+function renderNonVisualIssues(issues: DedupedIssue[]): string {
+  if (issues.length === 0) return "";
+  return `<section class="panel" aria-label="Non-visual findings">
+    <h2>Non-visual Findings</h2>
+    <p class="muted">These source or keyboard findings are not tied to a captured browser state.</p>
+    ${renderIssues(issues)}
   </section>`;
 }
 
-function renderFixGuidanceGroup(ruleId: string, issues: DedupedIssue[]): string {
+function renderStateIssueGroup(ruleId: string, issues: DedupedIssue[]): string {
   const summary = summarizeIssues(issues);
-  const pages = [...new Set(issues.map((issue) => issue.url || issue.file).filter(Boolean))] as string[];
-  const states = [...new Set(issues.map((issue) => issue.stateId).filter(Boolean))] as string[];
-  const targets = [...new Set(issues.map((issue) => issue.selector || issue.file).filter(Boolean))] as string[];
+  const colorSchemes = [...new Set(issues.map((issue) => issue.colorScheme).filter(Boolean))];
+  const criteria = uniqueWcagCriteria(issues);
+  const levels = [...new Set(criteria.map((criterion) => criterion.level))];
+  const findingTypes = [...new Set(issues.map((issue) => issue.findingType))];
+  const occurrences = `<ul class="finding-occurrences">
+    ${issues.map((issue) => `<li class="finding-occurrence">
+      ${issues.length > 1 ? `<div>${severityBadge(issue.severity)} ${findingTypeBadge(issue.findingType)}</div>` : ""}
+      ${issues.length > 1 && issue.colorScheme ? `<div class="badges"><span class="badge">${escapeHtml(issue.colorScheme)} color scheme</span></div>` : ""}
+      <div>${escapeHtml(issue.message)}</div>
+      ${issue.selector || issue.file ? `<div class="url">${escapeHtml(issue.selector || issue.file || "")}</div>` : ""}
+      ${issues.length > 1 ? "" : renderContrastEvidence(issue)}
+    </li>`).join("\n")}
+  </ul>`;
 
-  return `<li class="issue" id="${escapeAttribute(fixGuidanceAnchor(ruleId))}">
+  return `<li class="issue">
     <div class="triage-title">
       <code>${escapeHtml(ruleId)}</code>
-      <span class="badge">${issues.length} occurrence${issues.length === 1 ? "" : "s"}</span>
+      ${issues.length > 1 ? `<span class="badge">${issues.length} occurrences</span>` : ""}
     </div>
     <div class="badges">
       ${summary.critical ? badge("critical", `${summary.critical} critical`) : ""}
       ${summary.warning ? badge("warning", `${summary.warning} warning`) : ""}
       ${summary.info ? badge("info", `${summary.info} info`) : ""}
-      ${pages.length ? `<span class="badge">${pages.length} page${pages.length === 1 ? "" : "s"}</span>` : ""}
-      ${states.length ? `<span class="badge">${states.length} state${states.length === 1 ? "" : "s"}</span>` : ""}
+      ${findingTypes.map(findingTypeBadge).join("")}
+      ${levels.map((level) => `<span class="badge">WCAG Level ${escapeHtml(level)}</span>`).join("")}
+      ${colorSchemes.map((scheme) => `<span class="badge">${escapeHtml(scheme)} color scheme</span>`).join("")}
     </div>
-    ${targets.length > 0 ? `<details>
-      <summary>Affected targets (${targets.length})</summary>
-      <ul>${targets.slice(0, 20).map((target) => `<li><code>${escapeHtml(target)}</code></li>`).join("")}</ul>
-      ${targets.length > 20 ? `<p class="muted">${targets.length - 20} additional targets remain in Checked States and the JSON report.</p>` : ""}
-    </details>` : ""}
+    ${renderWcagCriteria(criteria)}
+    ${issues.length > 1
+      ? `<details open><summary>Affected findings (${issues.length})</summary>${occurrences}</details>`
+      : occurrences}
+    ${issues.length > 1 ? renderGroupedContrastGuidance(issues) : ""}
     ${renderRemediation(issues[0])}
   </li>`;
 }
 
-function fixGuidanceAnchor(ruleId: string): string {
-  return `fix-${ruleId}`;
+function uniqueWcagCriteria(issues: DedupedIssue[]): DedupedIssue["wcagCriteria"] {
+  const criteria = new Map<string, DedupedIssue["wcagCriteria"][number]>();
+  for (const issue of issues) {
+    for (const criterion of issue.wcagCriteria || []) {
+      if (!criteria.has(criterion.id)) criteria.set(criterion.id, criterion);
+    }
+  }
+  return [...criteria.values()];
+}
+
+function renderWcagCriteria(criteria: DedupedIssue["wcagCriteria"]): string {
+  if (criteria.length === 0) return "";
+  return `<div class="url">${criteria.map((criterion) => {
+    const url = safeExternalUrl(criterion.url);
+    const label = `WCAG ${criterion.id} ${criterion.title}`;
+    return url
+      ? `<a href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`
+      : escapeHtml(label);
+  }).join(" · ")}</div>`;
 }
 
 function renderRemediation(issue: DedupedIssue): string {
@@ -1528,7 +1944,7 @@ function renderRemediation(issue: DedupedIssue): string {
     ? `<div class="remediation-links">${docs.slice(0, 3).map((url, index) => `<a href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">Guidance ${index + 1}</a>`).join("\n")}</div>`
     : "";
 
-  return `<details class="remediation" open>
+  return `<details class="remediation">
     <summary>How to fix</summary>
     <div class="remediation-body">
       <div>${escapeHtml(remediation.summary)}</div>
@@ -1552,7 +1968,47 @@ function renderContrastEvidence(issue: DedupedIssue): string {
   const contrast = issue.contrast;
   if (!contrast) return "";
 
+  return renderContrastGuidance(contrast);
+}
+
+function renderContrastMeasurement(contrast: NonNullable<DedupedIssue["contrast"]>): string {
   const typography = [contrast.fontSize, contrast.fontWeight].filter(Boolean).join(", ");
+  return `<div class="contrast-measurement">
+    <div><strong>Contrast ${contrast.actualRatio}:1</strong> · required ${contrast.requiredRatio}:1</div>
+    <div class="contrast-colors">
+      <span class="contrast-color">${renderColorSwatch(contrast.foreground)} Text <code>${escapeHtml(contrast.foreground)}</code></span>
+      <span class="contrast-color">${renderColorSwatch(contrast.background)} Background <code>${escapeHtml(contrast.background)}</code></span>
+    </div>
+    ${typography ? `<div class="url">${escapeHtml(typography)}</div>` : ""}
+  </div>`;
+}
+
+function renderGroupedContrastGuidance(issues: DedupedIssue[]): string {
+  const groups = new Map<string, { contrast: NonNullable<DedupedIssue["contrast"]>; count: number }>();
+
+  for (const issue of issues) {
+    if (!issue.contrast) continue;
+    const key = JSON.stringify({
+      foreground: issue.contrast.foreground,
+      background: issue.contrast.background,
+      requiredRatio: issue.contrast.requiredRatio,
+      suggestions: issue.contrast.suggestions
+    });
+    const existing = groups.get(key);
+    if (existing) existing.count += 1;
+    else groups.set(key, { contrast: issue.contrast, count: 1 });
+  }
+
+  if (groups.size === 0) return "";
+  return [...groups.values()].map(({ contrast, count }) => (
+    `<div class="contrast-guidance-group">
+      ${count > 1 ? `<div class="url">Shared recommendation for ${count} findings</div>` : ""}
+      ${renderContrastGuidance(contrast)}
+    </div>`
+  )).join("\n");
+}
+
+function renderContrastGuidance(contrast: NonNullable<DedupedIssue["contrast"]>): string {
   const suggestions = contrast.suggestions.length > 0
     ? `<div class="contrast-suggestions">
       ${contrast.suggestions.map((suggestion) => `<span class="contrast-color">
@@ -1562,18 +2018,16 @@ function renderContrastEvidence(issue: DedupedIssue): string {
     </div>`
     : `<div class="muted">No reliable single-color suggestion is available. Review this contrast manually.</div>`;
 
-  return `<div class="contrast-evidence">
-    <div><strong>Contrast ${contrast.actualRatio}:1</strong> · required ${contrast.requiredRatio}:1</div>
-    <div class="contrast-colors">
-      <span class="contrast-color">${renderColorSwatch(contrast.foreground)} Text <code>${escapeHtml(contrast.foreground)}</code></span>
-      <span class="contrast-color">${renderColorSwatch(contrast.background)} Background <code>${escapeHtml(contrast.background)}</code></span>
+  return `<details class="contrast-evidence contrast-guidance">
+    <summary>Color recommendations</summary>
+    <div class="contrast-guidance-body">
+      ${renderContrastMeasurement(contrast)}
+      <div><strong>Suggested accessible colors</strong></div>
+      <div class="url">Keep background ${escapeHtml(contrast.background)} and change the text color:</div>
+      ${suggestions}
+      <div class="url">Review design tokens and hover, focus, disabled, and visited states before applying.</div>
     </div>
-    ${typography ? `<div class="url">${escapeHtml(typography)}</div>` : ""}
-    <div><strong>Suggested accessible colors</strong></div>
-    <div class="url">Keep background ${escapeHtml(contrast.background)} and change the text color:</div>
-    ${suggestions}
-    <div class="url">Review design tokens and hover, focus, disabled, and visited states before applying.</div>
-  </div>`;
+  </details>`;
 }
 
 function formatContrastSuggestionPurpose(
@@ -1693,6 +2147,12 @@ function summarizeIssues(issues: DedupedIssue[]): Record<Severity, number> {
     warning: 0,
     info: 0
   });
+}
+
+function severityValue(severity: Severity): number {
+  if (severity === "critical") return 3;
+  if (severity === "warning") return 2;
+  return 1;
 }
 
 function summarizeRules(issues: DedupedIssue[]): Array<{

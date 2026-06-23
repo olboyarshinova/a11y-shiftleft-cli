@@ -1,5 +1,6 @@
 import { chromium } from "playwright";
 import { AxeBuilder } from "@axe-core/playwright";
+import { getAxeRunOptions } from "../core/axeOptions.js";
 import { applyColorScheme, detectPageColorSchemes, normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig, type ScrollablePage } from "../core/pageScroll.js";
 import { extractContrastEvidence } from "../core/contrast.js";
 import { analyzePageTitles, type PageTitleObservation } from "../core/pageTitles.js";
@@ -86,7 +87,9 @@ export async function runAxePlaywrightAdapter(
         for (const colorScheme of colorSchemes) {
           await applyColorScheme(page, colorScheme);
           await scrollPageForLazyContent(page, scroll);
-          const results = await new AxeBuilder({ page }).analyze();
+          const results = await new AxeBuilder({ page })
+            .options(getAxeRunOptions())
+            .analyze();
           const reportedColorScheme = colorSchemes.length > 1 ? colorScheme : undefined;
           const colorSchemeIssues: Issue[] = [];
 

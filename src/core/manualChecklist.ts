@@ -1,4 +1,4 @@
-import type { DedupedIssue, Framework, ManualCheckItem, ManualChecklist, ManualChecklistEntry } from "../types.js";
+import type { DedupedIssue, ExplorationGraph, ExplorationState, Framework, ManualCheckItem, ManualChecklist, ManualChecklistEntry, ManualReviewTarget } from "../types.js";
 
 const MANUAL_CHECKS: ManualCheckItem[] = [
   {
@@ -205,13 +205,16 @@ export function createManualChecklist(options: {
   framework: Framework | string;
   urls?: string[];
   issues?: DedupedIssue[];
+  exploration?: ExplorationGraph;
   generatedAt?: string;
 }): ManualChecklist {
+  const targets = collectManualReviewTargets(options.exploration);
   return {
     generatedAt: options.generatedAt || new Date().toISOString(),
     framework: options.framework,
     urls: options.urls || [],
-    items: prioritizeManualChecks(MANUAL_CHECKS, options.issues || []).map(toChecklistEntry)
+    items: prioritizeManualChecks(MANUAL_CHECKS, options.issues || [], targets)
+      .map((item) => toChecklistEntry(item, targets.get(item.id) || []))
   };
 }
 
@@ -228,6 +231,8 @@ ${item.steps.map((step) => `- [ ] ${step}`).join("\n")}
 
 Evidence to capture:
 ${item.evidence.map((evidence) => `- [ ] ${evidence}`).join("\n")}
+
+${formatObservedTargets(item.targets)}
 
 Review record:
 - Status: \`${item.review.status}\` (pass, fail, or not-applicable)
@@ -252,9 +257,10 @@ and assistive technology checks.
 ${items}`;
 }
 
-function toChecklistEntry(item: ManualCheckItem): ManualChecklistEntry {
+function toChecklistEntry(item: ManualCheckItem, targets: ManualReviewTarget[]): ManualChecklistEntry {
   return {
     ...item,
+    ...(targets.length > 0 ? { targets } : {}),
     review: {
       status: "not-reviewed",
       tester: "",
@@ -267,15 +273,142 @@ function toChecklistEntry(item: ManualCheckItem): ManualChecklistEntry {
   };
 }
 
-function prioritizeManualChecks(items: ManualCheckItem[], issues: DedupedIssue[]): ManualCheckItem[] {
+function prioritizeManualChecks(
+  items: ManualCheckItem[],
+  issues: DedupedIssue[],
+  targets: Map<string, ManualReviewTarget[]>
+): ManualCheckItem[] {
   const hasForms = issues.some((issue) => issue.ruleId.includes("label") || issue.ruleId.includes("form"));
   const hasKeyboard = issues.some((issue) => issue.ruleId.includes("keyboard") || issue.ruleId.includes("focus"));
 
-  return [...items].sort((a, b) => score(b, hasForms, hasKeyboard) - score(a, hasForms, hasKeyboard));
+  return [...items].sort((a, b) => (
+    score(b, hasForms, hasKeyboard, targets.get(b.id)?.length || 0)
+      - score(a, hasForms, hasKeyboard, targets.get(a.id)?.length || 0)
+  ));
 }
 
-function score(item: ManualCheckItem, hasForms: boolean, hasKeyboard: boolean): number {
-  if (hasForms && item.id === "form-label-quality") return 2;
-  if (hasKeyboard && item.id === "complex-widget-focus") return 2;
-  return 1;
+function score(item: ManualCheckItem, hasForms: boolean, hasKeyboard: boolean, targetCount: number): number {
+  let result = targetCount > 0 ? 10 + Math.min(targetCount, 5) : 1;
+  if (hasForms && item.id === "form-label-quality") result += 2;
+  if (hasKeyboard && item.id === "complex-widget-focus") result += 2;
+  return result;
+}
+
+function collectManualReviewTargets(graph?: ExplorationGraph): Map<string, ManualReviewTarget[]> {
+  const targets = new Map<string, ManualReviewTarget[]>();
+  if (!graph) return targets;
+
+  for (const state of graph.states) {
+    addFormTargets(targets, state);
+    addModalTargets(targets, state);
+    addAnnouncementTargets(targets, state);
+    addImageTargets(targets, state);
+    addMediaTargets(targets, state);
+    addLandmarkTargets(targets, state);
+    addReflowTargets(targets, state);
+  }
+
+  return targets;
+}
+
+function addFormTargets(targets: Map<string, ManualReviewTarget[]>, state: ExplorationState): void {
+  const evidence = state.formErrors;
+  if (!evidence || evidence.formCount === 0) return;
+  const fields = evidence.invalidFields.length > 0
+    ? evidence.invalidFields
+    : [{ selector: "form", accessibleName: undefined }];
+  for (const field of fields) {
+    const target = targetFor(state, "form", field.accessibleName || field.selector, field.selector,
+      `${evidence.formCount} form(s), ${evidence.invalidFieldCount} invalid field(s), ${evidence.unassociatedInvalidCount} without an exposed associated error`);
+    addTarget(targets, "form-label-quality", target);
+    addTarget(targets, "screen-reader-dynamic-content", target);
+  }
+}
+
+function addModalTargets(targets: Map<string, ManualReviewTarget[]>, state: ExplorationState): void {
+  const evidence = state.modalFocus;
+  if (!evidence || evidence.dialogCount === 0) return;
+  const target = targetFor(state, "dialog", evidence.accessibleName || "Opened dialog", evidence.dialogSelector,
+    `Name ${evidence.hasAccessibleName ? "detected" : "missing"}; initial focus ${evidence.initialFocusInside ? "inside" : "outside"}; Escape ${evidence.escapeClosed ? "closed it" : "needs review"}`);
+  addTarget(targets, "complex-widget-focus", target);
+  addTarget(targets, "screen-reader-dynamic-content", target);
+}
+
+function addAnnouncementTargets(targets: Map<string, ManualReviewTarget[]>, state: ExplorationState): void {
+  const evidence = state.dynamicAnnouncements;
+  if (!evidence || evidence.updates.length === 0) return;
+  for (const update of evidence.updates) {
+    addTarget(targets, "screen-reader-dynamic-content", targetFor(state, "live-region",
+      update.text || `${update.role || "live"} region`, update.selector,
+      `${update.politeness} update after ${evidence.actionLabel}`));
+  }
+}
+
+function addImageTargets(targets: Map<string, ManualReviewTarget[]>, state: ExplorationState): void {
+  for (const image of state.imageAlternatives?.samples || []) {
+    addTarget(targets, "alternative-text-quality", targetFor(state, "image", image.alt || "Image without useful alternative", image.selector,
+      `Review concerns: ${image.concerns.join(", ") || "contextual quality"}`));
+  }
+}
+
+function addMediaTargets(targets: Map<string, ManualReviewTarget[]>, state: ExplorationState): void {
+  const evidence = state.media;
+  if (!evidence) return;
+  for (const media of evidence.elements) {
+    addTarget(targets, "media-motion", targetFor(state, "media", `${media.kind} element`, media.selector,
+      `${media.captionTrackCount} caption track(s); controls ${media.controls ? "present" : "missing"}; autoplay ${media.autoplay ? "enabled" : "disabled"}`));
+  }
+  if (evidence.activeAnimationCount > 0 && evidence.elements.length === 0) {
+    addTarget(targets, "media-motion", targetFor(state, "media", "Animated content", undefined,
+      `${evidence.activeAnimationCount} active animation(s); reduced-motion query ${evidence.reducedMotionQueryDetected ? "detected" : "not detected"}`));
+  }
+}
+
+function addLandmarkTargets(targets: Map<string, ManualReviewTarget[]>, state: ExplorationState): void {
+  const landmarks = state.accessibilityTree?.landmarks || [];
+  if (landmarks.length === 0) return;
+  addTarget(targets, "landmarks-bypass", targetFor(state, "landmark", `${landmarks.length} landmark(s)`, undefined,
+    landmarks.map((item) => `${item.role}${item.name ? `: ${item.name}` : ""}`).join(", ")));
+}
+
+function addReflowTargets(targets: Map<string, ManualReviewTarget[]>, state: ExplorationState): void {
+  const evidence = state.reflow;
+  if (!evidence) return;
+  const label = evidence.horizontalOverflowPx > 0 || evidence.clippedTextCount > 0
+    ? "Reflow findings require review"
+    : "Reflow sample";
+  addTarget(targets, "zoom-reflow", targetFor(state, "reflow", label, undefined,
+    `${evidence.horizontalOverflowPx}px horizontal overflow; ${evidence.clippedTextCount} clipped-text candidate(s)`));
+}
+
+function targetFor(
+  state: ExplorationState,
+  kind: ManualReviewTarget["kind"],
+  label: string,
+  selector: string | undefined,
+  evidence: string
+): ManualReviewTarget {
+  return {
+    id: `${state.id}:${kind}:${selector || label}`,
+    kind,
+    label,
+    url: state.url,
+    stateId: state.id,
+    ...(selector ? { selector } : {}),
+    evidence
+  };
+}
+
+function addTarget(targets: Map<string, ManualReviewTarget[]>, itemId: string, target: ManualReviewTarget): void {
+  const current = targets.get(itemId) || [];
+  if (current.length >= 6 || current.some((item) => item.id === target.id)) return;
+  current.push(target);
+  targets.set(itemId, current);
+}
+
+function formatObservedTargets(targets: ManualReviewTarget[] | undefined): string {
+  if (!targets?.length) return "Observed targets: none collected automatically; choose a representative instance manually.";
+  return `Observed targets:\n${targets.map((target) => (
+    `- [ ] ${target.kind}: ${target.label} — ${target.url} (${target.stateId}${target.selector ? `, ${target.selector}` : ""}); ${target.evidence}`
+  )).join("\n")}`;
 }

@@ -20,9 +20,21 @@ export function dedupeIssues(issues: TriagedIssue[]): DedupedIssue[] {
 
     existing.duplicateCount += 1;
     existing.sources = unique([existing.source, issue.source, ...(existing.sources || [])]);
+    preserveVisualEvidence(existing, issue);
   }
 
   return [...seen.values()];
+}
+
+function preserveVisualEvidence(existing: DedupedIssue, duplicate: TriagedIssue): void {
+  if (!existing.stateId && duplicate.stateId) existing.stateId = duplicate.stateId;
+  if (!existing.stateLabel && duplicate.stateLabel) existing.stateLabel = duplicate.stateLabel;
+  if (!existing.screenshot && duplicate.screenshot) existing.screenshot = duplicate.screenshot;
+  if (!existing.elementBounds && duplicate.elementBounds) existing.elementBounds = duplicate.elementBounds;
+  if (!existing.contrast && duplicate.contrast) existing.contrast = duplicate.contrast;
+  if (!existing.selector && duplicate.selector) existing.selector = duplicate.selector;
+  if (!existing.url && duplicate.url) existing.url = duplicate.url;
+  if (!existing.helpUrl && duplicate.helpUrl) existing.helpUrl = duplicate.helpUrl;
 }
 
 function createFingerprint(issue: TriagedIssue): string {

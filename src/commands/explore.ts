@@ -7,6 +7,7 @@ import { normalizeIssue } from "../core/normalize.js";
 import { triageIssues } from "../core/severity.js";
 import { resolveStandard } from "../core/standards.js";
 import { applyReportRetention } from "../core/reportRetention.js";
+import { filterReportFindings } from "../core/findingFilter.js";
 import { cleanExploreArtifacts } from "../reporters/cleanExploreArtifacts.js";
 import { writeExplorationHtml } from "../reporters/writeExplorationHtml.js";
 import { writeExplorationPdf } from "../reporters/writeExplorationPdf.js";
@@ -38,6 +39,7 @@ interface ExploreOptions {
   standard?: string;
   wcagFilter?: string;
   wcagVersion?: string;
+  wcagOnly?: boolean;
   format?: string[];
   clean?: boolean;
   html?: boolean;
@@ -93,6 +95,7 @@ export function registerExploreCommand(program: Command): void {
     .option("--standard <standard>", "Compliance support preset: wcag22-aa, ada-title-ii, or section508")
     .option("--wcag-filter <level>", "Only report findings mapped to WCAG level A, AA, or AAA")
     .option("--wcag-version <version>", "Limit mapped findings to WCAG version 2.0, 2.1, or 2.2")
+    .option("--wcag-only", "Only report findings mapped to WCAG; exclude best practices and unmapped review signals")
     .option("--format <formats...>", "Report formats: json, csv, markdown, or all")
     .option("--no-clean", "Keep previous generated report artifacts in the output directory")
     .option("--no-html", "Do not generate exploration.html")
@@ -280,7 +283,7 @@ export function registerExploreCommand(program: Command): void {
         version: effectiveConfig.wcagVersion,
         includeUnmapped: !explicitWcagFilter
       });
-      const uniqueIssues = dedupeIssues(filtered);
+      const uniqueIssues = dedupeIssues(filterReportFindings(filtered, { wcagOnly: options.wcagOnly }));
       const retentionSummary = await applyReportRetention(effectiveConfig.outputDir, effectiveConfig.retention);
       const report = await writeReports(effectiveConfig.outputDir, uniqueIssues, {
         framework,
