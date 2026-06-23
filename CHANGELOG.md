@@ -2,9 +2,10 @@
 
 ## Unreleased
 
-- Added the first optional Lighthouse comparison path for `check --with-lighthouse`.
-  Lighthouse remains an optional peer dependency so the core package does not
-  become heavier for teams that only need axe, keyboard, and visual reports.
+- Added the first optional Lighthouse comparison path for `check --with-lighthouse`
+  and `audit --with-lighthouse`. Lighthouse remains an optional peer dependency
+  so the core package does not become heavier for teams that only need axe,
+  keyboard, and visual reports.
 
 ## 0.7.0 - 2026-06-23
 

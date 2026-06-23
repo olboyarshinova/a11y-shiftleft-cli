@@ -105,7 +105,8 @@ remain suitable for reproducible empirical validation.
   that records Lighthouse accessibility scores, audit details, documentation
   links, and relevant performance/accessibility recommendations in the same
   report pipeline. The first implementation keeps Lighthouse optional and
-  records score, failed audits, and manual audit counts for `check`.
+  records score, failed audits, and manual audit counts for `check` and the
+  unified visual `audit` report.
 - Compare axe and Lighthouse disagreements in a separate report section,
   include Lighthouse suggested fixes where useful, and surface the comparison in
   `exploration.html` and the local dashboard.

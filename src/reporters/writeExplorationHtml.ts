@@ -3,7 +3,7 @@ import path from "node:path";
 import { enrichIssueEvidence } from "../core/classification.js";
 import { formatReportDateUtc } from "../core/reportDate.js";
 import { getRemediationHint } from "../core/remediation.js";
-import type { DedupedIssue, ExplorationGraph, ExplorationState, KeyboardAuditResult, ManualChecklist, Severity } from "../types.js";
+import type { DedupedIssue, ExplorationGraph, ExplorationState, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, Severity } from "../types.js";
 
 interface StateViewModel extends ExplorationState {
   issues: DedupedIssue[];
@@ -14,6 +14,7 @@ interface ExplorationHtmlOptions {
   title?: string;
   keyboard?: KeyboardAuditResult;
   manualChecklist?: ManualChecklist;
+  lighthouse?: LighthouseAuditResult[];
 }
 
 interface CoverageMatrixRow {
@@ -989,6 +990,8 @@ export function renderExplorationHtml(
 
     ${renderQuickReview(reportIssues, options)}
 
+    ${renderLighthouseComparison(options.lighthouse)}
+
     ${renderCoverageMatrix(graph, options, reportIssues)}
 
     <section class="panel triage" aria-label="Triage overview">
@@ -1108,6 +1111,47 @@ function renderQuickReview(issues: DedupedIssue[], options: ExplorationHtmlOptio
         ${renderQuickManualTasks(manualTasks)}
       </div>
     </div>
+  </section>`;
+}
+
+function renderLighthouseComparison(results: LighthouseAuditResult[] | undefined): string {
+  if (!results || results.length === 0) return "";
+  const scores = results
+    .map((result) => result.accessibilityScore)
+    .filter((score): score is number => typeof score === "number");
+  const averageScore = scores.length > 0
+    ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length)
+    : undefined;
+  const failedAuditCount = results.reduce((total, result) => total + result.failedAudits.length, 0);
+  const manualAuditCount = results.reduce((total, result) => total + result.manualAudits.length, 0);
+  const rows = results.map((result) => {
+    const failed = result.failedAudits.slice(0, 3).map((audit) =>
+      audit.documentationUrl
+        ? `<a href="${escapeAttribute(audit.documentationUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(audit.title)}</a>`
+        : escapeHtml(audit.title)
+    ).join("<br>");
+    return `<tr>
+      <td>${escapeHtml(result.finalUrl || result.url)}</td>
+      <td>${result.accessibilityScore ?? "n/a"}</td>
+      <td>${result.failedAudits.length}</td>
+      <td>${result.manualAudits.length}</td>
+      <td>${failed || "none"}</td>
+    </tr>`;
+  }).join("");
+
+  return `<section class="panel triage" aria-label="Lighthouse comparison">
+    <h2>Lighthouse Comparison</h2>
+    <p class="muted">Lighthouse is a score-oriented comparison signal. Use it alongside axe, keyboard, visual evidence, and manual review; it is not a WCAG conformance certificate.</p>
+    <div class="summary">
+      ${metric("Average score", averageScore ?? "n/a")}
+      ${metric("Pages scored", results.length)}
+      ${metric("Failed audits", failedAuditCount, failedAuditCount > 0 ? "warning" : undefined)}
+      ${metric("Manual audits", manualAuditCount)}
+    </div>
+    <table>
+      <thead><tr><th>URL</th><th>Score</th><th>Failed</th><th>Manual</th><th>Top failed audits</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
   </section>`;
 }
 
@@ -1246,11 +1290,14 @@ function renderCoverageMatrix(
   const staticFindingCount = countIssues((issue) => issue.source === "eslint");
   const staticAdapterFailed = issues.some((issue) => issue.ruleId === "adapter/eslint-error");
   const keyboardFindingCount = countIssues((issue) => issue.source === "keyboard");
+  const lighthouseFailedAudits = options.lighthouse?.reduce((total, result) => total + result.failedAudits.length, 0) || 0;
   const keyboardCommand = `npx a11y-shiftleft-cli audit --url ${shellQuote(graph.startUrl)} --out reports`;
+  const lighthouseCommand = `npx a11y-shiftleft-cli audit --url ${shellQuote(graph.startUrl)} --with-lighthouse --out reports`;
   const rows = [
     coverageRow("browser-automation", "Browser automation", "Automated", `${graph.summary.statesVisited} rendered state${graph.summary.statesVisited === 1 ? "" : "s"} scanned with axe`, true, dynamicFindingCount),
     coverageRow("static-source", "Static source analysis", staticAdapterFailed ? "Setup required" : "Automated", staticAdapterFailed ? "Install or configure the detected framework adapter, then run the audit again" : "Project source files checked with the configured accessibility lint adapter", !staticAdapterFailed, staticFindingCount),
     coverageRow("keyboard", "Keyboard traversal", options.keyboard ? "Automated evidence" : "Run keyboard audit", options.keyboard ? `${options.keyboard.steps.length} forward focus steps recorded; complete task testing may still be required` : `Run <code>${escapeHtml(keyboardCommand)}</code>`, Boolean(options.keyboard), options.keyboard ? keyboardFindingCount : undefined),
+    coverageRow("lighthouse", "Lighthouse score", options.lighthouse ? "Comparison evidence" : "Optional comparison", options.lighthouse ? `${options.lighthouse.length} page score${options.lighthouse.length === 1 ? "" : "s"} captured` : `Install <code>lighthouse</code>, then run <code>${escapeHtml(lighthouseCommand)}</code>`, Boolean(options.lighthouse), options.lighthouse ? lighthouseFailedAudits : undefined),
     coverageRow("appearance", "Light and dark appearance", "Automated evidence", themes.length > 0 ? escapeHtml(themes.join(", ")) : "No distinct system color-scheme state detected", true, countIssues((issue) => issue.category === "contrast")),
     coverageRow("reflow", "Reflow at 400% (320 CSS px simulation)", reflowStates.length > 0 ? "Automated evidence" : "Review required", reflowStates.length > 0 ? `${reflowStates.length} state${reflowStates.length === 1 ? "" : "s"} checked for overflow and clipped text` : "No reflow evidence was collected", reflowStates.length > 0, reflowStates.length > 0 ? countIssues((issue) => issue.source === "layout") : undefined),
     coverageRow("modal-focus", "Modal focus behavior", modalStates.length > 0 ? "Automated evidence" : "Review if applicable", modalStates.length > 0 ? `${modalStates.length} state${modalStates.length === 1 ? "" : "s"} checked for name, initial focus, Escape, and focus restoration` : "No opened modal was observed; open and review expected dialogs manually", modalStates.length > 0, modalStates.length > 0 ? countIssues((issue) => issue.source === "modal") : undefined),
@@ -2104,11 +2151,11 @@ function renderSkippedActions(graph: ExplorationGraph): string {
   </details>`;
 }
 
-function metric(label: string, value: number, severity?: Severity): string {
+function metric(label: string, value: number | string, severity?: Severity): string {
   const className = severity ? `metric metric-${severity}` : "metric";
 
   return `<div class="${className}">
-    <strong>${value}</strong>
+    <strong>${escapeHtml(String(value))}</strong>
     <span>${escapeHtml(label)}</span>
   </div>`;
 }

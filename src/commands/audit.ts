@@ -2,6 +2,7 @@ import type { Command } from "commander";
 import { runEslintAdapter } from "../adapters/eslintAdapter.js";
 import { runExplorePlaywrightAdapter, writeExplorationGraph } from "../adapters/explorePlaywrightAdapter.js";
 import { runKeyboardPlaywrightAdapter } from "../adapters/keyboardPlaywrightAdapter.js";
+import { runLighthouseAdapter } from "../adapters/lighthouseAdapter.js";
 import { loadConfig } from "../config/loadConfig.js";
 import { createManualChecklist } from "../core/manualChecklist.js";
 import { filterReportFindings } from "../core/findingFilter.js";
@@ -16,7 +17,7 @@ import { cleanExploreArtifacts } from "../reporters/cleanExploreArtifacts.js";
 import { writeExplorationHtml } from "../reporters/writeExplorationHtml.js";
 import { writeExplorationPdf } from "../reporters/writeExplorationPdf.js";
 import { writeReports } from "../reporters/writeReports.js";
-import type { ComplianceStandard, Framework, Issue, KeyboardAuditResult, Severity } from "../types.js";
+import type { ComplianceStandard, Framework, Issue, KeyboardAuditResult, LighthouseAuditResult, Severity } from "../types.js";
 import { filterByWcagConformance, shouldFail } from "./check.js";
 
 interface AuditOptions {
@@ -24,6 +25,7 @@ interface AuditOptions {
   config?: string;
   framework?: string;
   url: string;
+  withLighthouse?: boolean;
   out?: string;
   depth?: string;
   limit?: string;
@@ -62,6 +64,7 @@ export function registerAuditCommand(program: Command): void {
     .option("--config <file>", "Config path relative to cwd")
     .option("--framework <name>", "react, vue, angular, or auto")
     .requiredOption("--url <url>", "Start URL for the running application")
+    .option("--with-lighthouse", "Add optional Lighthouse accessibility score comparison")
     .option("--out <dir>", "Output directory", "reports")
     .option("--depth <depth>", "Maximum interaction depth", "2")
     .option("--limit <limit>", "Maximum UI states", "20")
@@ -138,8 +141,16 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
     }).then((result) => ({ result, issues: [] })).catch((error: unknown) => ({
       issues: [createAuditAdapterIssue(framework, options.url, "keyboard", error)]
     }));
+  const lighthousePromise: Promise<{ results: LighthouseAuditResult[]; issues: Issue[] }> = !options.withLighthouse
+    ? Promise.resolve({ results: [], issues: [] })
+    : runLighthouseAdapter({ url: options.url })
+      .then((result) => ({ results: [result], issues: [] }))
+      .catch((error: unknown) => ({
+        results: [],
+        issues: [createAuditAdapterIssue(framework, options.url, "lighthouse", error)]
+      }));
 
-  const [staticIssues, exploration, keyboardOutcome] = await Promise.all([
+  const [staticIssues, exploration, keyboardOutcome, lighthouseOutcome] = await Promise.all([
     runEslintAdapter(effectiveConfig),
     runExplorePlaywrightAdapter(effectiveConfig, {
       url: options.url,
@@ -155,9 +166,11 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
       scroll: effectiveConfig.explore.scroll,
       safeMode: effectiveConfig.explore.safeMode
     }),
-    keyboardPromise
+    keyboardPromise,
+    lighthousePromise
   ]);
   const keyboard = keyboardOutcome.result;
+  const lighthouse = lighthouseOutcome.results;
 
   // Browser evidence comes first so a duplicate static finding cannot replace
   // its state, screenshot, and element bounds in the unified visual report.
@@ -165,7 +178,8 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
     ...exploration.issues,
     ...staticIssues,
     ...(keyboard?.issues || []),
-    ...keyboardOutcome.issues
+    ...keyboardOutcome.issues,
+    ...lighthouseOutcome.issues
   ];
   const normalized = rawIssues.map(normalizeIssue);
   const triaged = triageIssues(normalized);
@@ -202,6 +216,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
     standard,
     ignore: ignoreResult.summary,
     remediationTracking: remediationResult.summary,
+    lighthouse: lighthouse.length > 0 ? lighthouse : undefined,
     scanDurationMs: Date.now() - startedAt,
     rawCount: rawIssues.length,
     uniqueCount: ignoreResult.issues.length,
@@ -220,7 +235,8 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
     fileName: "a11y-report.html",
     title: "Accessibility Audit Report",
     keyboard,
-    manualChecklist
+    manualChecklist,
+    lighthouse
   });
   if (options.pdf) await writeExplorationPdf(effectiveConfig.outputDir, "a11y-report");
 
@@ -229,6 +245,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
       "a11y-shiftleft audit",
       `Findings: ${report.summary.total} | critical ${report.summary.critical} | warning ${report.summary.warning} | info ${report.summary.info}`,
       `States: ${exploration.graph.summary.statesVisited} | keyboard steps ${keyboard?.steps.length || 0}`,
+      options.withLighthouse ? `Lighthouse: ${lighthouse[0]?.accessibilityScore ?? "not available"}` : "Lighthouse: not requested",
       `Open: ${effectiveConfig.outputDir}/a11y-report.html`,
       options.excel ? `Excel tables: ${effectiveConfig.outputDir}/a11y-summary.csv, a11y-pages.csv, a11y-rules.csv, a11y-findings.csv` : "Excel tables: not requested (add --excel)"
     ].join("\n"));

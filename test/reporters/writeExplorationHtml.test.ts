@@ -720,7 +720,27 @@ test("writeExplorationHtml can create a unified audit report", async () => {
           remediationOwner: ""
         }
       }]
-    }
+    },
+    lighthouse: [{
+      url: "http://localhost:3000",
+      finalUrl: "http://localhost:3000/",
+      accessibilityScore: 91,
+      failedAudits: [{
+        id: "color-contrast",
+        title: "Background and foreground colors have sufficient contrast",
+        score: 0,
+        scoreDisplayMode: "binary",
+        documentationUrl: "https://example.com/contrast"
+      }],
+      manualAudits: [{
+        id: "logical-tab-order",
+        title: "The page has a logical tab order",
+        score: null,
+        scoreDisplayMode: "manual"
+      }],
+      notApplicableAudits: 3,
+      durationMs: 1500
+    }]
   });
 
   const html = await fs.readFile(path.join(outputDir, "a11y-report.html"), "utf8");
@@ -746,6 +766,13 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /href="#state-1">Open state-1/);
   assert.match(html, /1 review area has observed targets from this audit/);
   assert.match(html, /Audit Coverage/);
+  assert.match(html, /Lighthouse Comparison/);
+  assert.match(html, /Lighthouse is a score-oriented comparison signal/);
+  assert.match(html, /Average score[\s\S]*?91/);
+  assert.match(html, /Background and foreground colors have sufficient contrast/);
+  assert.match(html, /href="https:\/\/example\.com\/contrast"/);
+  assert.match(html, /Lighthouse score/);
+  assert.match(html, /1 page score captured/);
   assert.match(html, /class="coverage-table"/);
   assert.match(html, /class="coverage-status-cell"/);
   assert.match(html, /\.coverage-row-review:not\(\.coverage-row-reviewed\):hover/);

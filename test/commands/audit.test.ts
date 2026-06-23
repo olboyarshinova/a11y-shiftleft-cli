@@ -9,6 +9,7 @@ test("audit is the unified visual report command with optional extra formats", (
   assert.match(audit.description(), /one visual accessibility report/);
   const flags = audit.options.map((option) => option.long);
   assert.equal(flags.includes("--url"), true);
+  assert.equal(flags.includes("--with-lighthouse"), true);
   assert.equal(flags.includes("--excel"), true);
   assert.equal(flags.includes("--pdf"), true);
   assert.equal(flags.includes("--raw"), true);
