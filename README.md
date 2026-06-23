@@ -36,10 +36,10 @@ their rule engines:
   [`eslint-plugin-vue`](https://www.npmjs.com/package/eslint-plugin-vue), and
   [Angular ESLint](https://www.npmjs.com/package/@angular-eslint/eslint-plugin-template).
 
-[Lighthouse](https://developer.chrome.com/docs/lighthouse/overview/) is not
-bundled in the current release. An optional comparison adapter is planned so
-teams can view its familiar accessibility score alongside detailed findings
-without making Lighthouse a required dependency.
+[Lighthouse](https://developer.chrome.com/docs/lighthouse/overview/) is optional
+and not bundled by default. Add `lighthouse` to a project and run
+`check --with-lighthouse` when teams want its familiar accessibility score
+alongside detailed axe, keyboard, and source findings.
 
 ## Why Use It?
 
@@ -47,8 +47,8 @@ Most accessibility tools solve one part of the workflow:
 
 - axe-core finds browser-rendered issues.
 - ESLint plugins catch framework-specific patterns.
-- Lighthouse gives a familiar page-level score, but is not part of the current
-  CLI scan.
+- Lighthouse gives a familiar page-level score when enabled, but it is not a
+  WCAG conformance certificate.
 - CI tells you whether a pull request should pass.
 
 This project connects automated checks, evidence, and reporting into one
@@ -211,6 +211,12 @@ HTML report.
 | Scan several known pages | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL $APP_URL/settings $APP_URL/checkout --out reports` | Combined non-visual report |
 | Discover same-origin pages | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --crawl --crawl-depth 1 --crawl-limit 10 --out reports` | Bounded crawl results |
 | Compare only new findings | `npx a11y-shiftleft-cli check --url $APP_URL --baseline --out reports` | Baseline comparison |
+| Add optional Lighthouse comparison | `npm install --save-dev lighthouse && npx a11y-shiftleft-cli check --url $APP_URL --with-lighthouse --out reports` | axe findings plus Lighthouse score |
+
+Lighthouse is optional so the default package stays lightweight. The report
+stores the Lighthouse accessibility score, failed audits, and manual Lighthouse
+checks as comparison evidence. Treat this as a useful signal for teams and
+designers, not as WCAG conformance proof.
 
 ### Visual UI Exploration
 

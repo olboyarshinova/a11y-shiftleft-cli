@@ -88,7 +88,8 @@
     "@angular-eslint/eslint-plugin-template": ">=19",
     "@angular-eslint/template-parser": ">=19",
     "eslint-plugin-jsx-a11y": ">=6",
-    "eslint-plugin-vue": ">=9"
+    "eslint-plugin-vue": ">=9",
+    "lighthouse": ">=12"
   },
   "peerDependenciesMeta": {
     "@angular-eslint/eslint-plugin-template": {
@@ -101,6 +102,9 @@
       "optional": true
     },
     "eslint-plugin-vue": {
+      "optional": true
+    },
+    "lighthouse": {
       "optional": true
     }
   },

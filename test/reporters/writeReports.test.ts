@@ -65,6 +65,25 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
       duplicateCount: 2,
       scanDurationMs: 123,
       urls: ["http://localhost:3000"],
+      lighthouse: [{
+        url: "http://localhost:3000",
+        finalUrl: "http://localhost:3000/",
+        accessibilityScore: 91,
+        failedAudits: [{
+          id: "color-contrast",
+          title: "Background and foreground colors have sufficient contrast",
+          score: 0,
+          scoreDisplayMode: "binary"
+        }],
+        manualAudits: [{
+          id: "logical-tab-order",
+          title: "The page has a logical tab order",
+          score: null,
+          scoreDisplayMode: "manual"
+        }],
+        notApplicableAudits: 3,
+        durationMs: 1500
+      }],
       standard: {
         id: "ada-title-ii",
         label: "ADA Title II web accessibility support mode",
@@ -136,6 +155,20 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   });
   assert.deepEqual(report.summary.byUnmappedRule, {});
   assert.deepEqual(report.summary.byFindingType, { wcag: 2 });
+  assert.deepEqual(report.summary.lighthouse, {
+    enabled: true,
+    pageCount: 1,
+    averageAccessibilityScore: 91,
+    minAccessibilityScore: 91,
+    failedAuditCount: 1,
+    manualAuditCount: 1,
+    pages: [{
+      url: "http://localhost:3000/",
+      score: 91,
+      failedAudits: 1,
+      manualAudits: 1
+    }]
+  });
   assert.equal(report.summary.rootCauseCount, 2);
   assert.deepEqual(report.summary.byPage, [
     {
@@ -172,7 +205,11 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.equal(json.issues[0].confidenceScore, 95);
   assert.equal(json.issues[0].category, "aria");
   assert.equal(json.issues[0].remediation.summary, "Give every button an accessible name.");
+  assert.equal(json.lighthouse[0].accessibilityScore, 91);
   assert.match(markdown, /Step 1: Use visible button text when possible/);
+  assert.match(markdown, /Lighthouse Accessibility Score/);
+  assert.match(markdown, /Average score \| 91/);
+  assert.match(markdown, /http:\/\/localhost:3000\/ \| 91 \| 1 \| 1/);
   assert.match(csv, /duplicateRate,0\.5/);
   assert.match(csv, /standard\.id,ada-title-ii/);
   assert.match(csv, /standard\.requiresManualReview,true/);

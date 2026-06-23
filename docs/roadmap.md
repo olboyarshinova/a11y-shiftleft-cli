@@ -104,7 +104,8 @@ remain suitable for reproducible empirical validation.
 - Add an optional Lighthouse integration, such as `check --with-lighthouse`,
   that records Lighthouse accessibility scores, audit details, documentation
   links, and relevant performance/accessibility recommendations in the same
-  report pipeline.
+  report pipeline. The first implementation keeps Lighthouse optional and
+  records score, failed audits, and manual audit counts for `check`.
 - Compare axe and Lighthouse disagreements in a separate report section,
   include Lighthouse suggested fixes where useful, and surface the comparison in
   `exploration.html` and the local dashboard.

@@ -5,7 +5,7 @@ import { enrichIssueEvidence } from "../core/classification.js";
 import { createManualChecklist, toManualChecklistMarkdown } from "../core/manualChecklist.js";
 import { getRemediationHint } from "../core/remediation.js";
 import { summarizeRootCauses } from "../core/rootCauses.js";
-import type { A11yReport, ComplianceEvidenceSummary, ComplianceStandardMetadata, DedupedIssue, Framework, PageSummary, RemediationHint, ReportFormat, ReportMetrics, ReportSummary, RootCauseGroup, Severity } from "../types.js";
+import type { A11yReport, ComplianceEvidenceSummary, ComplianceStandardMetadata, DedupedIssue, Framework, LighthouseAuditResult, LighthouseReportSummary, PageSummary, RemediationHint, ReportFormat, ReportMetrics, ReportSummary, RootCauseGroup, Severity } from "../types.js";
 
 interface WriteReportOptions {
   formats?: ReportFormat[];
@@ -61,7 +61,8 @@ export async function writeReports(
     issues: reportIssues,
     exploration: options.exploration,
     keyboard: options.keyboard,
-    manualChecklist
+    manualChecklist,
+    lighthouse: metrics.lighthouse
   };
 
   if (formats.has("json")) {
@@ -165,6 +166,7 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     remediationTracking: metrics.remediationTracking,
     ignore: metrics.ignore,
     retention: summarizeRetention(metrics.retention),
+    lighthouse: summarizeLighthouse(metrics.lighthouse),
     complianceEvidence: summarizeComplianceEvidence(issues, byPage, metrics.standard),
     bySource: countBy(issues, "source"),
     bySeverity: countBy(issues, "severity"),
@@ -428,6 +430,8 @@ ${formatCoverageMatrix(report)}
 ${formatPageSummary(report.summary.byPage || [])}
 
 ${formatComplianceEvidence(complianceEvidence)}
+
+${formatLighthouseEvidence(report.summary.lighthouse)}
 
 ${formatRootCauseGroups(report.summary.rootCauseGroups || [])}
 
@@ -786,6 +790,29 @@ function formatRetentionEvidenceStatus(retention: ReportSummary["retention"]): s
   return retention.dryRun ? "dry-run" : "recorded";
 }
 
+function formatLighthouseEvidence(lighthouse: LighthouseReportSummary | undefined): string {
+  if (!lighthouse?.enabled) return "";
+  const rows = lighthouse.pages
+    .map((page) => `| ${page.url} | ${page.score ?? "n/a"} | ${page.failedAudits} | ${page.manualAudits} |`)
+    .join("\n");
+
+  return `### Lighthouse Accessibility Score
+
+Lighthouse is an optional score-oriented signal. Treat it as a comparison point, not as WCAG conformance proof.
+
+| Metric | Value |
+|---|---:|
+| Pages checked | ${lighthouse.pageCount} |
+| Average score | ${lighthouse.averageAccessibilityScore ?? "n/a"} |
+| Lowest score | ${lighthouse.minAccessibilityScore ?? "n/a"} |
+| Failed Lighthouse audits | ${lighthouse.failedAuditCount} |
+| Manual Lighthouse audits | ${lighthouse.manualAuditCount} |
+
+| URL | Score | Failed audits | Manual audits |
+|---|---:|---:|---:|
+${rows}`;
+}
+
 function formatDisclaimer(standard: ComplianceStandardMetadata | undefined): string {
   const disclaimer = standard?.disclaimer || "This report supports accessibility risk detection and remediation tracking. It does not certify legal compliance with ADA, Section 508, or WCAG. Manual review is required.";
 
@@ -855,6 +882,31 @@ function summarizeRetention(retention: ReportMetrics["retention"]): ReportSummar
     plannedDeletedRuns: retention.plannedDeletedRuns ?? retention.deletedRuns,
     deletedRuns: retention.deletedRuns,
     keptRuns: retention.keptRuns
+  };
+}
+
+function summarizeLighthouse(results: LighthouseAuditResult[] | undefined): LighthouseReportSummary | undefined {
+  if (!results || results.length === 0) return undefined;
+  const scores = results
+    .map((result) => result.accessibilityScore)
+    .filter((score): score is number => typeof score === "number");
+  const averageAccessibilityScore = scores.length > 0
+    ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length)
+    : null;
+
+  return {
+    enabled: true,
+    pageCount: results.length,
+    averageAccessibilityScore,
+    minAccessibilityScore: scores.length > 0 ? Math.min(...scores) : null,
+    failedAuditCount: results.reduce((total, result) => total + result.failedAudits.length, 0),
+    manualAuditCount: results.reduce((total, result) => total + result.manualAudits.length, 0),
+    pages: results.map((result) => ({
+      url: result.finalUrl || result.url,
+      score: result.accessibilityScore,
+      failedAudits: result.failedAudits.length,
+      manualAudits: result.manualAudits.length
+    }))
   };
 }
 

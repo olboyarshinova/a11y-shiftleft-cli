@@ -191,10 +191,11 @@ test("formatVerboseCheckSummary renders scan context without JSON parsing requir
     scrollStepPx: 800,
     scrollMaxSteps: 25,
     scrollWaitMs: 100,
-    retentionEnabled: true,
-    retentionDryRun: false,
-    retentionPlannedDeletedRuns: 2,
-    retentionDeletedRuns: 2
+      retentionEnabled: true,
+      retentionDryRun: false,
+      retentionPlannedDeletedRuns: 2,
+      retentionDeletedRuns: 2,
+      lighthouseEnabled: true
   });
 
   assert.match(output, /framework: react/);
@@ -202,6 +203,7 @@ test("formatVerboseCheckSummary renders scan context without JSON parsing requir
   assert.match(output, /urls: http:\/\/localhost:3000/);
   assert.match(output, /crawl: enabled depth=1 limit=10/);
   assert.match(output, /scroll: enabled step=800px maxSteps=25 wait=100ms/);
+  assert.match(output, /lighthouse: enabled/);
   assert.match(output, /baseline: enabled file=.a11y-baseline.json/);
   assert.match(output, /ignore: enabled file=a11y-ignore.json ignored=2/);
   assert.match(output, /retention: enabled deletedRuns=2/);
@@ -268,7 +270,21 @@ test("formatCheckConsoleSummary renders a readable local summary", () => {
         warning: 1,
         info: 0,
         severityScore: 7
-      }]
+      }],
+      lighthouse: {
+        enabled: true,
+        pageCount: 1,
+        averageAccessibilityScore: 91,
+        minAccessibilityScore: 91,
+        failedAuditCount: 1,
+        manualAuditCount: 2,
+        pages: [{
+          url: "http://localhost:3000",
+          score: 91,
+          failedAudits: 1,
+          manualAudits: 2
+        }]
+      }
     },
     issues: [
       {
@@ -319,6 +335,7 @@ test("formatCheckConsoleSummary renders a readable local summary", () => {
 
   assert.match(output, /Findings: total 2 \| CRITICAL 1 \| WARNING 1 \| INFO 0/);
   assert.match(output, /Sources: axe: 1, eslint: 1/);
+  assert.match(output, /Lighthouse: avg score 91 \| failed audits 1 \| manual audits 2/);
   assert.match(output, /Color-scheme findings: none/);
   assert.match(output, /color-contrast: 1/);
   assert.match(output, /reports\/a11y-comment.md/);

@@ -3,6 +3,7 @@ import { loadConfig } from "../config/loadConfig.js";
 import { runEslintAdapter } from "../adapters/eslintAdapter.js";
 import { runAxePlaywrightAdapter } from "../adapters/axePlaywrightAdapter.js";
 import type { AxeProgressEvent } from "../adapters/axePlaywrightAdapter.js";
+import { runLighthouseAdapter } from "../adapters/lighthouseAdapter.js";
 import { normalizeIssue } from "../core/normalize.js";
 import { dedupeIssues } from "../core/dedupe.js";
 import { triageIssues } from "../core/severity.js";
@@ -16,7 +17,7 @@ import { applyRemediationTracking, DEFAULT_REMEDIATION_FILE } from "../core/reme
 import { applyIgnores, DEFAULT_IGNORE_FILE } from "../core/ignore.js";
 import { applyReportRetention } from "../core/reportRetention.js";
 import { filterReportFindings } from "../core/findingFilter.js";
-import type { A11yReport, ComplianceStandard, Framework, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel, WcagVersion } from "../types.js";
+import type { A11yReport, ComplianceStandard, Framework, Issue, LighthouseAuditResult, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel, WcagVersion } from "../types.js";
 
 export interface CheckOptions {
   cwd?: string;
@@ -24,6 +25,7 @@ export interface CheckOptions {
   framework?: string;
   static?: boolean;
   dynamic?: boolean;
+  withLighthouse?: boolean;
   url?: string[];
   crawl?: boolean;
   crawlDepth?: string;
@@ -79,6 +81,7 @@ export function registerCheckCommand(program: Command): void {
     .option("--framework <name>", "react, vue, angular, or auto")
     .option("--static", "Run static checks only")
     .option("--dynamic", "Run dynamic checks only")
+    .option("--with-lighthouse", "Also collect optional Lighthouse accessibility score and audit recommendations")
     .option("--url <urls...>", "Target URL(s) for dynamic scan")
     .option("--crawl", "Discover and scan same-origin links from dynamic URLs")
     .option("--crawl-depth <depth>", "Maximum same-origin crawl depth", "1")
@@ -176,6 +179,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
   };
 
   const rawIssues = [];
+  const lighthouseResults: LighthouseAuditResult[] = [];
   const adapterRuns: AdapterRunSummary[] = [];
   const progressEnabled = shouldPrintCheckProgress(options);
 
@@ -216,6 +220,34 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
   } else {
     adapterRuns.push({
       name: "dynamic",
+      enabled: false,
+      issueCount: 0,
+      durationMs: 0
+    });
+  }
+
+  if (options.withLighthouse) {
+    if (effectiveConfig.dynamic.urls.length === 0) {
+      throw new Error("--with-lighthouse requires at least one --url.");
+    }
+
+    const adapterStartedAt = Date.now();
+    for (const url of effectiveConfig.dynamic.urls) {
+      try {
+        lighthouseResults.push(await runLighthouseAdapter({ url }));
+      } catch (error) {
+        rawIssues.push(createCheckAdapterIssue(framework, url, "lighthouse", error));
+      }
+    }
+    adapterRuns.push({
+      name: "lighthouse",
+      enabled: true,
+      issueCount: lighthouseResults.reduce((total, result) => total + result.failedAudits.length, 0),
+      durationMs: Date.now() - adapterStartedAt
+    });
+  } else {
+    adapterRuns.push({
+      name: "lighthouse",
       enabled: false,
       issueCount: 0,
       durationMs: 0
@@ -272,6 +304,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
     remediationTracking: remediationResult.summary,
     ignore: ignoreResult.summary,
     retention: retentionSummary.enabled ? retentionSummary : undefined,
+    lighthouse: lighthouseResults.length > 0 ? lighthouseResults : undefined,
     scanDurationMs: Date.now() - startedAt,
     rawCount: rawIssues.length,
     uniqueCount: ignoreResult.issues.length,
@@ -311,7 +344,8 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
         retentionEnabled: retentionSummary.enabled,
         retentionDryRun: retentionSummary.dryRun,
         retentionPlannedDeletedRuns: retentionSummary.plannedDeletedRuns,
-        retentionDeletedRuns: retentionSummary.deletedRuns
+        retentionDeletedRuns: retentionSummary.deletedRuns,
+        lighthouseEnabled: Boolean(options.withLighthouse)
       }));
     }
 
@@ -360,7 +394,7 @@ export function resolveCheckModes({
 }
 
 export interface AdapterRunSummary {
-  name: "static" | "dynamic";
+  name: "static" | "dynamic" | "lighthouse";
   enabled: boolean;
   issueCount: number;
   durationMs: number;
@@ -394,6 +428,7 @@ export function formatVerboseCheckSummary(options: {
   retentionDryRun: boolean;
   retentionPlannedDeletedRuns: number;
   retentionDeletedRuns: number;
+  lighthouseEnabled?: boolean;
 }): string {
   const adapterLines = options.adapterRuns.map((run) => {
     const status = run.enabled ? "enabled" : "skipped";
@@ -425,6 +460,7 @@ export function formatVerboseCheckSummary(options: {
     `urls: ${urls}`,
     `crawl: ${crawl}`,
     `scroll: ${scroll}`,
+    `lighthouse: ${options.lighthouseEnabled ? "enabled" : "disabled"}`,
     `standard: ${options.standard}`,
     `wcag: ${options.wcagVersion} ${options.wcagLevel}`,
     `baseline: ${baseline}`,
@@ -435,6 +471,23 @@ export function formatVerboseCheckSummary(options: {
     "adapters:",
     ...adapterLines
   ].join("\n");
+}
+
+function createCheckAdapterIssue(
+  framework: Framework,
+  url: string,
+  adapter: string,
+  error: unknown
+): Issue {
+  const message = error instanceof Error ? error.message : String(error);
+  return {
+    source: adapter,
+    framework,
+    ruleId: `adapter/${adapter}-scan-error`,
+    severity: "warning",
+    url,
+    message: `${adapter} check failed: ${message}`
+  };
 }
 
 export function formatCheckConsoleSummary(
@@ -463,6 +516,9 @@ export function formatCheckConsoleSummary(
   const remediation = summary.remediationTracking?.enabled
     ? `Remediation: tracked ${summary.remediationTracking.matchedIssues} | stale ${summary.remediationTracking.staleEntries} | invalid ${summary.remediationTracking.invalidEntries}`
     : undefined;
+  const lighthouse = summary.lighthouse?.enabled
+    ? `Lighthouse: avg score ${summary.lighthouse.averageAccessibilityScore ?? "n/a"} | failed audits ${summary.lighthouse.failedAuditCount} | manual audits ${summary.lighthouse.manualAuditCount}`
+    : undefined;
 
   return [
     "a11y-shiftleft check",
@@ -477,6 +533,7 @@ export function formatCheckConsoleSummary(
     `Duplicates removed: ${summary.duplicateCount} of ${summary.rawCount} raw findings`,
     ...(retest ? [retest] : []),
     ...(remediation ? [remediation] : []),
+    ...(lighthouse ? [lighthouse] : []),
     `Duration: ${summary.scanDurationMs}ms`,
     "",
     "Top rules:",

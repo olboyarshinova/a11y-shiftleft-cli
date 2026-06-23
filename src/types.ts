@@ -432,6 +432,7 @@ export interface ReportMetrics {
   cwd?: string;
   urls?: string[];
   standard?: ComplianceStandardMetadata;
+  lighthouse?: LighthouseAuditResult[];
   baseline?: BaselineComparisonSummary;
   retest?: RetestComparisonSummary;
   remediationTracking?: RemediationTrackingSummary;
@@ -441,6 +442,43 @@ export interface ReportMetrics {
   rawCount?: number;
   uniqueCount?: number;
   duplicateCount?: number;
+}
+
+export interface LighthouseAuditItem {
+  id: string;
+  title: string;
+  score: number | null;
+  scoreDisplayMode?: string;
+  description?: string;
+  documentationUrl?: string;
+}
+
+export interface LighthouseAuditResult {
+  url: string;
+  requestedUrl?: string;
+  finalUrl?: string;
+  fetchTime?: string;
+  userAgent?: string;
+  accessibilityScore: number | null;
+  failedAudits: LighthouseAuditItem[];
+  manualAudits: LighthouseAuditItem[];
+  notApplicableAudits: number;
+  durationMs: number;
+}
+
+export interface LighthouseReportSummary {
+  enabled: boolean;
+  pageCount: number;
+  averageAccessibilityScore: number | null;
+  minAccessibilityScore: number | null;
+  failedAuditCount: number;
+  manualAuditCount: number;
+  pages: Array<{
+    url: string;
+    score: number | null;
+    failedAudits: number;
+    manualAudits: number;
+  }>;
 }
 
 export interface ManualCheckItem {
@@ -505,6 +543,7 @@ export interface ReportSummary {
   remediationTracking?: RemediationTrackingSummary;
   ignore?: IgnoreSummary;
   retention?: ReportRetentionEvidence;
+  lighthouse?: LighthouseReportSummary;
   complianceEvidence: ComplianceEvidenceSummary;
   bySource: Record<string, number>;
   bySeverity: Record<string, number>;
@@ -528,6 +567,7 @@ export interface A11yReport {
   exploration?: ExplorationGraph;
   keyboard?: KeyboardAuditResult;
   manualChecklist?: ManualChecklist;
+  lighthouse?: LighthouseAuditResult[];
 }
 
 export interface PageSummary {
