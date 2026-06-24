@@ -773,6 +773,12 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /href="https:\/\/example\.com\/contrast"/);
   assert.match(html, /Lighthouse score/);
   assert.match(html, /1 page score captured/);
+  assert.match(html, /Lighthouse and pipeline comparison/);
+  assert.match(html, /Same rule IDs/);
+  assert.match(html, /No matching failed rule IDs/);
+  assert.match(html, /Lighthouse-only failed audits/);
+  assert.match(html, /Pipeline-only rules/);
+  assert.match(html, /button-name<\/code> 1 finding · critical · axe/);
   assert.match(html, /class="coverage-table"/);
   assert.match(html, /class="coverage-status-cell"/);
   assert.match(html, /\.coverage-row-review:not\(\.coverage-row-reviewed\):hover/);

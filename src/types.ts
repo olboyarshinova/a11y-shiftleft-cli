@@ -473,12 +473,28 @@ export interface LighthouseReportSummary {
   minAccessibilityScore: number | null;
   failedAuditCount: number;
   manualAuditCount: number;
+  comparison?: LighthouseComparisonSummary;
   pages: Array<{
     url: string;
     score: number | null;
     failedAudits: number;
     manualAudits: number;
   }>;
+}
+
+export interface LighthouseComparisonRule {
+  ruleId: string;
+  count: number;
+  sources: string[];
+  highestSeverity: Severity;
+  findingType: FindingType;
+  category: IssueCategory;
+}
+
+export interface LighthouseComparisonSummary {
+  matchingRuleIds: string[];
+  lighthouseOnlyAudits: LighthouseAuditItem[];
+  pipelineOnlyRules: LighthouseComparisonRule[];
 }
 
 export interface ManualCheckItem {

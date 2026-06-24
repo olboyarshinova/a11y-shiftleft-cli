@@ -3,6 +3,7 @@ import path from "node:path";
 import { stringify } from "csv-stringify/sync";
 import { enrichIssueEvidence } from "../core/classification.js";
 import { createManualChecklist, toManualChecklistMarkdown } from "../core/manualChecklist.js";
+import { compareLighthouseWithFindings } from "../core/lighthouseComparison.js";
 import { getRemediationHint } from "../core/remediation.js";
 import { summarizeRootCauses } from "../core/rootCauses.js";
 import type { A11yReport, ComplianceEvidenceSummary, ComplianceStandardMetadata, DedupedIssue, Framework, LighthouseAuditResult, LighthouseReportSummary, PageSummary, RemediationHint, ReportFormat, ReportMetrics, ReportSummary, RootCauseGroup, Severity } from "../types.js";
@@ -166,7 +167,7 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     remediationTracking: metrics.remediationTracking,
     ignore: metrics.ignore,
     retention: summarizeRetention(metrics.retention),
-    lighthouse: summarizeLighthouse(metrics.lighthouse),
+    lighthouse: summarizeLighthouse(metrics.lighthouse, issues),
     complianceEvidence: summarizeComplianceEvidence(issues, byPage, metrics.standard),
     bySource: countBy(issues, "source"),
     bySeverity: countBy(issues, "severity"),
@@ -795,6 +796,7 @@ function formatLighthouseEvidence(lighthouse: LighthouseReportSummary | undefine
   const rows = lighthouse.pages
     .map((page) => `| ${page.url} | ${page.score ?? "n/a"} | ${page.failedAudits} | ${page.manualAudits} |`)
     .join("\n");
+  const comparison = formatLighthouseComparison(lighthouse);
 
   return `### Lighthouse Accessibility Score
 
@@ -810,7 +812,34 @@ Lighthouse is an optional score-oriented signal. Treat it as a comparison point,
 
 | URL | Score | Failed audits | Manual audits |
 |---|---:|---:|---:|
-${rows}`;
+${rows}
+
+${comparison}`;
+}
+
+function formatLighthouseComparison(lighthouse: LighthouseReportSummary): string {
+  const comparison = lighthouse.comparison;
+  if (!comparison) return "";
+  const lighthouseOnly = comparison.lighthouseOnlyAudits
+    .slice(0, 10)
+    .map((audit) => `- \`${audit.id}\`: ${markdownInline(audit.title)}`)
+    .join("\n");
+  const pipelineOnly = comparison.pipelineOnlyRules
+    .slice(0, 10)
+    .map((rule) => `- \`${rule.ruleId}\`: ${rule.count} finding${rule.count === 1 ? "" : "s"}, ${rule.highestSeverity}, ${rule.sources.join(" + ")}`)
+    .join("\n");
+
+  return `#### Lighthouse And Pipeline Comparison
+
+Matching rule IDs: ${comparison.matchingRuleIds.length > 0 ? comparison.matchingRuleIds.map((ruleId) => `\`${ruleId}\``).join(", ") : "none"}
+
+Lighthouse-only failed audits:
+
+${lighthouseOnly || "none"}
+
+Pipeline-only rules:
+
+${pipelineOnly || "none"}`;
 }
 
 function formatDisclaimer(standard: ComplianceStandardMetadata | undefined): string {
@@ -885,7 +914,7 @@ function summarizeRetention(retention: ReportMetrics["retention"]): ReportSummar
   };
 }
 
-function summarizeLighthouse(results: LighthouseAuditResult[] | undefined): LighthouseReportSummary | undefined {
+function summarizeLighthouse(results: LighthouseAuditResult[] | undefined, issues: DedupedIssue[]): LighthouseReportSummary | undefined {
   if (!results || results.length === 0) return undefined;
   const scores = results
     .map((result) => result.accessibilityScore)
@@ -901,6 +930,7 @@ function summarizeLighthouse(results: LighthouseAuditResult[] | undefined): Ligh
     minAccessibilityScore: scores.length > 0 ? Math.min(...scores) : null,
     failedAuditCount: results.reduce((total, result) => total + result.failedAudits.length, 0),
     manualAuditCount: results.reduce((total, result) => total + result.manualAudits.length, 0),
+    comparison: compareLighthouseWithFindings(issues, results),
     pages: results.map((result) => ({
       url: result.finalUrl || result.url,
       score: result.accessibilityScore,

@@ -162,6 +162,30 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
     minAccessibilityScore: 91,
     failedAuditCount: 1,
     manualAuditCount: 1,
+    comparison: {
+      matchingRuleIds: [],
+      lighthouseOnlyAudits: [{
+        id: "color-contrast",
+        title: "Background and foreground colors have sufficient contrast",
+        score: 0,
+        scoreDisplayMode: "binary"
+      }],
+      pipelineOnlyRules: [{
+        ruleId: "button-name",
+        count: 1,
+        sources: ["axe"],
+        highestSeverity: "critical",
+        findingType: "wcag",
+        category: "aria"
+      }, {
+        ruleId: "jsx-a11y/alt-text",
+        count: 1,
+        sources: ["eslint"],
+        highestSeverity: "warning",
+        findingType: "wcag",
+        category: "images"
+      }]
+    },
     pages: [{
       url: "http://localhost:3000/",
       score: 91,
@@ -210,6 +234,11 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /Lighthouse Accessibility Score/);
   assert.match(markdown, /Average score \| 91/);
   assert.match(markdown, /http:\/\/localhost:3000\/ \| 91 \| 1 \| 1/);
+  assert.match(markdown, /Lighthouse And Pipeline Comparison/);
+  assert.match(markdown, /Lighthouse-only failed audits/);
+  assert.match(markdown, /`color-contrast`: Background and foreground colors have sufficient contrast/);
+  assert.match(markdown, /Pipeline-only rules/);
+  assert.match(markdown, /`button-name`: 1 finding, critical, axe/);
   assert.match(csv, /duplicateRate,0\.5/);
   assert.match(csv, /standard\.id,ada-title-ii/);
   assert.match(csv, /standard\.requiresManualReview,true/);

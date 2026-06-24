@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { enrichIssueEvidence } from "../core/classification.js";
+import { compareLighthouseWithFindings } from "../core/lighthouseComparison.js";
 import { formatReportDateUtc } from "../core/reportDate.js";
 import { getRemediationHint } from "../core/remediation.js";
 import type { DedupedIssue, ExplorationGraph, ExplorationState, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, Severity } from "../types.js";
@@ -118,6 +119,25 @@ export function renderExplorationHtml(
       display: grid;
       gap: 12px;
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+
+    .comparison-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      margin-top: 16px;
+    }
+
+    .comparison-grid > div {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .comparison-grid ul {
+      margin: 0;
+      padding-left: 18px;
     }
 
     .metric,
@@ -990,7 +1010,7 @@ export function renderExplorationHtml(
 
     ${renderQuickReview(reportIssues, options)}
 
-    ${renderLighthouseComparison(options.lighthouse)}
+    ${renderLighthouseComparison(options.lighthouse, reportIssues)}
 
     ${renderCoverageMatrix(graph, options, reportIssues)}
 
@@ -1114,7 +1134,7 @@ function renderQuickReview(issues: DedupedIssue[], options: ExplorationHtmlOptio
   </section>`;
 }
 
-function renderLighthouseComparison(results: LighthouseAuditResult[] | undefined): string {
+function renderLighthouseComparison(results: LighthouseAuditResult[] | undefined, issues: DedupedIssue[] = []): string {
   if (!results || results.length === 0) return "";
   const scores = results
     .map((result) => result.accessibilityScore)
@@ -1124,6 +1144,7 @@ function renderLighthouseComparison(results: LighthouseAuditResult[] | undefined
     : undefined;
   const failedAuditCount = results.reduce((total, result) => total + result.failedAudits.length, 0);
   const manualAuditCount = results.reduce((total, result) => total + result.manualAudits.length, 0);
+  const comparison = compareLighthouseWithFindings(issues, results);
   const rows = results.map((result) => {
     const failed = result.failedAudits.slice(0, 3).map((audit) =>
       audit.documentationUrl
@@ -1152,7 +1173,32 @@ function renderLighthouseComparison(results: LighthouseAuditResult[] | undefined
       <thead><tr><th>URL</th><th>Score</th><th>Failed</th><th>Manual</th><th>Top failed audits</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
+    ${comparison ? renderLighthouseComparisonDetails(comparison) : ""}
   </section>`;
+}
+
+function renderLighthouseComparisonDetails(comparison: NonNullable<ReturnType<typeof compareLighthouseWithFindings>>): string {
+  const lighthouseOnly = comparison.lighthouseOnlyAudits.slice(0, 8).map((audit) =>
+    `<li><code>${escapeHtml(audit.id)}</code> ${escapeHtml(audit.title)}</li>`
+  ).join("");
+  const pipelineOnly = comparison.pipelineOnlyRules.slice(0, 8).map((rule) =>
+    `<li><code>${escapeHtml(rule.ruleId)}</code> ${rule.count} finding${rule.count === 1 ? "" : "s"} · ${escapeHtml(rule.highestSeverity)} · ${escapeHtml(rule.sources.join(" + "))}</li>`
+  ).join("");
+
+  return `<div class="comparison-grid" aria-label="Lighthouse and pipeline comparison">
+    <div>
+      <h3>Same rule IDs</h3>
+      <p class="muted">${comparison.matchingRuleIds.length > 0 ? comparison.matchingRuleIds.map((ruleId) => `<code>${escapeHtml(ruleId)}</code>`).join(", ") : "No matching failed rule IDs."}</p>
+    </div>
+    <div>
+      <h3>Lighthouse-only failed audits</h3>
+      <ul>${lighthouseOnly || "<li>none</li>"}</ul>
+    </div>
+    <div>
+      <h3>Pipeline-only rules</h3>
+      <ul>${pipelineOnly || "<li>none</li>"}</ul>
+    </div>
+  </div>`;
 }
 
 function renderQuickFindings(issues: DedupedIssue[]): string {

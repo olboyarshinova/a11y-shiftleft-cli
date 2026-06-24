@@ -6,6 +6,9 @@
   and `audit --with-lighthouse`. Lighthouse remains an optional peer dependency
   so the core package does not become heavier for teams that only need axe,
   keyboard, and visual reports.
+- Added Lighthouse-vs-pipeline comparison metadata to JSON, Markdown, and visual
+  HTML reports so teams can see matching rule IDs, Lighthouse-only failed audits,
+  and pipeline-only rules.
 
 ## 0.7.0 - 2026-06-23
 

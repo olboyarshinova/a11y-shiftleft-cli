@@ -38,8 +38,10 @@ their rule engines:
 
 [Lighthouse](https://developer.chrome.com/docs/lighthouse/overview/) is optional
 and not bundled by default. Add `lighthouse` to a project and run
-`check --with-lighthouse` when teams want its familiar accessibility score
-alongside detailed axe, keyboard, and source findings.
+`audit --with-lighthouse` or `check --with-lighthouse` when teams want its
+familiar accessibility score alongside detailed axe, keyboard, and source
+findings. Reports also show where Lighthouse and the a11y-shiftleft pipeline
+agree or disagree by rule ID.
 
 ## Why Use It?
 
@@ -194,7 +196,7 @@ HTML report.
 |---|---|---|
 | Run the recommended audit | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports` | `a11y-report.html` |
 | Show only WCAG-mapped findings | `npx a11y-shiftleft-cli audit --url $APP_URL --wcag-only --out reports` | Report without best-practice or unmapped review signals |
-| Add optional Lighthouse score | `npm install --save-dev lighthouse && npx a11y-shiftleft-cli audit --url $APP_URL --with-lighthouse --out reports` | Visual report plus score comparison |
+| Add optional Lighthouse score | `npm install --save-dev lighthouse && npx a11y-shiftleft-cli audit --url $APP_URL --with-lighthouse --out reports` | Visual report plus score and rule comparison |
 | Add Excel and PDF exports | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports --excel --pdf` | HTML, CSV, and PDF |
 | Force complete page screenshots | `npx a11y-shiftleft-cli audit --url $APP_URL --screenshot-full-page --out reports` | Full-page visual evidence |
 | Audit a slower application | `npx a11y-shiftleft-cli audit --url $APP_URL --wait-ms 1000 --out reports` | Visual report after an extra settle wait |
@@ -215,9 +217,9 @@ HTML report.
 | Add optional Lighthouse comparison | `npm install --save-dev lighthouse && npx a11y-shiftleft-cli check --url $APP_URL --with-lighthouse --out reports` | axe findings plus Lighthouse score |
 
 Lighthouse is optional so the default package stays lightweight. Both `audit`
-and `check` can store the Lighthouse accessibility score, failed audits, and
-manual Lighthouse checks as comparison evidence. Treat this as a useful signal
-for teams and designers, not as WCAG conformance proof.
+and `check` can store the Lighthouse accessibility score, failed audits, manual
+Lighthouse checks, and rule-level comparison evidence. Treat this as a useful
+signal for teams and designers, not as WCAG conformance proof.
 
 ### Visual UI Exploration
 

@@ -109,7 +109,9 @@ remain suitable for reproducible empirical validation.
   unified visual `audit` report.
 - Compare axe and Lighthouse disagreements in a separate report section,
   include Lighthouse suggested fixes where useful, and surface the comparison in
-  `exploration.html` and the local dashboard.
+  `exploration.html` and the local dashboard. The first comparison layer now
+  records matching rule IDs, Lighthouse-only failed audits, and pipeline-only
+  rules in JSON, Markdown, and the unified visual HTML report.
 - Explain the Lighthouse score as a weighted summary rather than a conformance
   percentage. Keep manual-review, keyboard, and unmapped coverage visible next
   to the score so a high score cannot hide untested requirements.
