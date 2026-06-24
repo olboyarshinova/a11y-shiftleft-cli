@@ -12,6 +12,9 @@
 - Added Lighthouse recommendations to Markdown and visual HTML reports, including
   failed audit descriptions, manual Lighthouse checks, and documentation links
   when Lighthouse exposes them.
+- Added Lighthouse score and comparison summaries to the local dashboard so
+  historical reports can show runs with Lighthouse, average score, failed audits,
+  manual audits, and tool-difference counts.
 
 ## 0.7.0 - 2026-06-23
 

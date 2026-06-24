@@ -25,7 +25,8 @@ test("collectDashboardData summarizes historical report runs", async () => {
     byPage: [
       page("http://localhost:3000/", 2, 1, 1, 0, 7),
       page("http://localhost:3000/settings", 1, 0, 1, 0, 2)
-    ]
+    ],
+    lighthouseScore: 88
   });
   await writeReport(root, "run-2", {
     generatedAt: "2026-06-11T00:00:00.000Z",
@@ -38,7 +39,8 @@ test("collectDashboardData summarizes historical report runs", async () => {
     ],
     byPage: [
       page("http://localhost:3000/settings", 1, 0, 1, 0, 2)
-    ]
+    ],
+    lighthouseScore: 94
   });
 
   const data = await collectDashboardData(root);
@@ -47,10 +49,20 @@ test("collectDashboardData summarizes historical report runs", async () => {
   assert.equal(data.latestRun?.id, "run-2");
   assert.equal(data.latestRun?.total, 1);
   assert.deepEqual(data.trend.map((point) => point.total), [3, 1]);
+  assert.deepEqual(data.trend.map((point) => point.lighthouseScore), [88, 94]);
   assert.equal(data.topRules[0].ruleId, "color-contrast");
   assert.equal(data.topRules[0].total, 3);
   assert.equal(data.topPages[0].url, "http://localhost:3000/");
   assert.equal(data.runs[0].reportPath, "run-1/a11y-report.json");
+  assert.equal(data.lighthouse?.runsWithLighthouse, 2);
+  assert.equal(data.lighthouse?.latestScore, 94);
+  assert.equal(data.lighthouse?.averageScore, 91);
+  assert.equal(data.lighthouse?.failedAuditCount, 2);
+  assert.equal(data.lighthouse?.manualAuditCount, 2);
+  assert.equal(data.lighthouse?.lighthouseOnlyCount, 2);
+  assert.equal(data.lighthouse?.pipelineOnlyCount, 2);
+  assert.equal(data.lighthouse?.topFailedAudits[0].id, "color-contrast");
+  assert.equal(data.lighthouse?.topFailedAudits[0].count, 2);
   assert.equal(data.latestRecommendations[0].ruleId, "color-contrast");
   assert.match(data.latestRecommendations[0].remediation.summary, /contrast/i);
   assert.doesNotMatch(JSON.stringify(data), new RegExp(escapeRegExp(root)));
@@ -69,7 +81,8 @@ test("renderDashboardHtml renders dashboard sections and escapes content", async
     ],
     byPage: [
       page("http://localhost:3000/?q=<script>", 1, 0, 1, 0, 2)
-    ]
+    ],
+    lighthouseScore: 91
   });
 
   const html = renderDashboardHtml(await collectDashboardData(root));
@@ -77,6 +90,10 @@ test("renderDashboardHtml renders dashboard sections and escapes content", async
   assert.match(html, /a11y-shiftleft dashboard/);
   assert.match(html, /10 June 2026, 00:00 UTC/);
   assert.match(html, /Accessibility Trend/);
+  assert.match(html, /Lighthouse Comparison/);
+  assert.match(html, /Latest score/);
+  assert.match(html, /Tool differences/);
+  assert.match(html, /color-contrast/);
   assert.match(html, /Top Rules/);
   assert.match(html, /Most Affected Pages/);
   assert.match(html, /Latest Fix Recommendations/);
@@ -124,6 +141,7 @@ interface ReportInput {
   info: number;
   issues: Array<ReturnType<typeof issue>>;
   byPage: Array<ReturnType<typeof page>>;
+  lighthouseScore?: number;
 }
 
 async function writeReport(root: string, run: string, input: ReportInput): Promise<void> {
@@ -164,9 +182,67 @@ async function writeReport(root: string, run: string, input: ReportInput): Promi
       byWcagLevel: { A: input.total },
       byWcagVersion: { "2.0": input.total },
       byUnmappedRule: {},
-      byPage: input.byPage
+      byPage: input.byPage,
+      ...(typeof input.lighthouseScore === "number" ? {
+        lighthouse: {
+          enabled: true,
+          pageCount: 1,
+          averageAccessibilityScore: input.lighthouseScore,
+          minAccessibilityScore: input.lighthouseScore,
+          failedAuditCount: 1,
+          manualAuditCount: 1,
+          comparison: {
+            matchingRuleIds: [],
+            lighthouseOnlyAudits: [{
+              id: "color-contrast",
+              title: "Background and foreground colors have sufficient contrast",
+              score: 0,
+              scoreDisplayMode: "binary",
+              description: "Low-contrast text can be difficult to read.",
+              documentationUrl: "https://example.com/contrast"
+            }],
+            pipelineOnlyRules: [{
+              ruleId: "button-name",
+              count: 1,
+              sources: ["axe"],
+              highestSeverity: "critical",
+              findingType: "wcag",
+              category: "controls"
+            }]
+          },
+          pages: [{
+            url: "http://localhost:3000/",
+            score: input.lighthouseScore,
+            failedAudits: 1,
+            manualAudits: 1
+          }]
+        }
+      } : {})
     },
-    issues: input.issues
+    issues: input.issues,
+    ...(typeof input.lighthouseScore === "number" ? {
+      lighthouse: [{
+        url: "http://localhost:3000",
+        finalUrl: "http://localhost:3000/",
+        accessibilityScore: input.lighthouseScore,
+        failedAudits: [{
+          id: "color-contrast",
+          title: "Background and foreground colors have sufficient contrast",
+          score: 0,
+          scoreDisplayMode: "binary",
+          description: "Low-contrast text can be difficult to read.",
+          documentationUrl: "https://example.com/contrast"
+        }],
+        manualAudits: [{
+          id: "logical-tab-order",
+          title: "The page has a logical tab order",
+          score: null,
+          scoreDisplayMode: "manual"
+        }],
+        notApplicableAudits: 0,
+        durationMs: 100
+      }]
+    } : {})
   }, null, 2));
 }
 

@@ -18,6 +18,7 @@ export interface DashboardTrendPoint {
   info: number;
   duplicateRate: number;
   scanDurationMs: number;
+  lighthouseScore?: number | null;
 }
 
 export interface DashboardRuleSummary {
@@ -53,6 +54,23 @@ export interface DashboardRecommendation {
   remediation: RemediationHint;
 }
 
+export interface DashboardLighthouseAuditSummary {
+  id: string;
+  title: string;
+  count: number;
+}
+
+export interface DashboardLighthouseSummary {
+  runsWithLighthouse: number;
+  latestScore: number | null;
+  averageScore: number | null;
+  failedAuditCount: number;
+  manualAuditCount: number;
+  lighthouseOnlyCount: number;
+  pipelineOnlyCount: number;
+  topFailedAudits: DashboardLighthouseAuditSummary[];
+}
+
 export interface DashboardData {
   generatedAt: string;
   reportsRoot: string;
@@ -63,6 +81,7 @@ export interface DashboardData {
   topRules: DashboardRuleSummary[];
   topPages: DashboardPageSummary[];
   latestRecommendations: DashboardRecommendation[];
+  lighthouse?: DashboardLighthouseSummary;
 }
 
 interface ReportFile {
@@ -100,7 +119,8 @@ export async function collectDashboardData(
     trend: runs.map(({ framework: _framework, urls: _urls, ...point }) => point),
     topRules: summarizeRules(files),
     topPages: summarizePages(files),
-    latestRecommendations: summarizeLatestRecommendations(files)
+    latestRecommendations: summarizeLatestRecommendations(files),
+    lighthouse: summarizeLighthouse(files)
   };
 }
 
@@ -260,10 +280,12 @@ export function renderDashboardHtml(data: DashboardData): string {
       <div class="metric"><span class="muted">Latest findings</span><strong>${latest?.total ?? 0}</strong></div>
       <div class="metric"><span class="muted">Latest critical</span><strong class="critical">${latest?.critical ?? 0}</strong></div>
       <div class="metric"><span class="muted">Latest warnings</span><strong class="warning">${latest?.warning ?? 0}</strong></div>
+      <div class="metric"><span class="muted">Latest Lighthouse</span><strong>${latest?.lighthouseScore ?? "n/a"}</strong></div>
     </div>
 
     ${data.totalRuns === 0 ? emptyState() : [
     trendSection(data, maxTrend),
+    lighthouseSection(data.lighthouse),
     rulesSection(data.topRules),
     pagesSection(data.topPages),
     recommendationsSection(data.latestRecommendations),
@@ -338,6 +360,7 @@ function toDashboardRun(file: ReportFile): DashboardRunSummary {
     info: summary.info,
     duplicateRate: summary.duplicateRate,
     scanDurationMs: summary.scanDurationMs,
+    lighthouseScore: summary.lighthouse?.averageAccessibilityScore ?? undefined,
     framework: String(summary.framework || "unknown"),
     urls: summary.urls || []
   };
@@ -445,6 +468,43 @@ function summarizeLatestRecommendations(files: ReportFile[]): DashboardRecommend
   });
 }
 
+function summarizeLighthouse(files: ReportFile[]): DashboardLighthouseSummary | undefined {
+  const runs = files
+    .map((file) => file.report.summary.lighthouse)
+    .filter((lighthouse): lighthouse is NonNullable<A11yReport["summary"]["lighthouse"]> => Boolean(lighthouse?.enabled));
+  if (runs.length === 0) return undefined;
+
+  const scores = runs
+    .map((run) => run.averageAccessibilityScore)
+    .filter((score): score is number => typeof score === "number");
+  const topFailedAudits = new Map<string, DashboardLighthouseAuditSummary>();
+
+  for (const file of files) {
+    for (const result of file.report.lighthouse || []) {
+      for (const audit of result.failedAudits) {
+        const current = topFailedAudits.get(audit.id) || {
+          id: audit.id,
+          title: audit.title,
+          count: 0
+        };
+        current.count += 1;
+        topFailedAudits.set(audit.id, current);
+      }
+    }
+  }
+
+  return {
+    runsWithLighthouse: runs.length,
+    latestScore: runs.at(-1)?.averageAccessibilityScore ?? null,
+    averageScore: scores.length > 0 ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : null,
+    failedAuditCount: runs.reduce((total, run) => total + run.failedAuditCount, 0),
+    manualAuditCount: runs.reduce((total, run) => total + run.manualAuditCount, 0),
+    lighthouseOnlyCount: runs.reduce((total, run) => total + (run.comparison?.lighthouseOnlyAudits.length || 0), 0),
+    pipelineOnlyCount: runs.reduce((total, run) => total + (run.comparison?.pipelineOnlyRules.length || 0), 0),
+    topFailedAudits: [...topFailedAudits.values()].sort((left, right) => right.count - left.count || left.id.localeCompare(right.id)).slice(0, 10)
+  };
+}
+
 function trendSection(data: DashboardData, maxTrend: number): string {
   const bars = data.trend
     .map((point) => {
@@ -461,6 +521,34 @@ function trendSection(data: DashboardData, maxTrend: number): string {
     <h2>Accessibility Trend</h2>
     <div class="muted">Total findings per report run.</div>
     <div class="bars">${bars}</div>
+  </section>`;
+}
+
+function lighthouseSection(lighthouse: DashboardLighthouseSummary | undefined): string {
+  if (!lighthouse) return "";
+  const rows = lighthouse.topFailedAudits
+    .map((audit) => `<tr>
+      <td><code>${escapeHtml(audit.id)}</code></td>
+      <td>${escapeHtml(audit.title)}</td>
+      <td class="num">${audit.count}</td>
+    </tr>`)
+    .join("\n");
+
+  return `<section>
+    <h2 id="lighthouse-heading">Lighthouse Comparison</h2>
+    <p class="muted">Optional score-oriented evidence from runs that used <code>--with-lighthouse</code>. Treat this as comparison data, not conformance proof.</p>
+    <div class="grid metrics" aria-label="Lighthouse summary metrics">
+      <div class="metric"><span class="muted">Runs with Lighthouse</span><strong>${lighthouse.runsWithLighthouse}</strong></div>
+      <div class="metric"><span class="muted">Latest score</span><strong>${lighthouse.latestScore ?? "n/a"}</strong></div>
+      <div class="metric"><span class="muted">Average score</span><strong>${lighthouse.averageScore ?? "n/a"}</strong></div>
+      <div class="metric"><span class="muted">Failed audits</span><strong class="warning">${lighthouse.failedAuditCount}</strong></div>
+      <div class="metric"><span class="muted">Manual audits</span><strong>${lighthouse.manualAuditCount}</strong></div>
+      <div class="metric"><span class="muted">Tool differences</span><strong>${lighthouse.lighthouseOnlyCount + lighthouse.pipelineOnlyCount}</strong></div>
+    </div>
+    <table aria-labelledby="lighthouse-heading">
+      <thead><tr><th scope="col">Failed audit</th><th scope="col">Title</th><th scope="col" class="num">Runs</th></tr></thead>
+      <tbody>${rows || "<tr><td colspan=\"3\">No failed Lighthouse audits.</td></tr>"}</tbody>
+    </table>
   </section>`;
 }
 
