@@ -785,7 +785,8 @@ npx a11y-shiftleft-cli dashboard --reports reports --pdf
 
 The dashboard summarizes trends, top rules, affected pages, and recent runs.
 When reports were created with `--with-lighthouse`, it also summarizes
-Lighthouse scores, failed audits, manual audits, and tool-difference counts.
+Lighthouse score trends, failed audits, manual audits, and tool-difference
+counts.
 
 ## Ticket Drafts
 

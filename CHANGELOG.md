@@ -15,6 +15,8 @@
 - Added Lighthouse score and comparison summaries to the local dashboard so
   historical reports can show runs with Lighthouse, average score, failed audits,
   manual audits, and tool-difference counts.
+- Added a Lighthouse score trend to the local dashboard alongside the existing
+  findings trend.
 
 ## 0.7.0 - 2026-06-23
 

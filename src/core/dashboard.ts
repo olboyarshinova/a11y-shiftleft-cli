@@ -245,6 +245,14 @@ export function renderDashboardHtml(data: DashboardData): string {
       height: 100%;
       background: var(--accent);
     }
+    .fill-score {
+      background: var(--info);
+    }
+    .trend-groups {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
     code {
       background: #eef2f7;
       border-radius: 4px;
@@ -516,11 +524,32 @@ function trendSection(data: DashboardData, maxTrend: number): string {
       </div>`;
     })
     .join("\n");
+  const scorePoints = data.trend.filter((point) => typeof point.lighthouseScore === "number");
+  const scoreBars = scorePoints
+    .map((point) => {
+      const score = point.lighthouseScore ?? 0;
+      const width = Math.max(2, Math.min(100, Math.round(score)));
+      return `<div class="bar-row">
+        <div><code>${escapeHtml(point.id)}</code><div class="muted">${escapeHtml(formatReportDateUtc(point.generatedAt))}</div></div>
+        <div class="track" aria-hidden="true"><div class="fill fill-score" style="width: ${width}%"></div></div>
+        <div class="num">${score}</div>
+      </div>`;
+    })
+    .join("\n");
 
   return `<section>
     <h2>Accessibility Trend</h2>
-    <div class="muted">Total findings per report run.</div>
-    <div class="bars">${bars}</div>
+    <div class="muted">Total findings per report run. Lower findings are better; Lighthouse score is shown when reports were created with <code>--with-lighthouse</code>.</div>
+    <div class="trend-groups">
+      <div>
+        <h3>Findings</h3>
+        <div class="bars">${bars}</div>
+      </div>
+      <div>
+        <h3>Lighthouse Score</h3>
+        <div class="bars">${scoreBars || "<p class=\"muted\">No Lighthouse scores in indexed reports.</p>"}</div>
+      </div>
+    </div>
   </section>`;
 }
 

@@ -90,6 +90,9 @@ test("renderDashboardHtml renders dashboard sections and escapes content", async
   assert.match(html, /a11y-shiftleft dashboard/);
   assert.match(html, /10 June 2026, 00:00 UTC/);
   assert.match(html, /Accessibility Trend/);
+  assert.match(html, /Findings/);
+  assert.match(html, /Lighthouse Score/);
+  assert.match(html, /fill fill-score/);
   assert.match(html, /Lighthouse Comparison/);
   assert.match(html, /Latest score/);
   assert.match(html, /Tool differences/);
