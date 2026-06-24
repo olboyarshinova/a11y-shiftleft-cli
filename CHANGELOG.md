@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.0 - 2026-06-24
+
 - Added the first optional Lighthouse comparison path for `check --with-lighthouse`
   and `audit --with-lighthouse`. Lighthouse remains an optional peer dependency
   so the core package does not become heavier for teams that only need axe,

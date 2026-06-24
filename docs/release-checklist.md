@@ -187,6 +187,59 @@ node --test \
   dist-test/scripts/postA11yComment.test.js
 ```
 
+## v0.8 Lighthouse Smoke Tests
+
+Lighthouse is optional. Run this block only in a workspace where `lighthouse` is
+installed:
+
+```bash
+npm install --no-save lighthouse
+```
+
+Use a running demo app:
+
+```bash
+npm run demo -- --port 5173
+```
+
+In another terminal, verify the visual audit comparison:
+
+```bash
+node bin/cli.js audit \
+  --url http://localhost:5173 \
+  --with-lighthouse \
+  --depth 1 \
+  --limit 2 \
+  --actions-per-state 2 \
+  --fail-on none \
+  --out reports-lighthouse-smoke
+```
+
+Expected checks:
+
+```txt
+reports-lighthouse-smoke/a11y-report.html exists
+a11y-report.html contains "Lighthouse Comparison"
+a11y-report.html contains "Lighthouse recommendations"
+reports-lighthouse-smoke/a11y-comment.md contains "Lighthouse Accessibility Score"
+```
+
+Verify dashboard Lighthouse history:
+
+```bash
+node bin/cli.js dashboard \
+  --reports reports-lighthouse-smoke \
+  --no-serve
+```
+
+Expected checks:
+
+```txt
+reports-lighthouse-smoke/dashboard.html exists
+dashboard.html contains "Lighthouse Score"
+dashboard.html contains "Lighthouse Comparison"
+```
+
 ## Privacy Check
 
 ```bash

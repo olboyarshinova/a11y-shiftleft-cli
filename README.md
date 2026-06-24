@@ -1025,10 +1025,11 @@ node bin/cli.js audit --url http://localhost:5173 --out reports
 
 Current release:
 
-- [v0.7.0](docs/release-notes-v0.7.0.md)
+- [v0.8.0](docs/release-notes-v0.8.0.md)
 
 Previous releases:
 
+- [v0.7.0](docs/release-notes-v0.7.0.md)
 - [v0.6.3](docs/release-notes-v0.6.3.md)
 - [v0.6.2](docs/release-notes-v0.6.2.md)
 - [v0.6.1](docs/release-notes-v0.6.1.md)
