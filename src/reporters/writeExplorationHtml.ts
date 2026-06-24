@@ -140,6 +140,29 @@ export function renderExplorationHtml(
       padding-left: 18px;
     }
 
+    .lighthouse-recommendations {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      margin-top: 16px;
+    }
+
+    .lighthouse-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--warning-marker);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .lighthouse-card-manual {
+      border-left-color: var(--info);
+    }
+
+    .lighthouse-card code {
+      white-space: normal;
+    }
+
     .metric,
     .panel,
     .state {
@@ -1174,6 +1197,7 @@ function renderLighthouseComparison(results: LighthouseAuditResult[] | undefined
       <tbody>${rows}</tbody>
     </table>
     ${comparison ? renderLighthouseComparisonDetails(comparison) : ""}
+    ${renderLighthouseRecommendations(results)}
   </section>`;
 }
 
@@ -1199,6 +1223,47 @@ function renderLighthouseComparisonDetails(comparison: NonNullable<ReturnType<ty
       <ul>${pipelineOnly || "<li>none</li>"}</ul>
     </div>
   </div>`;
+}
+
+function renderLighthouseRecommendations(results: LighthouseAuditResult[]): string {
+  const failed = uniqueLighthouseAudits(results.flatMap((result) => result.failedAudits));
+  const manual = uniqueLighthouseAudits(results.flatMap((result) => result.manualAudits));
+  if (failed.length === 0 && manual.length === 0) return "";
+
+  const cards = [
+    ...failed.slice(0, 8).map((audit) => renderLighthouseRecommendationCard(audit, "Failed audit")),
+    ...manual.slice(0, 4).map((audit) => renderLighthouseRecommendationCard(audit, "Manual review", true))
+  ].join("");
+
+  return `<div class="lighthouse-recommendations" aria-label="Lighthouse recommendations">
+    ${cards}
+  </div>`;
+}
+
+function renderLighthouseRecommendationCard(audit: LighthouseAuditResult["failedAudits"][number], label: string, manual = false): string {
+  const className = manual ? "lighthouse-card lighthouse-card-manual" : "lighthouse-card";
+  const docs = audit.documentationUrl
+    ? `<p><a href="${escapeAttribute(audit.documentationUrl)}" target="_blank" rel="noopener noreferrer">Open Lighthouse guidance</a></p>`
+    : "";
+
+  return `<article class="${className}">
+    <h3>${escapeHtml(label)}</h3>
+    <p><code>${escapeHtml(audit.id)}</code></p>
+    <p><strong>${escapeHtml(audit.title)}</strong></p>
+    ${audit.description ? `<p class="muted">${escapeHtml(audit.description)}</p>` : ""}
+    ${docs}
+  </article>`;
+}
+
+function uniqueLighthouseAudits(audits: LighthouseAuditResult["failedAudits"]): LighthouseAuditResult["failedAudits"] {
+  const seen = new Set<string>();
+  const unique: LighthouseAuditResult["failedAudits"] = [];
+  for (const audit of audits) {
+    if (seen.has(audit.id)) continue;
+    seen.add(audit.id);
+    unique.push(audit);
+  }
+  return unique.sort((left, right) => left.id.localeCompare(right.id));
 }
 
 function renderQuickFindings(issues: DedupedIssue[]): string {

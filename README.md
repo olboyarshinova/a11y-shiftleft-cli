@@ -41,7 +41,8 @@ and not bundled by default. Add `lighthouse` to a project and run
 `audit --with-lighthouse` or `check --with-lighthouse` when teams want its
 familiar accessibility score alongside detailed axe, keyboard, and source
 findings. Reports also show where Lighthouse and the a11y-shiftleft pipeline
-agree or disagree by rule ID.
+agree or disagree by rule ID, plus Lighthouse descriptions and documentation
+links for failed and manual audits.
 
 ## Why Use It?
 
@@ -218,8 +219,9 @@ HTML report.
 
 Lighthouse is optional so the default package stays lightweight. Both `audit`
 and `check` can store the Lighthouse accessibility score, failed audits, manual
-Lighthouse checks, and rule-level comparison evidence. Treat this as a useful
-signal for teams and designers, not as WCAG conformance proof.
+Lighthouse checks, rule-level comparison evidence, and Lighthouse guidance links.
+Treat this as a useful signal for teams and designers, not as WCAG conformance
+proof.
 
 ### Visual UI Exploration
 

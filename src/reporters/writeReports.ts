@@ -432,7 +432,7 @@ ${formatPageSummary(report.summary.byPage || [])}
 
 ${formatComplianceEvidence(complianceEvidence)}
 
-${formatLighthouseEvidence(report.summary.lighthouse)}
+${formatLighthouseEvidence(report.summary.lighthouse, report.lighthouse)}
 
 ${formatRootCauseGroups(report.summary.rootCauseGroups || [])}
 
@@ -791,12 +791,13 @@ function formatRetentionEvidenceStatus(retention: ReportSummary["retention"]): s
   return retention.dryRun ? "dry-run" : "recorded";
 }
 
-function formatLighthouseEvidence(lighthouse: LighthouseReportSummary | undefined): string {
+function formatLighthouseEvidence(lighthouse: LighthouseReportSummary | undefined, results?: LighthouseAuditResult[]): string {
   if (!lighthouse?.enabled) return "";
   const rows = lighthouse.pages
     .map((page) => `| ${page.url} | ${page.score ?? "n/a"} | ${page.failedAudits} | ${page.manualAudits} |`)
     .join("\n");
   const comparison = formatLighthouseComparison(lighthouse);
+  const recommendations = formatLighthouseRecommendations(results);
 
   return `### Lighthouse Accessibility Score
 
@@ -814,7 +815,9 @@ Lighthouse is an optional score-oriented signal. Treat it as a comparison point,
 |---|---:|---:|---:|
 ${rows}
 
-${comparison}`;
+${comparison}
+
+${recommendations}`;
 }
 
 function formatLighthouseComparison(lighthouse: LighthouseReportSummary): string {
@@ -840,6 +843,43 @@ ${lighthouseOnly || "none"}
 Pipeline-only rules:
 
 ${pipelineOnly || "none"}`;
+}
+
+function formatLighthouseRecommendations(results: LighthouseAuditResult[] | undefined): string {
+  if (!results || results.length === 0) return "";
+  const failed = uniqueLighthouseAudits(results.flatMap((result) => result.failedAudits));
+  const manual = uniqueLighthouseAudits(results.flatMap((result) => result.manualAudits));
+  if (failed.length === 0 && manual.length === 0) return "";
+
+  const failedRows = failed.slice(0, 10).map(formatLighthouseRecommendationRow).join("\n");
+  const manualRows = manual.slice(0, 6).map(formatLighthouseRecommendationRow).join("\n");
+
+  return `#### Lighthouse Recommendations
+
+Failed audits:
+
+${failedRows || "none"}
+
+Manual Lighthouse checks:
+
+${manualRows || "none"}`;
+}
+
+function formatLighthouseRecommendationRow(audit: LighthouseAuditResult["failedAudits"][number]): string {
+  const description = audit.description ? ` ${markdownInline(audit.description)}` : "";
+  const docs = audit.documentationUrl ? ` Docs: ${audit.documentationUrl}` : "";
+  return `- \`${audit.id}\`: ${markdownInline(audit.title)}.${description}${docs}`;
+}
+
+function uniqueLighthouseAudits(audits: LighthouseAuditResult["failedAudits"]): LighthouseAuditResult["failedAudits"] {
+  const seen = new Set<string>();
+  const unique: LighthouseAuditResult["failedAudits"] = [];
+  for (const audit of audits) {
+    if (seen.has(audit.id)) continue;
+    seen.add(audit.id);
+    unique.push(audit);
+  }
+  return unique.sort((left, right) => left.id.localeCompare(right.id));
 }
 
 function formatDisclaimer(standard: ComplianceStandardMetadata | undefined): string {

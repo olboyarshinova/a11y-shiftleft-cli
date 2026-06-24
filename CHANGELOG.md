@@ -9,6 +9,9 @@
 - Added Lighthouse-vs-pipeline comparison metadata to JSON, Markdown, and visual
   HTML reports so teams can see matching rule IDs, Lighthouse-only failed audits,
   and pipeline-only rules.
+- Added Lighthouse recommendations to Markdown and visual HTML reports, including
+  failed audit descriptions, manual Lighthouse checks, and documentation links
+  when Lighthouse exposes them.
 
 ## 0.7.0 - 2026-06-23
 

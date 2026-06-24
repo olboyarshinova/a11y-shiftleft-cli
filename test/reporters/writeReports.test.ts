@@ -70,17 +70,21 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
         finalUrl: "http://localhost:3000/",
         accessibilityScore: 91,
         failedAudits: [{
-          id: "color-contrast",
-          title: "Background and foreground colors have sufficient contrast",
-          score: 0,
-          scoreDisplayMode: "binary"
-        }],
-        manualAudits: [{
-          id: "logical-tab-order",
-          title: "The page has a logical tab order",
-          score: null,
-          scoreDisplayMode: "manual"
-        }],
+        id: "color-contrast",
+        title: "Background and foreground colors have sufficient contrast",
+        score: 0,
+        scoreDisplayMode: "binary",
+        description: "Low-contrast text can be difficult to read.",
+        documentationUrl: "https://example.com/contrast"
+      }],
+      manualAudits: [{
+        id: "logical-tab-order",
+        title: "The page has a logical tab order",
+        score: null,
+        scoreDisplayMode: "manual",
+        description: "Confirm that keyboard focus moves in a meaningful order.",
+        documentationUrl: "https://example.com/tab-order"
+      }],
         notApplicableAudits: 3,
         durationMs: 1500
       }],
@@ -168,7 +172,9 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
         id: "color-contrast",
         title: "Background and foreground colors have sufficient contrast",
         score: 0,
-        scoreDisplayMode: "binary"
+        scoreDisplayMode: "binary",
+        description: "Low-contrast text can be difficult to read.",
+        documentationUrl: "https://example.com/contrast"
       }],
       pipelineOnlyRules: [{
         ruleId: "button-name",
@@ -239,6 +245,10 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /`color-contrast`: Background and foreground colors have sufficient contrast/);
   assert.match(markdown, /Pipeline-only rules/);
   assert.match(markdown, /`button-name`: 1 finding, critical, axe/);
+  assert.match(markdown, /Lighthouse Recommendations/);
+  assert.match(markdown, /Low-contrast text can be difficult to read/);
+  assert.match(markdown, /Docs: https:\/\/example\.com\/contrast/);
+  assert.match(markdown, /Confirm that keyboard focus moves in a meaningful order/);
   assert.match(csv, /duplicateRate,0\.5/);
   assert.match(csv, /standard\.id,ada-title-ii/);
   assert.match(csv, /standard\.requiresManualReview,true/);

@@ -730,13 +730,16 @@ test("writeExplorationHtml can create a unified audit report", async () => {
         title: "Background and foreground colors have sufficient contrast",
         score: 0,
         scoreDisplayMode: "binary",
+        description: "Low-contrast text can be difficult to read.",
         documentationUrl: "https://example.com/contrast"
       }],
       manualAudits: [{
         id: "logical-tab-order",
         title: "The page has a logical tab order",
         score: null,
-        scoreDisplayMode: "manual"
+        scoreDisplayMode: "manual",
+        description: "Confirm focus order manually.",
+        documentationUrl: "https://example.com/tab-order"
       }],
       notApplicableAudits: 3,
       durationMs: 1500
@@ -779,6 +782,12 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /Lighthouse-only failed audits/);
   assert.match(html, /Pipeline-only rules/);
   assert.match(html, /button-name<\/code> 1 finding · critical · axe/);
+  assert.match(html, /Lighthouse recommendations/);
+  assert.match(html, /Failed audit/);
+  assert.match(html, /Low-contrast text can be difficult to read/);
+  assert.match(html, /Open Lighthouse guidance/);
+  assert.match(html, /Manual review/);
+  assert.match(html, /Confirm focus order manually/);
   assert.match(html, /class="coverage-table"/);
   assert.match(html, /class="coverage-status-cell"/);
   assert.match(html, /\.coverage-row-review:not\(\.coverage-row-reviewed\):hover/);
