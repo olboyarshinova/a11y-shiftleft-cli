@@ -23,6 +23,8 @@
   `share prepare` receives a report directory with `evaluation-scope.json`.
 - Added a `Share Review Copy` section to the visual HTML report with a
   privacy-first command for creating a sanitized evidence folder.
+- Added latest-run delta tracking to the local dashboard so teams can see
+  whether findings and Lighthouse scores improved since the previous report.
 
 ## 0.8.0 - 2026-06-24
 

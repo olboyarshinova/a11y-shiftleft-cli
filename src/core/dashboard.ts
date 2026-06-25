@@ -44,6 +44,22 @@ export interface DashboardRunSummary extends DashboardTrendPoint {
   urls: string[];
 }
 
+export interface DashboardDeltaMetric {
+  previous: number | null;
+  latest: number | null;
+  change: number | null;
+}
+
+export interface DashboardLatestDelta {
+  previousRunId: string;
+  latestRunId: string;
+  total: DashboardDeltaMetric;
+  critical: DashboardDeltaMetric;
+  warning: DashboardDeltaMetric;
+  info: DashboardDeltaMetric;
+  lighthouseScore: DashboardDeltaMetric;
+}
+
 export interface DashboardRecommendation {
   ruleId: string;
   severity: Severity;
@@ -76,6 +92,7 @@ export interface DashboardData {
   reportsRoot: string;
   totalRuns: number;
   latestRun?: DashboardRunSummary;
+  latestDelta?: DashboardLatestDelta;
   runs: DashboardRunSummary[];
   trend: DashboardTrendPoint[];
   topRules: DashboardRuleSummary[];
@@ -115,6 +132,7 @@ export async function collectDashboardData(
     reportsRoot: path.basename(rootDir) || ".",
     totalRuns: runs.length,
     latestRun: runs.at(-1),
+    latestDelta: summarizeLatestDelta(runs),
     runs,
     trend: runs.map(({ framework: _framework, urls: _urls, ...point }) => point),
     topRules: summarizeRules(files),
@@ -146,6 +164,8 @@ export function renderDashboardHtml(data: DashboardData): string {
       --warning: #b54708;
       --info: #175cd3;
       --accent: #0f766e;
+      --good: #067647;
+      --bad: #b42318;
     }
     * { box-sizing: border-box; }
     body {
@@ -218,6 +238,9 @@ export function renderDashboardHtml(data: DashboardData): string {
     .critical { color: var(--critical); }
     .warning { color: var(--warning); }
     .info { color: var(--info); }
+    .delta-good { color: var(--good); }
+    .delta-bad { color: var(--bad); }
+    .delta-flat { color: var(--muted); }
     .pages-table, .runs-table { table-layout: fixed; font-size: 12px; }
     .pages-table th:first-child, .pages-table td:first-child { width: 46%; }
     .runs-table th:first-child, .runs-table td:first-child { width: 9%; }
@@ -288,10 +311,12 @@ export function renderDashboardHtml(data: DashboardData): string {
       <div class="metric"><span class="muted">Latest findings</span><strong>${latest?.total ?? 0}</strong></div>
       <div class="metric"><span class="muted">Latest critical</span><strong class="critical">${latest?.critical ?? 0}</strong></div>
       <div class="metric"><span class="muted">Latest warnings</span><strong class="warning">${latest?.warning ?? 0}</strong></div>
+      <div class="metric"><span class="muted">Change from previous</span><strong class="${deltaClass(data.latestDelta?.total.change ?? null, "lower")}">${formatDelta(data.latestDelta?.total.change ?? null)}</strong></div>
       <div class="metric"><span class="muted">Latest Lighthouse</span><strong>${latest?.lighthouseScore ?? "n/a"}</strong></div>
     </div>
 
     ${data.totalRuns === 0 ? emptyState() : [
+    latestDeltaSection(data.latestDelta),
     trendSection(data, maxTrend),
     lighthouseSection(data.lighthouse),
     rulesSection(data.topRules),
@@ -372,6 +397,37 @@ function toDashboardRun(file: ReportFile): DashboardRunSummary {
     framework: String(summary.framework || "unknown"),
     urls: summary.urls || []
   };
+}
+
+function summarizeLatestDelta(runs: DashboardRunSummary[]): DashboardLatestDelta | undefined {
+  if (runs.length < 2) return undefined;
+  const previous = runs.at(-2);
+  const latest = runs.at(-1);
+  if (!previous || !latest) return undefined;
+
+  return {
+    previousRunId: previous.id,
+    latestRunId: latest.id,
+    total: deltaMetric(previous.total, latest.total),
+    critical: deltaMetric(previous.critical, latest.critical),
+    warning: deltaMetric(previous.warning, latest.warning),
+    info: deltaMetric(previous.info, latest.info),
+    lighthouseScore: deltaMetric(nullableNumber(previous.lighthouseScore), nullableNumber(latest.lighthouseScore))
+  };
+}
+
+function deltaMetric(previous: number | null | undefined, latest: number | null | undefined): DashboardDeltaMetric {
+  const previousValue = nullableNumber(previous);
+  const latestValue = nullableNumber(latest);
+  return {
+    previous: previousValue,
+    latest: latestValue,
+    change: previousValue === null || latestValue === null ? null : latestValue - previousValue
+  };
+}
+
+function nullableNumber(value: number | null | undefined): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 function summarizeRules(files: ReportFile[]): DashboardRuleSummary[] {
@@ -513,6 +569,37 @@ function summarizeLighthouse(files: ReportFile[]): DashboardLighthouseSummary | 
   };
 }
 
+function latestDeltaSection(delta: DashboardLatestDelta | undefined): string {
+  if (!delta) return `<section>
+    <h2>Latest Change</h2>
+    <p class="muted">Save at least two report runs to compare the latest audit with the previous one.</p>
+  </section>`;
+
+  return `<section>
+    <h2 id="latest-change-heading">Latest Change</h2>
+    <p class="muted">Comparison from <code>${escapeHtml(delta.previousRunId)}</code> to <code>${escapeHtml(delta.latestRunId)}</code>. Negative finding changes are improvements; positive Lighthouse score changes are improvements.</p>
+    <table aria-labelledby="latest-change-heading">
+      <thead><tr><th scope="col">Metric</th><th scope="col" class="num">Previous</th><th scope="col" class="num">Latest</th><th scope="col" class="num">Change</th></tr></thead>
+      <tbody>
+        ${deltaRow("Total findings", delta.total, "lower")}
+        ${deltaRow("Critical", delta.critical, "lower")}
+        ${deltaRow("Warnings", delta.warning, "lower")}
+        ${deltaRow("Info", delta.info, "lower")}
+        ${deltaRow("Lighthouse score", delta.lighthouseScore, "higher")}
+      </tbody>
+    </table>
+  </section>`;
+}
+
+function deltaRow(label: string, metric: DashboardDeltaMetric, direction: "lower" | "higher"): string {
+  return `<tr>
+    <td>${escapeHtml(label)}</td>
+    <td class="num">${formatNullableNumber(metric.previous)}</td>
+    <td class="num">${formatNullableNumber(metric.latest)}</td>
+    <td class="num ${deltaClass(metric.change, direction)}">${formatDelta(metric.change)}</td>
+  </tr>`;
+}
+
 function trendSection(data: DashboardData, maxTrend: number): string {
   const bars = data.trend
     .map((point) => {
@@ -551,6 +638,22 @@ function trendSection(data: DashboardData, maxTrend: number): string {
       </div>
     </div>
   </section>`;
+}
+
+function deltaClass(delta: number | null, direction: "lower" | "higher"): string {
+  if (delta === null || delta === 0) return "delta-flat";
+  const improved = direction === "lower" ? delta < 0 : delta > 0;
+  return improved ? "delta-good" : "delta-bad";
+}
+
+function formatDelta(delta: number | null): string {
+  if (delta === null) return "n/a";
+  if (delta > 0) return `+${delta}`;
+  return String(delta);
+}
+
+function formatNullableNumber(value: number | null): string {
+  return value === null ? "n/a" : String(value);
 }
 
 function lighthouseSection(lighthouse: DashboardLighthouseSummary | undefined): string {

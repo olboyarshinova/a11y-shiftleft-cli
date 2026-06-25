@@ -50,6 +50,11 @@ test("collectDashboardData summarizes historical report runs", async () => {
   assert.equal(data.latestRun?.total, 1);
   assert.deepEqual(data.trend.map((point) => point.total), [3, 1]);
   assert.deepEqual(data.trend.map((point) => point.lighthouseScore), [88, 94]);
+  assert.equal(data.latestDelta?.previousRunId, "run-1");
+  assert.equal(data.latestDelta?.latestRunId, "run-2");
+  assert.deepEqual(data.latestDelta?.total, { previous: 3, latest: 1, change: -2 });
+  assert.deepEqual(data.latestDelta?.critical, { previous: 1, latest: 0, change: -1 });
+  assert.deepEqual(data.latestDelta?.lighthouseScore, { previous: 88, latest: 94, change: 6 });
   assert.equal(data.topRules[0].ruleId, "color-contrast");
   assert.equal(data.topRules[0].total, 3);
   assert.equal(data.topPages[0].url, "http://localhost:3000/");
@@ -90,6 +95,8 @@ test("renderDashboardHtml renders dashboard sections and escapes content", async
   assert.match(html, /a11y-shiftleft dashboard/);
   assert.match(html, /10 June 2026, 00:00 UTC/);
   assert.match(html, /Accessibility Trend/);
+  assert.match(html, /Latest Change/);
+  assert.match(html, /Save at least two report runs to compare the latest audit with the previous one/);
   assert.match(html, /Findings/);
   assert.match(html, /Lighthouse Score/);
   assert.match(html, /fill fill-score/);
@@ -105,6 +112,47 @@ test("renderDashboardHtml renders dashboard sections and escapes content", async
   assert.match(html, /image-alt/);
   assert.match(html, /&lt;script&gt;/);
   assert.doesNotMatch(html, /<script>/);
+});
+
+test("renderDashboardHtml shows latest delta between two runs", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-dashboard-delta-"));
+  await writeReport(root, "run-1", {
+    generatedAt: "2026-06-10T00:00:00.000Z",
+    total: 5,
+    critical: 2,
+    warning: 3,
+    info: 0,
+    issues: [
+      issue("button-name", "critical", "http://localhost:3000/")
+    ],
+    byPage: [
+      page("http://localhost:3000/", 5, 2, 3, 0, 16)
+    ],
+    lighthouseScore: 80
+  });
+  await writeReport(root, "run-2", {
+    generatedAt: "2026-06-11T00:00:00.000Z",
+    total: 2,
+    critical: 0,
+    warning: 2,
+    info: 0,
+    issues: [
+      issue("color-contrast", "warning", "http://localhost:3000/")
+    ],
+    byPage: [
+      page("http://localhost:3000/", 2, 0, 2, 0, 4)
+    ],
+    lighthouseScore: 93
+  });
+
+  const html = renderDashboardHtml(await collectDashboardData(root));
+
+  assert.match(html, /Latest Change/);
+  assert.match(html, /Comparison from <code>run-1<\/code> to <code>run-2<\/code>/);
+  assert.match(html, /Total findings[\s\S]*?-3/);
+  assert.match(html, /Critical[\s\S]*?-2/);
+  assert.match(html, /Lighthouse score[\s\S]*?\+13/);
+  assert.match(html, /delta-good/);
 });
 
 test("formatDashboardSummary renders local output target", async () => {
