@@ -60,6 +60,20 @@ export interface DashboardLatestDelta {
   lighthouseScore: DashboardDeltaMetric;
 }
 
+export interface DashboardRegressionItem {
+  id: string;
+  previous: number;
+  latest: number;
+  change: number;
+}
+
+export interface DashboardRegressionSummary {
+  previousRunId: string;
+  latestRunId: string;
+  rules: DashboardRegressionItem[];
+  pages: DashboardRegressionItem[];
+}
+
 export interface DashboardRecommendation {
   ruleId: string;
   severity: Severity;
@@ -93,6 +107,7 @@ export interface DashboardData {
   totalRuns: number;
   latestRun?: DashboardRunSummary;
   latestDelta?: DashboardLatestDelta;
+  regressions?: DashboardRegressionSummary;
   runs: DashboardRunSummary[];
   trend: DashboardTrendPoint[];
   topRules: DashboardRuleSummary[];
@@ -133,6 +148,7 @@ export async function collectDashboardData(
     totalRuns: runs.length,
     latestRun: runs.at(-1),
     latestDelta: summarizeLatestDelta(runs),
+    regressions: summarizeRegressions(files),
     runs,
     trend: runs.map(({ framework: _framework, urls: _urls, ...point }) => point),
     topRules: summarizeRules(files),
@@ -241,6 +257,12 @@ export function renderDashboardHtml(data: DashboardData): string {
     .delta-good { color: var(--good); }
     .delta-bad { color: var(--bad); }
     .delta-flat { color: var(--muted); }
+    .regression-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      margin-top: 12px;
+    }
     .pages-table, .runs-table { table-layout: fixed; font-size: 12px; }
     .pages-table th:first-child, .pages-table td:first-child { width: 46%; }
     .runs-table th:first-child, .runs-table td:first-child { width: 9%; }
@@ -317,6 +339,7 @@ export function renderDashboardHtml(data: DashboardData): string {
 
     ${data.totalRuns === 0 ? emptyState() : [
     latestDeltaSection(data.latestDelta),
+    regressionsSection(data.regressions),
     trendSection(data, maxTrend),
     lighthouseSection(data.lighthouse),
     rulesSection(data.topRules),
@@ -428,6 +451,64 @@ function deltaMetric(previous: number | null | undefined, latest: number | null 
 
 function nullableNumber(value: number | null | undefined): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function summarizeRegressions(files: ReportFile[]): DashboardRegressionSummary | undefined {
+  const sorted = [...files].sort((a, b) => a.report.generatedAt.localeCompare(b.report.generatedAt));
+  if (sorted.length < 2) return undefined;
+  const previous = sorted.at(-2);
+  const latest = sorted.at(-1);
+  if (!previous || !latest) return undefined;
+
+  return {
+    previousRunId: runIdFromPath(previous.relativePath),
+    latestRunId: runIdFromPath(latest.relativePath),
+    rules: compareCounts(countLatestRules(previous.report), countLatestRules(latest.report)).slice(0, 8),
+    pages: compareCounts(countLatestPages(previous.report), countLatestPages(latest.report)).slice(0, 8)
+  };
+}
+
+function countLatestRules(report: A11yReport): Map<string, number> {
+  const counts = new Map<string, number>();
+
+  for (const issue of report.issues || []) {
+    const ruleId = issue.ruleId || "unknown";
+    counts.set(ruleId, (counts.get(ruleId) || 0) + 1 + (issue.duplicateCount || 0));
+  }
+
+  return counts;
+}
+
+function countLatestPages(report: A11yReport): Map<string, number> {
+  const counts = new Map<string, number>();
+
+  for (const page of report.summary.byPage || []) {
+    counts.set(page.url, page.total);
+  }
+
+  return counts;
+}
+
+function compareCounts(previous: Map<string, number>, latest: Map<string, number>): DashboardRegressionItem[] {
+  const items: DashboardRegressionItem[] = [];
+
+  for (const [id, latestCount] of latest) {
+    const previousCount = previous.get(id) || 0;
+    const change = latestCount - previousCount;
+    if (change <= 0) continue;
+    items.push({
+      id,
+      previous: previousCount,
+      latest: latestCount,
+      change
+    });
+  }
+
+  return items.sort((left, right) => {
+    if (right.change !== left.change) return right.change - left.change;
+    if (right.latest !== left.latest) return right.latest - left.latest;
+    return left.id.localeCompare(right.id);
+  });
 }
 
 function summarizeRules(files: ReportFile[]): DashboardRuleSummary[] {
@@ -598,6 +679,43 @@ function deltaRow(label: string, metric: DashboardDeltaMetric, direction: "lower
     <td class="num">${formatNullableNumber(metric.latest)}</td>
     <td class="num ${deltaClass(metric.change, direction)}">${formatDelta(metric.change)}</td>
   </tr>`;
+}
+
+function regressionsSection(regressions: DashboardRegressionSummary | undefined): string {
+  if (!regressions) return `<section>
+    <h2>New Or Worse Problems</h2>
+    <p class="muted">Save at least two report runs to detect rule and page regressions.</p>
+  </section>`;
+
+  const hasRegressions = regressions.rules.length > 0 || regressions.pages.length > 0;
+
+  return `<section>
+    <h2>New Or Worse Problems</h2>
+    <p class="muted">Items that increased from <code>${escapeHtml(regressions.previousRunId)}</code> to <code>${escapeHtml(regressions.latestRunId)}</code>. Use this to spot new issues introduced by recent work.</p>
+    ${hasRegressions
+      ? `<div class="regression-grid">
+        ${regressionTable("Rules", "Rule", regressions.rules)}
+        ${regressionTable("Pages", "Page", regressions.pages)}
+      </div>`
+      : "<p class=\"muted\">No rule or page regressions found in the latest report.</p>"}
+  </section>`;
+}
+
+function regressionTable(title: string, idLabel: string, items: DashboardRegressionItem[]): string {
+  const rows = items.map((item) => `<tr>
+    <td><code>${escapeHtml(item.id)}</code></td>
+    <td class="num">${item.previous}</td>
+    <td class="num">${item.latest}</td>
+    <td class="num delta-bad">+${item.change}</td>
+  </tr>`).join("\n");
+
+  return `<div>
+    <h3>${escapeHtml(title)}</h3>
+    <table>
+      <thead><tr><th scope="col">${escapeHtml(idLabel)}</th><th scope="col" class="num">Previous</th><th scope="col" class="num">Latest</th><th scope="col" class="num">Change</th></tr></thead>
+      <tbody>${rows || "<tr><td colspan=\"4\">No regressions.</td></tr>"}</tbody>
+    </table>
+  </div>`;
 }
 
 function trendSection(data: DashboardData, maxTrend: number): string {

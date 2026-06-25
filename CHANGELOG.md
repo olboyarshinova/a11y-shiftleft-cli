@@ -25,6 +25,8 @@
   privacy-first command for creating a sanitized evidence folder.
 - Added latest-run delta tracking to the local dashboard so teams can see
   whether findings and Lighthouse scores improved since the previous report.
+- Added a dashboard `New Or Worse Problems` section that compares the latest
+  report with the previous run by rule and page.
 
 ## 0.8.0 - 2026-06-24
 
