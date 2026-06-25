@@ -21,6 +21,8 @@
   for pull request comments.
 - Added the sanitized Evaluation Scope summary to `share-summary.md` when
   `share prepare` receives a report directory with `evaluation-scope.json`.
+- Added a `Share Review Copy` section to the visual HTML report with a
+  privacy-first command for creating a sanitized evidence folder.
 
 ## 0.8.0 - 2026-06-24
 

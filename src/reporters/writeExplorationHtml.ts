@@ -159,6 +159,40 @@ export function renderExplorationHtml(
       margin-bottom: 4px;
     }
 
+    .share-review {
+      border-left: 4px solid var(--info);
+    }
+
+    .share-review-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      margin-top: 12px;
+    }
+
+    .share-review-card {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .share-review-card strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .share-command {
+      background: #111827;
+      border-radius: 8px;
+      color: #f9fafb;
+      display: block;
+      margin: 12px 0 0;
+      overflow-x: auto;
+      padding: 12px;
+      white-space: pre;
+    }
+
     .lighthouse-recommendations {
       display: grid;
       gap: 12px;
@@ -1054,6 +1088,8 @@ export function renderExplorationHtml(
 
     ${renderEvaluationScope(graph, options, reportIssues)}
 
+    ${renderShareReview()}
+
     ${renderLighthouseComparison(options.lighthouse, reportIssues)}
 
     ${renderCoverageMatrix(graph, options, reportIssues)}
@@ -1142,6 +1178,24 @@ export function renderExplorationHtml(
 </body>
 </html>
 `;
+}
+
+function renderShareReview(): string {
+  return `<section class="panel share-review" aria-label="Share review copy">
+    <h2>Share Review Copy</h2>
+    <p class="muted">Before sending evidence outside the team, create a smaller sanitized copy. It removes screenshots, raw keyboard data, exploration graphs, raw Lighthouse payloads, query strings, hashes, obvious local paths, and common secret patterns.</p>
+    <div class="share-review-grid">
+      <div class="share-review-card">
+        <strong>Use for external review</strong>
+        <span>Share <code>share-summary.md</code>, <code>share-report.json</code>, <code>privacy-summary.json</code>, and <code>share-evaluation-scope.json</code> when it exists.</span>
+      </div>
+      <div class="share-review-card">
+        <strong>Keep local by default</strong>
+        <span>Keep screenshots, full visual HTML, raw keyboard traces, and raw browser evidence inside the project unless your team has explicitly approved sharing them.</span>
+      </div>
+    </div>
+    <code class="share-command">npx a11y-shiftleft-cli share prepare --report reports --out a11y-share</code>
+  </section>`;
 }
 
 function renderQuickReview(issues: DedupedIssue[], options: ExplorationHtmlOptions): string {

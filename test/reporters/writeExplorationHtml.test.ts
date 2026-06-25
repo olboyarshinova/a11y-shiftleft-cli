@@ -752,6 +752,10 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /WCAG-EM-inspired scope summary/);
   assert.match(html, /not a WCAG conformance claim/);
   assert.match(html, /evaluation-scope\.json/);
+  assert.match(html, /Share Review Copy/);
+  assert.match(html, /npx a11y-shiftleft-cli share prepare --report reports --out a11y-share/);
+  assert.match(html, /share-summary\.md/);
+  assert.match(html, /Keep screenshots, full visual HTML, raw keyboard traces, and raw browser evidence inside the project/);
   assert.match(html, /Evidence collected[\s\S]*?axe/);
   assert.match(html, /keyboard traversal/);
   assert.match(html, /Lighthouse comparison/);

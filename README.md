@@ -258,6 +258,8 @@ automation cannot complete. Use `a11y-comment.md` for pull requests,
 machine-readable scope: requested URLs, discovered states, target standard, tool
 version, evidence types, and known limitations.
 The Markdown PR report also includes the same compact scope summary.
+The visual report includes a `Share Review Copy` section with the safest command
+for creating a smaller sanitized evidence folder before external review.
 
 Each finding is labeled as a `WCAG violation`, `best practice`, or
 `unmapped review`. Reports also group repeated occurrences into likely root
