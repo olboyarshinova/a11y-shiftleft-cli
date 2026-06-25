@@ -59,6 +59,15 @@ test("collectDashboardData summarizes historical report runs", async () => {
   assert.equal(data.regressions?.latestRunId, "run-2");
   assert.deepEqual(data.regressions?.rules, []);
   assert.deepEqual(data.regressions?.pages, []);
+  assert.equal(data.resolved?.previousRunId, "run-1");
+  assert.equal(data.resolved?.latestRunId, "run-2");
+  assert.deepEqual(data.resolved?.rules.map((item) => [item.id, item.previous, item.latest, item.resolved]), [
+    ["color-contrast", 2, 1, 1],
+    ["button-name", 1, 0, 1]
+  ]);
+  assert.deepEqual(data.resolved?.pages.map((item) => [item.id, item.previous, item.latest, item.resolved]), [
+    ["http://localhost:3000/", 2, 0, 2]
+  ]);
   assert.equal(data.topRules[0].ruleId, "color-contrast");
   assert.equal(data.topRules[0].total, 3);
   assert.equal(data.topPages[0].url, "http://localhost:3000/");
@@ -103,6 +112,8 @@ test("renderDashboardHtml renders dashboard sections and escapes content", async
   assert.match(html, /Save at least two report runs to compare the latest audit with the previous one/);
   assert.match(html, /New Or Worse Problems/);
   assert.match(html, /Save at least two report runs to detect rule and page regressions/);
+  assert.match(html, /Resolved Problems/);
+  assert.match(html, /Save at least two report runs to detect rules and pages that improved/);
   assert.match(html, /Findings/);
   assert.match(html, /Lighthouse Score/);
   assert.match(html, /fill fill-score/);
@@ -168,6 +179,56 @@ test("collectDashboardData and renderDashboardHtml show new or worse problems", 
   assert.match(html, /Items that increased from <code>run-1<\/code> to <code>run-2<\/code>/);
   assert.match(html, /button-name[\s\S]*?\+1/);
   assert.match(html, /http:\/\/localhost:3000\/checkout[\s\S]*?\+3/);
+});
+
+test("collectDashboardData and renderDashboardHtml show resolved problems", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-dashboard-resolved-"));
+  await writeReport(root, "run-1", {
+    generatedAt: "2026-06-10T00:00:00.000Z",
+    total: 4,
+    critical: 1,
+    warning: 3,
+    info: 0,
+    issues: [
+      issue("button-name", "critical", "http://localhost:3000/checkout"),
+      issue("color-contrast", "warning", "http://localhost:3000/"),
+      issue("color-contrast", "warning", "http://localhost:3000/checkout"),
+      issue("image-alt", "warning", "http://localhost:3000/checkout")
+    ],
+    byPage: [
+      page("http://localhost:3000/", 1, 0, 1, 0, 2),
+      page("http://localhost:3000/checkout", 3, 1, 2, 0, 9)
+    ]
+  });
+  await writeReport(root, "run-2", {
+    generatedAt: "2026-06-11T00:00:00.000Z",
+    total: 1,
+    critical: 0,
+    warning: 1,
+    info: 0,
+    issues: [
+      issue("color-contrast", "warning", "http://localhost:3000/")
+    ],
+    byPage: [
+      page("http://localhost:3000/", 1, 0, 1, 0, 2)
+    ]
+  });
+
+  const data = await collectDashboardData(root);
+  const html = renderDashboardHtml(data);
+
+  assert.deepEqual(data.resolved?.rules.map((item) => [item.id, item.previous, item.latest, item.resolved]), [
+    ["color-contrast", 2, 1, 1],
+    ["button-name", 1, 0, 1],
+    ["image-alt", 1, 0, 1]
+  ]);
+  assert.deepEqual(data.resolved?.pages.map((item) => [item.id, item.previous, item.latest, item.resolved]), [
+    ["http://localhost:3000/checkout", 3, 0, 3]
+  ]);
+  assert.match(html, /Resolved Problems/);
+  assert.match(html, /Items that decreased from <code>run-1<\/code> to <code>run-2<\/code>/);
+  assert.match(html, /image-alt[\s\S]*?-1/);
+  assert.match(html, /http:\/\/localhost:3000\/checkout[\s\S]*?-3/);
 });
 
 test("renderDashboardHtml shows latest delta between two runs", async () => {

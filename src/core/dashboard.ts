@@ -74,6 +74,20 @@ export interface DashboardRegressionSummary {
   pages: DashboardRegressionItem[];
 }
 
+export interface DashboardResolvedItem {
+  id: string;
+  previous: number;
+  latest: number;
+  resolved: number;
+}
+
+export interface DashboardResolvedSummary {
+  previousRunId: string;
+  latestRunId: string;
+  rules: DashboardResolvedItem[];
+  pages: DashboardResolvedItem[];
+}
+
 export interface DashboardRecommendation {
   ruleId: string;
   severity: Severity;
@@ -108,6 +122,7 @@ export interface DashboardData {
   latestRun?: DashboardRunSummary;
   latestDelta?: DashboardLatestDelta;
   regressions?: DashboardRegressionSummary;
+  resolved?: DashboardResolvedSummary;
   runs: DashboardRunSummary[];
   trend: DashboardTrendPoint[];
   topRules: DashboardRuleSummary[];
@@ -149,6 +164,7 @@ export async function collectDashboardData(
     latestRun: runs.at(-1),
     latestDelta: summarizeLatestDelta(runs),
     regressions: summarizeRegressions(files),
+    resolved: summarizeResolved(files),
     runs,
     trend: runs.map(({ framework: _framework, urls: _urls, ...point }) => point),
     topRules: summarizeRules(files),
@@ -263,6 +279,9 @@ export function renderDashboardHtml(data: DashboardData): string {
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       margin-top: 12px;
     }
+    .resolved-section {
+      border-left: 4px solid var(--good);
+    }
     .pages-table, .runs-table { table-layout: fixed; font-size: 12px; }
     .pages-table th:first-child, .pages-table td:first-child { width: 46%; }
     .runs-table th:first-child, .runs-table td:first-child { width: 9%; }
@@ -340,6 +359,7 @@ export function renderDashboardHtml(data: DashboardData): string {
     ${data.totalRuns === 0 ? emptyState() : [
     latestDeltaSection(data.latestDelta),
     regressionsSection(data.regressions),
+    resolvedSection(data.resolved),
     trendSection(data, maxTrend),
     lighthouseSection(data.lighthouse),
     rulesSection(data.topRules),
@@ -507,6 +527,43 @@ function compareCounts(previous: Map<string, number>, latest: Map<string, number
   return items.sort((left, right) => {
     if (right.change !== left.change) return right.change - left.change;
     if (right.latest !== left.latest) return right.latest - left.latest;
+    return left.id.localeCompare(right.id);
+  });
+}
+
+function summarizeResolved(files: ReportFile[]): DashboardResolvedSummary | undefined {
+  const sorted = [...files].sort((a, b) => a.report.generatedAt.localeCompare(b.report.generatedAt));
+  if (sorted.length < 2) return undefined;
+  const previous = sorted.at(-2);
+  const latest = sorted.at(-1);
+  if (!previous || !latest) return undefined;
+
+  return {
+    previousRunId: runIdFromPath(previous.relativePath),
+    latestRunId: runIdFromPath(latest.relativePath),
+    rules: compareResolvedCounts(countLatestRules(previous.report), countLatestRules(latest.report)).slice(0, 8),
+    pages: compareResolvedCounts(countLatestPages(previous.report), countLatestPages(latest.report)).slice(0, 8)
+  };
+}
+
+function compareResolvedCounts(previous: Map<string, number>, latest: Map<string, number>): DashboardResolvedItem[] {
+  const items: DashboardResolvedItem[] = [];
+
+  for (const [id, previousCount] of previous) {
+    const latestCount = latest.get(id) || 0;
+    const resolved = previousCount - latestCount;
+    if (resolved <= 0) continue;
+    items.push({
+      id,
+      previous: previousCount,
+      latest: latestCount,
+      resolved
+    });
+  }
+
+  return items.sort((left, right) => {
+    if (right.resolved !== left.resolved) return right.resolved - left.resolved;
+    if (right.previous !== left.previous) return right.previous - left.previous;
     return left.id.localeCompare(right.id);
   });
 }
@@ -714,6 +771,43 @@ function regressionTable(title: string, idLabel: string, items: DashboardRegress
     <table>
       <thead><tr><th scope="col">${escapeHtml(idLabel)}</th><th scope="col" class="num">Previous</th><th scope="col" class="num">Latest</th><th scope="col" class="num">Change</th></tr></thead>
       <tbody>${rows || "<tr><td colspan=\"4\">No regressions.</td></tr>"}</tbody>
+    </table>
+  </div>`;
+}
+
+function resolvedSection(resolved: DashboardResolvedSummary | undefined): string {
+  if (!resolved) return `<section class="resolved-section">
+    <h2>Resolved Problems</h2>
+    <p class="muted">Save at least two report runs to detect rules and pages that improved.</p>
+  </section>`;
+
+  const hasResolved = resolved.rules.length > 0 || resolved.pages.length > 0;
+
+  return `<section class="resolved-section">
+    <h2>Resolved Problems</h2>
+    <p class="muted">Items that decreased from <code>${escapeHtml(resolved.previousRunId)}</code> to <code>${escapeHtml(resolved.latestRunId)}</code>. This is the quickest way to show what improved after fixes.</p>
+    ${hasResolved
+      ? `<div class="regression-grid">
+        ${resolvedTable("Rules", "Rule", resolved.rules)}
+        ${resolvedTable("Pages", "Page", resolved.pages)}
+      </div>`
+      : "<p class=\"muted\">No resolved rule or page findings found in the latest comparison.</p>"}
+  </section>`;
+}
+
+function resolvedTable(title: string, idLabel: string, items: DashboardResolvedItem[]): string {
+  const rows = items.map((item) => `<tr>
+    <td><code>${escapeHtml(item.id)}</code></td>
+    <td class="num">${item.previous}</td>
+    <td class="num">${item.latest}</td>
+    <td class="num delta-good">-${item.resolved}</td>
+  </tr>`).join("\n");
+
+  return `<div>
+    <h3>${escapeHtml(title)}</h3>
+    <table>
+      <thead><tr><th scope="col">${escapeHtml(idLabel)}</th><th scope="col" class="num">Previous</th><th scope="col" class="num">Latest</th><th scope="col" class="num">Resolved</th></tr></thead>
+      <tbody>${rows || "<tr><td colspan=\"4\">No resolved items.</td></tr>"}</tbody>
     </table>
   </div>`;
 }

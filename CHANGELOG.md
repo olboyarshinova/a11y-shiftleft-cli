@@ -27,6 +27,8 @@
   whether findings and Lighthouse scores improved since the previous report.
 - Added a dashboard `New Or Worse Problems` section that compares the latest
   report with the previous run by rule and page.
+- Added a dashboard `Resolved Problems` section that highlights rules and pages
+  that improved or disappeared in the latest report.
 
 ## 0.8.0 - 2026-06-24
 
