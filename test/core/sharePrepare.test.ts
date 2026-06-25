@@ -83,11 +83,21 @@ test("prepareShareReport writes sanitized local share artifacts", async () => {
     },
     sample: {
       includedUrls: ["https://example.com/account?session=abc"],
+      statesVisited: 2,
+      maxDepth: 1,
       representativeStates: [{
         id: "state-1",
+        findingCount: 1,
         url: "https://example.com/account?email=user@example.com",
         sourcePath: "/Users/example/private/project/src/App.tsx"
       }]
+    },
+    evidence: {
+      automatedSources: ["axe"],
+      visualExploration: true,
+      keyboardTraversal: true,
+      lighthouseComparison: false,
+      manualChecklist: true
     }
   }, null, 2));
 
@@ -123,6 +133,12 @@ test("prepareShareReport writes sanitized local share artifacts", async () => {
   assert.doesNotMatch(JSON.stringify(shareReport), /token=secret/);
   assert.doesNotMatch(JSON.stringify(shareScope), /token=secret/);
   assert.match(markdown, /Sanitized Accessibility Share Report/);
+  assert.match(markdown, /## Evaluation Scope/);
+  assert.match(markdown, /not a WCAG conformance claim/);
+  assert.match(markdown, /Requested URLs \| https:\/\/example.com\/account/);
+  assert.match(markdown, /Rendered states \| 2/);
+  assert.match(markdown, /Automated sources \| axe/);
+  assert.match(markdown, /Keyboard traversal \| yes/);
 });
 
 test("prepareShareReport refuses to write into a non-empty output directory", async () => {

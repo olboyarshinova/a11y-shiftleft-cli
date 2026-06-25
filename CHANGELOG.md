@@ -19,6 +19,8 @@
   the non-conformance-claim note without opening JSON.
 - Added the same compact Evaluation Scope summary to the Markdown report used
   for pull request comments.
+- Added the sanitized Evaluation Scope summary to `share-summary.md` when
+  `share prepare` receives a report directory with `evaluation-scope.json`.
 
 ## 0.8.0 - 2026-06-24
 

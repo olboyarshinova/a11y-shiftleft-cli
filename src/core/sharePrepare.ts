@@ -89,7 +89,7 @@ export async function prepareShareReport(options: PrepareShareReportOptions): Pr
     ...(scope ? [
       fs.writeFile(path.join(outputDir, "share-evaluation-scope.json"), `${JSON.stringify(scope, null, 2)}\n`)
     ] : []),
-    fs.writeFile(path.join(outputDir, "share-summary.md"), toShareMarkdown(shareReport)),
+    fs.writeFile(path.join(outputDir, "share-summary.md"), toShareMarkdown(shareReport, scope)),
     fs.writeFile(path.join(outputDir, "privacy-summary.json"), `${JSON.stringify(manifest, null, 2)}\n`)
   ]);
 
@@ -253,7 +253,7 @@ function countIssuesWithScreenshots(issues: DedupedIssue[]): number {
   return issues.filter((issue) => Boolean(issue.screenshot)).length;
 }
 
-function toShareMarkdown(report: ReturnType<typeof sanitizeReport>): string {
+function toShareMarkdown(report: ReturnType<typeof sanitizeReport>, scope?: unknown): string {
   const rows = report.issues.slice(0, 20).map((issue) =>
     `| ${issue.severity} | \`${issue.ruleId}\` | ${issue.url || issue.file || "unknown"} | ${markdownCell(issue.message)} |`
   ).join("\n");
@@ -273,6 +273,8 @@ Lighthouse payloads. Review it before sharing.
 | WCAG levels | ${formatCountMap(report.summary.byWcagLevel)} |
 | Finding types | ${formatCountMap(report.summary.byFindingType)} |
 
+${formatShareScope(scope)}
+
 ## Findings
 
 | Severity | Rule | Location | Message |
@@ -280,6 +282,53 @@ Lighthouse payloads. Review it before sharing.
 ${rows || "| - | - | No findings | - |"}
 
 ${report.issues.length > 20 ? `Showing 20 of ${report.issues.length} findings. See \`share-report.json\` for the sanitized machine-readable report.\n` : ""}
+`;
+}
+
+function formatShareScope(scope: unknown): string {
+  if (!scope || typeof scope !== "object") return "";
+  const source = scope as {
+    methodology?: { conformanceClaim?: boolean };
+    target?: { urlsRequested?: unknown[] };
+    sample?: {
+      includedUrls?: unknown[];
+      statesVisited?: unknown;
+      maxDepth?: unknown;
+      representativeStates?: Array<{ id?: unknown; findingCount?: unknown }>;
+    };
+    evidence?: {
+      visualExploration?: unknown;
+      keyboardTraversal?: unknown;
+      lighthouseComparison?: unknown;
+      manualChecklist?: unknown;
+      automatedSources?: unknown[];
+    };
+  };
+  const targetUrls = source.target?.urlsRequested?.filter((url): url is string => typeof url === "string") || [];
+  const includedUrls = source.sample?.includedUrls?.filter((url): url is string => typeof url === "string") || [];
+  const automatedSources = source.evidence?.automatedSources?.filter((item): item is string => typeof item === "string") || [];
+  const representativeStates = source.sample?.representativeStates
+    ?.slice(0, 3)
+    .map((state) => `${String(state.id || "state")}: ${String(state.findingCount ?? "n/a")} finding(s)`)
+    .join("; ") || "none";
+
+  return `## Evaluation Scope
+
+This WCAG-EM-inspired scope summary is sanitized for external review. It is reproducibility evidence, not a WCAG conformance claim.
+
+| Scope item | Value |
+|---|---|
+| Conformance claim | ${source.methodology?.conformanceClaim === true ? "yes" : "no"} |
+| Requested URLs | ${markdownCell(targetUrls.join(", ") || "none")} |
+| URLs included | ${includedUrls.length} |
+| Rendered states | ${source.sample?.statesVisited ?? "not included"} |
+| Depth | ${source.sample?.maxDepth ?? "not included"} |
+| Automated sources | ${markdownCell(automatedSources.join(", ") || "none")} |
+| Visual exploration | ${source.evidence?.visualExploration === true ? "yes" : "no"} |
+| Keyboard traversal | ${source.evidence?.keyboardTraversal === true ? "yes" : "no"} |
+| Lighthouse comparison | ${source.evidence?.lighthouseComparison === true ? "yes" : "no"} |
+| Manual checklist | ${source.evidence?.manualChecklist === true ? "yes" : "no"} |
+| Representative states | ${markdownCell(representativeStates)} |
 `;
 }
 
