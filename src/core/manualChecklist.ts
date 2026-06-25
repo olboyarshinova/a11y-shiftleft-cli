@@ -84,6 +84,25 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
     ]
   },
   {
+    id: "voiceover-smoke",
+    title: "VoiceOver smoke test for Safari",
+    principle: "robust",
+    wcag: ["1.3.1", "2.4.1", "2.4.6", "4.1.2"],
+    whyManual: "VoiceOver announcements and rotor navigation are platform behavior that cannot be fully verified from DOM, axe, or Playwright evidence alone.",
+    steps: [
+      "Open a representative route in Safari on macOS and start VoiceOver.",
+      "Use the VoiceOver rotor to inspect headings, landmarks, links, buttons, and form controls.",
+      "Confirm page title, current region, primary navigation, control names, roles, states, and validation errors are announced meaningfully.",
+      "Open one dialog, menu, or dynamic widget and confirm VoiceOver announces the name, state, focus movement, and close or return behavior.",
+      "Repeat on iOS Safari with VoiceOver when the product has meaningful mobile usage or touch-specific interactions."
+    ],
+    evidence: [
+      "macOS or iOS version, Safari version, and VoiceOver version or OS build",
+      "Rotor headings, landmarks, and controls notes",
+      "Task outcome and announcement issues"
+    ]
+  },
+  {
     id: "screen-reader-dynamic-content",
     title: "Screen reader forms, dialogs, and dynamic updates",
     principle: "robust",

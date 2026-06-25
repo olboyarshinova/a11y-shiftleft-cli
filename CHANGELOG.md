@@ -5,6 +5,9 @@
 - Added the first local `share prepare` workflow for creating sanitized
   external-review copies from `a11y-report.json`. The export writes sanitized
   JSON, Markdown, and privacy-summary files without uploading anything.
+- Added a `screen-reader` checklist command for human VoiceOver, NVDA, JAWS, and
+  TalkBack smoke-test protocols, plus a dedicated VoiceOver item in the manual
+  review checklist embedded by `audit`.
 
 ## 0.8.0 - 2026-06-24
 

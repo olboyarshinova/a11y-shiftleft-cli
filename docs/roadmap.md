@@ -152,6 +152,8 @@ remain suitable for reproducible empirical validation.
   assistive technology and version, input method, zoom, and color mode. Provide
   suggested NVDA, JAWS, VoiceOver, TalkBack, keyboard-only, and switch/voice
   scenarios without pretending that browser automation executed those tools.
+  The first `screen-reader --profile voiceover|nvda|jaws|talkback` workflow now
+  generates local Markdown and JSON smoke-test protocols for this evidence.
 - Add a bounded forced-colors diagnostic that compares normal rendering with
   `forced-colors: active` and flags controls, focus indicators, SVGs, and
   information-bearing backgrounds that disappear or become indistinguishable.

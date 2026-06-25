@@ -242,6 +242,7 @@ keyboard and manual-review sections from `audit`.
 |---|---|---|
 | Verify local setup | `npx a11y-shiftleft-cli doctor --url $APP_URL` | Framework, adapter, browser, and URL diagnostics |
 | Audit only keyboard focus | `npx a11y-shiftleft-cli keyboard --url $APP_URL --out reports/keyboard` | Focus order and keyboard evidence |
+| Generate a VoiceOver smoke checklist | `npx a11y-shiftleft-cli screen-reader --profile voiceover --url $APP_URL --out reports/screen-reader` | Manual screen-reader test protocol |
 | Refresh reports while coding | `npx a11y-shiftleft-cli watch --url $APP_URL --out reports/watch` | Local development feedback |
 | Generate GitHub Actions workflows | `npx a11y-shiftleft-cli ci --url $APP_URL --start-command "npm run dev"` | Pull-request and scheduled CI |
 | View historical trends | `npx a11y-shiftleft-cli dashboard --reports reports` | Local metrics dashboard |
@@ -934,10 +935,21 @@ keyboard flow, screen-reader smoke testing, form labels, content clarity, zoom
 and reflow, alternative-text and logo quality, media and motion, skip links, and
 representative-user tasks.
 
-The screen-reader steps use representative US desktop combinations: NVDA with
-Chrome or Firefox, JAWS with Chrome or Edge, and VoiceOver with Safari. Teams
-can select combinations that match their supported platforms and risk profile;
-the CLI does not claim to automate screen-reader testing.
+The screen-reader steps use representative desktop and mobile combinations:
+VoiceOver with Safari, NVDA with Chrome or Firefox, JAWS with Chrome or Edge,
+and TalkBack with Android Chrome. Teams can select combinations that match their
+supported platforms and risk profile; the CLI does not claim to automate
+screen-reader testing.
+
+For a dedicated assistive-technology protocol, generate a screen-reader
+checklist:
+
+```bash
+npx a11y-shiftleft-cli screen-reader --profile voiceover --url $APP_URL --out reports/screen-reader
+```
+
+Supported profiles are `voiceover`, `nvda`, `jaws`, and `talkback`. This command
+creates `screen-reader-checklist.md` and `screen-reader-checklist.json`.
 
 For the standalone Markdown and JSON checklist workflow, run:
 
