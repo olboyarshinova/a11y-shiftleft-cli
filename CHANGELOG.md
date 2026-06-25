@@ -29,6 +29,8 @@
   report with the previous run by rule and page.
 - Added a dashboard `Resolved Problems` section that highlights rules and pages
   that improved or disappeared in the latest report.
+- Added latest-change, new/worse, and resolved counts to the terminal summary
+  printed by the `dashboard` command.
 
 ## 0.8.0 - 2026-06-24
 

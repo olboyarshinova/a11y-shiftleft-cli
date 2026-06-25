@@ -276,16 +276,35 @@ test("formatDashboardSummary renders local output target", async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-dashboard-summary-"));
   await writeReport(root, "run-1", {
     generatedAt: "2026-06-10T00:00:00.000Z",
-    total: 1,
+    total: 2,
     critical: 1,
-    warning: 0,
+    warning: 1,
     info: 0,
     issues: [
-      issue("button-name", "critical", "http://localhost:3000/")
+      issue("button-name", "critical", "http://localhost:3000/"),
+      issue("image-alt", "warning", "http://localhost:3000/profile")
     ],
     byPage: [
-      page("http://localhost:3000/", 1, 1, 0, 0, 5)
-    ]
+      page("http://localhost:3000/", 1, 1, 0, 0, 5),
+      page("http://localhost:3000/profile", 1, 0, 1, 0, 2)
+    ],
+    lighthouseScore: 80
+  });
+  await writeReport(root, "run-2", {
+    generatedAt: "2026-06-11T00:00:00.000Z",
+    total: 2,
+    critical: 0,
+    warning: 2,
+    info: 0,
+    issues: [
+      issue("color-contrast", "warning", "http://localhost:3000/checkout"),
+      issue("image-alt", "warning", "http://localhost:3000/profile")
+    ],
+    byPage: [
+      page("http://localhost:3000/checkout", 1, 0, 1, 0, 2),
+      page("http://localhost:3000/profile", 1, 0, 1, 0, 2)
+    ],
+    lighthouseScore: 88
   });
 
   const output = formatDashboardSummary(await collectDashboardData(root), {
@@ -294,9 +313,12 @@ test("formatDashboardSummary renders local output target", async () => {
     pdfPath: "reports/dashboard.pdf"
   });
 
-  assert.match(output, /Runs indexed: 1/);
-  assert.match(output, /Latest run: run-1 total=1 critical=1 warning=0 info=0/);
-  assert.match(output, /Top rule: button-name \(1\)/);
+  assert.match(output, /Runs indexed: 2/);
+  assert.match(output, /Latest run: run-2 total=2 critical=0 warning=2 info=0/);
+  assert.match(output, /Latest change: total 0, critical -1, warning \+1, Lighthouse \+8/);
+  assert.match(output, /New\/worse problems: 1 rule\(s\), 1 page\(s\)/);
+  assert.match(output, /Resolved problems: 1 rule\(s\), 1 page\(s\)/);
+  assert.match(output, /Top rule: image-alt \(2\)/);
   assert.match(output, /reports\/dashboard\.html/);
   assert.match(output, /PDF: reports\/dashboard\.pdf/);
 });

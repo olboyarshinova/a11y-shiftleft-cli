@@ -106,12 +106,27 @@ export function formatDashboardSummary(data: DashboardData, destination: Dashboa
     latest
       ? `Latest run: ${latest.id} total=${latest.total} critical=${latest.critical} warning=${latest.warning} info=${latest.info}`
       : "Latest run: none",
+    data.latestDelta
+      ? `Latest change: total ${formatDelta(data.latestDelta.total.change)}, critical ${formatDelta(data.latestDelta.critical.change)}, warning ${formatDelta(data.latestDelta.warning.change)}, Lighthouse ${formatDelta(data.latestDelta.lighthouseScore.change)}`
+      : "Latest change: n/a (need 2 runs)",
+    `New/worse problems: ${formatRulePageCounts(data.regressions?.rules.length, data.regressions?.pages.length)}`,
+    `Resolved problems: ${formatRulePageCounts(data.resolved?.rules.length, data.resolved?.pages.length)}`,
     topRule
       ? `Top rule: ${topRule.ruleId} (${topRule.total})`
       : "Top rule: none",
     `Output: ${target}`,
     ...(destination.pdfPath ? [`PDF: ${destination.pdfPath}`] : [])
   ].join("\n");
+}
+
+function formatDelta(value: number | null): string {
+  if (value === null) return "n/a";
+  return value > 0 ? `+${value}` : String(value);
+}
+
+function formatRulePageCounts(rules: number | undefined, pages: number | undefined): string {
+  if (typeof rules !== "number" || typeof pages !== "number") return "n/a (need 2 runs)";
+  return `${rules} rule(s), ${pages} page(s)`;
 }
 
 function toPdfPath(htmlPath: string): string {
