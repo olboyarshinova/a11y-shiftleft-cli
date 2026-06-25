@@ -140,6 +140,25 @@ export function renderExplorationHtml(
       padding-left: 18px;
     }
 
+    .scope-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      margin-top: 12px;
+    }
+
+    .scope-item {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .scope-item strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
     .lighthouse-recommendations {
       display: grid;
       gap: 12px;
@@ -1033,6 +1052,8 @@ export function renderExplorationHtml(
 
     ${renderQuickReview(reportIssues, options)}
 
+    ${renderEvaluationScope(graph, options, reportIssues)}
+
     ${renderLighthouseComparison(options.lighthouse, reportIssues)}
 
     ${renderCoverageMatrix(graph, options, reportIssues)}
@@ -1154,6 +1175,40 @@ function renderQuickReview(issues: DedupedIssue[], options: ExplorationHtmlOptio
         ${renderQuickManualTasks(manualTasks)}
       </div>
     </div>
+  </section>`;
+}
+
+function renderEvaluationScope(
+  graph: ExplorationGraph,
+  options: ExplorationHtmlOptions,
+  issues: DedupedIssue[]
+): string {
+  const urls = [...new Set(graph.states.map((state) => state.url))];
+  const sources = [...new Set(issues.map((issue) => issue.source || "unknown"))].sort();
+  const evidence = [
+    "browser exploration",
+    sources.length > 0 ? sources.join(", ") : "no automated findings",
+    options.keyboard ? "keyboard traversal" : "keyboard not included",
+    options.lighthouse?.length ? "Lighthouse comparison" : "Lighthouse not included",
+    options.manualChecklist ? "manual checklist" : "manual checklist not included"
+  ];
+  const mostAffected = [...graph.states]
+    .sort((left, right) => right.issueCount - left.issueCount)
+    .slice(0, 3)
+    .map((state) => `${state.id}: ${state.issueCount} finding${state.issueCount === 1 ? "" : "s"}`);
+
+  return `<section class="panel triage" aria-label="Evaluation scope">
+    <h2>Evaluation Scope</h2>
+    <p class="muted">WCAG-EM-inspired scope summary. This is reproducibility evidence, not a WCAG conformance claim.</p>
+    <div class="scope-grid">
+      <div class="scope-item"><strong>Start URL</strong><span>${escapeHtml(graph.startUrl)}</span></div>
+      <div class="scope-item"><strong>URLs included</strong><span>${urls.length}</span></div>
+      <div class="scope-item"><strong>Rendered states</strong><span>${graph.summary.statesVisited} of ${graph.summary.maxStates} max</span></div>
+      <div class="scope-item"><strong>Depth</strong><span>${graph.summary.maxDepth}</span></div>
+      <div class="scope-item"><strong>Evidence collected</strong><span>${escapeHtml(evidence.join("; "))}</span></div>
+      <div class="scope-item"><strong>Representative states</strong><span>${escapeHtml(mostAffected.length ? mostAffected.join("; ") : "No findings in captured states")}</span></div>
+    </div>
+    <p class="muted">The machine-readable scope is written to <code>evaluation-scope.json</code> with tool version, target standard, sample, evidence types, review status, and limitations.</p>
   </section>`;
 }
 

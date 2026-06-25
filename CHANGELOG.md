@@ -14,6 +14,9 @@
   conformance claim.
 - Extended `share prepare` to include a sanitized `share-evaluation-scope.json`
   when the source report directory contains `evaluation-scope.json`.
+- Added an Evaluation Scope section to the visual HTML report so reviewers can
+  see included URLs, rendered states, evidence types, representative states, and
+  the non-conformance-claim note without opening JSON.
 
 ## 0.8.0 - 2026-06-24
 
