@@ -142,7 +142,10 @@ remain suitable for reproducible empirical validation.
 - Add an evaluation-scope manifest inspired by WCAG-EM: target standard and
   level, included technologies, discovered pages and states, representative
   and random samples, unavailable content, exclusions, and the exact tool and
-  browser versions used. Keep it as reproducibility evidence, not a conformance
+  browser versions used. The first implementation now writes
+  `evaluation-scope.json` with the target standard, requested URLs, discovered
+  URLs and states, representative states, evidence types, tool version, and
+  limitations. Keep it as reproducibility evidence, not a conformance
   certificate.
 - Represent complete user processes separately from individual pages. Let a
   reviewer group discovered states into journeys such as sign-in, search,

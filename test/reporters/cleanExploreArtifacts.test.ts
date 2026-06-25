@@ -16,6 +16,7 @@ test("cleanExploreArtifacts removes generated reports and stale state screenshot
   await fs.writeFile(path.join(outputDir, "a11y-pages.csv"), "url,total");
   await fs.writeFile(path.join(outputDir, "a11y-rules.csv"), "ruleId,findings");
   await fs.writeFile(path.join(outputDir, "a11y-remediation.csv"), "fingerprint,status");
+  await fs.writeFile(path.join(outputDir, "evaluation-scope.json"), "{}");
   await fs.writeFile(path.join(outputDir, "exploration-visual-check.html"), "<html></html>");
   await fs.writeFile(path.join(outputDir, "exploration.html"), "<html></html>");
   await fs.writeFile(path.join(outputDir, "exploration.pdf"), "pdf");
@@ -30,7 +31,7 @@ test("cleanExploreArtifacts removes generated reports and stale state screenshot
   const result = await cleanExploreArtifacts(outputDir);
 
   assert.deepEqual(result, {
-    filesRemoved: 9,
+    filesRemoved: 10,
     screenshotsRemoved: 5
   });
   assert.equal(await exists(path.join(outputDir, "a11y-report.json")), false);
@@ -39,6 +40,7 @@ test("cleanExploreArtifacts removes generated reports and stale state screenshot
   assert.equal(await exists(path.join(outputDir, "a11y-pages.csv")), false);
   assert.equal(await exists(path.join(outputDir, "a11y-rules.csv")), false);
   assert.equal(await exists(path.join(outputDir, "a11y-remediation.csv")), false);
+  assert.equal(await exists(path.join(outputDir, "evaluation-scope.json")), false);
   assert.equal(await exists(path.join(outputDir, "exploration-visual-check.html")), false);
   assert.equal(await exists(path.join(outputDir, "exploration.html")), false);
   assert.equal(await exists(path.join(outputDir, "exploration.pdf")), false);

@@ -3,6 +3,7 @@ import path from "node:path";
 import { stringify } from "csv-stringify/sync";
 import { enrichIssueEvidence } from "../core/classification.js";
 import { createManualChecklist, toManualChecklistMarkdown } from "../core/manualChecklist.js";
+import { writeEvaluationScopeManifest } from "../core/evaluationScope.js";
 import { compareLighthouseWithFindings } from "../core/lighthouseComparison.js";
 import { getRemediationHint } from "../core/remediation.js";
 import { summarizeRootCauses } from "../core/rootCauses.js";
@@ -65,6 +66,8 @@ export async function writeReports(
     manualChecklist,
     lighthouse: metrics.lighthouse
   };
+
+  await writeEvaluationScopeManifest(outputDir, report);
 
   if (formats.has("json")) {
     await fs.writeFile(

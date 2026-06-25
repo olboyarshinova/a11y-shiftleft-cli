@@ -228,8 +228,18 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   const pagesCsv = await fs.readFile(path.join(outputDir, "a11y-pages.csv"), "utf8");
   const rulesCsv = await fs.readFile(path.join(outputDir, "a11y-rules.csv"), "utf8");
   const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+  const scope = JSON.parse(
+    await fs.readFile(path.join(outputDir, "evaluation-scope.json"), "utf8")
+  );
 
   assert.equal(json.summary.framework, "react");
+  assert.equal(scope.methodology.name, "WCAG-EM-inspired evaluation scope");
+  assert.equal(scope.methodology.conformanceClaim, false);
+  assert.equal(scope.target.standard.id, "ada-title-ii");
+  assert.equal(scope.sample.strategy, "configured-urls");
+  assert.deepEqual(scope.evidence.automatedSources, ["axe", "eslint"]);
+  assert.equal(scope.evidence.lighthouseComparison, true);
+  assert.equal(scope.reviewStatus.needsHumanEvaluation, true);
   assert.equal(json.summary.standard.id, "ada-title-ii");
   assert.equal(json.issues[0].confidence, "high");
   assert.equal(json.issues[0].confidenceScore, 95);

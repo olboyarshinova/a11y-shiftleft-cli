@@ -12,6 +12,7 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   await fs.mkdir(path.join(reportsDir, "screenshots"), { recursive: true });
   await fs.writeFile(path.join(reportsDir, "a11y-report.json"), "{\"issues\":[]}\n");
   await fs.writeFile(path.join(reportsDir, "a11y-comment.md"), "# Report\n");
+  await fs.writeFile(path.join(reportsDir, "evaluation-scope.json"), "{}\n");
   await fs.writeFile(path.join(reportsDir, "exploration.html"), "<h1>Visual</h1>");
   await fs.writeFile(path.join(reportsDir, "screenshots", "state-1.jpg"), "image-data");
 
@@ -24,7 +25,7 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   assert.equal(manifest.generatedAt, "2026-06-20T00:00:00.000Z");
   assert.equal(manifest.source, "reports-run-1");
   assert.equal(manifest.includeVisual, false);
-  assert.deepEqual(manifest.files.map((file) => file.path), ["a11y-comment.md", "a11y-report.json"]);
+  assert.deepEqual(manifest.files.map((file) => file.path), ["a11y-comment.md", "a11y-report.json", "evaluation-scope.json"]);
   assert.match(manifest.files[0].sha256, /^[a-f0-9]{64}$/);
   assert.equal(await exists(path.join(outputDir, "exploration.html")), false);
   assert.equal(await exists(path.join(outputDir, "screenshots", "state-1.jpg")), false);

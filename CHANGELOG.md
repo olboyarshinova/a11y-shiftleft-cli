@@ -8,6 +8,10 @@
 - Added a `screen-reader` checklist command for human VoiceOver, NVDA, JAWS, and
   TalkBack smoke-test protocols, plus a dedicated VoiceOver item in the manual
   review checklist embedded by `audit`.
+- Added `evaluation-scope.json`, a WCAG-EM-inspired reproducibility manifest
+  that records requested URLs, discovered states, target standard, evidence
+  types, tool version, manual-review status, and limitations without making a
+  conformance claim.
 
 ## 0.8.0 - 2026-06-24
 

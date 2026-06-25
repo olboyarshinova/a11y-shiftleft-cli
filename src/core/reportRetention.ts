@@ -30,6 +30,7 @@ const REPORT_MARKERS = [
   "a11y-remediation.csv",
   "a11y-manual-checklist.md",
   "a11y-manual-checklist.json",
+  "evaluation-scope.json",
   "exploration.html",
   "exploration.pdf",
   "a11y-report.html",

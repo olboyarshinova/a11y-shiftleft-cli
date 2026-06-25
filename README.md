@@ -149,6 +149,7 @@ The default audit stays compact:
 reports/a11y-report.html
 reports/a11y-report.json
 reports/a11y-comment.md
+reports/evaluation-scope.json
 reports/screenshots/
 ```
 
@@ -252,7 +253,10 @@ keyboard and manual-review sections from `audit`.
 After an audit, start with `reports/a11y-report.html`. It combines visual states,
 annotated screenshots, severity and WCAG metadata, fix recommendations, keyboard
 evidence, and the manual checks that automation cannot complete. Use
-`a11y-comment.md` for pull requests and `a11y-report.json` for integrations.
+`a11y-comment.md` for pull requests, `a11y-report.json` for integrations, and
+`evaluation-scope.json` to see the WCAG-EM-inspired scope: requested URLs,
+discovered states, target standard, tool version, evidence types, and known
+limitations.
 
 Each finding is labeled as a `WCAG violation`, `best practice`, or
 `unmapped review`. Reports also group repeated occurrences into likely root
@@ -270,6 +274,7 @@ empty recommendation; axe findings also preserve their rule-specific help link.
 | `reports/a11y-report.html` | Primary visual review | Usually no |
 | `reports/a11y-comment.md` | Human review and PR comments | Usually no |
 | `reports/a11y-report.json` | Automation, debugging, integrations | Usually no |
+| `reports/evaluation-scope.json` | Reproducibility scope inspired by WCAG-EM | Usually no |
 | `reports/screenshots/` | Screenshots from visual exploration | No |
 | `reports/a11y-summary.csv` | Optional Excel summary from `audit --excel` | Usually no |
 | `reports/a11y-pages.csv` | Optional page table from `audit --excel` | Usually no |

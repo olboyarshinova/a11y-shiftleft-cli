@@ -12,6 +12,7 @@ const TEXT_EVIDENCE_FILES = [
   "a11y-findings.csv",
   "a11y-manual-checklist.md",
   "a11y-manual-checklist.json",
+  "evaluation-scope.json",
   "keyboard-report.json",
   "keyboard-path.md",
   "exploration-graph.json"
