@@ -5,9 +5,13 @@ import os from "node:os";
 import path from "node:path";
 import {
   collectDashboardData,
-  renderDashboardHtml
+  renderDashboardHtml,
+  type DashboardData
 } from "../../dist/core/dashboard.js";
-import { formatDashboardSummary } from "../../dist/commands/dashboard.js";
+import {
+  formatDashboardSummary,
+  writeStaticDashboardFiles
+} from "../../dist/commands/dashboard.js";
 
 test("collectDashboardData summarizes historical report runs", async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-dashboard-"));
@@ -310,6 +314,7 @@ test("formatDashboardSummary renders local output target", async () => {
   const output = formatDashboardSummary(await collectDashboardData(root), {
     mode: "file",
     outputPath: "reports/dashboard.html",
+    jsonPath: "reports/dashboard.json",
     pdfPath: "reports/dashboard.pdf"
   });
 
@@ -320,7 +325,29 @@ test("formatDashboardSummary renders local output target", async () => {
   assert.match(output, /Resolved problems: 1 rule\(s\), 1 page\(s\)/);
   assert.match(output, /Top rule: image-alt \(2\)/);
   assert.match(output, /reports\/dashboard\.html/);
+  assert.match(output, /JSON: reports\/dashboard\.json/);
   assert.match(output, /PDF: reports\/dashboard\.pdf/);
+});
+
+test("writeStaticDashboardFiles writes HTML and machine-readable dashboard JSON", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-dashboard-static-"));
+  const outputPath = path.join(root, "nested", "dashboard.html");
+  const data: DashboardData = {
+    generatedAt: "2026-06-11T00:00:00.000Z",
+    reportsRoot: "reports",
+    totalRuns: 0,
+    runs: [],
+    trend: [],
+    topRules: [],
+    topPages: [],
+    latestRecommendations: []
+  };
+
+  const jsonPath = await writeStaticDashboardFiles(outputPath, "<!doctype html><title>Dashboard</title>", data);
+
+  assert.equal(jsonPath, path.join(root, "nested", "dashboard.json"));
+  assert.match(await fs.readFile(outputPath, "utf8"), /Dashboard/);
+  assert.deepEqual(JSON.parse(await fs.readFile(jsonPath, "utf8")), data);
 });
 
 interface ReportInput {

@@ -31,6 +31,8 @@
   that improved or disappeared in the latest report.
 - Added latest-change, new/worse, and resolved counts to the terminal summary
   printed by the `dashboard` command.
+- Added a machine-readable `dashboard.json` file next to static dashboard HTML
+  exports for CI and future integrations.
 
 ## 0.8.0 - 2026-06-24
 

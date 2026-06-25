@@ -24,6 +24,7 @@ interface DashboardOptions {
 interface DashboardDestination {
   mode: "json" | "file" | "server";
   outputPath?: string;
+  jsonPath?: string;
   pdfPath?: string;
   url?: string;
 }
@@ -55,12 +56,12 @@ export function registerDashboardCommand(program: Command): void {
 
       if (options.serve === false || options.out || options.pdf) {
         const outputPath = path.resolve(options.out || path.join(reportsRoot, "dashboard.html"));
-        await fs.mkdir(path.dirname(outputPath), { recursive: true });
-        await fs.writeFile(outputPath, html);
+        const jsonPath = await writeStaticDashboardFiles(outputPath, html, data);
         const pdfPath = options.pdf ? await writeHtmlPdf(outputPath, toPdfPath(outputPath)) : undefined;
         console.log(formatDashboardSummary(data, {
           mode: "file",
           outputPath,
+          jsonPath,
           pdfPath
         }));
         return;
@@ -91,6 +92,20 @@ export function registerDashboardCommand(program: Command): void {
     });
 }
 
+export async function writeStaticDashboardFiles(
+  outputPath: string,
+  html: string,
+  data: DashboardData
+): Promise<string> {
+  const jsonPath = toJsonPath(outputPath);
+  await fs.mkdir(path.dirname(outputPath), { recursive: true });
+  await Promise.all([
+    fs.writeFile(outputPath, html),
+    fs.writeFile(jsonPath, `${JSON.stringify(data, null, 2)}\n`)
+  ]);
+  return jsonPath;
+}
+
 export function formatDashboardSummary(data: DashboardData, destination: DashboardDestination): string {
   const latest = data.latestRun;
   const topRule = data.topRules[0];
@@ -115,6 +130,7 @@ export function formatDashboardSummary(data: DashboardData, destination: Dashboa
       ? `Top rule: ${topRule.ruleId} (${topRule.total})`
       : "Top rule: none",
     `Output: ${target}`,
+    ...(destination.jsonPath ? [`JSON: ${destination.jsonPath}`] : []),
     ...(destination.pdfPath ? [`PDF: ${destination.pdfPath}`] : [])
   ].join("\n");
 }
@@ -133,6 +149,12 @@ function toPdfPath(htmlPath: string): string {
   const extension = path.extname(htmlPath);
   if (!extension) return `${htmlPath}.pdf`;
   return `${htmlPath.slice(0, -extension.length)}.pdf`;
+}
+
+function toJsonPath(htmlPath: string): string {
+  const extension = path.extname(htmlPath);
+  if (!extension) return `${htmlPath}.json`;
+  return `${htmlPath.slice(0, -extension.length)}.json`;
 }
 
 function toPositiveInteger(value: string | undefined): number | undefined {

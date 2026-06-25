@@ -785,6 +785,9 @@ Or write a static dashboard file:
 npx a11y-shiftleft-cli dashboard --reports reports --no-serve
 ```
 
+Static export writes both `dashboard.html` and `dashboard.json`, so CI jobs and
+future integrations can read the same trend data without parsing HTML.
+
 Add `--pdf` when the dashboard should be attached to a ticket, review, or
 internal report:
 
