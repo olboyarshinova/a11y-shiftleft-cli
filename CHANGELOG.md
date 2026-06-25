@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added the first local `share prepare` workflow for creating sanitized
+  external-review copies from `a11y-report.json`. The export writes sanitized
+  JSON, Markdown, and privacy-summary files without uploading anything.
+
 ## 0.8.0 - 2026-06-24
 
 - Added the first optional Lighthouse comparison path for `check --with-lighthouse`

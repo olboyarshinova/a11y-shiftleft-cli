@@ -24,12 +24,33 @@ a11y-shiftleft service or create an unlisted public URL.
 - Keep generated report directories out of Git.
 - Share the smallest useful evidence set and remove it when the review ends.
 
-## Planned Sanitized Export
+## Sanitized Local Export
 
-A future local `share prepare` workflow will create a separate sanitized static
-report. It will be offline by default and will not publish anything. The export
-will exclude screenshots, absolute paths, query strings, form values, tokens,
-and raw HTML unless the user explicitly allows individual fields.
+Use `share prepare` to create a separate sanitized static report. It is offline
+by default and does not publish anything:
+
+```bash
+npx a11y-shiftleft-cli share prepare \
+  --report reports/a11y-report.json \
+  --out a11y-share
+```
+
+The first local export writes:
+
+```txt
+a11y-share/share-report.json
+a11y-share/share-summary.md
+a11y-share/privacy-summary.json
+```
+
+The export excludes screenshots, visual HTML/PDF reports, raw exploration
+graphs, raw keyboard data, and raw Lighthouse payloads. It removes URL query
+strings and hashes, redacts obvious local absolute paths, and redacts common
+email, bearer-token, password, secret, token, and API-key patterns. Review the
+privacy summary and generated report before sharing externally.
+
+Future versions can add explicit allow flags for teams that intentionally need
+specific visual evidence or additional fields.
 
 Any later public-link integration must remain opt-in and provide an expiration
 date, an unguessable URL, revocation, deletion, a pre-upload privacy summary,

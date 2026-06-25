@@ -11,6 +11,7 @@ import { registerExploreCommand } from "./commands/explore.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerKeyboardCommand } from "./commands/keyboard.js";
 import { registerRemediationCommand } from "./commands/remediation.js";
+import { registerShareCommand } from "./commands/share.js";
 import { registerTicketCommand } from "./commands/ticket.js";
 import { registerWatchCommand } from "./commands/watch.js";
 
@@ -35,6 +36,7 @@ export function createProgram(): Command {
   registerExploreCommand(program);
   registerKeyboardCommand(program);
   registerRemediationCommand(program);
+  registerShareCommand(program);
   registerDashboardCommand(program);
   registerWatchCommand(program);
   registerTicketCommand(program);

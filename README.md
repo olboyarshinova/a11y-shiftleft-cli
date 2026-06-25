@@ -829,6 +829,30 @@ npx a11y-shiftleft-cli evidence pack \
   --include-visual
 ```
 
+## Sanitized Share Report
+
+Use `share prepare` when you need a smaller local copy for external review. It
+does not upload anything. It excludes screenshots, visual reports, raw
+exploration graphs, raw keyboard data, and raw Lighthouse payloads; it also
+removes URL query strings and hashes, redacts obvious local paths and common
+secret patterns, and writes a privacy summary:
+
+```bash
+npx a11y-shiftleft-cli share prepare \
+  --report reports/a11y-report.json \
+  --out a11y-share
+```
+
+It creates:
+
+```txt
+a11y-share/share-report.json
+a11y-share/share-summary.md
+a11y-share/privacy-summary.json
+```
+
+Review every generated file before sending it outside the project team.
+
 ## Focused Keyboard Audit
 
 The recommended `audit` command already embeds keyboard evidence in

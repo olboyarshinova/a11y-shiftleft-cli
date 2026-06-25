@@ -121,11 +121,16 @@ remain suitable for reproducible empirical validation.
 ### 0.9.x Secure Report Sharing
 
 - Add a local `share prepare` workflow that creates a separate sanitized static
-  report without uploading it anywhere.
+  report without uploading it anywhere. The first implementation now writes a
+  sanitized JSON report, Markdown summary, and machine-readable privacy summary.
 - Exclude screenshots, absolute paths, query strings, form values, tokens, and
-  raw HTML by default; require explicit allow flags for sensitive evidence.
+  raw HTML by default; require explicit allow flags for sensitive evidence. The
+  first implementation excludes screenshots, visual reports, raw exploration,
+  raw keyboard, and raw Lighthouse payloads while redacting common URL, path,
+  email, token, password, secret, and API-key patterns.
 - Add a machine-readable privacy summary so users can review exactly which
-  fields and assets would be shared.
+  fields and assets would be shared. The initial `privacy-summary.json` records
+  excluded evidence types and redaction counts.
 - Evaluate an optional public-link publisher only after sanitized export is
   stable. Require explicit confirmation, unguessable URLs, expiration,
   revocation, and deletion.
