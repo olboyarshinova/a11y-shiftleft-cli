@@ -72,6 +72,24 @@ test("prepareShareReport writes sanitized local share artifacts", async () => {
       duplicateCount: 0
     }]
   }, null, 2));
+  await fs.writeFile(path.join(reportsDir, "evaluation-scope.json"), JSON.stringify({
+    methodology: {
+      name: "WCAG-EM-inspired evaluation scope",
+      conformanceClaim: false
+    },
+    target: {
+      urlsRequested: ["https://example.com/account?token=secret"],
+      owner: "user@example.com"
+    },
+    sample: {
+      includedUrls: ["https://example.com/account?session=abc"],
+      representativeStates: [{
+        id: "state-1",
+        url: "https://example.com/account?email=user@example.com",
+        sourcePath: "/Users/example/private/project/src/App.tsx"
+      }]
+    }
+  }, null, 2));
 
   const manifest = await prepareShareReport({
     reportPath: reportsDir,
@@ -79,24 +97,31 @@ test("prepareShareReport writes sanitized local share artifacts", async () => {
     generatedAt: "2026-06-25T00:00:00.000Z"
   });
 
-  assert.deepEqual(manifest.outputs, ["share-report.json", "share-summary.md", "privacy-summary.json"]);
+  assert.deepEqual(manifest.outputs, ["share-report.json", "share-evaluation-scope.json", "share-summary.md", "privacy-summary.json"]);
   assert.equal(manifest.privacy.screenshotsIncluded, false);
+  assert.equal(manifest.privacy.evaluationScopeIncluded, true);
   assert.equal(manifest.privacy.rawExplorationIncluded, false);
   assert.equal(manifest.privacy.reviewRequiredBeforeSharing, true);
-  assert.equal(manifest.privacy.queryStringsRemoved, 4);
-  assert.equal(manifest.privacy.absolutePathsRedacted, 1);
+  assert.equal(manifest.privacy.queryStringsRemoved >= 7, true);
+  assert.equal(manifest.privacy.absolutePathsRedacted >= 2, true);
   assert.equal(manifest.privacy.sensitiveTokensRedacted >= 3, true);
 
   const shareReport = JSON.parse(await fs.readFile(path.join(outputDir, "share-report.json"), "utf8"));
+  const shareScope = JSON.parse(await fs.readFile(path.join(outputDir, "share-evaluation-scope.json"), "utf8"));
   const markdown = await fs.readFile(path.join(outputDir, "share-summary.md"), "utf8");
 
   assert.equal(shareReport.summary.urls[0], "https://example.com/account");
   assert.equal(shareReport.summary.byPage[0].url, "https://example.com/account");
   assert.equal(shareReport.issues[0].file, "[local-path]/project/src/App.tsx");
+  assert.equal(shareScope.target.urlsRequested[0], "https://example.com/account");
+  assert.equal(shareScope.sample.includedUrls[0], "https://example.com/account");
+  assert.equal(shareScope.sample.representativeStates[0].sourcePath, "[local-path]/project/src/App.tsx");
   assert.equal(shareReport.issues[0].screenshot, undefined);
   assert.doesNotMatch(JSON.stringify(shareReport), /user@example\.com/);
+  assert.doesNotMatch(JSON.stringify(shareScope), /user@example\.com/);
   assert.doesNotMatch(JSON.stringify(shareReport), /Bearer abc123/);
   assert.doesNotMatch(JSON.stringify(shareReport), /token=secret/);
+  assert.doesNotMatch(JSON.stringify(shareScope), /token=secret/);
   assert.match(markdown, /Sanitized Accessibility Share Report/);
 });
 

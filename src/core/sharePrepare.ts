@@ -17,6 +17,7 @@ export interface SharePrepareManifest {
   privacy: {
     screenshotsIncluded: false;
     visualReportsIncluded: false;
+    evaluationScopeIncluded: boolean;
     rawExplorationIncluded: false;
     rawKeyboardIncluded: false;
     rawLighthouseIncluded: false;
@@ -50,7 +51,13 @@ export async function prepareShareReport(options: PrepareShareReportOptions): Pr
     sensitiveTokensRedacted: 0
   };
   const shareReport = sanitizeReport(report, counts);
-  const outputs = ["share-report.json", "share-summary.md", "privacy-summary.json"];
+  const scope = await readOptionalEvaluationScope(reportPath, counts);
+  const outputs = [
+    "share-report.json",
+    ...(scope ? ["share-evaluation-scope.json"] : []),
+    "share-summary.md",
+    "privacy-summary.json"
+  ];
   const manifest: SharePrepareManifest = {
     version: 1,
     generatedAt: options.generatedAt || new Date().toISOString(),
@@ -60,6 +67,7 @@ export async function prepareShareReport(options: PrepareShareReportOptions): Pr
     privacy: {
       screenshotsIncluded: false,
       visualReportsIncluded: false,
+      evaluationScopeIncluded: Boolean(scope),
       rawExplorationIncluded: false,
       rawKeyboardIncluded: false,
       rawLighthouseIncluded: false,
@@ -78,11 +86,25 @@ export async function prepareShareReport(options: PrepareShareReportOptions): Pr
 
   await Promise.all([
     fs.writeFile(path.join(outputDir, "share-report.json"), `${JSON.stringify(shareReport, null, 2)}\n`),
+    ...(scope ? [
+      fs.writeFile(path.join(outputDir, "share-evaluation-scope.json"), `${JSON.stringify(scope, null, 2)}\n`)
+    ] : []),
     fs.writeFile(path.join(outputDir, "share-summary.md"), toShareMarkdown(shareReport)),
     fs.writeFile(path.join(outputDir, "privacy-summary.json"), `${JSON.stringify(manifest, null, 2)}\n`)
   ]);
 
   return manifest;
+}
+
+async function readOptionalEvaluationScope(reportPath: string, counts: RedactionCounts): Promise<unknown | undefined> {
+  const scopePath = path.join(path.dirname(reportPath), "evaluation-scope.json");
+  try {
+    const scope = JSON.parse(await fs.readFile(scopePath, "utf8")) as unknown;
+    return sanitizeShareValue(scope, counts);
+  } catch (error) {
+    if (isNodeError(error) && error.code === "ENOENT") return undefined;
+    throw error;
+  }
 }
 
 async function resolveReportPath(inputPath: string): Promise<string> {
@@ -195,6 +217,20 @@ function sanitizeText(value: string, counts: RedactionCounts): string {
   output = replaceAndCount(output, /\b(password|secret|token|api[_-]?key)=([^&\s]+)/gi, "$1=[redacted]", counts, "sensitiveTokensRedacted");
   output = replaceAndCount(output, /(?:\/Users\/[^/\s]+|\/home\/[^/\s]+|[A-Za-z]:\\Users\\[^\\\s]+)/g, "[local-path]", counts, "absolutePathsRedacted");
   return output;
+}
+
+function sanitizeShareValue(value: unknown, counts: RedactionCounts): unknown {
+  if (typeof value === "string") {
+    if (/^https?:\/\//i.test(value)) return sanitizeUrl(value, counts);
+    return sanitizePath(value, counts);
+  }
+  if (Array.isArray(value)) return value.map((item) => sanitizeShareValue(item, counts));
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nested]) => [key, sanitizeShareValue(nested, counts)])
+    );
+  }
+  return value;
 }
 
 function replaceAndCount(

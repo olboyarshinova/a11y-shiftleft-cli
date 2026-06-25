@@ -12,6 +12,8 @@
   that records requested URLs, discovered states, target standard, evidence
   types, tool version, manual-review status, and limitations without making a
   conformance claim.
+- Extended `share prepare` to include a sanitized `share-evaluation-scope.json`
+  when the source report directory contains `evaluation-scope.json`.
 
 ## 0.8.0 - 2026-06-24
 

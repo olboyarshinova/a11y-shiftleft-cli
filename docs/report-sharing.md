@@ -39,6 +39,7 @@ The first local export writes:
 
 ```txt
 a11y-share/share-report.json
+a11y-share/share-evaluation-scope.json  # when evaluation-scope.json exists
 a11y-share/share-summary.md
 a11y-share/privacy-summary.json
 ```
@@ -48,6 +49,11 @@ graphs, raw keyboard data, and raw Lighthouse payloads. It removes URL query
 strings and hashes, redacts obvious local absolute paths, and redacts common
 email, bearer-token, password, secret, token, and API-key patterns. Review the
 privacy summary and generated report before sharing externally.
+
+When the source report directory contains `evaluation-scope.json`, the export
+also writes a sanitized `share-evaluation-scope.json`. This preserves the
+WCAG-EM-inspired review scope without including screenshots or raw browser
+evidence.
 
 Future versions can add explicit allow flags for teams that intentionally need
 specific visual evidence or additional fields.

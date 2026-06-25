@@ -841,7 +841,9 @@ Use `share prepare` when you need a smaller local copy for external review. It
 does not upload anything. It excludes screenshots, visual reports, raw
 exploration graphs, raw keyboard data, and raw Lighthouse payloads; it also
 removes URL query strings and hashes, redacts obvious local paths and common
-secret patterns, and writes a privacy summary:
+secret patterns, and writes a privacy summary. If `evaluation-scope.json` exists
+next to the source report, the command also writes a sanitized
+`share-evaluation-scope.json`:
 
 ```bash
 npx a11y-shiftleft-cli share prepare \
