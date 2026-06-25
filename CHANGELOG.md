@@ -17,6 +17,8 @@
 - Added an Evaluation Scope section to the visual HTML report so reviewers can
   see included URLs, rendered states, evidence types, representative states, and
   the non-conformance-claim note without opening JSON.
+- Added the same compact Evaluation Scope summary to the Markdown report used
+  for pull request comments.
 
 ## 0.8.0 - 2026-06-24
 

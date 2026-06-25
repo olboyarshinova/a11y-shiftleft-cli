@@ -429,6 +429,8 @@ ${formatRetentionRows(report.summary.retention)}| Retention evidence | ${formatR
 | Categories | ${formatCountMap(report.summary.byCategory)} |
 | Rules without WCAG mapping | ${formatCountMap(report.summary.byUnmappedRule)} |
 
+${formatEvaluationScope(report)}
+
 ${formatCoverageMatrix(report)}
 
 ${formatPageSummary(report.summary.byPage || [])}
@@ -451,6 +453,41 @@ ${report.issues.length > 10 ? `Showing 10 of ${report.issues.length} findings. S
 
 ${formatDisclaimer(report.summary.standard)}
 `;
+}
+
+function formatEvaluationScope(report: A11yReport): string {
+  const graph = report.exploration;
+  const urls = graph
+    ? [...new Set(graph.states.map((state) => state.url))]
+    : report.summary.urls || [];
+  const sources = Object.keys(report.summary.bySource || {}).sort();
+  const evidence = [
+    graph ? "browser exploration" : "browser exploration not included",
+    sources.length > 0 ? sources.join(", ") : "no automated findings",
+    report.keyboard ? "keyboard traversal" : "keyboard not included",
+    report.summary.lighthouse ? "Lighthouse comparison" : "Lighthouse not included",
+    report.manualChecklist ? "manual checklist" : "manual checklist not included"
+  ].join("; ");
+  const representativeStates = graph
+    ? [...graph.states]
+      .sort((left, right) => right.issueCount - left.issueCount)
+      .slice(0, 3)
+      .map((state) => `${state.id}: ${state.issueCount} finding${state.issueCount === 1 ? "" : "s"}`)
+      .join("; ")
+    : "not applicable";
+
+  return `## Evaluation Scope
+
+This WCAG-EM-inspired scope summary is reproducibility evidence, not a WCAG conformance claim. See \`evaluation-scope.json\` for the machine-readable version.
+
+| Scope item | Value |
+|---|---|
+| Requested URLs | ${markdownCell((report.summary.urls || []).join(", ") || "none")} |
+| URLs included | ${urls.length} |
+| Rendered states | ${graph ? `${graph.summary.statesVisited} of ${graph.summary.maxStates} max` : "not included"} |
+| Depth | ${graph ? graph.summary.maxDepth : "not included"} |
+| Evidence collected | ${markdownCell(evidence)} |
+| Representative states | ${markdownCell(representativeStates || "No findings in captured states")} |`;
 }
 
 function formatKeyboardEvidence(report: A11yReport): string {

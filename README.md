@@ -257,6 +257,7 @@ automation cannot complete. Use `a11y-comment.md` for pull requests,
 `a11y-report.json` for integrations, and `evaluation-scope.json` to see the
 machine-readable scope: requested URLs, discovered states, target standard, tool
 version, evidence types, and known limitations.
+The Markdown PR report also includes the same compact scope summary.
 
 Each finding is labeled as a `WCAG violation`, `best practice`, or
 `unmapped review`. Reports also group repeated occurrences into likely root

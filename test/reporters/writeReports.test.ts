@@ -284,6 +284,11 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(rulesCsv, /button-name,critical,1,1,axe,wcag,aria/);
   assert.match(markdown, /Scan duration \| 123ms/);
   assert.match(markdown, /ADA Title II web accessibility support mode \(2\.1 AA\)/);
+  assert.match(markdown, /## Evaluation Scope/);
+  assert.match(markdown, /not a WCAG conformance claim/);
+  assert.match(markdown, /evaluation-scope\.json/);
+  assert.match(markdown, /Requested URLs \| http:\/\/localhost:3000/);
+  assert.match(markdown, /Evidence collected \| browser exploration not included; axe, eslint; keyboard not included; Lighthouse comparison; manual checklist not included/);
   assert.match(markdown, /Compliance Note/);
   assert.match(markdown, /Compliance Evidence Summary/);
   assert.match(markdown, /WCAG-mapped findings \| 2/);
