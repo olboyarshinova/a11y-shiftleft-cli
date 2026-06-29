@@ -577,6 +577,8 @@ export interface ReportSummary {
   byColorScheme?: Record<string, number>;
   byFindingType?: Record<string, number>;
   byCategory: Record<string, number>;
+  byOwnership?: Record<string, number>;
+  blockedByHumanVerification?: number;
   byPour: Record<string, number>;
   byWcagLevel: Record<string, number>;
   byWcagVersion: Record<string, number>;

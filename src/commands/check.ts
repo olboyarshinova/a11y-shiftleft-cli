@@ -519,6 +519,12 @@ export function formatCheckConsoleSummary(
   const lighthouse = summary.lighthouse?.enabled
     ? `Lighthouse: avg score ${summary.lighthouse.averageAccessibilityScore ?? "n/a"} | failed audits ${summary.lighthouse.failedAuditCount} | manual audits ${summary.lighthouse.manualAuditCount}`
     : undefined;
+  const ownership = summary.byOwnership && Object.keys(summary.byOwnership).length > 0
+    ? `Ownership: ${formatCountMap(summary.byOwnership)}`
+    : undefined;
+  const humanVerification = summary.blockedByHumanVerification
+    ? `Human verification blockers: ${summary.blockedByHumanVerification}`
+    : undefined;
 
   return [
     "a11y-shiftleft check",
@@ -529,6 +535,8 @@ export function formatCheckConsoleSummary(
     `Sources: ${formatCountMap(summary.bySource)}`,
     `Confidence: ${formatCountMap(summary.byConfidence)}`,
     `Color-scheme findings: ${formatCountMap(summary.byColorScheme)}`,
+    ...(ownership ? [ownership] : []),
+    ...(humanVerification ? [humanVerification] : []),
     `WCAG levels: ${formatCountMap(summary.byWcagLevel)}`,
     `Duplicates removed: ${summary.duplicateCount} of ${summary.rawCount} raw findings`,
     ...(retest ? [retest] : []),

@@ -178,6 +178,8 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     byColorScheme: countByPresent(issues, "colorScheme"),
     byFindingType: countBy(issues, "findingType"),
     byCategory: countBy(issues, "category"),
+    byOwnership: countByOwnership(issues),
+    blockedByHumanVerification: issues.filter((issue) => issue.ruleId === "adapter/human-verification").length,
     byPour: countByPour(issues),
     byWcagLevel: countByWcagLevel(issues),
     byWcagVersion: countByWcagVersion(issues),
@@ -219,6 +221,8 @@ export function toSummaryCsv(report: A11yReport): string {
     bestPracticeFindings: compliance.bestPracticeFindings || 0,
     unmappedFindings: compliance.unmappedFindings,
     likelyRootCauses: summary.rootCauseCount || 0,
+    thirdPartyEmbeddedFindings: summary.byOwnership?.["third-party-embed"] || 0,
+    humanVerificationBlocked: summary.blockedByHumanVerification || 0,
     baselineNew: summary.baseline?.newIssues ?? "",
     baselineResolved: summary.baseline?.resolvedIssues ?? "",
     retestNew: summary.retest?.newIssues ?? "",
@@ -231,7 +235,8 @@ export function toSummaryCsv(report: A11yReport): string {
     "duplicatesRemoved", "duplicateRate", "scanDurationMs", "affectedPages",
     "wcagMappedFindings", "bestPracticeFindings", "unmappedFindings",
     "likelyRootCauses", "baselineNew", "baselineResolved", "retestNew",
-    "retestFixed", "ignoredFindings", "trackedRemediation"
+    "retestFixed", "ignoredFindings", "trackedRemediation",
+    "thirdPartyEmbeddedFindings", "humanVerificationBlocked"
   ]);
 }
 
@@ -436,6 +441,8 @@ ${formatRetentionRows(report.summary.retention)}| Retention evidence | ${formatR
 | Color schemes | ${formatCountMap(report.summary.byColorScheme)} |
 | Finding types | ${formatCountMap(report.summary.byFindingType)} |
 | Categories | ${formatCountMap(report.summary.byCategory)} |
+| Ownership | ${formatCountMap(report.summary.byOwnership)} |
+| Human verification blockers | ${report.summary.blockedByHumanVerification || 0} |
 | Rules without WCAG mapping | ${formatCountMap(report.summary.byUnmappedRule)} |
 
 ${formatEvaluationScope(report)}
@@ -595,6 +602,15 @@ function countByPresent(
 ): Record<string, number> {
   return items.reduce<Record<string, number>>((acc, item) => {
     const key = item[field];
+    if (!key) return acc;
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+function countByOwnership(items: DedupedIssue[]): Record<string, number> {
+  return items.reduce<Record<string, number>>((acc, item) => {
+    const key = item.ownership?.kind;
     if (!key) return acc;
     acc[key] = (acc[key] || 0) + 1;
     return acc;

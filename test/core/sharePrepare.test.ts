@@ -38,6 +38,8 @@ test("prepareShareReport writes sanitized local share artifacts", async () => {
       byConfidence: { high: 1 },
       byFindingType: { wcag: 1 },
       byCategory: { aria: 1 },
+      byOwnership: { "third-party-embed": 1 },
+      blockedByHumanVerification: 1,
       byPour: { robust: 1 },
       byWcagLevel: { A: 1 },
       byWcagVersion: { "2.0": 1 },
@@ -122,6 +124,8 @@ test("prepareShareReport writes sanitized local share artifacts", async () => {
 
   assert.equal(shareReport.summary.urls[0], "https://example.com/account");
   assert.equal(shareReport.summary.byPage[0].url, "https://example.com/account");
+  assert.equal(shareReport.summary.byOwnership["third-party-embed"], 1);
+  assert.equal(shareReport.summary.blockedByHumanVerification, 1);
   assert.equal(shareReport.issues[0].file, "[local-path]/project/src/App.tsx");
   assert.equal(shareScope.target.urlsRequested[0], "https://example.com/account");
   assert.equal(shareScope.sample.includedUrls[0], "https://example.com/account");

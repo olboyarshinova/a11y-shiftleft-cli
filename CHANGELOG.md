@@ -37,6 +37,8 @@
   such as YouTube, Vimeo, Spotify, Google Maps, and CodePen.
 - Added human-verification detection so CAPTCHA or bot-protection pages are
   reported as `adapter/human-verification` instead of ambiguous scan failures.
+- Added ownership and human-verification counts to report summaries, CSV
+  exports, CLI output, and sanitized share reports.
 
 ## 0.8.0 - 2026-06-24
 

@@ -273,6 +273,8 @@ If a production site shows CAPTCHA or `verify you are human`, the report marks
 that page as `adapter/human-verification` instead of trying to bypass it. Use a
 staging or allowlisted preview URL for automated scans, then record manual
 evidence for protected production-only flows.
+The top-level report summary includes ownership and human-verification counts
+so these cases are visible before reviewing individual findings.
 
 Under each screenshot, the visual report groups repeated findings by rule and
 shows one deterministic `How to fix` guide for that state-level group. Known

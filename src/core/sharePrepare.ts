@@ -140,6 +140,8 @@ function sanitizeReport(report: A11yReport, counts: RedactionCounts) {
       bySeverity: summary.bySeverity,
       byFindingType: summary.byFindingType,
       byCategory: summary.byCategory,
+      byOwnership: summary.byOwnership,
+      blockedByHumanVerification: summary.blockedByHumanVerification,
       byPour: summary.byPour,
       byWcagLevel: summary.byWcagLevel,
       byWcagVersion: summary.byWcagVersion,

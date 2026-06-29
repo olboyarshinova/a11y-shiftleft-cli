@@ -127,6 +127,10 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
     aria: 1,
     images: 1
   });
+  assert.deepEqual(report.summary.byOwnership, {
+    "third-party-embed": 1
+  });
+  assert.equal(report.summary.blockedByHumanVerification, 0);
   assert.deepEqual(report.summary.byPour, {
     robust: 1,
     perceivable: 1
@@ -277,6 +281,8 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(csv, /byConfidence\.high,1/);
   assert.match(csv, /byColorScheme\.dark,1/);
   assert.match(csv, /byCategory\.aria,1/);
+  assert.match(csv, /byOwnership\.third-party-embed,1/);
+  assert.match(csv, /blockedByHumanVerification,0/);
   assert.match(csv, /byPour\.robust,1/);
   assert.match(csv, /byWcagVersion\.2\.0,2/);
   assert.match(csv, /byPage\.0\.url,http:\/\/localhost:3000\/settings/);
@@ -289,6 +295,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(findingsCsv, /react: <button type=""button"" aria-label=""Open menu"">/);
   assert.match(summaryCsv, /^generatedAt,framework,urls,standard,wcagVersion,wcagLevel,total,critical,warning,info,/);
   assert.match(summaryCsv, /react.*ada-title-ii.*2\.1,AA,2,1,1,0/);
+  assert.match(summaryCsv, /thirdPartyEmbeddedFindings,humanVerificationBlocked/);
   assert.match(pagesCsv, /^url,total,critical,warning,info,severityScore/);
   assert.match(pagesCsv, /http:\/\/localhost:3000\/settings,1,1,0,0,5/);
   assert.match(rulesCsv, /^ruleId,highestSeverity,findings,occurrences,sources,findingTypes,categories,wcagCriteria,pages,fixSummary,documentation/);
@@ -311,6 +318,8 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /Confidence \| high: 1, medium: 1/);
   assert.match(markdown, /Color schemes \| dark: 1/);
   assert.match(markdown, /Categories \| aria: 1, images: 1/);
+  assert.match(markdown, /Ownership \| third-party-embed: 1/);
+  assert.match(markdown, /Human verification blockers \| 0/);
   assert.match(markdown, /category: aria confidence: high 95%/);
   assert.match(markdown, /ownership: Third-party embedded content source: youtube\.com note: Third-party embedded content\. Manual verification recommended\./);
   assert.match(markdown, /color scheme: dark/);
