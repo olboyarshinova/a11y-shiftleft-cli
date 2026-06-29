@@ -352,6 +352,25 @@ test("renderExplorationHtml groups repeated remediation by rule", () => {
   assert.equal((html.match(/<summary>How to fix<\/summary>/g) || []).length, 1);
 });
 
+test("renderExplorationHtml explains human verification blockers", () => {
+  const html = renderExplorationHtml(graph, [{
+    ...issues[0],
+    ruleId: "adapter/human-verification",
+    wcag: [],
+    wcagCriteria: [],
+    severity: "info",
+    ownership: undefined,
+    selector: "body",
+    message: "Human verification challenge detected",
+    fingerprint: "adapter/human-verification::state-1"
+  }]);
+
+  assert.match(html, /class="finding-context finding-context-blocked"/);
+  assert.match(html, /Scan blocked by human verification/);
+  assert.match(html, /CAPTCHA, bot protection, or a verify-you-are-human challenge/);
+  assert.match(html, /Use a staging, preview, or allowlisted URL/);
+});
+
 test("renderExplorationHtml keeps source findings outside visual state groups", () => {
   const html = renderExplorationHtml(graph, [{
     ...issues[0],
@@ -772,7 +791,10 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /Human Review Next/);
   assert.match(html, /WCAG Level A/);
   assert.match(html, /Third-party embedded content/);
-  assert.match(html, /Ownership:<\/strong> Third-party embedded content\. Source: youtube\.com\. Third-party embedded content\. Manual verification recommended\./);
+  assert.match(html, /class="finding-context finding-context-third-party"/);
+  assert.match(html, /Ownership: Third-party embedded content/);
+  assert.match(html, /Source: <a href="https:\/\/www\.youtube\.com\/" target="_blank" rel="noopener noreferrer">youtube\.com<\/a>/);
+  assert.match(html, /Third-party embedded content\. Manual verification recommended\./);
   assert.match(html, /1\. Search products/);
   assert.match(html, /review focus visibility/);
   assert.match(html, /1 observed target/);

@@ -41,6 +41,8 @@
   exports, CLI output, and sanitized share reports.
 - Added third-party embedded-content and human-verification counts to dashboard
   run history, dashboard JSON, and terminal summary output.
+- Made visual HTML reports call out third-party embedded-content ownership and
+  human-verification blockers as explicit review notes.
 
 ## 0.8.0 - 2026-06-24
 

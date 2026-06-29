@@ -862,6 +862,34 @@ export function renderExplorationHtml(
       padding-top: 8px;
     }
 
+    .finding-context {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--info);
+      border-radius: 8px;
+      color: var(--muted);
+      display: grid;
+      gap: 4px;
+      margin-top: 8px;
+      padding: 10px;
+    }
+
+    .finding-context strong {
+      color: var(--ink);
+    }
+
+    .finding-context a {
+      color: var(--info);
+    }
+
+    .finding-context-third-party {
+      border-left-color: var(--warning-marker);
+    }
+
+    .finding-context-blocked {
+      border-left-color: var(--critical);
+    }
+
     .contrast-evidence {
       background: #f6f7f9;
       border-left: 3px solid var(--info);
@@ -2144,6 +2172,7 @@ function renderStateIssueGroup(ruleId: string, issues: DedupedIssue[]): string {
       <div>${escapeHtml(issue.message)}</div>
       ${issue.selector || issue.file ? `<div class="url">${escapeHtml(issue.selector || issue.file || "")}</div>` : ""}
       ${renderOwnership(issue)}
+      ${renderHumanVerificationContext(issue)}
       ${issues.length > 1 ? "" : renderContrastEvidence(issue)}
     </li>`).join("\n")}
   </ul>`;
@@ -2194,9 +2223,30 @@ function renderWcagCriteria(criteria: DedupedIssue["wcagCriteria"]): string {
 
 function renderOwnership(issue: DedupedIssue): string {
   if (!issue.ownership) return "";
-  const source = issue.ownership.source ? ` Source: ${issue.ownership.source}.` : "";
-  const note = issue.ownership.note ? ` ${issue.ownership.note}` : "";
-  return `<div class="url"><strong>Ownership:</strong> ${escapeHtml(issue.ownership.label)}.${escapeHtml(source)}${escapeHtml(note)}</div>`;
+  const sourceUrl = issue.ownership.url ? safeExternalUrl(issue.ownership.url) : undefined;
+  const source = issue.ownership.source
+    ? sourceUrl
+      ? `<span>Source: <a href="${escapeAttribute(sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(issue.ownership.source)}</a></span>`
+      : `<span>Source: ${escapeHtml(issue.ownership.source)}</span>`
+    : "";
+  const note = issue.ownership.note ? `<span>${escapeHtml(issue.ownership.note)}</span>` : "";
+  const className = issue.ownership.kind === "third-party-embed"
+    ? "finding-context finding-context-third-party"
+    : "finding-context";
+  return `<aside class="${className}" aria-label="Finding ownership">
+    <strong>Ownership: ${escapeHtml(issue.ownership.label)}</strong>
+    ${source}
+    ${note}
+  </aside>`;
+}
+
+function renderHumanVerificationContext(issue: DedupedIssue): string {
+  if (issue.ruleId !== "adapter/human-verification") return "";
+  return `<aside class="finding-context finding-context-blocked" aria-label="Human verification blocker">
+    <strong>Scan blocked by human verification</strong>
+    <span>The page appears to be replaced by CAPTCHA, bot protection, or a verify-you-are-human challenge, so automated accessibility results for this URL are incomplete.</span>
+    <span>Use a staging, preview, or allowlisted URL for automation, or record manual accessibility evidence for this flow.</span>
+  </aside>`;
 }
 
 function renderRemediation(issue: DedupedIssue): string {
