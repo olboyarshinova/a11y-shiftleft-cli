@@ -47,6 +47,14 @@ test("getRemediationHint explains how to recover adapter failures", () => {
   assert.match(hint.howToFix[0], /target URL/);
 });
 
+test("getRemediationHint explains human verification blockers", () => {
+  const hint = getRemediationHint("adapter/human-verification");
+
+  assert.match(hint.summary, /trusted automation/);
+  assert.match(hint.howToFix[0], /staging, preview, or allowlisted URL/);
+  assert.match(hint.howToFix[2], /Do not bypass CAPTCHA automatically/);
+});
+
 test("normalizeIssue attaches remediation hints", () => {
   const issue = normalizeIssue({
     source: "axe",

@@ -775,6 +775,18 @@ function createGenericHint(
     helpUrl?: string;
   }
 ): RemediationHint {
+  if (ruleId === "adapter/human-verification") {
+    return {
+      summary: "Run the audit against an environment that allows trusted automation, or record manual evidence for the blocked page.",
+      howToFix: [
+        "Use a staging, preview, or allowlisted URL where bot protection does not replace the page with a human-verification challenge.",
+        "If production must be tested, coordinate with the site owner or security team to allow the audit runner temporarily.",
+        "Do not bypass CAPTCHA automatically; document the blocked page and complete a manual accessibility review for the affected flow."
+      ],
+      docs: options.helpUrl ? [options.helpUrl] : []
+    };
+  }
+
   if (ruleId.startsWith("adapter/")) {
     return {
       summary: "Restore the scanner setup so the affected accessibility checks can run.",

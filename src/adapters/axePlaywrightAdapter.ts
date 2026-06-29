@@ -3,6 +3,7 @@ import { AxeBuilder } from "@axe-core/playwright";
 import { getAxeRunOptions } from "../core/axeOptions.js";
 import { applyColorScheme, detectPageColorSchemes, normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig, type ScrollablePage } from "../core/pageScroll.js";
 import { extractContrastEvidence } from "../core/contrast.js";
+import { createHumanVerificationIssue, detectHumanVerification } from "../core/humanVerification.js";
 import { inferIssueOwnership } from "../core/ownership.js";
 import { analyzePageTitles, type PageTitleObservation } from "../core/pageTitles.js";
 import type { A11yConfig, Issue } from "../types.js";
@@ -80,6 +81,24 @@ export async function runAxePlaywrightAdapter(
           totalUrls: scanUrls.length
         });
         await page.goto(url, { waitUntil: "networkidle" });
+        const verification = await detectHumanVerification(page);
+        if (verification) {
+          const verificationIssue = createHumanVerificationIssue({
+            source: "axe",
+            framework: config.framework,
+            url,
+            signal: verification
+          });
+          issues.push(verificationIssue);
+          options.onProgress?.({
+            type: "scan-complete",
+            url,
+            scannedCount,
+            totalUrls: scanUrls.length,
+            issueCount: 1
+          });
+          continue;
+        }
         await scrollPageForLazyContent(page, scroll);
         pageTitles.push({ url, title: await page.title() });
         const colorSchemes = await detectPageColorSchemes(page);

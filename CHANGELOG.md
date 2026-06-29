@@ -35,6 +35,8 @@
   exports for CI and future integrations.
 - Added third-party iframe ownership metadata for findings inside known embeds
   such as YouTube, Vimeo, Spotify, Google Maps, and CodePen.
+- Added human-verification detection so CAPTCHA or bot-protection pages are
+  reported as `adapter/human-verification` instead of ambiguous scan failures.
 
 ## 0.8.0 - 2026-06-24
 

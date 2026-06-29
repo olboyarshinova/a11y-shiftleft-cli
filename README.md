@@ -269,6 +269,10 @@ Findings inside known third-party embeds such as YouTube, Vimeo, Spotify,
 Google Maps, and CodePen are marked as `Third-party embedded content` with a
 manual-verification note, so teams can separate owner-fixable issues from
 embedded content that may need vendor review or an accessible alternative.
+If a production site shows CAPTCHA or `verify you are human`, the report marks
+that page as `adapter/human-verification` instead of trying to bypass it. Use a
+staging or allowlisted preview URL for automated scans, then record manual
+evidence for protected production-only flows.
 
 Under each screenshot, the visual report groups repeated findings by rule and
 shows one deterministic `How to fix` guide for that state-level group. Known

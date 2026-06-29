@@ -6,6 +6,7 @@ import { getAxeRunOptions } from "../core/axeOptions.js";
 import { chromium, type Browser, type BrowserContext, type Page } from "playwright";
 import { applyColorScheme, detectPageColorSchemes, getPageAppearanceSignature, normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig } from "../core/pageScroll.js";
 import { extractContrastEvidence } from "../core/contrast.js";
+import { createHumanVerificationIssue, detectHumanVerification } from "../core/humanVerification.js";
 import { inferIssueOwnership } from "../core/ownership.js";
 import { analyzePageTitles } from "../core/pageTitles.js";
 import type {
@@ -323,6 +324,7 @@ export async function runExplorePlaywrightAdapter(
         continue;
       }
 
+      const verification = await detectHumanVerification(page);
       const initialPageState = await fingerprintPage(page);
       const openModal = await inspectOpenModal(page);
       const modalFocus = openModal
@@ -333,6 +335,8 @@ export async function runExplorePlaywrightAdapter(
         : undefined;
       const discovery = current.depth >= maxDepth
         ? { actions: [], skipped: [] }
+        : verification
+          ? { actions: [], skipped: [] }
         : await discoverSafeActions(page, initialPageState.url, maxActionsPerState, safeMode);
       const actions = discovery.actions;
       const colorSchemes = await detectPageColorSchemes(page);
@@ -943,6 +947,18 @@ async function scanState(
   }
 ): Promise<Issue[]> {
   try {
+    const verification = await detectHumanVerification(page);
+    if (verification) {
+      return [createHumanVerificationIssue({
+        source: "axe",
+        framework: config.framework,
+        url: page.url(),
+        signal: verification,
+        stateId: state.stateId,
+        stateLabel: state.stateLabel
+      })];
+    }
+
     const results = await new AxeBuilder({ page })
       .options(getAxeRunOptions())
       .analyze();
