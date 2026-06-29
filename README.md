@@ -809,6 +809,8 @@ The dashboard summarizes the latest change from the previous run, new or worse
 problems, resolved problems, trends, top rules, affected pages, and recent runs.
 The terminal summary also prints latest-change, new/worse, and resolved counts
 so CI logs stay useful without opening the HTML file.
+It also carries third-party embedded-content and human-verification counts into
+the latest-run cards, recent-run history, JSON export, and terminal summary.
 When reports were created with `--with-lighthouse`, it also summarizes
 Lighthouse score trends, failed audits, manual audits, and tool-difference
 counts.

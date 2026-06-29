@@ -30,7 +30,8 @@ test("collectDashboardData summarizes historical report runs", async () => {
       page("http://localhost:3000/", 2, 1, 1, 0, 7),
       page("http://localhost:3000/settings", 1, 0, 1, 0, 2)
     ],
-    lighthouseScore: 88
+    lighthouseScore: 88,
+    thirdPartyEmbedded: 1
   });
   await writeReport(root, "run-2", {
     generatedAt: "2026-06-11T00:00:00.000Z",
@@ -44,7 +45,8 @@ test("collectDashboardData summarizes historical report runs", async () => {
     byPage: [
       page("http://localhost:3000/settings", 1, 0, 1, 0, 2)
     ],
-    lighthouseScore: 94
+    lighthouseScore: 94,
+    humanVerificationBlocked: 1
   });
 
   const data = await collectDashboardData(root);
@@ -54,6 +56,10 @@ test("collectDashboardData summarizes historical report runs", async () => {
   assert.equal(data.latestRun?.total, 1);
   assert.deepEqual(data.trend.map((point) => point.total), [3, 1]);
   assert.deepEqual(data.trend.map((point) => point.lighthouseScore), [88, 94]);
+  assert.deepEqual(data.trend.map((point) => point.thirdPartyEmbedded), [1, 0]);
+  assert.deepEqual(data.trend.map((point) => point.humanVerificationBlocked), [0, 1]);
+  assert.equal(data.latestRun?.thirdPartyEmbedded, 0);
+  assert.equal(data.latestRun?.humanVerificationBlocked, 1);
   assert.equal(data.latestDelta?.previousRunId, "run-1");
   assert.equal(data.latestDelta?.latestRunId, "run-2");
   assert.deepEqual(data.latestDelta?.total, { previous: 3, latest: 1, change: -2 });
@@ -113,6 +119,8 @@ test("renderDashboardHtml renders dashboard sections and escapes content", async
   assert.match(html, /10 June 2026, 00:00 UTC/);
   assert.match(html, /Accessibility Trend/);
   assert.match(html, /Latest Change/);
+  assert.match(html, /Third-party embeds/);
+  assert.match(html, /Human verification/);
   assert.match(html, /Save at least two report runs to compare the latest audit with the previous one/);
   assert.match(html, /New Or Worse Problems/);
   assert.match(html, /Save at least two report runs to detect rule and page regressions/);
@@ -126,6 +134,8 @@ test("renderDashboardHtml renders dashboard sections and escapes content", async
   assert.match(html, /Tool differences/);
   assert.match(html, /color-contrast/);
   assert.match(html, /Top Rules/);
+  assert.match(html, /Third-party<\/th>/);
+  assert.match(html, /Human verification<\/th>/);
   assert.match(html, /Most Affected Pages/);
   assert.match(html, /Latest Fix Recommendations/);
   assert.match(html, /Suggested fix/);
@@ -308,7 +318,9 @@ test("formatDashboardSummary renders local output target", async () => {
       page("http://localhost:3000/checkout", 1, 0, 1, 0, 2),
       page("http://localhost:3000/profile", 1, 0, 1, 0, 2)
     ],
-    lighthouseScore: 88
+    lighthouseScore: 88,
+    thirdPartyEmbedded: 1,
+    humanVerificationBlocked: 1
   });
 
   const output = formatDashboardSummary(await collectDashboardData(root), {
@@ -320,6 +332,7 @@ test("formatDashboardSummary renders local output target", async () => {
 
   assert.match(output, /Runs indexed: 2/);
   assert.match(output, /Latest run: run-2 total=2 critical=0 warning=2 info=0/);
+  assert.match(output, /Latest ownership: third-party=1 human-verification=1/);
   assert.match(output, /Latest change: total 0, critical -1, warning \+1, Lighthouse \+8/);
   assert.match(output, /New\/worse problems: 1 rule\(s\), 1 page\(s\)/);
   assert.match(output, /Resolved problems: 1 rule\(s\), 1 page\(s\)/);
@@ -359,6 +372,8 @@ interface ReportInput {
   issues: Array<ReturnType<typeof issue>>;
   byPage: Array<ReturnType<typeof page>>;
   lighthouseScore?: number;
+  thirdPartyEmbedded?: number;
+  humanVerificationBlocked?: number;
 }
 
 async function writeReport(root: string, run: string, input: ReportInput): Promise<void> {
@@ -395,6 +410,8 @@ async function writeReport(root: string, run: string, input: ReportInput): Promi
       },
       byConfidence: { high: input.total },
       byCategory: { controls: input.total },
+      byOwnership: input.thirdPartyEmbedded ? { "third-party-embed": input.thirdPartyEmbedded } : {},
+      blockedByHumanVerification: input.humanVerificationBlocked || 0,
       byPour: { robust: input.total },
       byWcagLevel: { A: input.total },
       byWcagVersion: { "2.0": input.total },

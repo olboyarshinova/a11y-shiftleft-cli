@@ -16,6 +16,8 @@ export interface DashboardTrendPoint {
   critical: number;
   warning: number;
   info: number;
+  thirdPartyEmbedded: number;
+  humanVerificationBlocked: number;
   duplicateRate: number;
   scanDurationMs: number;
   lighthouseScore?: number | null;
@@ -286,8 +288,8 @@ export function renderDashboardHtml(data: DashboardData): string {
     .pages-table th:first-child, .pages-table td:first-child { width: 46%; }
     .runs-table th:first-child, .runs-table td:first-child { width: 9%; }
     .runs-table th:nth-child(2), .runs-table td:nth-child(2) { width: 16%; }
-    .runs-table th:nth-child(7), .runs-table td:nth-child(7) { width: 10%; }
-    .runs-table th:nth-child(8), .runs-table td:nth-child(8) { width: 21%; }
+    .runs-table th:nth-child(9), .runs-table td:nth-child(9) { width: 10%; }
+    .runs-table th:nth-child(10), .runs-table td:nth-child(10) { width: 18%; }
     .bars {
       display: grid;
       gap: 10px;
@@ -352,6 +354,8 @@ export function renderDashboardHtml(data: DashboardData): string {
       <div class="metric"><span class="muted">Latest findings</span><strong>${latest?.total ?? 0}</strong></div>
       <div class="metric"><span class="muted">Latest critical</span><strong class="critical">${latest?.critical ?? 0}</strong></div>
       <div class="metric"><span class="muted">Latest warnings</span><strong class="warning">${latest?.warning ?? 0}</strong></div>
+      <div class="metric"><span class="muted">Third-party embeds</span><strong>${latest?.thirdPartyEmbedded ?? 0}</strong></div>
+      <div class="metric"><span class="muted">Human verification</span><strong>${latest?.humanVerificationBlocked ?? 0}</strong></div>
       <div class="metric"><span class="muted">Change from previous</span><strong class="${deltaClass(data.latestDelta?.total.change ?? null, "lower")}">${formatDelta(data.latestDelta?.total.change ?? null)}</strong></div>
       <div class="metric"><span class="muted">Latest Lighthouse</span><strong>${latest?.lighthouseScore ?? "n/a"}</strong></div>
     </div>
@@ -434,6 +438,8 @@ function toDashboardRun(file: ReportFile): DashboardRunSummary {
     critical: summary.critical,
     warning: summary.warning,
     info: summary.info,
+    thirdPartyEmbedded: summary.byOwnership?.["third-party-embed"] || 0,
+    humanVerificationBlocked: summary.blockedByHumanVerification || 0,
     duplicateRate: summary.duplicateRate,
     scanDurationMs: summary.scanDurationMs,
     lighthouseScore: summary.lighthouse?.averageAccessibilityScore ?? undefined,
@@ -977,6 +983,8 @@ function runsSection(runs: DashboardRunSummary[]): string {
       <td class="num critical">${run.critical}</td>
       <td class="num warning">${run.warning}</td>
       <td class="num info">${run.info}</td>
+      <td class="num">${run.thirdPartyEmbedded}</td>
+      <td class="num">${run.humanVerificationBlocked}</td>
       <td>${escapeHtml(run.framework)}</td>
       <td><code>${escapeHtml(run.reportPath)}</code></td>
     </tr>`)
@@ -985,7 +993,7 @@ function runsSection(runs: DashboardRunSummary[]): string {
   return `<section>
     <h2 id="recent-runs-heading">Recent Runs</h2>
     <table class="runs-table" aria-labelledby="recent-runs-heading">
-      <thead><tr><th scope="col">Run</th><th scope="col">Generated</th><th scope="col" class="num">Total</th><th scope="col" class="num">Critical</th><th scope="col" class="num">Warning</th><th scope="col" class="num">Info</th><th scope="col">Framework</th><th scope="col">Report</th></tr></thead>
+      <thead><tr><th scope="col">Run</th><th scope="col">Generated</th><th scope="col" class="num">Total</th><th scope="col" class="num">Critical</th><th scope="col" class="num">Warning</th><th scope="col" class="num">Info</th><th scope="col" class="num">Third-party</th><th scope="col" class="num">Human verification</th><th scope="col">Framework</th><th scope="col">Report</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
   </section>`;
