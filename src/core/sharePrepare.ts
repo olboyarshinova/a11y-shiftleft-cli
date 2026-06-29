@@ -170,6 +170,13 @@ function sanitizeIssue(issue: DedupedIssue, counts: RedactionCounts) {
     url: issue.url ? sanitizeUrl(issue.url, counts) : undefined,
     file: issue.file ? sanitizePath(issue.file, counts) : undefined,
     selector: issue.selector ? sanitizeText(issue.selector, counts) : undefined,
+    ownership: issue.ownership ? {
+      kind: issue.ownership.kind,
+      label: sanitizeText(issue.ownership.label, counts),
+      source: issue.ownership.source ? sanitizeText(issue.ownership.source, counts) : undefined,
+      url: issue.ownership.url ? sanitizeUrl(issue.ownership.url, counts) : undefined,
+      note: issue.ownership.note ? sanitizeText(issue.ownership.note, counts) : undefined
+    } : undefined,
     message: sanitizeText(issue.message, counts),
     remediation: issue.remediation ? {
       summary: sanitizeText(issue.remediation.summary, counts),

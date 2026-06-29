@@ -77,6 +77,14 @@ export interface RemediationHint {
   frameworkExamples?: Partial<Record<Exclude<Framework, "auto" | "unknown">, string>>;
 }
 
+export interface IssueOwnership {
+  kind: "first-party" | "third-party-embed" | "unknown";
+  label: string;
+  source?: string;
+  url?: string;
+  note?: string;
+}
+
 export interface ElementBounds {
   x: number;
   y: number;
@@ -268,6 +276,7 @@ export interface Issue {
   contrast?: ContrastEvidence;
   helpUrl?: string;
   colorScheme?: ColorScheme;
+  ownership?: IssueOwnership;
   message?: string;
   remediation?: RemediationHint;
 }
@@ -296,6 +305,7 @@ export interface NormalizedIssue extends Required<Pick<Issue, "source" | "framew
   contrast?: ContrastEvidence;
   helpUrl?: string;
   colorScheme?: ColorScheme;
+  ownership?: IssueOwnership;
 }
 
 export interface TriagedIssue extends NormalizedIssue {

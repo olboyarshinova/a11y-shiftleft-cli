@@ -2136,12 +2136,14 @@ function renderStateIssueGroup(ruleId: string, issues: DedupedIssue[]): string {
   const criteria = uniqueWcagCriteria(issues);
   const levels = [...new Set(criteria.map((criterion) => criterion.level))];
   const findingTypes = [...new Set(issues.map((issue) => issue.findingType))];
+  const ownershipLabels = [...new Set(issues.map((issue) => issue.ownership?.label).filter(Boolean))];
   const occurrences = `<ul class="finding-occurrences">
     ${issues.map((issue) => `<li class="finding-occurrence">
       ${issues.length > 1 ? `<div>${severityBadge(issue.severity)} ${findingTypeBadge(issue.findingType)}</div>` : ""}
       ${issues.length > 1 && issue.colorScheme ? `<div class="badges"><span class="badge">${escapeHtml(issue.colorScheme)} color scheme</span></div>` : ""}
       <div>${escapeHtml(issue.message)}</div>
       ${issue.selector || issue.file ? `<div class="url">${escapeHtml(issue.selector || issue.file || "")}</div>` : ""}
+      ${renderOwnership(issue)}
       ${issues.length > 1 ? "" : renderContrastEvidence(issue)}
     </li>`).join("\n")}
   </ul>`;
@@ -2158,6 +2160,7 @@ function renderStateIssueGroup(ruleId: string, issues: DedupedIssue[]): string {
       ${findingTypes.map(findingTypeBadge).join("")}
       ${levels.map((level) => `<span class="badge">WCAG Level ${escapeHtml(level)}</span>`).join("")}
       ${colorSchemes.map((scheme) => `<span class="badge">${escapeHtml(scheme)} color scheme</span>`).join("")}
+      ${ownershipLabels.map((label) => `<span class="badge">${escapeHtml(label || "")}</span>`).join("")}
     </div>
     ${renderWcagCriteria(criteria)}
     ${issues.length > 1
@@ -2187,6 +2190,13 @@ function renderWcagCriteria(criteria: DedupedIssue["wcagCriteria"]): string {
       ? `<a href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`
       : escapeHtml(label);
   }).join(" · ")}</div>`;
+}
+
+function renderOwnership(issue: DedupedIssue): string {
+  if (!issue.ownership) return "";
+  const source = issue.ownership.source ? ` Source: ${issue.ownership.source}.` : "";
+  const note = issue.ownership.note ? ` ${issue.ownership.note}` : "";
+  return `<div class="url"><strong>Ownership:</strong> ${escapeHtml(issue.ownership.label)}.${escapeHtml(source)}${escapeHtml(note)}</div>`;
 }
 
 function renderRemediation(issue: DedupedIssue): string {

@@ -6,6 +6,7 @@ import { getAxeRunOptions } from "../core/axeOptions.js";
 import { chromium, type Browser, type BrowserContext, type Page } from "playwright";
 import { applyColorScheme, detectPageColorSchemes, getPageAppearanceSignature, normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig } from "../core/pageScroll.js";
 import { extractContrastEvidence } from "../core/contrast.js";
+import { inferIssueOwnership } from "../core/ownership.js";
 import { analyzePageTitles } from "../core/pageTitles.js";
 import type {
   A11yConfig,
@@ -946,6 +947,7 @@ async function scanState(
       .options(getAxeRunOptions())
       .analyze();
     const issues: Issue[] = [];
+    const frames = page.frames().map((frame) => ({ url: frame.url() }));
 
     for (const violation of results.violations) {
       for (const node of violation.nodes) {
@@ -962,6 +964,7 @@ async function scanState(
           contrast: extractContrastEvidence(violation.id, node),
           helpUrl: violation.helpUrl,
           colorScheme: state.colorScheme,
+          ownership: inferIssueOwnership(selector, page.url(), frames),
           message: violation.help,
           url: page.url(),
           stateId: state.stateId,

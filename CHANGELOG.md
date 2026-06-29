@@ -33,6 +33,8 @@
   printed by the `dashboard` command.
 - Added a machine-readable `dashboard.json` file next to static dashboard HTML
   exports for CI and future integrations.
+- Added third-party iframe ownership metadata for findings inside known embeds
+  such as YouTube, Vimeo, Spotify, Google Maps, and CodePen.
 
 ## 0.8.0 - 2026-06-24
 

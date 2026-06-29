@@ -292,6 +292,10 @@ export function toFindingsCsv(issues: DedupedIssue[]): string {
     fixSteps: issue.remediation?.howToFix.join(" | ") || "",
     documentation: issue.remediation?.docs.join(" | ") || "",
     frameworkExamples: formatFrameworkExamplesForCsv(issue),
+    ownership: issue.ownership?.label || "",
+    ownershipSource: issue.ownership?.source || "",
+    ownershipUrl: issue.ownership?.url || "",
+    ownershipNote: issue.ownership?.note || "",
     duplicateCount: issue.duplicateCount,
     baselineStatus: issue.baselineStatus || "",
     retestStatus: issue.retestStatus || "",
@@ -323,6 +327,10 @@ export function toFindingsCsv(issues: DedupedIssue[]): string {
       "fixSteps",
       "documentation",
       "frameworkExamples",
+      "ownership",
+      "ownershipSource",
+      "ownershipUrl",
+      "ownershipNote",
       "duplicateCount",
       "baselineStatus",
       "retestStatus",
@@ -390,11 +398,12 @@ export function toMarkdown(report: A11yReport): string {
       const baseline = issue.baselineStatus ? ` baseline: ${issue.baselineStatus}` : "";
       const retest = issue.retestStatus ? ` retest: ${issue.retestStatus}` : "";
       const tracking = formatRemediationTracking(issue);
+      const ownership = formatOwnership(issue);
       const confidence = formatIssueConfidence(issue);
       const findingType = ` type: ${formatFindingType(issue.findingType)}`;
       const category = issue.category ? ` category: ${issue.category}` : "";
       const contrast = formatContrastEvidence(issue);
-      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}${state}${colorScheme}${screenshot}${baseline}${retest}${tracking}${findingType}${category}${confidence}: ${issue.message}${contrast}${remediation}`;
+      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}${state}${colorScheme}${screenshot}${baseline}${retest}${tracking}${ownership}${findingType}${category}${confidence}: ${issue.message}${contrast}${remediation}`;
     })
     .join("\n");
 
@@ -739,6 +748,13 @@ function formatIssueConfidence(issue: DedupedIssue): string {
     : "";
 
   return ` confidence: ${issue.confidence}${score}`;
+}
+
+function formatOwnership(issue: DedupedIssue): string {
+  if (!issue.ownership) return "";
+  const source = issue.ownership.source ? ` source: ${issue.ownership.source}` : "";
+  const note = issue.ownership.note ? ` note: ${issue.ownership.note}` : "";
+  return ` ownership: ${issue.ownership.label}${source}${note}`;
 }
 
 function formatCountMap(counts: Record<string, number> | undefined): string {

@@ -230,6 +230,13 @@ const issues = [
     stateId: "state-1",
     stateLabel: "Initial page",
     colorScheme: "dark",
+    ownership: {
+      kind: "third-party-embed",
+      label: "Third-party embedded content",
+      source: "youtube.com",
+      url: "https://www.youtube.com",
+      note: "Third-party embedded content. Manual verification recommended."
+    },
     screenshot: "screenshots/state-1.png",
     elementBounds: {
       x: 10,
@@ -764,6 +771,8 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /First Tab Stops/);
   assert.match(html, /Human Review Next/);
   assert.match(html, /WCAG Level A/);
+  assert.match(html, /Third-party embedded content/);
+  assert.match(html, /Ownership:<\/strong> Third-party embedded content\. Source: youtube\.com\. Third-party embedded content\. Manual verification recommended\./);
   assert.match(html, /1\. Search products/);
   assert.match(html, /review focus visibility/);
   assert.match(html, /1 observed target/);

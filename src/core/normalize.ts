@@ -37,6 +37,7 @@ export function normalizeIssue(issue: Issue): NormalizedIssue {
     contrast: issue.contrast,
     helpUrl: issue.helpUrl,
     colorScheme: issue.colorScheme,
+    ownership: issue.ownership,
     message: issue.message || "Accessibility issue detected."
   };
 }

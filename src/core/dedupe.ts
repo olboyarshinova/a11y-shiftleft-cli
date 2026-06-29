@@ -35,6 +35,7 @@ function preserveVisualEvidence(existing: DedupedIssue, duplicate: TriagedIssue)
   if (!existing.selector && duplicate.selector) existing.selector = duplicate.selector;
   if (!existing.url && duplicate.url) existing.url = duplicate.url;
   if (!existing.helpUrl && duplicate.helpUrl) existing.helpUrl = duplicate.helpUrl;
+  if (!existing.ownership && duplicate.ownership) existing.ownership = duplicate.ownership;
 }
 
 function createFingerprint(issue: TriagedIssue): string {

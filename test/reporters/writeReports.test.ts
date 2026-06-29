@@ -28,6 +28,13 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
         selector: ".icon-button",
         url: "http://localhost:3000/settings",
         colorScheme: "dark",
+        ownership: {
+          kind: "third-party-embed",
+          label: "Third-party embedded content",
+          source: "youtube.com",
+          url: "https://www.youtube.com",
+          note: "Third-party embedded content. Manual verification recommended."
+        },
         message: "Buttons must have discernible text",
         remediation: {
           summary: "Give every button an accessible name.",
@@ -244,6 +251,8 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.equal(json.issues[0].confidence, "high");
   assert.equal(json.issues[0].confidenceScore, 95);
   assert.equal(json.issues[0].category, "aria");
+  assert.equal(json.issues[0].ownership.source, "youtube.com");
+  assert.equal(json.issues[0].ownership.note, "Third-party embedded content. Manual verification recommended.");
   assert.equal(json.issues[0].remediation.summary, "Give every button an accessible name.");
   assert.equal(json.lighthouse[0].accessibilityScore, 91);
   assert.match(markdown, /Step 1: Use visible button text when possible/);
@@ -273,6 +282,8 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(csv, /byPage\.0\.url,http:\/\/localhost:3000\/settings/);
   assert.match(csv, /byPage\.0\.severityScore,5/);
   assert.match(findingsCsv, /fixSummary,fixSteps,documentation,frameworkExamples/);
+  assert.match(findingsCsv, /ownership,ownershipSource,ownershipUrl,ownershipNote/);
+  assert.match(findingsCsv, /Third-party embedded content,youtube\.com,https:\/\/www\.youtube\.com,Third-party embedded content\. Manual verification recommended\./);
   assert.match(findingsCsv, /Give every button an accessible name/);
   assert.match(findingsCsv, /Use visible button text when possible/);
   assert.match(findingsCsv, /react: <button type=""button"" aria-label=""Open menu"">/);
@@ -301,6 +312,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /Color schemes \| dark: 1/);
   assert.match(markdown, /Categories \| aria: 1, images: 1/);
   assert.match(markdown, /category: aria confidence: high 95%/);
+  assert.match(markdown, /ownership: Third-party embedded content source: youtube\.com note: Third-party embedded content\. Manual verification recommended\./);
   assert.match(markdown, /color scheme: dark/);
   assert.match(markdown, /WCAG 4\.1\.2 Name, Role, Value, Level A/);
   assert.match(markdown, /Fix: Give every button an accessible name/);

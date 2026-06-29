@@ -265,6 +265,10 @@ Each finding is labeled as a `WCAG violation`, `best practice`, or
 `unmapped review`. Reports also group repeated occurrences into likely root
 causes when the same rule and component state appear across routes. This grouping is
 heuristic: per-page evidence remains available for review.
+Findings inside known third-party embeds such as YouTube, Vimeo, Spotify,
+Google Maps, and CodePen are marked as `Third-party embedded content` with a
+manual-verification note, so teams can separate owner-fixable issues from
+embedded content that may need vendor review or an accessible alternative.
 
 Under each screenshot, the visual report groups repeated findings by rule and
 shows one deterministic `How to fix` guide for that state-level group. Known

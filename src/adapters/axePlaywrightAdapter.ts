@@ -3,6 +3,7 @@ import { AxeBuilder } from "@axe-core/playwright";
 import { getAxeRunOptions } from "../core/axeOptions.js";
 import { applyColorScheme, detectPageColorSchemes, normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig, type ScrollablePage } from "../core/pageScroll.js";
 import { extractContrastEvidence } from "../core/contrast.js";
+import { inferIssueOwnership } from "../core/ownership.js";
 import { analyzePageTitles, type PageTitleObservation } from "../core/pageTitles.js";
 import type { A11yConfig, Issue } from "../types.js";
 
@@ -92,9 +93,11 @@ export async function runAxePlaywrightAdapter(
             .analyze();
           const reportedColorScheme = colorSchemes.length > 1 ? colorScheme : undefined;
           const colorSchemeIssues: Issue[] = [];
+          const frames = page.frames().map((frame) => ({ url: frame.url() }));
 
           for (const violation of results.violations) {
             for (const node of violation.nodes) {
+              const selector = node.target.join(" ");
               colorSchemeIssues.push({
                 source: "axe",
                 framework: config.framework,
@@ -102,10 +105,11 @@ export async function runAxePlaywrightAdapter(
                 impact: violation.impact || undefined,
                 wcag: violation.tags.filter((tag: string) => tag.startsWith("wcag")),
                 tags: violation.tags,
-                selector: node.target.join(" "),
+                selector,
                 contrast: extractContrastEvidence(violation.id, node),
                 helpUrl: violation.helpUrl,
                 colorScheme: reportedColorScheme,
+                ownership: inferIssueOwnership(selector, url, frames),
                 message: violation.help,
                 url
               });
