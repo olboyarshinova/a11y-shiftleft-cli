@@ -278,6 +278,16 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /<summary>How to fix<\/summary>/);
   assert.match(html, /<details class="remediation">\s*<summary>How to fix<\/summary>/);
   assert.doesNotMatch(html, /<details class="remediation" open>/);
+  assert.match(html, /class="copy-issue"/);
+  assert.match(html, />Copy issue<\/button>/);
+  assert.match(html, /data-copy-issue-status aria-live="polite"/);
+  assert.match(html, /navigator\.clipboard/);
+  const copyPayload = html.match(/data-copy-issue="([^"]+)"/)?.[1];
+  assert.ok(copyPayload);
+  const decodedCopyPayload = decodeURIComponent(copyPayload);
+  assert.match(decodedCopyPayload, /## button-name/);
+  assert.match(decodedCopyPayload, /WCAG 4\.1\.2 Name, Role, Value \(A\)/);
+  assert.match(decodedCopyPayload, /Ownership/);
   assert.match(html, /Give every button an accessible name/);
   assert.match(html, /Use visible button text when possible/);
   assert.match(html, /react example/);

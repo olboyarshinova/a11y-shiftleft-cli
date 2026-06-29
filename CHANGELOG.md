@@ -43,6 +43,8 @@
   run history, dashboard JSON, and terminal summary output.
 - Made visual HTML reports call out third-party embedded-content ownership and
   human-verification blockers as explicit review notes.
+- Added a local `Copy issue` action to visual HTML report finding groups so
+  teams can copy Markdown evidence and fix guidance into their tracker.
 
 ## 0.8.0 - 2026-06-24
 

@@ -281,6 +281,9 @@ shows one deterministic `How to fix` guide for that state-level group. Known
 rules provide specific steps, official guidance links, and framework examples
 when available. Unknown rules still receive safe review steps instead of an
 empty recommendation; axe findings also preserve their rule-specific help link.
+Use `Copy issue` beside a finding group to copy a Markdown draft with severity,
+page, selector, WCAG metadata, ownership context, and fix guidance for GitHub
+Issues, Jira, Linear, or team notes.
 
 | File | Use it for | Commit it? |
 |---|---|---|

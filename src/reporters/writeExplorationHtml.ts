@@ -890,6 +890,38 @@ export function renderExplorationHtml(
       border-left-color: var(--critical);
     }
 
+    .issue-actions {
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .copy-issue {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--ink);
+      cursor: pointer;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      min-height: 32px;
+      padding: 5px 10px;
+    }
+
+    .copy-issue:hover,
+    .copy-issue:focus-visible {
+      border-color: var(--info);
+      outline: 2px solid transparent;
+    }
+
+    .copy-issue-status {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
     .contrast-evidence {
       background: #f6f7f9;
       border-left: 3px solid var(--info);
@@ -1201,6 +1233,39 @@ export function renderExplorationHtml(
       }
 
       update();
+    })();
+
+    (() => {
+      const buttons = Array.from(document.querySelectorAll('[data-copy-issue]'));
+
+      const copyText = async (text) => {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+          return;
+        }
+
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.top = '-1000px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        textarea.remove();
+      };
+
+      for (const button of buttons) {
+        button.addEventListener('click', async () => {
+          const status = button.parentElement?.querySelector('[data-copy-issue-status]');
+          try {
+            await copyText(decodeURIComponent(button.dataset.copyIssue || ''));
+            if (status) status.textContent = 'Copied';
+          } catch {
+            if (status) status.textContent = 'Copy failed';
+          }
+        });
+      }
     })();
   </script>
 </body>
@@ -2195,6 +2260,7 @@ function renderStateIssueGroup(ruleId: string, issues: DedupedIssue[]): string {
     ${issues.length > 1
       ? `<details open><summary>Affected findings (${issues.length})</summary>${occurrences}</details>`
       : occurrences}
+    ${renderCopyIssueAction(ruleId, issues)}
     ${issues.length > 1 ? renderGroupedContrastGuidance(issues) : ""}
     ${renderRemediation(issues[0])}
   </li>`;
@@ -2247,6 +2313,75 @@ function renderHumanVerificationContext(issue: DedupedIssue): string {
     <span>The page appears to be replaced by CAPTCHA, bot protection, or a verify-you-are-human challenge, so automated accessibility results for this URL are incomplete.</span>
     <span>Use a staging, preview, or allowlisted URL for automation, or record manual accessibility evidence for this flow.</span>
   </aside>`;
+}
+
+function renderCopyIssueAction(ruleId: string, issues: DedupedIssue[]): string {
+  const markdown = buildIssueMarkdown(ruleId, issues);
+  return `<div class="issue-actions">
+    <button class="copy-issue" type="button" data-copy-issue="${escapeAttribute(encodeURIComponent(markdown))}">Copy issue</button>
+    <span class="copy-issue-status" data-copy-issue-status aria-live="polite"></span>
+  </div>`;
+}
+
+function buildIssueMarkdown(ruleId: string, issues: DedupedIssue[]): string {
+  const primary = issues[0];
+  const summary = summarizeIssues(issues);
+  const criteria = uniqueWcagCriteria(issues);
+  const remediation = primary.remediation || getRemediationHint(
+    primary.ruleId,
+    primary.wcagCriteria,
+    primary.framework,
+    { helpUrl: primary.helpUrl }
+  );
+  const targets = [...new Set(issues.map((issue) => issue.selector || issue.file || "unknown target"))].slice(0, 5);
+  const wcag = criteria.length > 0
+    ? criteria.map((criterion) => `- WCAG ${criterion.id} ${criterion.title} (${criterion.level}): ${criterion.url}`)
+    : ["- No WCAG mapping available."];
+  const ownership: string[] = primary.ownership
+    ? ([
+      "",
+      "### Ownership",
+      "",
+      `- ${primary.ownership.label}`,
+      primary.ownership.source ? `- Source: ${primary.ownership.source}` : undefined,
+      primary.ownership.note ? `- Note: ${primary.ownership.note}` : undefined
+    ].filter((line): line is string => line !== undefined))
+    : [];
+
+  const lines: Array<string | undefined> = [
+    `## ${ruleId}`,
+    "",
+    primary.message,
+    "",
+    "### Evidence",
+    "",
+    `- Severity: ${primary.severity}`,
+    `- Source: ${primary.source}`,
+    `- Finding type: ${primary.findingType}`,
+    `- Page: ${primary.url || "unknown"}`,
+    primary.stateId ? `- State: ${primary.stateId}${primary.stateLabel ? ` (${primary.stateLabel})` : ""}` : "",
+    `- Findings in group: ${issues.length}`,
+    `- Severity mix: critical ${summary.critical}, warning ${summary.warning}, info ${summary.info}`,
+    "",
+    "### Targets",
+    "",
+    ...targets.map((target) => `- \`${target}\``),
+    "",
+    "### WCAG",
+    "",
+    ...wcag,
+    ...ownership,
+    "",
+    "### Suggested fix",
+    "",
+    remediation.summary,
+    "",
+    ...remediation.howToFix.map((step) => `- ${step}`),
+    "",
+    ...remediation.docs.slice(0, 3).map((url) => `- ${url}`)
+  ];
+
+  return lines.filter((line): line is string => line !== undefined).join("\n");
 }
 
 function renderRemediation(issue: DedupedIssue): string {
