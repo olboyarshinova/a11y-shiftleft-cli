@@ -86,6 +86,11 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
         },
         supportedPlatforms: ["Desktop Chrome"],
         assistiveTechnologies: ["Keyboard only"],
+        representativeSample: [{
+          type: "Core page",
+          url: "http://localhost:3000",
+          reason: "Primary authenticated page"
+        }],
         criticalJourneys: [{
           name: "Account settings",
           urls: ["http://localhost:3000/settings", "http://localhost:3000"]
@@ -276,6 +281,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.equal(json.summary.plannedScope.product.name, "Demo Shop");
   assert.equal(json.summary.journeyImpact[0].name, "Account settings");
   assert.equal(json.summary.journeyImpact[0].findingCount, 2);
+  assert.equal(json.summary.plannedScope.representativeSample[0].type, "Core page");
   assert.deepEqual(json.issues.map((issue: { journeys?: string[] }) => issue.journeys), [["Account settings"], ["Account settings"]]);
   assert.equal(scope.methodology.name, "WCAG-EM-inspired evaluation scope");
   assert.equal(scope.methodology.conformanceClaim, false);
@@ -344,6 +350,9 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /Evidence collected \| browser exploration not included; axe, eslint; keyboard not included; Lighthouse comparison; manual checklist not included/);
   assert.match(markdown, /## Planned Scope/);
   assert.match(markdown, /Product \| Demo Shop - ecommerce/);
+  assert.match(markdown, /Representative sample \| 1/);
+  assert.match(markdown, /### Representative Sample/);
+  assert.match(markdown, /Core page \| http:\/\/localhost:3000 \| Primary authenticated page/);
   assert.match(markdown, /Critical journeys \| 1/);
   assert.match(markdown, /### Journey Impact/);
   assert.match(markdown, /Account settings \| 2 \| 1 \| 1 \| 0/);

@@ -17,9 +17,6 @@ Section 508 certification.
   and `full` so reports can explain whether the run is prioritizing blockers,
   retesting fixes, estimating remediation scope, or building a fuller evidence
   package.
-- Add representative sample planning for large sites: core pages, page types,
-  important states, critical journeys, and optional special-purpose pages such
-  as accessibility contact or help pages.
 - Add structured-vs-random sample comparison for larger audits, including
   random sample size, findings unique to random pages, and a recommendation to
   expand the representative sample when new issue types appear.

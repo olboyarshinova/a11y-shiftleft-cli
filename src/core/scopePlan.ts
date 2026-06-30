@@ -5,6 +5,7 @@ import type {
   PlannedEvaluationScope,
   PlannedScopeExclusion,
   PlannedScopeJourney,
+  PlannedScopeSamplePage,
   PlannedScopeThirdPartyContent
 } from "../types.js";
 
@@ -18,6 +19,7 @@ export interface CreateScopePlanInput {
   languages?: string[];
   supportedPlatforms?: string[];
   assistiveTechnologies?: string[];
+  representativeSample?: PlannedScopeSamplePage[];
   criticalJourneys?: PlannedScopeJourney[];
   thirdPartyContent?: PlannedScopeThirdPartyContent[];
   exclusions?: PlannedScopeExclusion[];
@@ -46,6 +48,7 @@ export function createScopePlan(input: CreateScopePlanInput = {}): PlannedEvalua
       "Keyboard only",
       "Screen reader manual review"
     ]),
+    representativeSample: input.representativeSample || [],
     criticalJourneys: input.criticalJourneys || [],
     thirdPartyContent: input.thirdPartyContent || [],
     exclusions: input.exclusions || [],
@@ -75,6 +78,16 @@ export function parseJourney(value: string): PlannedScopeJourney {
   return {
     name: requiredText(name, "Journey name"),
     urls: splitCsv(urlList)
+  };
+}
+
+export function parseSamplePage(value: string): PlannedScopeSamplePage {
+  const [type, rest = ""] = splitOnce(value, ":");
+  const [url, reason] = splitOnce(rest, "|");
+  return {
+    type: requiredText(type, "Sample page type"),
+    url: requiredText(url, "Sample page URL"),
+    ...(reason ? { reason: reason.trim() } : {})
   };
 }
 
@@ -119,6 +132,13 @@ function normalizeScopePlan(value: unknown, filePath: string): PlannedEvaluation
     urls: stringArray(target.urls),
     supportedPlatforms: stringArray(value.supportedPlatforms),
     assistiveTechnologies: stringArray(value.assistiveTechnologies),
+    representativeSample: Array.isArray(value.representativeSample)
+      ? value.representativeSample.filter(isPlainObject).map((page) => ({
+        type: typeof page.type === "string" ? page.type : "Representative page",
+        url: typeof page.url === "string" ? page.url : "",
+        ...(typeof page.reason === "string" ? { reason: page.reason } : {})
+      })).filter((page) => page.url.length > 0)
+      : [],
     criticalJourneys: Array.isArray(value.criticalJourneys)
       ? value.criticalJourneys.filter(isPlainObject).map((journey) => ({
         name: typeof journey.name === "string" ? journey.name : "Unnamed journey",
