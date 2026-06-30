@@ -17,9 +17,6 @@ Section 508 certification.
   and `full` so reports can explain whether the run is prioritizing blockers,
   retesting fixes, estimating remediation scope, or building a fuller evidence
   package.
-- Add a guided scope initializer that records product type, target standard,
-  languages, supported platform and assistive-technology combinations, critical
-  journeys, third-party content, and intentionally excluded areas.
 - Add representative sample planning for large sites: core pages, page types,
   important states, critical journeys, and optional special-purpose pages such
   as accessibility contact or help pages.

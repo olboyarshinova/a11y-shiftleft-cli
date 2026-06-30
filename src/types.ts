@@ -437,11 +437,53 @@ export interface ReportRetentionEvidence {
   keptRuns: number;
 }
 
+export interface PlannedScopeJourney {
+  name: string;
+  urls: string[];
+  description?: string;
+  notes?: string;
+}
+
+export interface PlannedScopeThirdPartyContent {
+  name: string;
+  url?: string;
+  owner?: string;
+  reviewStrategy: string;
+}
+
+export interface PlannedScopeExclusion {
+  area: string;
+  reason: string;
+  owner?: string;
+  reviewBy?: string;
+}
+
+export interface PlannedEvaluationScope {
+  version: 1;
+  generatedAt: string;
+  product: {
+    name?: string;
+    type: string;
+    languages: string[];
+  };
+  target: {
+    standard: ComplianceStandard;
+    urls: string[];
+  };
+  supportedPlatforms: string[];
+  assistiveTechnologies: string[];
+  criticalJourneys: PlannedScopeJourney[];
+  thirdPartyContent: PlannedScopeThirdPartyContent[];
+  exclusions: PlannedScopeExclusion[];
+  notes: string[];
+}
+
 export interface ReportMetrics {
   framework?: Framework | string;
   cwd?: string;
   urls?: string[];
   standard?: ComplianceStandardMetadata;
+  plannedScope?: PlannedEvaluationScope;
   lighthouse?: LighthouseAuditResult[];
   baseline?: BaselineComparisonSummary;
   retest?: RetestComparisonSummary;
@@ -574,6 +616,7 @@ export interface ReportSummary {
   framework: Framework | string;
   urls: string[];
   standard?: ComplianceStandardMetadata;
+  plannedScope?: PlannedEvaluationScope;
   baseline?: BaselineComparisonSummary;
   retest?: RetestComparisonSummary;
   remediationTracking?: RemediationTrackingSummary;

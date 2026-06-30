@@ -165,6 +165,23 @@ Create a config file and add generated reports to `.gitignore`:
 npx a11y-shiftleft-cli init --framework auto --gitignore
 ```
 
+Optional: describe what you intend to audit. The generated `a11y-scope.json`
+is picked up automatically by `audit`, `explore`, `check`, and `keyboard`
+reports:
+
+```bash
+npx a11y-shiftleft-cli scope init \
+  --product-name "My App" \
+  --product-type "web application" \
+  --url $APP_URL \
+  --language en \
+  --platform "Desktop Chrome" \
+  --assistive-tech "Keyboard only" \
+  --journey "Core task:$APP_URL" \
+  --third-party "YouTube:https://www.youtube.com" \
+  --exclude "Authenticated billing:requires test account"
+```
+
 Then use a URL shortcut in your terminal. The examples below use macOS/Linux
 shell syntax:
 
@@ -197,6 +214,7 @@ HTML report.
 | Goal | Command | Main output |
 |---|---|---|
 | Run the recommended audit | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports` | `a11y-report.html` |
+| Create planned audit scope | `npx a11y-shiftleft-cli scope init --url $APP_URL --product-type "web application"` | `a11y-scope.json` used by later reports |
 | Show only WCAG-mapped findings | `npx a11y-shiftleft-cli audit --url $APP_URL --wcag-only --out reports` | Report without best-practice or unmapped review signals |
 | Add optional Lighthouse score | `npm install --save-dev lighthouse && npx a11y-shiftleft-cli audit --url $APP_URL --with-lighthouse --out reports` | Visual report plus score and rule comparison |
 | Add Excel and PDF exports | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports --excel --pdf` | HTML, CSV, and PDF |

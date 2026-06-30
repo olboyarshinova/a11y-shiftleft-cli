@@ -12,6 +12,18 @@ optional exports are needed. Slow applications can use `--wait-ms 1000` or
 `--wait-for-selector "[data-page-ready]"`; audit auto-scrolls before scanning
 unless `--no-scroll` is passed.
 
+Create `a11y-scope.json` before a run when the report should include planned
+audit context:
+
+```bash
+npx a11y-shiftleft scope init --url $APP_URL --product-type "web application"
+```
+
+The visual report then shows the planned product type, target standard, and
+critical journey count next to the discovered browser scope. The same planned
+scope is also embedded in `a11y-report.json`, `a11y-comment.md`, and
+`evaluation-scope.json`.
+
 Use `explore` when you want the CLI to walk safe parts of a running app and
 produce only the lower-level visual exploration artifacts:
 

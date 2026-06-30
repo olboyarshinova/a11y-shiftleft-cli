@@ -4,7 +4,7 @@ import { enrichIssueEvidence } from "../core/classification.js";
 import { compareLighthouseWithFindings } from "../core/lighthouseComparison.js";
 import { formatReportDateUtc } from "../core/reportDate.js";
 import { getRemediationHint } from "../core/remediation.js";
-import type { DedupedIssue, ExplorationGraph, ExplorationState, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, Severity } from "../types.js";
+import type { DedupedIssue, ExplorationGraph, ExplorationState, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, PlannedEvaluationScope, Severity } from "../types.js";
 
 interface StateViewModel extends ExplorationState {
   issues: DedupedIssue[];
@@ -16,6 +16,7 @@ interface ExplorationHtmlOptions {
   keyboard?: KeyboardAuditResult;
   manualChecklist?: ManualChecklist;
   lighthouse?: LighthouseAuditResult[];
+  plannedScope?: PlannedEvaluationScope;
 }
 
 interface CoverageMatrixRow {
@@ -1557,10 +1558,18 @@ function renderEvaluationScope(
       <div class="scope-item"><strong>Depth</strong><span>${graph.summary.maxDepth}</span></div>
       <div class="scope-item"><strong>Evidence collected</strong><span>${escapeHtml(evidence.join("; "))}</span></div>
       <div class="scope-item"><strong>Representative states</strong><span>${escapeHtml(mostAffected.length ? mostAffected.join("; ") : "No findings in captured states")}</span></div>
+      <div class="scope-item"><strong>Planned scope</strong><span>${escapeHtml(formatPlannedScopeSummary(options.plannedScope))}</span></div>
     </div>
     ${renderReportCompleteness(graph, options, sources)}
     <p class="muted">Full machine-readable details are in <code>evaluation-scope.json</code>.</p>
   </section>`;
+}
+
+function formatPlannedScopeSummary(scope: PlannedEvaluationScope | undefined): string {
+  if (!scope) return "not provided";
+  const product = scope.product.name ? `${scope.product.name} (${scope.product.type})` : scope.product.type;
+  const journeyCount = `${scope.criticalJourneys.length} journey${scope.criticalJourneys.length === 1 ? "" : "s"}`;
+  return `${product}; ${scope.target.standard}; ${journeyCount}`;
 }
 
 function renderReportCompleteness(
@@ -1592,6 +1601,14 @@ function renderReportCompleteness(
       detail: sources.length > 0 ? sources.join(", ") : "Browser exploration completed without automated findings",
       status: "ready",
       statusLabel: "included"
+    },
+    {
+      label: "Planned scope",
+      detail: options.plannedScope
+        ? `${options.plannedScope.product.type}; ${options.plannedScope.criticalJourneys.length} critical journey${options.plannedScope.criticalJourneys.length === 1 ? "" : "s"}`
+        : "Create a11y-scope.json with scope init when you need planned audit context",
+      status: options.plannedScope ? "ready" : "optional",
+      statusLabel: options.plannedScope ? "included" : "optional"
     },
     {
       label: "Keyboard evidence",

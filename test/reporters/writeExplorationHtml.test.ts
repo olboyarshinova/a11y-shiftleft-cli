@@ -803,7 +803,29 @@ test("writeExplorationHtml can create a unified audit report", async () => {
       }],
       notApplicableAudits: 3,
       durationMs: 1500
-    }]
+    }],
+    plannedScope: {
+      version: 1,
+      generatedAt: "2026-06-21T00:00:00.000Z",
+      product: {
+        name: "Demo Shop",
+        type: "ecommerce",
+        languages: ["en"]
+      },
+      target: {
+        standard: "wcag22-aa",
+        urls: ["http://localhost:3000"]
+      },
+      supportedPlatforms: ["Desktop Chrome"],
+      assistiveTechnologies: ["Keyboard only"],
+      criticalJourneys: [{
+        name: "Checkout",
+        urls: ["http://localhost:3000/cart", "http://localhost:3000/checkout"]
+      }],
+      thirdPartyContent: [],
+      exclusions: [],
+      notes: []
+    }
   });
 
   const html = await fs.readFile(path.join(outputDir, "a11y-report.html"), "utf8");
@@ -815,6 +837,8 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /Report Completeness/);
   assert.match(html, /URL and state scope/);
   assert.match(html, /Automated tools/);
+  assert.match(html, /Planned scope/);
+  assert.match(html, /Demo Shop \(ecommerce\); wcag22-aa; 1 journey/);
   assert.match(html, /Keyboard evidence/);
   assert.match(html, /Manual review records/);
   assert.match(html, /Known limitations/);

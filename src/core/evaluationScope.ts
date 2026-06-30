@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
-import type { A11yReport, ComplianceStandardMetadata, ExplorationGraph, Framework } from "../types.js";
+import type { A11yReport, ComplianceStandardMetadata, ExplorationGraph, Framework, PlannedEvaluationScope } from "../types.js";
 
 const require = createRequire(import.meta.url);
 const { version } = require("../../package.json") as { version: string };
@@ -24,6 +24,7 @@ export interface EvaluationScopeManifest {
     framework: Framework | string;
     urlsRequested: string[];
   };
+  plannedScope?: PlannedEvaluationScope;
   sample: {
     strategy: "configured-urls" | "browser-exploration" | "static-source";
     includedUrls: string[];
@@ -83,6 +84,7 @@ export function createEvaluationScopeManifest(report: A11yReport): EvaluationSco
       framework: report.summary.framework,
       urlsRequested: requestedUrls
     },
+    ...(report.summary.plannedScope ? { plannedScope: report.summary.plannedScope } : {}),
     sample: {
       strategy: sampleStrategy(graph, requestedUrls),
       includedUrls: discoveredUrls,

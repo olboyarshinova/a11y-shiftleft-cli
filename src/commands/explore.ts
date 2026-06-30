@@ -8,6 +8,7 @@ import { triageIssues } from "../core/severity.js";
 import { resolveStandard } from "../core/standards.js";
 import { applyReportRetention } from "../core/reportRetention.js";
 import { filterReportFindings } from "../core/findingFilter.js";
+import { readScopePlanIfExists } from "../core/scopePlan.js";
 import { cleanExploreArtifacts } from "../reporters/cleanExploreArtifacts.js";
 import { writeExplorationHtml } from "../reporters/writeExplorationHtml.js";
 import { writeExplorationPdf } from "../reporters/writeExplorationPdf.js";
@@ -178,6 +179,7 @@ export function registerExploreCommand(program: Command): void {
       const framework = config.framework === "auto"
         ? await detectFramework(config.cwd)
         : config.framework;
+      const plannedScope = await readScopePlanIfExists(config.cwd);
       const effectiveConfig = {
         ...config,
         framework,
@@ -289,6 +291,7 @@ export function registerExploreCommand(program: Command): void {
         framework,
         cwd: effectiveConfig.cwd,
         urls: [...new Set(exploration.graph.states.map((state) => state.url))],
+        plannedScope,
         standard: {
           ...standard,
           wcagVersion: effectiveConfig.wcagVersion,
@@ -305,7 +308,7 @@ export function registerExploreCommand(program: Command): void {
         semiAuto: Boolean(options.semiAuto)
       });
       if (options.html !== false) {
-        await writeExplorationHtml(effectiveConfig.outputDir, exploration.graph, report.issues);
+        await writeExplorationHtml(effectiveConfig.outputDir, exploration.graph, report.issues, { plannedScope });
       }
       if (options.pdf) {
         await writeExplorationPdf(effectiveConfig.outputDir);
