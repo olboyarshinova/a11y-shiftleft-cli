@@ -96,6 +96,12 @@ Usually no. Report files (`a11y-comment.md`, `a11y-report.json`, generated CSV
 tables, visual HTML, and `screenshots/`) change on every run and quickly
 inflate repository size. Add the reports folder to `.gitignore`:
 
+### Why am I seeing findings inside third-party iframes like YouTube or Google Maps?
+
+Some reports may include findings that originate from embedded third-party iframes - such as YouTube, Vimeo, Spotify, Google Maps, or CodePen. This content is served directly from external providers and is outside your direct control as a site owner.
+
+These findings cannot always be fixed on your end. We recommend manually verifying whether the issue affects your users in practice, and providing an accessible alternative on your own site where possible - for example, adding a transcript alongside an embedded video.
+
 ```
 # .gitignore
 reports/
