@@ -154,13 +154,15 @@ Section 508 certification.
   positives.
 - Add an optional import format for manually confirmed external findings only
   after the validation protocol is stable.
-- Package a dedicated GitHub Action wrapper after generated workflows are stable
-  enough to support public Marketplace usage.
+- After the 1.0 CLI release, package a dedicated GitHub Action wrapper in a
+  separate repository for GitHub Marketplace. Keep the first version focused on
+  a simple `uses:` workflow that installs the CLI, runs `audit`, uploads visual
+  report artifacts, and optionally posts a pull request summary.
 - Add a `pr-comment` command for manual pull request feedback that can scan a
   provided preview URL, update an existing accessibility comment, and apply
   severity labels when GitHub credentials are available.
-- Extend the GitHub Action wrapper with uploaded `exploration.html` artifacts,
-  direct artifact links, preview URL inputs, and optional severity labels.
+- Extend the post-1.0 GitHub Action wrapper with direct artifact links, preview
+  URL inputs, existing-comment updates, and optional severity labels.
 - Add optional Jira and Linear export commands after the report schema is stable
   enough for external ticket sync. Keep the first version dry-run first, with
   explicit credentials, duplicate detection, and redaction of sensitive report
@@ -176,9 +178,9 @@ Section 508 certification.
 
 ## Adoption And Documentation
 
-- Create a documentation website with quick start guides, framework-specific
-  setup pages, CI/compliance-support examples, troubleshooting, privacy notes,
-  and sample reports.
+- After the 1.0 CLI release, create a documentation website with quick start
+  guides, framework-specific setup pages, CI and compliance-support examples,
+  troubleshooting, privacy notes, and sample visual reports.
 - Add a privacy section to the documentation website covering screenshot
   redaction, `--no-screenshots`, generated report directories, `.gitignore`
   setup, baseline files, and safe handling of local artifacts.
