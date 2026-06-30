@@ -1,10 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { enrichIssueEvidence } from "../core/classification.js";
+import { formatAuditGoal } from "../core/auditGoal.js";
 import { compareLighthouseWithFindings } from "../core/lighthouseComparison.js";
 import { formatReportDateUtc } from "../core/reportDate.js";
 import { getRemediationHint } from "../core/remediation.js";
-import type { DedupedIssue, ExplorationGraph, ExplorationState, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, Severity } from "../types.js";
+import type { AuditGoalMetadata, DedupedIssue, ExplorationGraph, ExplorationState, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, Severity } from "../types.js";
 
 interface StateViewModel extends ExplorationState {
   issues: DedupedIssue[];
@@ -16,6 +17,7 @@ interface ExplorationHtmlOptions {
   keyboard?: KeyboardAuditResult;
   manualChecklist?: ManualChecklist;
   lighthouse?: LighthouseAuditResult[];
+  auditGoal?: AuditGoalMetadata;
 }
 
 interface CoverageMatrixRow {
@@ -1555,6 +1557,7 @@ function renderEvaluationScope(
       <div class="scope-item"><strong>URLs included</strong><span>${urls.length}</span></div>
       <div class="scope-item"><strong>Rendered states</strong><span>${graph.summary.statesVisited} of ${graph.summary.maxStates} max</span></div>
       <div class="scope-item"><strong>Depth</strong><span>${graph.summary.maxDepth}</span></div>
+      <div class="scope-item"><strong>Audit goal</strong><span>${escapeHtml(formatAuditGoal(options.auditGoal))}</span></div>
       <div class="scope-item"><strong>Evidence collected</strong><span>${escapeHtml(evidence.join("; "))}</span></div>
       <div class="scope-item"><strong>Representative states</strong><span>${escapeHtml(mostAffected.length ? mostAffected.join("; ") : "No findings in captured states")}</span></div>
     </div>
@@ -1580,6 +1583,12 @@ function renderReportCompleteness(
       detail: formatReportDateUtc(graph.generatedAt),
       status: "ready",
       statusLabel: "included"
+    },
+    {
+      label: "Audit goal",
+      detail: options.auditGoal ? options.auditGoal.description : "Choose --audit-goal for risk, validation, level-of-effort, or full audit context",
+      status: options.auditGoal ? "ready" : "optional",
+      statusLabel: options.auditGoal ? "included" : "optional"
     },
     {
       label: "URL and state scope",

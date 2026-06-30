@@ -688,6 +688,11 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   await writeExplorationHtml(outputDir, graph, issues, {
     fileName: "a11y-report.html",
     title: "Accessibility Audit Report",
+    auditGoal: {
+      id: "full",
+      label: "Full evidence audit",
+      description: "Collect a broader evidence package for automated findings, visual states, keyboard checks, and manual review."
+    },
     keyboard: {
       url: "http://localhost:3000",
       generatedAt: "2026-06-21T00:00:00.000Z",
@@ -812,6 +817,7 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /class="panel evaluation-scope"/);
   assert.match(html, /Reproducibility scope, not a WCAG conformance claim/);
   assert.match(html, /not a WCAG conformance claim/);
+  assert.match(html, /Audit goal[\s\S]*?Full evidence audit \(full\)/);
   assert.match(html, /Report Completeness/);
   assert.match(html, /URL and state scope/);
   assert.match(html, /Automated tools/);
@@ -819,6 +825,7 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /Manual review records/);
   assert.match(html, /Known limitations/);
   assert.match(html, /Next steps/);
+  assert.match(html, /Collect a broader evidence package/);
   assert.match(html, /completeness-status completeness-ready/);
   assert.match(html, /Lighthouse comparison[\s\S]*?included/);
   assert.match(html, /evaluation-scope\.json/);

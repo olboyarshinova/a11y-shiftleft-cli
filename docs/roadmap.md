@@ -13,10 +13,6 @@ Section 508 certification.
 - Represent complete user processes separately from individual pages. Let a
   reviewer group discovered states into journeys such as sign-in, search,
   checkout, or form submission and record whether every step was evaluated.
-- Add audit goals or profiles such as `risk`, `validation`, `level-of-effort`,
-  and `full` so reports can explain whether the run is prioritizing blockers,
-  retesting fixes, estimating remediation scope, or building a fuller evidence
-  package.
 - Add a guided scope initializer that records product type, target standard,
   languages, supported platform and assistive-technology combinations, critical
   journeys, third-party content, and intentionally excluded areas.

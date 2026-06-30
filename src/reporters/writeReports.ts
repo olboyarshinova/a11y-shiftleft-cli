@@ -164,6 +164,7 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     scanDurationMs: metrics.scanDurationMs || 0,
     framework: metrics.framework || "unknown",
     urls: metrics.urls || [],
+    auditGoal: metrics.auditGoal,
     standard: metrics.standard,
     baseline: metrics.baseline,
     retest: metrics.retest,
@@ -204,6 +205,8 @@ export function toSummaryCsv(report: A11yReport): string {
     generatedAt: report.generatedAt,
     framework: summary.framework,
     urls: summary.urls.join(" | "),
+    auditGoal: summary.auditGoal?.id || "",
+    auditGoalLabel: summary.auditGoal?.label || "",
     standard: summary.standard?.id || "wcag22-aa",
     wcagVersion: summary.standard?.wcagVersion || "2.2",
     wcagLevel: summary.standard?.wcagLevel || "AA",
@@ -230,8 +233,9 @@ export function toSummaryCsv(report: A11yReport): string {
     ignoredFindings: summary.ignore?.ignoredIssues ?? 0,
     trackedRemediation: summary.remediationTracking?.matchedIssues ?? 0
   }], [
-    "generatedAt", "framework", "urls", "standard", "wcagVersion", "wcagLevel",
-    "total", "critical", "warning", "info", "rawFindings", "uniqueFindings",
+    "generatedAt", "framework", "urls", "auditGoal", "auditGoalLabel",
+    "standard", "wcagVersion", "wcagLevel", "total", "critical", "warning",
+    "info", "rawFindings", "uniqueFindings",
     "duplicatesRemoved", "duplicateRate", "scanDurationMs", "affectedPages",
     "wcagMappedFindings", "bestPracticeFindings", "unmappedFindings",
     "likelyRootCauses", "baselineNew", "baselineResolved", "retestNew",
@@ -425,6 +429,7 @@ export function toMarkdown(report: A11yReport): string {
 | Duplicate rate | ${report.summary.duplicateRate} |
 | Scan duration | ${report.summary.scanDurationMs}ms |
 | Framework | ${report.summary.framework} |
+| Audit goal | ${report.summary.auditGoal ? `${markdownCell(report.summary.auditGoal.label)} (${markdownCell(report.summary.auditGoal.id)})` : "not specified"} |
 | Standard | ${formatStandard(report.summary.standard)} |
 ${formatBaselineRows(report.summary.baseline)}${formatRetestRows(report.summary.retest)}${formatRemediationRows(report.summary.remediationTracking)}| Automated coverage | ${report.summary.standard?.automatedCoverage || "partial"} |
 ${formatIgnoreRows(report.summary.ignore)}| Manual review required | ${complianceEvidence.requiresManualReview ? "yes" : "no"} |
@@ -499,6 +504,7 @@ This WCAG-EM-inspired scope summary is reproducibility evidence, not a WCAG conf
 | Scope item | Value |
 |---|---|
 | Requested URLs | ${markdownCell((report.summary.urls || []).join(", ") || "none")} |
+| Audit goal | ${markdownCell(report.summary.auditGoal ? `${report.summary.auditGoal.label}: ${report.summary.auditGoal.description}` : "not specified")} |
 | URLs included | ${urls.length} |
 | Rendered states | ${graph ? `${graph.summary.statesVisited} of ${graph.summary.maxStates} max` : "not included"} |
 | Depth | ${graph ? graph.summary.maxDepth : "not included"} |

@@ -202,6 +202,14 @@ HTML report.
 | Add Excel and PDF exports | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports --excel --pdf` | HTML, CSV, and PDF |
 | Force complete page screenshots | `npx a11y-shiftleft-cli audit --url $APP_URL --screenshot-full-page --out reports` | Full-page visual evidence |
 | Audit a slower application | `npx a11y-shiftleft-cli audit --url $APP_URL --wait-ms 1000 --out reports` | Visual report after an extra settle wait |
+| Explain the audit purpose | `npx a11y-shiftleft-cli audit --url $APP_URL --audit-goal risk --out reports` | Report labeled with the audit goal |
+
+Use `--audit-goal risk`, `--audit-goal validation`,
+`--audit-goal level-of-effort`, or `--audit-goal full` when the report should
+state why the scan was run. This is useful when sharing results with a team:
+`risk` prioritizes blockers, `validation` documents a retest, `level-of-effort`
+supports remediation planning, and `full` frames the run as a broader evidence
+package.
 
 ### Fast Checks For Terminal And CI
 

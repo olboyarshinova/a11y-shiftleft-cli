@@ -4,6 +4,7 @@ import { runExplorePlaywrightAdapter, writeExplorationGraph } from "../adapters/
 import { runKeyboardPlaywrightAdapter } from "../adapters/keyboardPlaywrightAdapter.js";
 import { runLighthouseAdapter } from "../adapters/lighthouseAdapter.js";
 import { loadConfig } from "../config/loadConfig.js";
+import { resolveAuditGoal } from "../core/auditGoal.js";
 import { createManualChecklist } from "../core/manualChecklist.js";
 import { filterReportFindings } from "../core/findingFilter.js";
 import { dedupeIssues } from "../core/dedupe.js";
@@ -33,6 +34,7 @@ interface AuditOptions {
   maxTabs?: string;
   failOn?: Severity | "none";
   standard?: string;
+  auditGoal?: string;
   wcagOnly?: boolean;
   keyboard?: boolean;
   manualReview?: boolean;
@@ -72,6 +74,7 @@ export function registerAuditCommand(program: Command): void {
     .option("--max-tabs <count>", "Maximum Tab presses for keyboard traversal", "40")
     .option("--fail-on <severity>", "critical, warning, info, or none")
     .option("--standard <standard>", "wcag22-aa, ada-title-ii, or section508")
+    .option("--audit-goal <goal>", "risk, validation, level-of-effort, or full")
     .option("--wcag-only", "Only report findings mapped to WCAG; exclude best practices and unmapped review signals")
     .option("--no-keyboard", "Skip the bounded keyboard focus traversal")
     .option("--no-manual-review", "Do not embed the manual review checklist")
@@ -120,6 +123,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
   });
   const framework = config.framework === "auto" ? await detectFramework(config.cwd) : config.framework;
   const standard = resolveStandard(config.standard);
+  const auditGoal = resolveAuditGoal(options.auditGoal);
   const effectiveConfig = {
     ...config,
     framework,
@@ -213,6 +217,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
     framework,
     cwd: effectiveConfig.cwd,
     urls,
+    auditGoal,
     standard,
     ignore: ignoreResult.summary,
     remediationTracking: remediationResult.summary,
@@ -236,7 +241,8 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
     title: "Accessibility Audit Report",
     keyboard,
     manualChecklist,
-    lighthouse
+    lighthouse,
+    auditGoal
   });
   if (options.pdf) await writeExplorationPdf(effectiveConfig.outputDir, "a11y-report");
 

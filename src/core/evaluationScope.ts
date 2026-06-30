@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
-import type { A11yReport, ComplianceStandardMetadata, ExplorationGraph, Framework } from "../types.js";
+import type { A11yReport, AuditGoalMetadata, ComplianceStandardMetadata, ExplorationGraph, Framework } from "../types.js";
 
 const require = createRequire(import.meta.url);
 const { version } = require("../../package.json") as { version: string };
@@ -20,6 +20,7 @@ export interface EvaluationScopeManifest {
     nodeVersion: string;
   };
   target: {
+    auditGoal?: AuditGoalMetadata;
     standard?: Pick<ComplianceStandardMetadata, "id" | "label" | "wcagVersion" | "wcagLevel" | "automatedCoverage" | "requiresManualReview">;
     framework: Framework | string;
     urlsRequested: string[];
@@ -79,6 +80,7 @@ export function createEvaluationScopeManifest(report: A11yReport): EvaluationSco
       nodeVersion: process.version
     },
     target: {
+      ...(report.summary.auditGoal ? { auditGoal: report.summary.auditGoal } : {}),
       ...(standard ? { standard: toStandardScope(standard) } : {}),
       framework: report.summary.framework,
       urlsRequested: requestedUrls

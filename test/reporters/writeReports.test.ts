@@ -72,6 +72,11 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
       duplicateCount: 2,
       scanDurationMs: 123,
       urls: ["http://localhost:3000"],
+      auditGoal: {
+        id: "risk",
+        label: "Risk audit",
+        description: "Prioritize high-impact blockers and owner-fixable risks before broader manual review."
+      },
       lighthouse: [{
         url: "http://localhost:3000",
         finalUrl: "http://localhost:3000/",
@@ -111,6 +116,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   );
 
   assert.equal(report.summary.total, 2);
+  assert.equal(report.summary.auditGoal?.id, "risk");
   assert.equal(report.summary.duplicateRate, 0.5);
   assert.deepEqual(report.summary.bySource, {
     axe: 1,
@@ -293,19 +299,21 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(findingsCsv, /Give every button an accessible name/);
   assert.match(findingsCsv, /Use visible button text when possible/);
   assert.match(findingsCsv, /react: <button type=""button"" aria-label=""Open menu"">/);
-  assert.match(summaryCsv, /^generatedAt,framework,urls,standard,wcagVersion,wcagLevel,total,critical,warning,info,/);
-  assert.match(summaryCsv, /react.*ada-title-ii.*2\.1,AA,2,1,1,0/);
+  assert.match(summaryCsv, /^generatedAt,framework,urls,auditGoal,auditGoalLabel,standard,wcagVersion,wcagLevel,total,critical,warning,info,/);
+  assert.match(summaryCsv, /react.*risk,Risk audit,ada-title-ii.*2\.1,AA,2,1,1,0/);
   assert.match(summaryCsv, /thirdPartyEmbeddedFindings,humanVerificationBlocked/);
   assert.match(pagesCsv, /^url,total,critical,warning,info,severityScore/);
   assert.match(pagesCsv, /http:\/\/localhost:3000\/settings,1,1,0,0,5/);
   assert.match(rulesCsv, /^ruleId,highestSeverity,findings,occurrences,sources,findingTypes,categories,wcagCriteria,pages,fixSummary,documentation/);
   assert.match(rulesCsv, /button-name,critical,1,1,axe,wcag,aria/);
   assert.match(markdown, /Scan duration \| 123ms/);
+  assert.match(markdown, /Audit goal \| Risk audit \(risk\)/);
   assert.match(markdown, /ADA Title II web accessibility support mode \(2\.1 AA\)/);
   assert.match(markdown, /## Evaluation Scope/);
   assert.match(markdown, /not a WCAG conformance claim/);
   assert.match(markdown, /evaluation-scope\.json/);
   assert.match(markdown, /Requested URLs \| http:\/\/localhost:3000/);
+  assert.match(markdown, /Audit goal \| Risk audit: Prioritize high-impact blockers/);
   assert.match(markdown, /Evidence collected \| browser exploration not included; axe, eslint; keyboard not included; Lighthouse comparison; manual checklist not included/);
   assert.match(markdown, /Compliance Note/);
   assert.match(markdown, /Compliance Evidence Summary/);

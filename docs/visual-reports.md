@@ -12,6 +12,11 @@ optional exports are needed. Slow applications can use `--wait-ms 1000` or
 `--wait-for-selector "[data-page-ready]"`; audit auto-scrolls before scanning
 unless `--no-scroll` is passed.
 
+Add `--audit-goal risk`, `--audit-goal validation`,
+`--audit-goal level-of-effort`, or `--audit-goal full` when the report needs to
+explain the purpose of the run. The selected goal is recorded in the visual
+report, Markdown summary, JSON, CSV, and evaluation-scope manifest.
+
 Use `explore` when you want the CLI to walk safe parts of a running app and
 produce only the lower-level visual exploration artifacts:
 

@@ -437,10 +437,19 @@ export interface ReportRetentionEvidence {
   keptRuns: number;
 }
 
+export type AuditGoal = "risk" | "validation" | "level-of-effort" | "full";
+
+export interface AuditGoalMetadata {
+  id: AuditGoal;
+  label: string;
+  description: string;
+}
+
 export interface ReportMetrics {
   framework?: Framework | string;
   cwd?: string;
   urls?: string[];
+  auditGoal?: AuditGoalMetadata;
   standard?: ComplianceStandardMetadata;
   lighthouse?: LighthouseAuditResult[];
   baseline?: BaselineComparisonSummary;
@@ -573,6 +582,7 @@ export interface ReportSummary {
   scanDurationMs: number;
   framework: Framework | string;
   urls: string[];
+  auditGoal?: AuditGoalMetadata;
   standard?: ComplianceStandardMetadata;
   baseline?: BaselineComparisonSummary;
   retest?: RetestComparisonSummary;
