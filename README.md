@@ -278,6 +278,14 @@ block automated scans because of IP location, rate limits, or bot detection. If
 you see connection errors or a challenge page, retry from an approved network,
 VPN, staging URL, or allowlisted preview environment before treating the result
 as complete.
+
+For a quick public-site exploration example, replace `https://example.com` with
+a site you are authorized to scan:
+
+```bash
+npx a11y-shiftleft-cli explore --url https://example.com --out reports
+```
+
 The top-level report summary includes ownership and human-verification counts
 so these cases are visible before reviewing individual findings.
 
