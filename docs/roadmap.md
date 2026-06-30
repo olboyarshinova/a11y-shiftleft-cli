@@ -76,8 +76,6 @@ Section 508 certification.
 
 - Add multi-viewport evidence for 320 CSS px, desktop, and color-scheme states
   so layout, reflow, and visual findings are easier to compare.
-- Add a heatmap-style Audit Coverage view for `passed`, `failed`,
-  `needs-review`, `not-tested`, and `unavailable` evidence states.
 - Add before/after comparison for retest runs, including resolved, new,
   remaining, and worsened findings.
 - Add local report history and trend summaries inside visual reports where it

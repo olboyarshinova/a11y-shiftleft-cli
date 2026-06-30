@@ -63,12 +63,14 @@ summary records exposed landmarks, headings, an interactive-node sample, and
 the number of unnamed interactive nodes without storing the entire tree. This
 is diagnostic evidence, not a substitute for NVDA, JAWS, or VoiceOver testing.
 
-The coverage matrix is a bordered working checklist. Green locked checkboxes
-identify evidence collected by the audit; yellow rows remain available for
-manual confirmation. Its Findings column shows the number of issues associated
-with a completed automated area; `0` means the area ran without a finding, while
-an em dash means no automated result is available. Missing optional checks show
-a copy-paste command in the next-step column. Manual selections are stored in
+The coverage matrix is a bordered working checklist. Its compact state summary
+shows how many review areas have failed evidence, need review, were not tested,
+were unavailable, or passed automated evidence. Green locked checkboxes identify
+evidence collected by the audit; yellow rows remain available for manual
+confirmation. Its Findings column shows the number of issues associated with a
+completed automated area; `0` means the area ran without a finding, while an em
+dash means no automated result is available. Missing optional checks show a
+copy-paste command in the next-step column. Manual selections are stored in
 browser local storage under an identifier unique to the generated report. They
 are not uploaded, written back into the report files, or treated as proof of
 WCAG conformance.
