@@ -812,6 +812,15 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /class="panel evaluation-scope"/);
   assert.match(html, /Reproducibility scope, not a WCAG conformance claim/);
   assert.match(html, /not a WCAG conformance claim/);
+  assert.match(html, /Report Completeness/);
+  assert.match(html, /URL and state scope/);
+  assert.match(html, /Automated tools/);
+  assert.match(html, /Keyboard evidence/);
+  assert.match(html, /Manual review records/);
+  assert.match(html, /Known limitations/);
+  assert.match(html, /Next steps/);
+  assert.match(html, /completeness-status completeness-ready/);
+  assert.match(html, /Lighthouse comparison[\s\S]*?included/);
   assert.match(html, /evaluation-scope\.json/);
   assert.match(html, /Share Review Copy/);
   assert.match(html, /\.share-review \{[\s\S]*?grid-column: 1 \/ -1/);

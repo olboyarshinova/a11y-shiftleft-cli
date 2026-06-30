@@ -173,6 +173,52 @@ export function renderExplorationHtml(
       overflow-wrap: anywhere;
     }
 
+    .completeness-grid {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      margin-top: 14px;
+    }
+
+    .completeness-item {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .completeness-item strong,
+    .completeness-item span {
+      display: block;
+    }
+
+    .completeness-item span {
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .completeness-status {
+      border: 1px solid currentColor;
+      border-radius: 4px;
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 8px;
+      padding: 2px 6px;
+    }
+
+    .completeness-ready {
+      color: var(--ok);
+    }
+
+    .completeness-review {
+      color: var(--warning);
+    }
+
+    .completeness-optional {
+      color: var(--info);
+    }
+
     .share-review {
       border-left: 4px solid var(--info);
       grid-column: 1 / -1;
@@ -1512,8 +1558,83 @@ function renderEvaluationScope(
       <div class="scope-item"><strong>Evidence collected</strong><span>${escapeHtml(evidence.join("; "))}</span></div>
       <div class="scope-item"><strong>Representative states</strong><span>${escapeHtml(mostAffected.length ? mostAffected.join("; ") : "No findings in captured states")}</span></div>
     </div>
+    ${renderReportCompleteness(graph, options, sources)}
     <p class="muted">Full machine-readable details are in <code>evaluation-scope.json</code>.</p>
   </section>`;
+}
+
+function renderReportCompleteness(
+  graph: ExplorationGraph,
+  options: ExplorationHtmlOptions,
+  sources: string[]
+): string {
+  const urlCount = new Set(graph.states.map((state) => state.url)).size;
+  const items: Array<{
+    label: string;
+    detail: string;
+    status: "ready" | "review" | "optional";
+    statusLabel: string;
+  }> = [
+    {
+      label: "Date",
+      detail: formatReportDateUtc(graph.generatedAt),
+      status: "ready",
+      statusLabel: "included"
+    },
+    {
+      label: "URL and state scope",
+      detail: `${urlCount} URL${urlCount === 1 ? "" : "s"}; ${graph.summary.statesVisited} rendered state${graph.summary.statesVisited === 1 ? "" : "s"}`,
+      status: "ready",
+      statusLabel: "included"
+    },
+    {
+      label: "Automated tools",
+      detail: sources.length > 0 ? sources.join(", ") : "Browser exploration completed without automated findings",
+      status: "ready",
+      statusLabel: "included"
+    },
+    {
+      label: "Keyboard evidence",
+      detail: options.keyboard ? `${options.keyboard.steps.length} forward focus step${options.keyboard.steps.length === 1 ? "" : "s"} recorded` : "Run the audit without --no-keyboard or run the keyboard command",
+      status: options.keyboard ? "ready" : "review",
+      statusLabel: options.keyboard ? "included" : "needs review"
+    },
+    {
+      label: "Manual review records",
+      detail: options.manualChecklist ? `${options.manualChecklist.items.length} checklist item${options.manualChecklist.items.length === 1 ? "" : "s"} generated` : "Generate or attach manual-review evidence",
+      status: options.manualChecklist ? "ready" : "review",
+      statusLabel: options.manualChecklist ? "included" : "needs review"
+    },
+    {
+      label: "Lighthouse comparison",
+      detail: options.lighthouse?.length ? `${options.lighthouse.length} page score${options.lighthouse.length === 1 ? "" : "s"} captured` : "Optional comparison signal",
+      status: options.lighthouse?.length ? "ready" : "optional",
+      statusLabel: options.lighthouse?.length ? "included" : "optional"
+    },
+    {
+      label: "Known limitations",
+      detail: "Report states that automated evidence does not prove full conformance",
+      status: "ready",
+      statusLabel: "included"
+    },
+    {
+      label: "Next steps",
+      detail: "Quick Review, Audit Coverage, and Share Review Copy are included",
+      status: "ready",
+      statusLabel: "included"
+    }
+  ];
+
+  return `<div aria-label="Report completeness">
+    <h3>Report Completeness</h3>
+    <div class="completeness-grid">
+      ${items.map((item) => `<div class="completeness-item">
+        <strong>${escapeHtml(item.label)}</strong>
+        <span>${escapeHtml(item.detail)}</span>
+        <span class="completeness-status completeness-${item.status}">${escapeHtml(item.statusLabel)}</span>
+      </div>`).join("")}
+    </div>
+  </div>`;
 }
 
 function renderLighthouseComparison(results: LighthouseAuditResult[] | undefined, issues: DedupedIssue[] = []): string {

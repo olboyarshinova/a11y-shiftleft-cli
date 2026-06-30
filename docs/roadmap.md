@@ -102,10 +102,6 @@ Section 508 certification.
   so layout, reflow, and visual findings are easier to compare.
 - Add before/after comparison for retest runs, including resolved, new,
   remaining, and worsened findings.
-- Add a report-completeness checklist that flags whether the artifact includes
-  date, scope, target standard, tools used, supported technologies, sample or
-  journey coverage, manual environment records, known limitations, and next
-  steps.
 - Add local report history and trend summaries inside visual reports where it
   can be done without storing sensitive data.
 - Add more copyable fix summaries, including targeted snippets for reflow,
