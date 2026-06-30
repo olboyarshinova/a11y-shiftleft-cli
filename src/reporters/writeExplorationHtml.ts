@@ -164,6 +164,7 @@ export function renderExplorationHtml(
 
     .share-review {
       border-left: 4px solid var(--info);
+      grid-column: 1 / -1;
     }
 
     .share-review-grid {
@@ -1144,6 +1145,7 @@ export function renderExplorationHtml(
 
       .summary,
       .quick-review,
+      .share-review,
       .triage,
       .states {
         grid-column: 1 / -1;
