@@ -273,6 +273,11 @@ If a production site shows CAPTCHA or `verify you are human`, the report marks
 that page as `adapter/human-verification` instead of trying to bypass it. Use a
 staging or allowlisted preview URL for automated scans, then record manual
 evidence for protected production-only flows.
+When auditing a public site you are authorized to test, some hosts may still
+block automated scans because of IP location, rate limits, or bot detection. If
+you see connection errors or a challenge page, retry from an approved network,
+VPN, staging URL, or allowlisted preview environment before treating the result
+as complete.
 The top-level report summary includes ownership and human-verification counts
 so these cases are visible before reviewing individual findings.
 

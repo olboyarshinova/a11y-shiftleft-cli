@@ -121,6 +121,16 @@ In another terminal, scan the demo:
 node bin/cli.js check --dynamic --url http://localhost:3000 --out reports
 ```
 
+When you run CLI commands through npm scripts, pass command options after `--`:
+
+```bash
+npm run check -- --dynamic --url http://localhost:3000 --out reports
+npm run explore -- --url http://localhost:3000 --depth 2 --out reports
+```
+
+Do not use `npm run check explore ...`; that still runs the `check` command and
+can drop the intended URL/options.
+
 Generated reports should stay out of commits.
 
 ## Project Structure
