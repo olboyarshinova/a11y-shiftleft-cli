@@ -296,6 +296,12 @@ remain suitable for reproducible empirical validation.
 - Continue expanding `exploration.html` from a static triage overview into a
   richer dashboard that can visualize checked pages/states, screenshots, and
   accessibility findings while the scan is running.
+- Add Visual Report UX improvements inspired by lightweight inspection tools:
+  multi-viewport evidence for 320 CSS px, desktop, and color-scheme states;
+  a heatmap-style Audit Coverage view; before/after comparison for retest
+  runs; local report history/trends; copyable fix summaries; and a future
+  drag-and-drop report viewer for the documentation website. Keep these as
+  report UX features, not additional conformance claims.
 - Continue hardening screenshot annotations in `exploration.html`, including
   better selector matching, edge-case handling for full-page screenshots, and
   clearer overlay legends.
