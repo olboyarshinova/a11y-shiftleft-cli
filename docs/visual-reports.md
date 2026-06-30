@@ -146,6 +146,11 @@ with concrete steps, rule documentation, and a React, Vue, or Angular example
 when one is available. Generic fallback guidance remains visible for unknown or
 custom rules so no finding ends without a next action.
 
+Use `Copy issue` on a finding group to copy a local Markdown draft in the
+browser. The draft is intended for GitHub Issues, Jira, Linear, or team notes,
+but the visual report does not send data to those trackers or create an external
+issue automatically.
+
 For `color-contrast` findings, the HTML report also shows the measured ratio,
 required ratio, foreground and background swatches, font metadata, and options
 for minimally changing the text color while preserving the current background.
