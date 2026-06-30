@@ -866,8 +866,13 @@ test("writeReports can generate a semi-automated manual checklist", async () => 
   assert.match(checklist, /Framework: react/);
   assert.match(checklist, /Screen reader navigation and task smoke test/);
   assert.match(checklist, /Screen reader forms, dialogs, and dynamic updates/);
+  assert.match(checklist, /Environment summary:/);
+  assert.match(checklist, /Operating system:/);
+  assert.match(checklist, /Assistive technology and version:/);
   assert.equal(checklistJson.items[0].review.status, "not-reviewed");
   assert.equal(checklistJson.items[0].review.environment, "");
+  assert.equal(checklistJson.items[0].review.environmentDetails.viewportOrZoom, "");
+  assert.equal(checklistJson.items[0].review.environmentDetails.colorMode, "");
 });
 
 async function exists(filePath) {

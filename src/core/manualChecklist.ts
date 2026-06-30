@@ -1,4 +1,4 @@
-import type { DedupedIssue, ExplorationGraph, ExplorationState, Framework, ManualCheckItem, ManualChecklist, ManualChecklistEntry, ManualReviewTarget } from "../types.js";
+import type { DedupedIssue, ExplorationGraph, ExplorationState, Framework, ManualCheckItem, ManualChecklist, ManualChecklistEntry, ManualReviewEnvironment, ManualReviewTarget } from "../types.js";
 
 const MANUAL_CHECKS: ManualCheckItem[] = [
   {
@@ -257,7 +257,8 @@ Review record:
 - Status: \`${item.review.status}\` (pass, fail, or not-applicable)
 - Tester:
 - Tested at:
-- Environment (browser, assistive technology, viewport/zoom, input method):
+- Environment summary:
+${formatEnvironmentDetailsMarkdown(item.review.environmentDetails)}
 - Remediation owner:
 - Notes:
 - Evidence links:
@@ -285,11 +286,35 @@ function toChecklistEntry(item: ManualCheckItem, targets: ManualReviewTarget[]):
       tester: "",
       testedAt: "",
       environment: "",
+      environmentDetails: createEmptyManualReviewEnvironment(),
       notes: "",
       evidenceLinks: [],
       remediationOwner: ""
     }
   };
+}
+
+function createEmptyManualReviewEnvironment(): ManualReviewEnvironment {
+  return {
+    operatingSystem: "",
+    browser: "",
+    assistiveTechnology: "",
+    inputMethod: "",
+    viewportOrZoom: "",
+    colorMode: ""
+  };
+}
+
+function formatEnvironmentDetailsMarkdown(environment: ManualReviewEnvironment | undefined): string {
+  const details = environment || createEmptyManualReviewEnvironment();
+  return [
+    `  - Operating system: ${details.operatingSystem}`,
+    `  - Browser: ${details.browser}`,
+    `  - Assistive technology and version: ${details.assistiveTechnology}`,
+    `  - Input method: ${details.inputMethod}`,
+    `  - Viewport or zoom level: ${details.viewportOrZoom}`,
+    `  - Color mode: ${details.colorMode}`
+  ].join("\n");
 }
 
 function prioritizeManualChecks(

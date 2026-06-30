@@ -25,6 +25,14 @@ test("createManualChecklist generates human-review checklist items", () => {
   assert.equal(checklist.items.some((item) => item.id === "representative-user-test"), true);
   assert.equal(checklist.items.some((item) => item.id === "screen-reader-dynamic-content"), true);
   assert.equal(checklist.items.every((item) => item.review.status === "not-reviewed"), true);
+  assert.deepEqual(checklist.items[0].review.environmentDetails, {
+    operatingSystem: "",
+    browser: "",
+    assistiveTechnology: "",
+    inputMethod: "",
+    viewportOrZoom: "",
+    colorMode: ""
+  });
 });
 
 test("createManualChecklist prioritizes form review when form issues exist", () => {
@@ -132,6 +140,10 @@ test("toManualChecklistMarkdown renders actionable Markdown checkboxes", () => {
   assert.match(markdown, /Activate the skip link/);
   assert.match(markdown, /Automated accessibility tools do not prove full WCAG conformance/);
   assert.match(markdown, /Status: `not-reviewed`/);
-  assert.match(markdown, /Environment \(browser, assistive technology, viewport\/zoom, input method\)/);
+  assert.match(markdown, /Environment summary:/);
+  assert.match(markdown, /Operating system:/);
+  assert.match(markdown, /Assistive technology and version:/);
+  assert.match(markdown, /Viewport or zoom level:/);
+  assert.match(markdown, /Color mode:/);
   assert.match(markdown, /Remediation owner:/);
 });

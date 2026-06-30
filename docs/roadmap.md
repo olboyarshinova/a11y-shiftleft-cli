@@ -13,8 +13,6 @@ Section 508 certification.
 - Represent complete user processes separately from individual pages. Let a
   reviewer group discovered states into journeys such as sign-in, search,
   checkout, or form submission and record whether every step was evaluated.
-- Record manual-test environment metadata for browser, operating system,
-  assistive technology and version, input method, zoom level, and color mode.
 - Add a bounded forced-colors diagnostic that compares normal rendering with
   `forced-colors: active` and flags controls, focus indicators, SVGs, and
   information-bearing backgrounds that disappear or become indistinguishable.

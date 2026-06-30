@@ -1004,8 +1004,10 @@ reports/a11y-manual-checklist.md
 reports/a11y-manual-checklist.json
 ```
 
-Each item includes fields for review status,
-tester, date, test environment, notes, evidence links, and remediation owner.
+Each item includes fields for review status, tester, date, structured test
+environment, notes, evidence links, and remediation owner. The environment
+fields cover operating system, browser, assistive technology and version, input
+method, viewport or zoom level, and color mode.
 Use Markdown for human review and JSON when the evidence needs to be processed
 or aggregated later.
 

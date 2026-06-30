@@ -75,6 +75,12 @@ browser local storage under an identifier unique to the generated report. They
 are not uploaded, written back into the report files, or treated as proof of
 WCAG conformance.
 
+The manual checklist also includes a structured environment template for human
+review. Record the operating system, browser, assistive technology and version,
+input method, viewport or zoom level, and color mode used for each review.
+The same fields are present in the generated JSON checklist for teams that
+aggregate manual evidence later.
+
 Each explored state also receives a bounded 400% reflow proxy at 320 CSS pixels. It
 records document width, horizontal overflow, and text containers that appear to
 clip meaningful content. These are heuristic WCAG 1.4.10 signals: confirm them

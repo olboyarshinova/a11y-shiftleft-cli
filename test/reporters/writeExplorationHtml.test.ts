@@ -842,6 +842,11 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /class="focus-path-item focus-path-item-risk"/);
   assert.match(html, /Complete focus path data/);
   assert.match(html, /Manual Review Checklist/);
+  assert.match(html, /Manual test environment fields/);
+  assert.match(html, /Operating system/);
+  assert.match(html, /Assistive technology/);
+  assert.match(html, /Viewport or zoom/);
+  assert.match(html, /Color mode/);
   assert.match(html, /Observed review targets/);
   assert.match(html, /form: Email address/);
   assert.match(html, /href="#state-1">Open state-1/);

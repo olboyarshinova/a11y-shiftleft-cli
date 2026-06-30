@@ -519,11 +519,21 @@ export interface ManualCheckItem {
 
 export type ManualReviewStatus = "not-reviewed" | "pass" | "fail" | "not-applicable";
 
+export interface ManualReviewEnvironment {
+  operatingSystem: string;
+  browser: string;
+  assistiveTechnology: string;
+  inputMethod: string;
+  viewportOrZoom: string;
+  colorMode: string;
+}
+
 export interface ManualReviewRecord {
   status: ManualReviewStatus;
   tester: string;
   testedAt: string;
   environment: string;
+  environmentDetails?: ManualReviewEnvironment;
   notes: string;
   evidenceLinks: string[];
   remediationOwner: string;

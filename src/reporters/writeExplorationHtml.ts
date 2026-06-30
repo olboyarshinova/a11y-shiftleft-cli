@@ -350,6 +350,38 @@ export function renderExplorationHtml(
       font-weight: 700;
     }
 
+    .manual-env-grid {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: grid;
+      gap: 0;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      margin: 12px 0;
+      overflow: hidden;
+    }
+
+    .manual-env-field {
+      background: #f8fafc;
+      border-bottom: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      min-height: 64px;
+      padding: 10px;
+    }
+
+    .manual-env-field strong,
+    .manual-env-field span {
+      display: block;
+    }
+
+    .manual-env-field strong {
+      font-size: 12px;
+    }
+
+    .manual-env-field span {
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
     .coverage-table-wrap {
       overflow-x: auto;
     }
@@ -1838,6 +1870,7 @@ function renderManualChecklist(checklist: ManualChecklist): string {
   return `<section class="panel" aria-label="Manual review checklist">
     <h2>Manual Review Checklist</h2>
     <p class="muted">Automated checks cover only part of accessibility. ${targetedItems > 0 ? `${targetedItems} review area${targetedItems === 1 ? " has" : "s have"} observed targets from this audit.` : "Choose representative targets for the areas below."} Record human review evidence and outcomes.</p>
+    ${renderManualEnvironmentTemplate()}
     ${checklist.items.map((item) => `<details>
       <summary>${escapeHtml(item.title)} (${escapeHtml(item.wcag.join(", "))})${item.targets?.length ? ` — ${item.targets.length} target${item.targets.length === 1 ? "" : "s"}` : ""}</summary>
       <p>${escapeHtml(item.whyManual)}</p>
@@ -1846,6 +1879,24 @@ function renderManualChecklist(checklist: ManualChecklist): string {
       <p class="muted">Suggested evidence: ${escapeHtml(item.evidence.join("; "))}</p>
     </details>`).join("")}
   </section>`;
+}
+
+function renderManualEnvironmentTemplate(): string {
+  const fields = [
+    ["Operating system", "Example: Windows 11, macOS 15, iOS 18"],
+    ["Browser", "Example: Chrome 126, Safari 18, Edge 126"],
+    ["Assistive technology", "Example: NVDA 2026.1, JAWS 2026, VoiceOver"],
+    ["Input method", "Example: keyboard only, touch, switch, voice"],
+    ["Viewport or zoom", "Example: 390px mobile, 200%, 400%"],
+    ["Color mode", "Example: light, dark, forced colors"]
+  ];
+
+  return `<div class="manual-env-grid" aria-label="Manual test environment fields">
+    ${fields.map(([label, hint]) => `<div class="manual-env-field">
+      <strong>${escapeHtml(label)}</strong>
+      <span>${escapeHtml(hint)}</span>
+    </div>`).join("")}
+  </div>`;
 }
 
 function renderManualTargets(targets: ManualChecklist["items"][number]["targets"]): string {
