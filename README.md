@@ -288,7 +288,10 @@ when available. Unknown rules still receive safe review steps instead of an
 empty recommendation; axe findings also preserve their rule-specific help link.
 Use `Copy issue` beside a finding group to copy a Markdown draft with severity,
 page, selector, WCAG metadata, ownership context, and fix guidance for GitHub
-Issues, Jira, Linear, or team notes.
+Issues, Jira, Linear, or team notes. The button copies the draft to your
+clipboard locally in the browser — it does not send data to GitHub, Jira,
+Linear, or any external tracker, and no issue is created automatically.
+
 The `Audit Coverage` table separates review completion from evidence state:
 `passed`, `failed`, `needs-review`, `not-tested`, and `unavailable` describe
 what this run actually observed for each area.

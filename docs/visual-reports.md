@@ -57,6 +57,12 @@ reports/screenshots/state-*-error-*.jpg   # focused crops on long pages
 findings, recorded transitions, skipped actions, and reviewable overlays around
 affected elements when Playwright can resolve their bounds.
 
+Each finding group in the report includes a `Copy issue` button that copies a
+Markdown draft to your clipboard locally in the browser. This draft includes
+severity, page context, selector, WCAG metadata, and fix guidance — useful for
+pasting into GitHub Issues, Jira, Linear, or team notes. The button does not
+send data to any external tracker, and no issue is created automatically.
+
 The unified `a11y-report.html` also includes an audit coverage matrix and a
 bounded Chromium accessibility-tree summary for each explored state. The
 summary records exposed landmarks, headings, an interactive-node sample, and
