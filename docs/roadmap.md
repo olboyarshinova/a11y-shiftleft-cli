@@ -22,6 +22,10 @@ Section 508 certification.
 - Separate user impact from technical severity and confidence. Add a compact
   impact field such as `blocker`, `significant`, `workaround`, or `minor`, plus
   affected-page and repeated-component counts.
+- Add affected-user lenses to findings so reports can explain who may be
+  affected, such as keyboard users, screen reader users, low-vision users,
+  users relying on captions, voice-control users, or people under cognitive
+  load.
 - Add report grouping controls for rule, page/state, affected element, WCAG
   criterion, and POUR principle while preserving root-cause grouping.
 - Extend readiness controls beyond a fixed delay with bounded declarative
@@ -65,6 +69,12 @@ Section 508 certification.
 - Add an optional usability-test worksheet that records task completion,
   assistive technology and browser context, blockers, and remediation owners
   without collecting unnecessary personal information.
+- Add inclusive review prompts inspired by human-centered design practices:
+  whether a task works without sound, without precise pointer movement, under
+  zoom, with keyboard only, with reduced motion, and under cognitive load.
+- Add cognitive-load and neurodiversity review prompts for plain language,
+  predictable next actions, calm error messages, time limits, interruption
+  recovery, and understandable multi-step forms.
 - Expand remediation hint coverage for additional axe, keyboard, layout, media,
   and ESLint rules.
 - Improve Vue and Angular static coverage while continuing to rely on
@@ -80,6 +90,9 @@ Section 508 certification.
   can be done without storing sensitive data.
 - Add more copyable fix summaries, including targeted snippets for reflow,
   contrast, iframe ownership, and keyboard/focus issues.
+- Reframe selected report labels around potential exclusion risk, affected
+  users, and practical impact while preserving technical WCAG and rule metadata
+  for developers.
 - Add a future drag-and-drop report viewer for the documentation website so a
   user can open an existing `a11y-report.json` without rerunning the CLI.
 - Continue hardening screenshot annotations, including selector matching,
@@ -148,6 +161,11 @@ Section 508 certification.
   setup, baseline files, and safe handling of local artifacts.
 - Expand recipe docs with screenshots, generated report excerpts, public-site
   examples, and rollout guidance for early teams.
+- Add inclusive-design documentation that connects common technical findings to
+  real user scenarios, before/after fixes, and "solve for one, extend to many"
+  examples without copying any proprietary toolkit language.
+- Strengthen privacy-first positioning in docs: reports, screenshots, URLs, DOM
+  evidence, and metrics stay local unless the user explicitly shares them.
 - Keep the adoption plan in [adoption-strategy.md](adoption-strategy.md)
   aligned with current CLI capabilities and public documentation.
 - Publish a public demo repository and before/after case study showing a full
