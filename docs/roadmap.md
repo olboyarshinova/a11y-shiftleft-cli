@@ -13,6 +13,19 @@ Section 508 certification.
 - Represent complete user processes separately from individual pages. Let a
   reviewer group discovered states into journeys such as sign-in, search,
   checkout, or form submission and record whether every step was evaluated.
+- Add audit goals or profiles such as `risk`, `validation`, `level-of-effort`,
+  and `full` so reports can explain whether the run is prioritizing blockers,
+  retesting fixes, estimating remediation scope, or building a fuller evidence
+  package.
+- Add a guided scope initializer that records product type, target standard,
+  languages, supported platform and assistive-technology combinations, critical
+  journeys, third-party content, and intentionally excluded areas.
+- Add representative sample planning for large sites: core pages, page types,
+  important states, critical journeys, and optional special-purpose pages such
+  as accessibility contact or help pages.
+- Add structured-vs-random sample comparison for larger audits, including
+  random sample size, findings unique to random pages, and a recommendation to
+  expand the representative sample when new issue types appear.
 - Add a bounded forced-colors diagnostic that compares normal rendering with
   `forced-colors: active` and flags controls, focus indicators, SVGs, and
   information-bearing backgrounds that disappear or become indistinguishable.
@@ -22,6 +35,9 @@ Section 508 certification.
 - Separate user impact from technical severity and confidence. Add a compact
   impact field such as `blocker`, `significant`, `workaround`, or `minor`, plus
   affected-page and repeated-component counts.
+- Add remediation effort estimates such as `small`, `medium`, and `large`
+  based on rule family, affected components, journey impact, and whether the fix
+  is local, shared, or architectural.
 - Add affected-user lenses to findings so reports can explain who may be
   affected, such as keyboard users, screen reader users, low-vision users,
   users relying on captions, voice-control users, or people under cognitive
@@ -86,6 +102,10 @@ Section 508 certification.
   so layout, reflow, and visual findings are easier to compare.
 - Add before/after comparison for retest runs, including resolved, new,
   remaining, and worsened findings.
+- Add a report-completeness checklist that flags whether the artifact includes
+  date, scope, target standard, tools used, supported technologies, sample or
+  journey coverage, manual environment records, known limitations, and next
+  steps.
 - Add local report history and trend summaries inside visual reports where it
   can be done without storing sensitive data.
 - Add more copyable fix summaries, including targeted snippets for reflow,
@@ -150,6 +170,9 @@ Section 508 certification.
 - Evaluate an optional public-link publisher only after sanitized export is
   stable. Require explicit confirmation, unguessable URLs, expiration,
   revocation, and deletion.
+- Evaluate EARL or JSON-LD export for machine-readable evaluation evidence
+  after the internal report schema is stable and mapped clearly to WCAG metadata
+  and manual-review statuses.
 
 ## Adoption And Documentation
 
