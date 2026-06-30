@@ -286,9 +286,11 @@ shows one deterministic `How to fix` guide for that state-level group. Known
 rules provide specific steps, official guidance links, and framework examples
 when available. Unknown rules still receive safe review steps instead of an
 empty recommendation; axe findings also preserve their rule-specific help link.
-Use `Copy issue` beside a finding group to copy a Markdown draft with severity,
-page, selector, WCAG metadata, ownership context, and fix guidance for GitHub
-Issues, Jira, Linear, or team notes.
+Use `Copy issue` beside a finding group to copy a local Markdown draft in the
+browser with severity, page, selector, WCAG metadata, ownership context, and fix
+guidance. Paste the draft into GitHub Issues, Jira, Linear, or team notes when
+you are ready; the report does not create an external tracker issue
+automatically.
 The `Audit Coverage` table separates review completion from evidence state:
 `passed`, `failed`, `needs-review`, `not-tested`, and `unavailable` describe
 what this run actually observed for each area.
