@@ -45,6 +45,8 @@
   human-verification blockers as explicit review notes.
 - Added a local `Copy issue` action to visual HTML report finding groups so
   teams can copy Markdown evidence and fix guidance into their tracker.
+- Added explicit Audit Coverage evidence states (`passed`, `failed`,
+  `needs-review`, `not-tested`, `unavailable`) to the visual HTML report.
 
 ## 0.8.0 - 2026-06-24
 

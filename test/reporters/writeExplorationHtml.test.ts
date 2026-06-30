@@ -381,6 +381,30 @@ test("renderExplorationHtml explains human verification blockers", () => {
   assert.match(html, /Use a staging, preview, or allowlisted URL/);
 });
 
+test("renderExplorationHtml marks unavailable coverage evidence", () => {
+  const html = renderExplorationHtml({
+    ...graph,
+    states: [{
+      ...graph.states[0],
+      embeddedContent: {
+        ...graph.states[0].embeddedContent,
+        inaccessibleIframeCount: 1,
+        iframes: [{
+          selector: "#video",
+          url: "https://www.youtube.com/embed/demo",
+          sameOrigin: false,
+          title: "Video",
+          browserAccessible: false
+        }]
+      }
+    }]
+  }, []);
+
+  assert.match(html, /Embedded content/);
+  assert.match(html, /coverage-state-unavailable/);
+  assert.match(html, /1 unavailable document/);
+});
+
 test("renderExplorationHtml keeps source findings outside visual state groups", () => {
   const html = renderExplorationHtml(graph, [{
     ...issues[0],
@@ -841,8 +865,15 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /Manual review/);
   assert.match(html, /Confirm focus order manually/);
   assert.match(html, /class="coverage-table"/);
+  assert.match(html, /Evidence state/);
+  assert.match(html, /class="coverage-state-cell"/);
   assert.match(html, /class="coverage-status-cell"/);
+  assert.match(html, /coverage-state-failed/);
+  assert.match(html, /coverage-state-passed/);
+  assert.match(html, /coverage-state-needs-review/);
+  assert.match(html, /data-coverage-state data-default-state="needs-review"/);
   assert.match(html, /\.coverage-row-review:not\(\.coverage-row-reviewed\):hover/);
+  assert.match(html, /coverage-row-state-/);
   assert.match(html, /Browser automation: evidence collected automatically/);
   assert.match(html, /type="checkbox" checked disabled/);
   assert.match(html, /data-coverage-review="screen-reader"/);
@@ -918,4 +949,6 @@ test("renderExplorationHtml hides successful per-state diagnostic details", () =
   assert.match(html, /Audit Coverage/);
   assert.match(html, /1 state checked for overflow and clipped text/);
   assert.match(html, /0 image alternatives flagged for human review/);
+  assert.match(html, /coverage-state-not-tested/);
+  assert.match(html, /coverage-state-passed/);
 });

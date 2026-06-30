@@ -284,6 +284,9 @@ empty recommendation; axe findings also preserve their rule-specific help link.
 Use `Copy issue` beside a finding group to copy a Markdown draft with severity,
 page, selector, WCAG metadata, ownership context, and fix guidance for GitHub
 Issues, Jira, Linear, or team notes.
+The `Audit Coverage` table separates review completion from evidence state:
+`passed`, `failed`, `needs-review`, `not-tested`, and `unavailable` describe
+what this run actually observed for each area.
 
 | File | Use it for | Commit it? |
 |---|---|---|
