@@ -17,6 +17,7 @@ import { applyRemediationTracking, DEFAULT_REMEDIATION_FILE } from "../core/reme
 import { applyIgnores, DEFAULT_IGNORE_FILE } from "../core/ignore.js";
 import { applyReportRetention } from "../core/reportRetention.js";
 import { filterReportFindings } from "../core/findingFilter.js";
+import { readScopePlanIfExists } from "../core/scopePlan.js";
 import type { A11yReport, ComplianceStandard, Framework, Issue, LighthouseAuditResult, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel, WcagVersion } from "../types.js";
 
 export interface CheckOptions {
@@ -171,6 +172,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
   const framework = config.framework === "auto"
     ? await detectFramework(config.cwd)
     : config.framework;
+  const plannedScope = await readScopePlanIfExists(config.cwd);
   const effectiveConfig = {
     ...config,
     framework,
@@ -294,6 +296,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
     framework,
     cwd: effectiveConfig.cwd,
     urls: runDynamic ? effectiveConfig.dynamic.urls : [],
+    plannedScope,
     standard: {
       ...standard,
       wcagVersion: effectiveConfig.wcagVersion,

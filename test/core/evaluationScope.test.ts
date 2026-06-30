@@ -18,6 +18,27 @@ test("createEvaluationScopeManifest records WCAG-EM-inspired browser exploration
         automatedCoverage: "partial",
         requiresManualReview: true,
         disclaimer: "Manual review is required."
+      },
+      plannedScope: {
+        version: 1,
+        generatedAt: "2026-06-25T00:00:00.000Z",
+        product: {
+          type: "web application",
+          languages: ["en"]
+        },
+        target: {
+          standard: "section508",
+          urls: ["https://example.com"]
+        },
+        supportedPlatforms: ["Desktop Chrome"],
+        assistiveTechnologies: ["Keyboard only"],
+        criticalJourneys: [{
+          name: "Search",
+          urls: ["https://example.com/search"]
+        }],
+        thirdPartyContent: [],
+        exclusions: [],
+        notes: []
       }
     },
     issues: [
@@ -67,6 +88,7 @@ test("createEvaluationScopeManifest records WCAG-EM-inspired browser exploration
 
   assert.equal(manifest.methodology.conformanceClaim, false);
   assert.equal(manifest.target.standard?.id, "section508");
+  assert.equal(manifest.plannedScope?.criticalJourneys[0].name, "Search");
   assert.equal(manifest.sample.strategy, "browser-exploration");
   assert.deepEqual(manifest.sample.discoveredUrls, ["https://example.com", "https://example.com/menu"]);
   assert.equal(manifest.sample.maxDepth, 2);

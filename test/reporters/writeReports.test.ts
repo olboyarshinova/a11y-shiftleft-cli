@@ -72,6 +72,35 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
       duplicateCount: 2,
       scanDurationMs: 123,
       urls: ["http://localhost:3000"],
+      plannedScope: {
+        version: 1,
+        generatedAt: "2026-06-01T00:00:00.000Z",
+        product: {
+          name: "Demo Shop",
+          type: "ecommerce",
+          languages: ["en"]
+        },
+        target: {
+          standard: "ada-title-ii",
+          urls: ["http://localhost:3000"]
+        },
+        supportedPlatforms: ["Desktop Chrome"],
+        assistiveTechnologies: ["Keyboard only"],
+        criticalJourneys: [{
+          name: "Checkout",
+          urls: ["http://localhost:3000/cart", "http://localhost:3000/checkout"]
+        }],
+        thirdPartyContent: [{
+          name: "YouTube",
+          url: "https://youtube.com/embed/demo",
+          reviewStrategy: "Manual verification recommended"
+        }],
+        exclusions: [{
+          area: "Admin billing",
+          reason: "requires production account"
+        }],
+        notes: []
+      },
       lighthouse: [{
         url: "http://localhost:3000",
         finalUrl: "http://localhost:3000/",
@@ -244,8 +273,10 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   );
 
   assert.equal(json.summary.framework, "react");
+  assert.equal(json.summary.plannedScope.product.name, "Demo Shop");
   assert.equal(scope.methodology.name, "WCAG-EM-inspired evaluation scope");
   assert.equal(scope.methodology.conformanceClaim, false);
+  assert.equal(scope.plannedScope.product.type, "ecommerce");
   assert.equal(scope.target.standard.id, "ada-title-ii");
   assert.equal(scope.sample.strategy, "configured-urls");
   assert.deepEqual(scope.evidence.automatedSources, ["axe", "eslint"]);
@@ -307,6 +338,9 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /evaluation-scope\.json/);
   assert.match(markdown, /Requested URLs \| http:\/\/localhost:3000/);
   assert.match(markdown, /Evidence collected \| browser exploration not included; axe, eslint; keyboard not included; Lighthouse comparison; manual checklist not included/);
+  assert.match(markdown, /## Planned Scope/);
+  assert.match(markdown, /Product \| Demo Shop - ecommerce/);
+  assert.match(markdown, /Critical journeys \| 1/);
   assert.match(markdown, /Compliance Note/);
   assert.match(markdown, /Compliance Evidence Summary/);
   assert.match(markdown, /WCAG-mapped findings \| 2/);

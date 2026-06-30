@@ -165,6 +165,7 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     framework: metrics.framework || "unknown",
     urls: metrics.urls || [],
     standard: metrics.standard,
+    plannedScope: metrics.plannedScope,
     baseline: metrics.baseline,
     retest: metrics.retest,
     remediationTracking: metrics.remediationTracking,
@@ -447,6 +448,8 @@ ${formatRetentionRows(report.summary.retention)}| Retention evidence | ${formatR
 
 ${formatEvaluationScope(report)}
 
+${formatPlannedScope(report.summary.plannedScope)}
+
 ${formatCoverageMatrix(report)}
 
 ${formatPageSummary(report.summary.byPage || [])}
@@ -504,6 +507,24 @@ This WCAG-EM-inspired scope summary is reproducibility evidence, not a WCAG conf
 | Depth | ${graph ? graph.summary.maxDepth : "not included"} |
 | Evidence collected | ${markdownCell(evidence)} |
 | Representative states | ${markdownCell(representativeStates || "No findings in captured states")} |`;
+}
+
+function formatPlannedScope(scope: ReportSummary["plannedScope"]): string {
+  if (!scope) return "";
+  const product = `${scope.product.name ? `${scope.product.name} - ` : ""}${scope.product.type}`;
+  return `## Planned Scope
+
+| Scope item | Value |
+|---|---|
+| Product | ${markdownCell(product)} |
+| Target standard | ${scope.target.standard} |
+| Languages | ${markdownCell(scope.product.languages.join(", ") || "not specified")} |
+| Representative URLs | ${markdownCell(scope.target.urls.join(", ") || "not specified")} |
+| Supported platforms | ${markdownCell(scope.supportedPlatforms.join(", ") || "not specified")} |
+| Assistive technologies | ${markdownCell(scope.assistiveTechnologies.join(", ") || "not specified")} |
+| Critical journeys | ${scope.criticalJourneys.length} |
+| Third-party content | ${scope.thirdPartyContent.length} |
+| Exclusions | ${scope.exclusions.length} |`;
 }
 
 function formatKeyboardEvidence(report: A11yReport): string {

@@ -7,6 +7,7 @@ import { loadConfig } from "../config/loadConfig.js";
 import { createManualChecklist } from "../core/manualChecklist.js";
 import { filterReportFindings } from "../core/findingFilter.js";
 import { dedupeIssues } from "../core/dedupe.js";
+import { readScopePlanIfExists } from "../core/scopePlan.js";
 import { detectFramework } from "../core/detectFramework.js";
 import { applyIgnores, DEFAULT_IGNORE_FILE } from "../core/ignore.js";
 import { normalizeIssue } from "../core/normalize.js";
@@ -120,6 +121,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
   });
   const framework = config.framework === "auto" ? await detectFramework(config.cwd) : config.framework;
   const standard = resolveStandard(config.standard);
+  const plannedScope = await readScopePlanIfExists(config.cwd);
   const effectiveConfig = {
     ...config,
     framework,
@@ -213,6 +215,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
     framework,
     cwd: effectiveConfig.cwd,
     urls,
+    plannedScope,
     standard,
     ignore: ignoreResult.summary,
     remediationTracking: remediationResult.summary,
@@ -236,7 +239,8 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
     title: "Accessibility Audit Report",
     keyboard,
     manualChecklist,
-    lighthouse
+    lighthouse,
+    plannedScope
   });
   if (options.pdf) await writeExplorationPdf(effectiveConfig.outputDir, "a11y-report");
 
