@@ -809,7 +809,8 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   const html = await fs.readFile(path.join(outputDir, "a11y-report.html"), "utf8");
   assert.match(html, /Accessibility Audit Report/);
   assert.match(html, /Evaluation Scope/);
-  assert.match(html, /WCAG-EM-inspired scope summary/);
+  assert.match(html, /class="panel evaluation-scope"/);
+  assert.match(html, /Reproducibility scope, not a WCAG conformance claim/);
   assert.match(html, /not a WCAG conformance claim/);
   assert.match(html, /evaluation-scope\.json/);
   assert.match(html, /Share Review Copy/);
