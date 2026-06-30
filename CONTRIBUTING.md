@@ -420,6 +420,12 @@ To create issues, use a GitHub token with issue-write permission:
 GH_TOKEN=your_token node scripts/create-good-first-issues.js
 ```
 
+To close the older seeded issues before creating the refreshed list:
+
+```bash
+GH_TOKEN=your_token node scripts/create-good-first-issues.js --close-stale
+```
+
 The script skips existing issue titles and uses only common public labels:
 `good first issue`, `help wanted`, `enhancement`, and `documentation`.
 

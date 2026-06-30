@@ -4,51 +4,101 @@ import https from "node:https";
 
 const DEFAULT_REPO = "olboyarshinova/a11y-shiftleft-cli";
 
+const staleIssues = [
+  {
+    number: 11,
+    comment: "Closing this because the demo docs and visual report workflow have changed since this issue was opened. I am replacing it with smaller, more current good-first-issue tasks."
+  },
+  {
+    number: 12,
+    comment: "Closing this because the visual report empty states have changed since this issue was opened. I am replacing it with narrower, current good-first-issue tasks."
+  }
+];
+
 const issues = [
   {
-    title: "[Good first issue]: Add a FAQ page for new users",
+    title: "[Good first issue]: Add FAQ entry explaining third-party iframe findings",
     labels: ["good first issue", "help wanted", "documentation"],
     body: issueBody({
-      task: "Create a short `docs/faq.md` page with beginner questions about installing, running, and reading reports.",
-      why: "New users should be able to answer the most common setup questions without reading every docs page.",
+      task: "Add a short FAQ entry that explains why a report may show findings inside third-party iframes such as YouTube, Vimeo, Spotify, Google Maps, or CodePen.",
+      why: "Users need to understand which findings are directly fixable by their site and which ones require third-party review or an accessible alternative.",
       files: [
-        "docs/faq.md",
-        "README.md"
+        "docs/faq.md"
       ],
       acceptance: [
-        "`docs/faq.md` exists.",
-        "The FAQ answers at least 4 beginner questions.",
-        "The FAQ explains that generated reports usually should not be committed.",
-        "README links to the FAQ from the More Documentation section.",
+        "The FAQ includes a question about third-party iframe findings.",
+        "The answer mentions that embedded content can be outside the website owner's direct control.",
+        "The answer suggests manual verification and checking for an accessible alternative when needed.",
+        "The answer does not claim that third-party findings can always be fixed in the host site.",
         "This is a docs-only change; tests are not required."
       ],
-      notes: "Good starter questions: Do I need React/Vue/Angular? Which URL should I scan? Where is the report? Should reports be committed?"
+      notes: "Keep the wording friendly and practical. Do not add legal or compliance claims."
     })
   },
   {
-    title: "[Good first issue]: Add common dev server port examples to README",
+    title: "[Good first issue]: Add a check vs explore vs audit docs recipe",
     labels: ["good first issue", "help wanted", "documentation"],
     body: issueBody({
-      task: "Add a small table to the README quick start showing common local dev server URLs.",
-      why: "Beginners often copy `localhost:3000` even when their dev server uses another port. A small table makes the first scan easier.",
+      task: "Add a short recipe that explains when to use `check`, `explore`, and `audit`.",
+      why: "New users can confuse `npm run check explore ...` with the real `explore` command. A small recipe prevents failed first runs.",
+      files: [
+        "docs/recipes/check-explore-audit.md",
+        "docs/recipes/index.md"
+      ],
+      acceptance: [
+        "`docs/recipes/check-explore-audit.md` exists.",
+        "The recipe has one short section each for `check`, `explore`, and `audit`.",
+        "The recipe includes copy-paste commands using `npx a11y-shiftleft-cli`.",
+        "The recipe explains that npm script arguments must come after `--`.",
+        "The recipe is linked from `docs/recipes/index.md`."
+      ],
+      notes: "This is a docs-only change; tests are not required."
+    })
+  },
+  {
+    title: "[Good first issue]: Add a public website audit example to README",
+    labels: ["good first issue", "help wanted", "documentation"],
+    body: issueBody({
+      task: "Add one small README example showing how to run `explore` against a public website URL.",
+      why: "Some users test public websites instead of local projects. A clear example helps them use the right command and understand scan limitations.",
       files: [
         "README.md"
       ],
       acceptance: [
-        "README includes examples for at least Vite, Next.js, Angular, and Vue dev server URLs.",
-        "The text tells users to use the URL printed by their own dev server.",
-        "The section stays short and copy-paste friendly.",
+        "README includes a copy-paste `npx a11y-shiftleft-cli explore --url https://example.com --out reports` style command.",
+        "The text says to test only sites the user is authorized to scan.",
+        "The text mentions that public sites may block automated scans.",
+        "The section stays short and beginner-friendly.",
         "This is a docs-only change; tests are not required."
       ],
-      notes: "Suggested examples: Vite `http://localhost:5173`, Next.js `http://localhost:3000`, Angular `http://localhost:4200`, Vue/Vite `http://localhost:5173`."
+      notes: "Do not add a long troubleshooting section; link or point to the existing report explanation if useful."
     })
   },
   {
-    title: "[Good first issue]: Add a beginner-friendly demo README screenshot placeholder section",
+    title: "[Good first issue]: Improve Audit Coverage empty-state wording",
+    labels: ["good first issue", "help wanted", "enhancement"],
+    body: issueBody({
+      task: "Improve one or two empty-state messages in the visual report Audit Coverage table.",
+      why: "Clear wording helps users understand the difference between `not-tested`, `needs-review`, and `unavailable` evidence states.",
+      files: [
+        "src/reporters/writeExplorationHtml.ts",
+        "test/reporters/writeExplorationHtml.test.ts"
+      ],
+      acceptance: [
+        "At least one Audit Coverage empty-state message is clearer for beginners.",
+        "The wording remains factual and does not claim full accessibility conformance.",
+        "A focused visual report test is updated if the changed text is asserted.",
+        "`npm test` passes."
+      ],
+      notes: "Keep this small. Do not redesign the table in this issue."
+    })
+  },
+  {
+    title: "[Good first issue]: Add demo README expected output section",
     labels: ["good first issue", "help wanted", "documentation"],
     body: issueBody({
-      task: "Improve the demo README with a short section explaining what users should see after running the demo scan.",
-      why: "The demo is often the first thing contributors try. A short expected-output section makes it easier to know whether the scan worked.",
+      task: "Add a short `What you should see` section to the React/Vite demo README.",
+      why: "The demo is often the first thing contributors try. Expected output helps them know whether the scan worked.",
       files: [
         "examples/demo-react-vite/README.md"
       ],
@@ -56,55 +106,36 @@ const issues = [
         "The demo README has a section named `What you should see` or similar.",
         "It mentions `reports/a11y-comment.md` and `reports/exploration.html`.",
         "It explains that the demo intentionally contains accessibility defects.",
+        "It tells users not to commit generated report folders.",
         "This is a docs-only change; tests are not required."
       ],
       notes: "Do not add real screenshots in this issue. Text-only documentation is enough."
     })
   },
   {
-    title: "[Good first issue]: Add a docs recipe for scanning multiple URLs",
+    title: "[Good first issue]: Add a short docs note for Copy issue",
     labels: ["good first issue", "help wanted", "documentation"],
     body: issueBody({
-      task: "Create a short recipe that shows how to scan more than one URL in a single command.",
-      why: "Users often ask whether they need to run the CLI separately for every page. A recipe makes the workflow obvious.",
-      files: [
-        "docs/recipes/multiple-urls.md",
-        "docs/recipes/index.md",
-        "README.md"
-      ],
-      acceptance: [
-        "`docs/recipes/multiple-urls.md` exists.",
-        "The recipe includes a copy-paste command with 2-3 URLs.",
-        "The recipe mentions when to use `--crawl` instead.",
-        "The recipe is linked from `docs/recipes/index.md`.",
-        "README links to the recipe or keeps the existing recipes index link clear."
-      ],
-      notes: "This is a docs-only change; tests are not required."
-    })
-  },
-  {
-    title: "[Good first issue]: Clarify screenshot privacy in the README",
-    labels: ["good first issue", "help wanted", "documentation"],
-    body: issueBody({
-      task: "Add one short paragraph to the README explaining when to use `--no-screenshots`.",
-      why: "Visual reports are useful, but users should understand screenshot privacy before scanning apps with personal or sensitive data.",
+      task: "Add a short note explaining the `Copy issue` button in the visual HTML report.",
+      why: "Users may not realize the button copies a local Markdown draft and does not send data to GitHub, Jira, or Linear automatically.",
       files: [
         "README.md",
         "docs/visual-reports.md"
       ],
       acceptance: [
-        "README mentions `--no-screenshots` near the visual exploration section.",
-        "The wording is short and links to `docs/visual-reports.md` for details.",
-        "The paragraph mentions personal data, login screens, or payment details.",
+        "Docs explain that `Copy issue` copies Markdown locally in the browser.",
+        "Docs mention that it is useful for GitHub Issues, Jira, Linear, or team notes.",
+        "Docs clarify that no external tracker issue is created automatically.",
         "This is a docs-only change; tests are not required."
       ],
-      notes: "Keep the README concise. The detailed explanation should stay in `docs/visual-reports.md`."
+      notes: "Keep this concise; do not duplicate the whole report documentation."
     })
   }
 ];
 
 const args = new Set(process.argv.slice(2));
 const dryRun = args.has("--dry-run");
+const closeStale = args.has("--close-stale");
 const repo = process.env.GITHUB_REPOSITORY || DEFAULT_REPO;
 const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
 
@@ -114,6 +145,18 @@ if (!dryRun && !token) {
 }
 
 const existingTitles = dryRun ? new Set() : await fetchExistingIssueTitles(repo, token);
+
+if (closeStale) {
+  for (const issue of staleIssues) {
+    if (dryRun) {
+      console.log(`dry-run close #${issue.number}: ${issue.comment}`);
+      continue;
+    }
+
+    await closeIssue(repo, token, issue);
+    console.log(`closed #${issue.number}`);
+  }
+}
 
 for (const issue of issues) {
   if (existingTitles.has(issue.title)) {
@@ -170,6 +213,23 @@ async function createIssue(repo, token, issue) {
     method: "POST",
     token,
     body: issue
+  });
+}
+
+async function closeIssue(repo, token, issue) {
+  await requestJson(`https://api.github.com/repos/${repo}/issues/${issue.number}/comments`, {
+    method: "POST",
+    token,
+    body: { body: issue.comment }
+  });
+
+  return requestJson(`https://api.github.com/repos/${repo}/issues/${issue.number}`, {
+    method: "PATCH",
+    token,
+    body: {
+      state: "closed",
+      state_reason: "not_planned"
+    }
   });
 }
 
