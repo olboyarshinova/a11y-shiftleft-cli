@@ -1558,18 +1558,20 @@ function renderEvaluationScope(
       <div class="scope-item"><strong>Depth</strong><span>${graph.summary.maxDepth}</span></div>
       <div class="scope-item"><strong>Evidence collected</strong><span>${escapeHtml(evidence.join("; "))}</span></div>
       <div class="scope-item"><strong>Representative states</strong><span>${escapeHtml(mostAffected.length ? mostAffected.join("; ") : "No findings in captured states")}</span></div>
-      <div class="scope-item"><strong>Planned scope</strong><span>${escapeHtml(formatPlannedScopeSummary(options.plannedScope))}</span></div>
+      <div class="scope-item"><strong>Planned scope</strong><span>${escapeHtml(formatPlannedScopeSummary(options.plannedScope, issues))}</span></div>
     </div>
     ${renderReportCompleteness(graph, options, sources)}
     <p class="muted">Full machine-readable details are in <code>evaluation-scope.json</code>.</p>
   </section>`;
 }
 
-function formatPlannedScopeSummary(scope: PlannedEvaluationScope | undefined): string {
+function formatPlannedScopeSummary(scope: PlannedEvaluationScope | undefined, issues: DedupedIssue[]): string {
   if (!scope) return "not provided";
   const product = scope.product.name ? `${scope.product.name} (${scope.product.type})` : scope.product.type;
   const journeyCount = `${scope.criticalJourneys.length} journey${scope.criticalJourneys.length === 1 ? "" : "s"}`;
-  return `${product}; ${scope.target.standard}; ${journeyCount}`;
+  const affected = new Set(issues.flatMap((issue) => issue.journeys || []));
+  const affectedCount = affected.size > 0 ? `; ${affected.size} affected` : "";
+  return `${product}; ${scope.target.standard}; ${journeyCount}${affectedCount}`;
 }
 
 function renderReportCompleteness(

@@ -24,6 +24,10 @@ critical journey count next to the discovered browser scope. The same planned
 scope is also embedded in `a11y-report.json`, `a11y-comment.md`, and
 `evaluation-scope.json`.
 
+Findings are linked to critical journeys when their URL matches a journey URL.
+Markdown and JSON reports include a journey-impact summary, and the findings
+CSV includes a `journeys` column for spreadsheet triage.
+
 Use `explore` when you want the CLI to walk safe parts of a running app and
 produce only the lower-level visual exploration artifacts:
 

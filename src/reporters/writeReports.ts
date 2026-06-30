@@ -4,6 +4,7 @@ import { stringify } from "csv-stringify/sync";
 import { enrichIssueEvidence } from "../core/classification.js";
 import { createManualChecklist, toManualChecklistMarkdown } from "../core/manualChecklist.js";
 import { writeEvaluationScopeManifest } from "../core/evaluationScope.js";
+import { annotateIssuesWithJourneys, summarizeJourneyImpact } from "../core/journeyImpact.js";
 import { compareLighthouseWithFindings } from "../core/lighthouseComparison.js";
 import { getRemediationHint } from "../core/remediation.js";
 import { summarizeRootCauses } from "../core/rootCauses.js";
@@ -29,7 +30,7 @@ export async function writeReports(
 ): Promise<A11yReport> {
   await fs.mkdir(outputDir, { recursive: true });
   const formats = new Set(options.formats || ["json", "csv", "markdown"]);
-  const reportIssues = issues.map((issue) => {
+  const reportIssues = annotateIssuesWithJourneys(issues.map((issue) => {
     const enrichedIssue = issue.confidence && issue.category && issue.findingType
       ? issue
       : enrichIssueEvidence(issue);
@@ -48,7 +49,7 @@ export async function writeReports(
         options.frameworkExample
       )
     };
-  });
+  }), metrics.plannedScope);
 
   const manualChecklist = options.manualChecklist || (options.semiAuto
     ? createManualChecklist({
@@ -166,6 +167,7 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     urls: metrics.urls || [],
     standard: metrics.standard,
     plannedScope: metrics.plannedScope,
+    journeyImpact: summarizeJourneyImpact(issues, metrics.plannedScope),
     baseline: metrics.baseline,
     retest: metrics.retest,
     remediationTracking: metrics.remediationTracking,
@@ -302,6 +304,7 @@ export function toFindingsCsv(issues: DedupedIssue[]): string {
     ownershipSource: issue.ownership?.source || "",
     ownershipUrl: issue.ownership?.url || "",
     ownershipNote: issue.ownership?.note || "",
+    journeys: issue.journeys?.join(" | ") || "",
     duplicateCount: issue.duplicateCount,
     baselineStatus: issue.baselineStatus || "",
     retestStatus: issue.retestStatus || "",
@@ -337,6 +340,7 @@ export function toFindingsCsv(issues: DedupedIssue[]): string {
       "ownershipSource",
       "ownershipUrl",
       "ownershipNote",
+      "journeys",
       "duplicateCount",
       "baselineStatus",
       "retestStatus",
@@ -448,7 +452,7 @@ ${formatRetentionRows(report.summary.retention)}| Retention evidence | ${formatR
 
 ${formatEvaluationScope(report)}
 
-${formatPlannedScope(report.summary.plannedScope)}
+${formatPlannedScope(report.summary)}
 
 ${formatCoverageMatrix(report)}
 
@@ -509,9 +513,13 @@ This WCAG-EM-inspired scope summary is reproducibility evidence, not a WCAG conf
 | Representative states | ${markdownCell(representativeStates || "No findings in captured states")} |`;
 }
 
-function formatPlannedScope(scope: ReportSummary["plannedScope"]): string {
+function formatPlannedScope(summary: ReportSummary): string {
+  const scope = summary.plannedScope;
   if (!scope) return "";
   const product = `${scope.product.name ? `${scope.product.name} - ` : ""}${scope.product.type}`;
+  const journeyRows = (summary.journeyImpact || [])
+    .map((journey) => `| ${markdownCell(journey.name)} | ${journey.findingCount} | ${journey.critical} | ${journey.warning} | ${journey.info} | ${markdownCell(journey.urls.join(", "))} |`)
+    .join("\n");
   return `## Planned Scope
 
 | Scope item | Value |
@@ -524,7 +532,13 @@ function formatPlannedScope(scope: ReportSummary["plannedScope"]): string {
 | Assistive technologies | ${markdownCell(scope.assistiveTechnologies.join(", ") || "not specified")} |
 | Critical journeys | ${scope.criticalJourneys.length} |
 | Third-party content | ${scope.thirdPartyContent.length} |
-| Exclusions | ${scope.exclusions.length} |`;
+| Exclusions | ${scope.exclusions.length} |
+
+${journeyRows ? `### Journey Impact
+
+| Journey | Findings | Critical | Warning | Info | URLs |
+|---|---:|---:|---:|---:|---|
+${journeyRows}` : ""}`;
 }
 
 function formatKeyboardEvidence(report: A11yReport): string {

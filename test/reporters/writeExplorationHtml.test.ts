@@ -717,7 +717,12 @@ test("writeExplorationHtml writes exploration.html", async () => {
 
 test("writeExplorationHtml can create a unified audit report", async () => {
   const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-audit-html-"));
-  await writeExplorationHtml(outputDir, graph, issues, {
+  const journeyIssues = issues.map((issue) => (
+    issue.ruleId === "button-name"
+      ? { ...issue, journeys: ["Checkout"] }
+      : issue
+  ));
+  await writeExplorationHtml(outputDir, graph, journeyIssues, {
     fileName: "a11y-report.html",
     title: "Accessibility Audit Report",
     keyboard: {
@@ -870,7 +875,7 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /URL and state scope/);
   assert.match(html, /Automated tools/);
   assert.match(html, /Planned scope/);
-  assert.match(html, /Demo Shop \(ecommerce\); wcag22-aa; 1 journey/);
+  assert.match(html, /Demo Shop \(ecommerce\); wcag22-aa; 1 journey; 1 affected/);
   assert.match(html, /Keyboard evidence/);
   assert.match(html, /Manual review records/);
   assert.match(html, /Known limitations/);

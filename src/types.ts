@@ -85,6 +85,15 @@ export interface IssueOwnership {
   note?: string;
 }
 
+export interface JourneyImpactSummary {
+  name: string;
+  urls: string[];
+  findingCount: number;
+  critical: number;
+  warning: number;
+  info: number;
+}
+
 export interface ElementBounds {
   x: number;
   y: number;
@@ -277,6 +286,7 @@ export interface Issue {
   helpUrl?: string;
   colorScheme?: ColorScheme;
   ownership?: IssueOwnership;
+  journeys?: string[];
   message?: string;
   remediation?: RemediationHint;
 }
@@ -306,6 +316,7 @@ export interface NormalizedIssue extends Required<Pick<Issue, "source" | "framew
   helpUrl?: string;
   colorScheme?: ColorScheme;
   ownership?: IssueOwnership;
+  journeys?: string[];
 }
 
 export interface TriagedIssue extends NormalizedIssue {
@@ -617,6 +628,7 @@ export interface ReportSummary {
   urls: string[];
   standard?: ComplianceStandardMetadata;
   plannedScope?: PlannedEvaluationScope;
+  journeyImpact?: JourneyImpactSummary[];
   baseline?: BaselineComparisonSummary;
   retest?: RetestComparisonSummary;
   remediationTracking?: RemediationTrackingSummary;

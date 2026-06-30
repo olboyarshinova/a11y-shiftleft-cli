@@ -87,8 +87,8 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
         supportedPlatforms: ["Desktop Chrome"],
         assistiveTechnologies: ["Keyboard only"],
         criticalJourneys: [{
-          name: "Checkout",
-          urls: ["http://localhost:3000/cart", "http://localhost:3000/checkout"]
+          name: "Account settings",
+          urls: ["http://localhost:3000/settings", "http://localhost:3000"]
         }],
         thirdPartyContent: [{
           name: "YouTube",
@@ -274,6 +274,9 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
 
   assert.equal(json.summary.framework, "react");
   assert.equal(json.summary.plannedScope.product.name, "Demo Shop");
+  assert.equal(json.summary.journeyImpact[0].name, "Account settings");
+  assert.equal(json.summary.journeyImpact[0].findingCount, 2);
+  assert.deepEqual(json.issues.map((issue: { journeys?: string[] }) => issue.journeys), [["Account settings"], ["Account settings"]]);
   assert.equal(scope.methodology.name, "WCAG-EM-inspired evaluation scope");
   assert.equal(scope.methodology.conformanceClaim, false);
   assert.equal(scope.plannedScope.product.type, "ecommerce");
@@ -319,8 +322,9 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(csv, /byPage\.0\.url,http:\/\/localhost:3000\/settings/);
   assert.match(csv, /byPage\.0\.severityScore,5/);
   assert.match(findingsCsv, /fixSummary,fixSteps,documentation,frameworkExamples/);
-  assert.match(findingsCsv, /ownership,ownershipSource,ownershipUrl,ownershipNote/);
+  assert.match(findingsCsv, /ownership,ownershipSource,ownershipUrl,ownershipNote,journeys/);
   assert.match(findingsCsv, /Third-party embedded content,youtube\.com,https:\/\/www\.youtube\.com,Third-party embedded content\. Manual verification recommended\./);
+  assert.match(findingsCsv, /Account settings/);
   assert.match(findingsCsv, /Give every button an accessible name/);
   assert.match(findingsCsv, /Use visible button text when possible/);
   assert.match(findingsCsv, /react: <button type=""button"" aria-label=""Open menu"">/);
@@ -341,6 +345,8 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /## Planned Scope/);
   assert.match(markdown, /Product \| Demo Shop - ecommerce/);
   assert.match(markdown, /Critical journeys \| 1/);
+  assert.match(markdown, /### Journey Impact/);
+  assert.match(markdown, /Account settings \| 2 \| 1 \| 1 \| 0/);
   assert.match(markdown, /Compliance Note/);
   assert.match(markdown, /Compliance Evidence Summary/);
   assert.match(markdown, /WCAG-mapped findings \| 2/);
