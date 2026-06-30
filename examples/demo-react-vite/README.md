@@ -51,20 +51,22 @@ The demo page intentionally includes examples such as:
 
 These are teaching examples, not production recommendations.
 
-
 ## What You Should See
 
-After running the demo successfully, the `reports/` directory should contain generated accessibility reports.
+After running the demo successfully, the `reports/` directory should contain
+generated accessibility reports.
 
 Expected output includes:
 
-- `reports/a11y-comment.md` – a Markdown summary of the accessibility findings.
-- `reports/exploration.html` – an interactive HTML report for exploring the scan results.
+- `reports/a11y-comment.md` - a Markdown summary of the accessibility findings.
+- `reports/exploration.html` - an interactive HTML report for exploring the
+  scan results.
 
-The demo intentionally includes accessibility defects so these reports contain meaningful findings.
+The demo intentionally includes accessibility defects so these reports contain
+meaningful findings.
 
-Do not commit the generated `reports/` directory to Git, as it contains generated artifacts.
-
+Do not commit the generated `reports/` directory to Git, as it contains
+generated artifacts.
 
 ## Before/After PR Flow
 
@@ -83,4 +85,3 @@ For the full playbook, see
 - Automated checks cover only part of accessibility review.
 - Do not commit npm tokens, OTP codes, private screenshots, or local machine
   paths.
-
