@@ -867,6 +867,13 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /Manual review/);
   assert.match(html, /Confirm focus order manually/);
   assert.match(html, /class="coverage-table"/);
+  assert.match(html, /Audit coverage evidence state summary/);
+  assert.match(html, /coverage-legend-item coverage-legend-failed/);
+  assert.match(html, /Failed evidence/);
+  assert.match(html, /Needs review/);
+  assert.match(html, /Not tested/);
+  assert.match(html, /Unavailable/);
+  assert.match(html, /Passed evidence/);
   assert.match(html, /Evidence state/);
   assert.match(html, /class="coverage-state-cell"/);
   assert.match(html, /class="coverage-status-cell"/);

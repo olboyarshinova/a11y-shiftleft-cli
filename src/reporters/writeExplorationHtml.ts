@@ -25,6 +25,7 @@ interface CoverageMatrixRow {
 }
 
 type CoverageEvidenceState = "passed" | "failed" | "needs-review" | "not-tested" | "unavailable";
+type CoverageStateCounts = Record<CoverageEvidenceState, number>;
 
 export async function writeExplorationHtml(
   outputDir: string,
@@ -351,6 +352,82 @@ export function renderExplorationHtml(
 
     .coverage-table-wrap {
       overflow-x: auto;
+    }
+
+    .coverage-legend {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+      margin: 14px 0;
+    }
+
+    .coverage-legend-item {
+      align-items: center;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: grid;
+      gap: 6px;
+      grid-template-columns: auto auto minmax(0, 1fr);
+      min-height: 44px;
+      padding: 8px 10px;
+    }
+
+    .coverage-legend-swatch {
+      border-radius: 3px;
+      display: inline-block;
+      height: 12px;
+      width: 12px;
+    }
+
+    .coverage-legend-item strong {
+      color: var(--ink);
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .coverage-legend-item span:last-child {
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .coverage-legend-failed {
+      background: #fff1f0;
+      border-color: #f4b5ae;
+    }
+
+    .coverage-legend-failed .coverage-legend-swatch {
+      background: var(--critical);
+    }
+
+    .coverage-legend-needs-review,
+    .coverage-legend-not-tested {
+      background: #fff7e6;
+      border-color: #f6c56b;
+    }
+
+    .coverage-legend-needs-review .coverage-legend-swatch,
+    .coverage-legend-not-tested .coverage-legend-swatch {
+      background: var(--warning);
+    }
+
+    .coverage-legend-unavailable {
+      background: #f1f3f6;
+      border-color: #c8ced8;
+    }
+
+    .coverage-legend-unavailable .coverage-legend-swatch {
+      background: var(--muted);
+    }
+
+    .coverage-legend-passed {
+      background: #edf9f3;
+      border-color: #9bd8bd;
+    }
+
+    .coverage-legend-passed .coverage-legend-swatch {
+      background: var(--ok);
     }
 
     .coverage-table {
@@ -1671,6 +1748,7 @@ function renderCoverageMatrix(
     coverageRow("screen-reader", "Screen reader", "needs-review", "Human review required", "Test representative tasks with NVDA, JAWS, or VoiceOver"),
     coverageRow("content-usability", "Content and task usability", "needs-review", options.manualChecklist ? "Checklist ready" : "Human review required", "Record tester, environment, evidence, and outcome")
   ];
+  const stateCounts = countCoverageStates(rows);
   const orderedRows = rows
     .sort((left, right) => Number(right.automated) - Number(left.automated))
     .map((row) => row.html);
@@ -1678,6 +1756,7 @@ function renderCoverageMatrix(
   return `<section class="panel triage" aria-label="Audit coverage matrix">
     <h2>Audit Coverage</h2>
     <p class="muted">Green checked rows contain evidence collected by this audit. Complete the yellow rows manually; your selections stay in this browser for this generated report.</p>
+    ${renderCoverageLegend(stateCounts)}
     <p class="coverage-progress" data-coverage-progress aria-live="polite"></p>
     <div class="coverage-table-wrap">
       <table class="coverage-table">
@@ -1686,6 +1765,40 @@ function renderCoverageMatrix(
       </table>
     </div>
   </section>`;
+}
+
+function countCoverageStates(rows: CoverageMatrixRow[]): CoverageStateCounts {
+  const counts: CoverageStateCounts = {
+    passed: 0,
+    failed: 0,
+    "needs-review": 0,
+    "not-tested": 0,
+    unavailable: 0
+  };
+
+  for (const row of rows) {
+    counts[row.evidenceState] += 1;
+  }
+
+  return counts;
+}
+
+function renderCoverageLegend(counts: CoverageStateCounts): string {
+  const labels: Array<[CoverageEvidenceState, string]> = [
+    ["failed", "Failed evidence"],
+    ["needs-review", "Needs review"],
+    ["not-tested", "Not tested"],
+    ["unavailable", "Unavailable"],
+    ["passed", "Passed evidence"]
+  ];
+
+  return `<div class="coverage-legend" aria-label="Audit coverage evidence state summary">
+    ${labels.map(([state, label]) => `<div class="coverage-legend-item coverage-legend-${state}">
+      <span class="coverage-legend-swatch" aria-hidden="true"></span>
+      <strong>${counts[state]}</strong>
+      <span>${escapeHtml(label)}</span>
+    </div>`).join("")}
+  </div>`;
 }
 
 function evidenceState(findingCount: number): CoverageEvidenceState {
