@@ -177,6 +177,7 @@ npx a11y-shiftleft-cli scope init \
   --language en \
   --platform "Desktop Chrome" \
   --assistive-tech "Keyboard only" \
+  --sample-page "Core page:$APP_URL|Primary app entry" \
   --journey "Core task:$APP_URL" \
   --third-party "YouTube:https://www.youtube.com" \
   --exclude "Authenticated billing:requires test account"
@@ -186,6 +187,10 @@ When a finding URL matches a URL inside a critical journey, reports add that
 journey to the finding and summarize journey impact. This helps teams see
 whether a problem affects a core task such as sign-in, search, checkout, or
 account management.
+
+Use `--sample-page "Type:URL|Reason"` for representative pages on larger sites,
+such as core pages, page types, help pages, accessibility contact pages, or
+other pages that should always be included in the review plan.
 
 Then use a URL shortcut in your terminal. The examples below use macOS/Linux
 shell syntax:

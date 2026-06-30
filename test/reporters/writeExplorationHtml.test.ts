@@ -823,6 +823,11 @@ test("writeExplorationHtml can create a unified audit report", async () => {
       },
       supportedPlatforms: ["Desktop Chrome"],
       assistiveTechnologies: ["Keyboard only"],
+      representativeSample: [{
+        type: "Core page",
+        url: "http://localhost:3000",
+        reason: "Primary flow"
+      }],
       criticalJourneys: [{
         name: "Checkout",
         urls: ["http://localhost:3000/cart", "http://localhost:3000/checkout"]
@@ -843,7 +848,7 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /URL and state scope/);
   assert.match(html, /Automated tools/);
   assert.match(html, /Planned scope/);
-  assert.match(html, /Demo Shop \(ecommerce\); wcag22-aa; 1 journey; 1 affected/);
+  assert.match(html, /Demo Shop \(ecommerce\); wcag22-aa; 1 sample page; 1 journey; 1 affected/);
   assert.match(html, /Keyboard evidence/);
   assert.match(html, /Manual review records/);
   assert.match(html, /Known limitations/);

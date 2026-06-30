@@ -455,6 +455,12 @@ export interface PlannedScopeJourney {
   notes?: string;
 }
 
+export interface PlannedScopeSamplePage {
+  type: string;
+  url: string;
+  reason?: string;
+}
+
 export interface PlannedScopeThirdPartyContent {
   name: string;
   url?: string;
@@ -483,6 +489,7 @@ export interface PlannedEvaluationScope {
   };
   supportedPlatforms: string[];
   assistiveTechnologies: string[];
+  representativeSample: PlannedScopeSamplePage[];
   criticalJourneys: PlannedScopeJourney[];
   thirdPartyContent: PlannedScopeThirdPartyContent[];
   exclusions: PlannedScopeExclusion[];

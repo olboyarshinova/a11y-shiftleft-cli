@@ -16,12 +16,15 @@ Create `a11y-scope.json` before a run when the report should include planned
 audit context:
 
 ```bash
-npx a11y-shiftleft scope init --url $APP_URL --product-type "web application"
+npx a11y-shiftleft scope init \
+  --url $APP_URL \
+  --product-type "web application" \
+  --sample-page "Core page:$APP_URL|Primary app entry"
 ```
 
 The visual report then shows the planned product type, target standard, and
-critical journey count next to the discovered browser scope. The same planned
-scope is also embedded in `a11y-report.json`, `a11y-comment.md`, and
+representative sample count next to the discovered browser scope. The same
+planned scope is also embedded in `a11y-report.json`, `a11y-comment.md`, and
 `evaluation-scope.json`.
 
 Findings are linked to critical journeys when their URL matches a journey URL.

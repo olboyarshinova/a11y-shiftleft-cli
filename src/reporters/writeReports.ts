@@ -530,15 +530,31 @@ function formatPlannedScope(summary: ReportSummary): string {
 | Representative URLs | ${markdownCell(scope.target.urls.join(", ") || "not specified")} |
 | Supported platforms | ${markdownCell(scope.supportedPlatforms.join(", ") || "not specified")} |
 | Assistive technologies | ${markdownCell(scope.assistiveTechnologies.join(", ") || "not specified")} |
+| Representative sample | ${scope.representativeSample.length} |
 | Critical journeys | ${scope.criticalJourneys.length} |
 | Third-party content | ${scope.thirdPartyContent.length} |
 | Exclusions | ${scope.exclusions.length} |
 
+${formatRepresentativeSample(scope)}
 ${journeyRows ? `### Journey Impact
 
 | Journey | Findings | Critical | Warning | Info | URLs |
 |---|---:|---:|---:|---:|---|
 ${journeyRows}` : ""}`;
+}
+
+function formatRepresentativeSample(scope: NonNullable<ReportSummary["plannedScope"]>): string {
+  if (scope.representativeSample.length === 0) return "";
+  const rows = scope.representativeSample
+    .map((page) => `| ${markdownCell(page.type)} | ${markdownCell(page.url)} | ${markdownCell(page.reason || "")} |`)
+    .join("\n");
+  return `### Representative Sample
+
+| Type | URL | Reason |
+|---|---|---|
+${rows}
+
+`;
 }
 
 function formatKeyboardEvidence(report: A11yReport): string {

@@ -32,6 +32,11 @@ test("createEvaluationScopeManifest records WCAG-EM-inspired browser exploration
         },
         supportedPlatforms: ["Desktop Chrome"],
         assistiveTechnologies: ["Keyboard only"],
+        representativeSample: [{
+          type: "Search results",
+          url: "https://example.com/search",
+          reason: "Critical listing page"
+        }],
         criticalJourneys: [{
           name: "Search",
           urls: ["https://example.com/search"]
