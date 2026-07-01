@@ -405,6 +405,38 @@ test("renderExplorationHtml marks unavailable coverage evidence", () => {
   assert.match(html, /1 unavailable document/);
 });
 
+test("renderExplorationHtml shows helpful empty-state messages for not-tested and needs-review coverage", () => {
+  const emptyGraph = {
+    ...graph,
+    states: [{
+      id: "state-1",
+      url: "http://localhost:3000/",
+      title: "Demo",
+      depth: 0,
+      fingerprint: "abc123",
+      actionLabel: "Initial page",
+      screenshot: "screenshots/state-1.png",
+      screenshotFullPage: true,
+      issueCount: 0,
+      actionCount: 0,
+      accessibilityTree: {
+        totalNodes: 1,
+        namedNodes: 1,
+        interactiveNodes: 0,
+        unnamedInteractiveNodes: 0,
+        landmarks: [],
+        headings: [],
+        interactiveSample: []
+      }
+    }],
+    summary: { ...graph.summary, statesVisited: 1 }
+  };
+  const html = renderExplorationHtml(emptyGraph, []);
+
+  assert.match(html, /This audit did not collect reflow evidence/);
+  assert.match(html, /No modal opened during this audit/);
+});
+
 test("renderExplorationHtml keeps source findings outside visual state groups", () => {
   const html = renderExplorationHtml(graph, [{
     ...issues[0],
