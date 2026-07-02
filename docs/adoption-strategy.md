@@ -106,6 +106,10 @@ Publish a short case study from the demo app or a consenting real project:
 
 This should be written as engineering evidence, not marketing copy.
 
+For content planning, post templates, short-video scripts, carousels, and lead
+magnets, use [marketing-playbook.md](marketing-playbook.md). Keep this adoption
+document focused on product distribution and engineering trust signals.
+
 ### Copy-Paste Recipes
 
 Keep short recipes for common adoption scenarios:
