@@ -393,10 +393,6 @@ node bin/cli.js audit --url http://localhost:5173 --out reports
   intervention study design and analysis commands.
 - [Adoption strategy](docs/adoption-strategy.md): npm scripts, generated CI,
   future GitHub Action wrapper, docs-site plan, and outreach ideas.
-- [Marketing playbook](docs/marketing-playbook.md): audience, content calendar,
-  carousels, video scripts, post templates, and lead magnets.
-- [Accessibility PR checklist](docs/lead-magnets/accessibility-pr-checklist.md):
-  a shareable checklist for frontend pull requests.
 - [Roadmap](docs/roadmap.md): Lighthouse comparison, browser overlay,
   dashboard improvements, and future tracker integrations.
 - [Contributing](CONTRIBUTING.md): first PR path, local setup, testing, issue
