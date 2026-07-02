@@ -37,6 +37,7 @@ test("createEvaluationScopeManifest records WCAG-EM-inspired browser exploration
           url: "https://example.com/search",
           reason: "Critical listing page"
         }],
+        randomSample: [],
         criticalJourneys: [{
           name: "Search",
           urls: ["https://example.com/search"]

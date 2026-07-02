@@ -19,13 +19,19 @@ audit context:
 npx a11y-shiftleft scope init \
   --url $APP_URL \
   --product-type "web application" \
-  --sample-page "Core page:$APP_URL|Primary app entry"
+  --sample-page "Core page:$APP_URL|Primary app entry" \
+  --random-sample-page "Random content page:$APP_URL/blog/example|Control sample"
 ```
 
 The visual report then shows the planned product type, target standard, and
-representative sample count next to the discovered browser scope. The same
-planned scope is also embedded in `a11y-report.json`, `a11y-comment.md`, and
-`evaluation-scope.json`.
+representative and random sample counts next to the discovered browser scope.
+The same planned scope is also embedded in `a11y-report.json`,
+`a11y-comment.md`, and `evaluation-scope.json`.
+
+When random sample pages are present, Markdown and JSON reports compare
+structured sample findings with random sample findings. If random pages expose
+rule types not seen in the representative sample, the report recommends
+expanding the structured sample.
 
 Findings are linked to critical journeys when their URL matches a journey URL.
 Markdown and JSON reports include a journey-impact summary, and the findings

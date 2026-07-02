@@ -17,9 +17,6 @@ Section 508 certification.
   and `full` so reports can explain whether the run is prioritizing blockers,
   retesting fixes, estimating remediation scope, or building a fuller evidence
   package.
-- Add structured-vs-random sample comparison for larger audits, including
-  random sample size, findings unique to random pages, and a recommendation to
-  expand the representative sample when new issue types appear.
 - Add a bounded forced-colors diagnostic that compares normal rendering with
   `forced-colors: active` and flags controls, focus indicators, SVGs, and
   information-bearing backgrounds that disappear or become indistinguishable.

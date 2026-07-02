@@ -24,6 +24,7 @@ interface ScopeInitOptions {
   platform?: string[];
   assistiveTech?: string[];
   samplePage?: string[];
+  randomSamplePage?: string[];
   journey?: string[];
   thirdParty?: string[];
   exclude?: string[];
@@ -49,6 +50,7 @@ export function registerScopeCommand(program: Command): void {
     .option("--platform <target>", "Supported platform/browser combination", collect, [])
     .option("--assistive-tech <name>", "Assistive technology or input method to review", collect, [])
     .option("--sample-page <type:url>", "Representative page or page type, for example Core page:http://localhost:3000", collect, [])
+    .option("--random-sample-page <type:url>", "Random or control sample page for comparison, for example Blog page:http://localhost:3000/blog/post", collect, [])
     .option("--journey <name:urls>", "Critical journey, for example Checkout:http://localhost/cart,http://localhost/checkout", collect, [])
     .option("--third-party <name:url>", "Third-party embed or service to review manually", collect, [])
     .option("--exclude <area:reason>", "Intentionally excluded area with reason", collect, [])
@@ -69,6 +71,7 @@ export function registerScopeCommand(program: Command): void {
         supportedPlatforms: options.platform,
         assistiveTechnologies: options.assistiveTech,
         representativeSample: (options.samplePage || []).map(parseSamplePage),
+        randomSample: (options.randomSamplePage || []).map(parseSamplePage),
         criticalJourneys: (options.journey || []).map(parseJourney),
         thirdPartyContent: (options.thirdParty || []).map(parseThirdPartyContent),
         exclusions: (options.exclude || []).map(parseExclusion),
@@ -77,7 +80,7 @@ export function registerScopeCommand(program: Command): void {
 
       await writeScopePlan(outputPath, scopePlan);
       console.log(`Created ${outputPath}`);
-      console.log(`Scope: ${scopePlan.product.type}, ${scopePlan.target.standard}, ${scopePlan.target.urls.length} URL${scopePlan.target.urls.length === 1 ? "" : "s"}, ${scopePlan.representativeSample.length} sample page${scopePlan.representativeSample.length === 1 ? "" : "s"}, ${scopePlan.criticalJourneys.length} journey${scopePlan.criticalJourneys.length === 1 ? "" : "s"}.`);
+      console.log(`Scope: ${scopePlan.product.type}, ${scopePlan.target.standard}, ${scopePlan.target.urls.length} URL${scopePlan.target.urls.length === 1 ? "" : "s"}, ${scopePlan.representativeSample.length} sample page${scopePlan.representativeSample.length === 1 ? "" : "s"}, ${scopePlan.randomSample.length} random sample page${scopePlan.randomSample.length === 1 ? "" : "s"}, ${scopePlan.criticalJourneys.length} journey${scopePlan.criticalJourneys.length === 1 ? "" : "s"}.`);
     });
 }
 

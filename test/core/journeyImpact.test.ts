@@ -18,6 +18,7 @@ test("annotateIssuesWithJourneys links findings to planned journeys by normalize
     supportedPlatforms: ["Desktop browser"],
     assistiveTechnologies: ["Keyboard only"],
     representativeSample: [],
+    randomSample: [],
     criticalJourneys: [{
       name: "Checkout",
       urls: ["https://example.com/cart/"]

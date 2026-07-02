@@ -94,6 +94,16 @@ export interface JourneyImpactSummary {
   info: number;
 }
 
+export interface SampleComparisonSummary {
+  enabled: boolean;
+  representativeSampleSize: number;
+  randomSampleSize: number;
+  structuredFindingCount: number;
+  randomFindingCount: number;
+  uniqueRandomRules: string[];
+  recommendation: string;
+}
+
 export interface ElementBounds {
   x: number;
   y: number;
@@ -490,6 +500,7 @@ export interface PlannedEvaluationScope {
   supportedPlatforms: string[];
   assistiveTechnologies: string[];
   representativeSample: PlannedScopeSamplePage[];
+  randomSample: PlannedScopeSamplePage[];
   criticalJourneys: PlannedScopeJourney[];
   thirdPartyContent: PlannedScopeThirdPartyContent[];
   exclusions: PlannedScopeExclusion[];
@@ -636,6 +647,7 @@ export interface ReportSummary {
   standard?: ComplianceStandardMetadata;
   plannedScope?: PlannedEvaluationScope;
   journeyImpact?: JourneyImpactSummary[];
+  sampleComparison?: SampleComparisonSummary;
   baseline?: BaselineComparisonSummary;
   retest?: RetestComparisonSummary;
   remediationTracking?: RemediationTrackingSummary;

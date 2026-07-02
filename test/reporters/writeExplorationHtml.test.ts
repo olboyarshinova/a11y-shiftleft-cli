@@ -828,6 +828,11 @@ test("writeExplorationHtml can create a unified audit report", async () => {
         url: "http://localhost:3000",
         reason: "Primary flow"
       }],
+      randomSample: [{
+        type: "Random product page",
+        url: "http://localhost:3000/products/random",
+        reason: "Control sample"
+      }],
       criticalJourneys: [{
         name: "Checkout",
         urls: ["http://localhost:3000/cart", "http://localhost:3000/checkout"]
@@ -848,7 +853,7 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /URL and state scope/);
   assert.match(html, /Automated tools/);
   assert.match(html, /Planned scope/);
-  assert.match(html, /Demo Shop \(ecommerce\); wcag22-aa; 1 sample page; 1 journey; 1 affected/);
+  assert.match(html, /Demo Shop \(ecommerce\); wcag22-aa; 1 sample page; 1 random sample page; 1 journey; 1 affected/);
   assert.match(html, /Keyboard evidence/);
   assert.match(html, /Manual review records/);
   assert.match(html, /Known limitations/);

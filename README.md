@@ -178,6 +178,7 @@ npx a11y-shiftleft-cli scope init \
   --platform "Desktop Chrome" \
   --assistive-tech "Keyboard only" \
   --sample-page "Core page:$APP_URL|Primary app entry" \
+  --random-sample-page "Random content page:$APP_URL/blog/example|Control sample" \
   --journey "Core task:$APP_URL" \
   --third-party "YouTube:https://www.youtube.com" \
   --exclude "Authenticated billing:requires test account"
@@ -191,6 +192,9 @@ account management.
 Use `--sample-page "Type:URL|Reason"` for representative pages on larger sites,
 such as core pages, page types, help pages, accessibility contact pages, or
 other pages that should always be included in the review plan.
+Use `--random-sample-page "Type:URL|Reason"` for control pages. Reports compare
+structured and random samples and recommend expanding the representative sample
+when random pages expose new rule types.
 
 Then use a URL shortcut in your terminal. The examples below use macOS/Linux
 shell syntax:
