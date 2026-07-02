@@ -56,7 +56,7 @@ When in doubt, use the URL your terminal prints after `npm run dev`.
 3. Run your first audit. Replace the URL with the URL printed by your dev server:
 
 ```bash
-npx a11y-shiftleft-cli audit --url http://localhost:5173 --out reports
+npx a11y-shiftleft-cli audit --url http://localhost:5173 --out reports --open
 ```
 
 The command combines available static analysis, browser exploration, axe
@@ -69,7 +69,7 @@ The audit writes screenshots while browser exploration is running. The combined
 and report processing finish. Wait for the terminal to print `Open:
 reports/a11y-report.html` before opening the final report.
 
-4. Open the visual report:
+4. If the report does not open automatically, open it manually:
 
 ```bash
 # macOS

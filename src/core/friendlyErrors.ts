@@ -28,7 +28,7 @@ export function formatCliError(error: unknown, argv: string[] = process.argv): s
 }
 
 function isMissingChromiumError(message: string): boolean {
-  return /Executable doesn't exist|browserType\.launch|playwright install/i.test(message)
+  return /Executable doesn't exist|Please run.*playwright install|playwright install/i.test(message)
     && /chromium|chrome|browser/i.test(message);
 }
 

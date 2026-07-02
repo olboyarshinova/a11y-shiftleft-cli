@@ -37,3 +37,16 @@ test("formatCliError preserves unknown stack traces", () => {
   assert.match(output, /Unexpected failure/);
   assert.match(output, /Error:/);
 });
+
+test("formatCliError does not treat browser permission failures as missing Chromium", () => {
+  const output = formatCliError(new Error("browserType.launch: Target page closed: Permission denied"), [
+    "node",
+    "bin/cli.js",
+    "audit",
+    "--url",
+    "http://localhost:5173"
+  ]);
+
+  assert.match(output, /Permission denied/);
+  assert.doesNotMatch(output, /Chromium is missing/);
+});
