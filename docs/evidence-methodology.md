@@ -33,12 +33,13 @@ it does not prove that two DOM nodes share the same source implementation.
 
 ## Why Confidence Exists
 
-Severity and confidence answer different questions:
+Severity, confidence, and user impact answer different questions:
 
 | Field | Question | Example |
 |---|---|---|
 | `severity` | How risky is the issue if it is real? | Missing button name can block screen reader users. |
 | `confidence` | How strong is the tooling evidence? | axe found a concrete DOM node and mapped it to WCAG. |
+| `userImpact` | Who is likely affected in practice? | Screen reader and voice-control users may not identify an unnamed button. |
 
 This lets teams triage in a healthier order:
 
@@ -60,6 +61,22 @@ This lets teams triage in a healthier order:
 
 These scores are deterministic and intentionally conservative. They are not
 machine-learning predictions.
+
+## User Impact
+
+Reports include a deterministic `userImpact` object for each finding:
+
+```json
+{
+  "level": "significant",
+  "affectedUsers": ["Low-vision users", "Users in bright environments"],
+  "reason": "Low contrast can make text or controls hard to perceive."
+}
+```
+
+The impact level is not a legal conclusion. It is a triage lens that helps teams
+decide which findings may block real tasks, which findings need a workaround,
+and which findings are mainly implementation-quality signals.
 
 ## Issue Categories
 
