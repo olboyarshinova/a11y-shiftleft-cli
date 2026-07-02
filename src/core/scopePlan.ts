@@ -20,6 +20,7 @@ export interface CreateScopePlanInput {
   supportedPlatforms?: string[];
   assistiveTechnologies?: string[];
   representativeSample?: PlannedScopeSamplePage[];
+  randomSample?: PlannedScopeSamplePage[];
   criticalJourneys?: PlannedScopeJourney[];
   thirdPartyContent?: PlannedScopeThirdPartyContent[];
   exclusions?: PlannedScopeExclusion[];
@@ -49,6 +50,7 @@ export function createScopePlan(input: CreateScopePlanInput = {}): PlannedEvalua
       "Screen reader manual review"
     ]),
     representativeSample: input.representativeSample || [],
+    randomSample: input.randomSample || [],
     criticalJourneys: input.criticalJourneys || [],
     thirdPartyContent: input.thirdPartyContent || [],
     exclusions: input.exclusions || [],
@@ -135,6 +137,13 @@ function normalizeScopePlan(value: unknown, filePath: string): PlannedEvaluation
     representativeSample: Array.isArray(value.representativeSample)
       ? value.representativeSample.filter(isPlainObject).map((page) => ({
         type: typeof page.type === "string" ? page.type : "Representative page",
+        url: typeof page.url === "string" ? page.url : "",
+        ...(typeof page.reason === "string" ? { reason: page.reason } : {})
+      })).filter((page) => page.url.length > 0)
+      : [],
+    randomSample: Array.isArray(value.randomSample)
+      ? value.randomSample.filter(isPlainObject).map((page) => ({
+        type: typeof page.type === "string" ? page.type : "Random sample page",
         url: typeof page.url === "string" ? page.url : "",
         ...(typeof page.reason === "string" ? { reason: page.reason } : {})
       })).filter((page) => page.url.length > 0)

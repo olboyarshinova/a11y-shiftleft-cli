@@ -22,6 +22,7 @@ test("createScopePlan creates a guided planned audit scope", () => {
     urls: ["http://localhost:5173", "http://localhost:5173"],
     languages: ["en", "es"],
     representativeSample: [parseSamplePage("Core page:http://localhost:5173|Primary entry point")],
+    randomSample: [parseSamplePage("Random article:http://localhost:5173/blog/random|Control sample")],
     criticalJourneys: [parseJourney("Checkout:http://localhost/cart,http://localhost/checkout")],
     thirdPartyContent: [parseThirdPartyContent("YouTube:https://youtube.com/embed/demo")],
     exclusions: [parseExclusion("Admin billing:requires production account")]
@@ -34,6 +35,8 @@ test("createScopePlan creates a guided planned audit scope", () => {
   assert.equal(scope.target.standard, "ada-title-ii");
   assert.equal(scope.representativeSample[0].type, "Core page");
   assert.equal(scope.representativeSample[0].reason, "Primary entry point");
+  assert.equal(scope.randomSample[0].type, "Random article");
+  assert.equal(scope.randomSample[0].reason, "Control sample");
   assert.equal(scope.criticalJourneys[0].name, "Checkout");
   assert.deepEqual(scope.criticalJourneys[0].urls, ["http://localhost/cart", "http://localhost/checkout"]);
   assert.equal(scope.thirdPartyContent[0].reviewStrategy, "Manual verification recommended");

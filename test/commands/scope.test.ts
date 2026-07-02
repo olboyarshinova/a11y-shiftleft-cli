@@ -11,6 +11,7 @@ test("scope init command is registered with guided scope options", () => {
   const flags = init.options.map((option) => option.long);
   assert.equal(flags.includes("--product-type"), true);
   assert.equal(flags.includes("--sample-page"), true);
+  assert.equal(flags.includes("--random-sample-page"), true);
   assert.equal(flags.includes("--journey"), true);
   assert.equal(flags.includes("--third-party"), true);
   assert.equal(flags.includes("--exclude"), true);

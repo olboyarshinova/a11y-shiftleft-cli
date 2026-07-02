@@ -8,6 +8,7 @@ import { annotateIssuesWithJourneys, summarizeJourneyImpact } from "../core/jour
 import { compareLighthouseWithFindings } from "../core/lighthouseComparison.js";
 import { getRemediationHint } from "../core/remediation.js";
 import { summarizeRootCauses } from "../core/rootCauses.js";
+import { summarizeSampleComparison } from "../core/sampleComparison.js";
 import type { A11yReport, ComplianceEvidenceSummary, ComplianceStandardMetadata, DedupedIssue, Framework, LighthouseAuditResult, LighthouseReportSummary, PageSummary, RemediationHint, ReportFormat, ReportMetrics, ReportSummary, RootCauseGroup, Severity } from "../types.js";
 
 interface WriteReportOptions {
@@ -168,6 +169,7 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     standard: metrics.standard,
     plannedScope: metrics.plannedScope,
     journeyImpact: summarizeJourneyImpact(issues, metrics.plannedScope),
+    sampleComparison: summarizeSampleComparison(issues, metrics.plannedScope),
     baseline: metrics.baseline,
     retest: metrics.retest,
     remediationTracking: metrics.remediationTracking,
@@ -531,16 +533,34 @@ function formatPlannedScope(summary: ReportSummary): string {
 | Supported platforms | ${markdownCell(scope.supportedPlatforms.join(", ") || "not specified")} |
 | Assistive technologies | ${markdownCell(scope.assistiveTechnologies.join(", ") || "not specified")} |
 | Representative sample | ${scope.representativeSample.length} |
+| Random sample | ${scope.randomSample.length} |
 | Critical journeys | ${scope.criticalJourneys.length} |
 | Third-party content | ${scope.thirdPartyContent.length} |
 | Exclusions | ${scope.exclusions.length} |
 
 ${formatRepresentativeSample(scope)}
+${formatSampleComparison(summary.sampleComparison)}
 ${journeyRows ? `### Journey Impact
 
 | Journey | Findings | Critical | Warning | Info | URLs |
 |---|---:|---:|---:|---:|---|
 ${journeyRows}` : ""}`;
+}
+
+function formatSampleComparison(comparison: ReportSummary["sampleComparison"]): string {
+  if (!comparison) return "";
+  return `### Structured vs Random Sample
+
+| Metric | Value |
+|---|---:|
+| Representative sample pages | ${comparison.representativeSampleSize} |
+| Random sample pages | ${comparison.randomSampleSize} |
+| Structured findings | ${comparison.structuredFindingCount} |
+| Random findings | ${comparison.randomFindingCount} |
+| Random-only rules | ${comparison.uniqueRandomRules.length} |
+
+${markdownCell(comparison.recommendation)}
+${comparison.uniqueRandomRules.length > 0 ? `\nRandom-only rules: ${comparison.uniqueRandomRules.map((rule) => `\`${markdownInline(rule)}\``).join(", ")}\n` : ""}`;
 }
 
 function formatRepresentativeSample(scope: NonNullable<ReportSummary["plannedScope"]>): string {

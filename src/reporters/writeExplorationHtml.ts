@@ -1570,9 +1570,10 @@ function formatPlannedScopeSummary(scope: PlannedEvaluationScope | undefined, is
   const product = scope.product.name ? `${scope.product.name} (${scope.product.type})` : scope.product.type;
   const journeyCount = `${scope.criticalJourneys.length} journey${scope.criticalJourneys.length === 1 ? "" : "s"}`;
   const sampleCount = `${scope.representativeSample.length} sample page${scope.representativeSample.length === 1 ? "" : "s"}`;
+  const randomCount = `${scope.randomSample.length} random sample page${scope.randomSample.length === 1 ? "" : "s"}`;
   const affected = new Set(issues.flatMap((issue) => issue.journeys || []));
   const affectedCount = affected.size > 0 ? `; ${affected.size} affected` : "";
-  return `${product}; ${scope.target.standard}; ${sampleCount}; ${journeyCount}${affectedCount}`;
+  return `${product}; ${scope.target.standard}; ${sampleCount}; ${randomCount}; ${journeyCount}${affectedCount}`;
 }
 
 function renderReportCompleteness(
@@ -1608,7 +1609,7 @@ function renderReportCompleteness(
     {
       label: "Planned scope",
       detail: options.plannedScope
-        ? `${options.plannedScope.product.type}; ${options.plannedScope.representativeSample.length} sample page${options.plannedScope.representativeSample.length === 1 ? "" : "s"}; ${options.plannedScope.criticalJourneys.length} critical journey${options.plannedScope.criticalJourneys.length === 1 ? "" : "s"}`
+        ? `${options.plannedScope.product.type}; ${options.plannedScope.representativeSample.length} sample page${options.plannedScope.representativeSample.length === 1 ? "" : "s"}; ${options.plannedScope.randomSample.length} random page${options.plannedScope.randomSample.length === 1 ? "" : "s"}; ${options.plannedScope.criticalJourneys.length} critical journey${options.plannedScope.criticalJourneys.length === 1 ? "" : "s"}`
         : "Create a11y-scope.json with scope init when you need planned audit context",
       status: options.plannedScope ? "ready" : "optional",
       statusLabel: options.plannedScope ? "included" : "optional"
