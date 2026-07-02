@@ -96,6 +96,20 @@ Add `--excel` for four structured CSV tables, `--pdf` for a portable visual
 report, or `--raw` for the exploration graph. These files are optional so a
 normal local audit remains easy to navigate.
 
+### If The Audit Fails
+
+Make sure your app is still running, then ask the CLI to check the local setup:
+
+```bash
+npx a11y-shiftleft-cli doctor --url http://localhost:5173
+```
+
+If Chromium is missing, install the browser used by Playwright:
+
+```bash
+npx playwright install chromium
+```
+
 ## What It Does
 
 Most accessibility tools solve one part of the workflow:
