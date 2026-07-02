@@ -5,7 +5,7 @@ Use the repository About section to make the project easier to discover and unde
 ## Description
 
 ```txt
-Accessibility testing CLI for web apps, pull requests, visual reports, and dashboards.
+Visual accessibility audit CLI for web apps using axe, Playwright, Lighthouse, and WCAG metadata.
 ```
 
 ## Website
