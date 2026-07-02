@@ -8,6 +8,8 @@ export type ColorScheme = "light" | "dark";
 
 export type FindingType = "wcag" | "best-practice" | "unmapped";
 
+export type UserImpactLevel = "blocker" | "significant" | "workaround" | "minor";
+
 export type IssueCategory =
   | "aria"
   | "contrast"
@@ -83,6 +85,12 @@ export interface IssueOwnership {
   source?: string;
   url?: string;
   note?: string;
+}
+
+export interface UserImpactEvidence {
+  level: UserImpactLevel;
+  affectedUsers: string[];
+  reason: string;
 }
 
 export interface JourneyImpactSummary {
@@ -296,6 +304,7 @@ export interface Issue {
   helpUrl?: string;
   colorScheme?: ColorScheme;
   ownership?: IssueOwnership;
+  userImpact?: UserImpactEvidence;
   journeys?: string[];
   message?: string;
   remediation?: RemediationHint;
@@ -326,6 +335,7 @@ export interface NormalizedIssue extends Required<Pick<Issue, "source" | "framew
   helpUrl?: string;
   colorScheme?: ColorScheme;
   ownership?: IssueOwnership;
+  userImpact?: UserImpactEvidence;
   journeys?: string[];
 }
 
@@ -662,6 +672,7 @@ export interface ReportSummary {
   byFindingType?: Record<string, number>;
   byCategory: Record<string, number>;
   byOwnership?: Record<string, number>;
+  byUserImpact?: Record<string, number>;
   blockedByHumanVerification?: number;
   byPour: Record<string, number>;
   byWcagLevel: Record<string, number>;

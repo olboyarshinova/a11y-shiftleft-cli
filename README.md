@@ -390,6 +390,11 @@ Severity answers: "How risky is this finding?"
 
 Confidence answers: "How strong is the tool evidence?"
 
+User impact answers: "Who is likely affected in practice?" Reports use a
+compact `blocker`, `significant`, `workaround`, or `minor` label plus affected
+user groups such as keyboard users, screen reader users, voice-control users,
+or low-vision users.
+
 For axe `color-contrast` findings, JSON, Markdown, and visual reports include
 the measured and required ratios, text and background colors, font metadata,
 and deterministic suggestions that meet the reported threshold. Treat suggested

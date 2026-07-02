@@ -9,6 +9,7 @@ import { compareLighthouseWithFindings } from "../core/lighthouseComparison.js";
 import { getRemediationHint } from "../core/remediation.js";
 import { summarizeRootCauses } from "../core/rootCauses.js";
 import { summarizeSampleComparison } from "../core/sampleComparison.js";
+import { applyUserImpact, countUserImpact } from "../core/userImpact.js";
 import type { A11yReport, ComplianceEvidenceSummary, ComplianceStandardMetadata, DedupedIssue, Framework, LighthouseAuditResult, LighthouseReportSummary, PageSummary, RemediationHint, ReportFormat, ReportMetrics, ReportSummary, RootCauseGroup, Severity } from "../types.js";
 
 interface WriteReportOptions {
@@ -31,7 +32,7 @@ export async function writeReports(
 ): Promise<A11yReport> {
   await fs.mkdir(outputDir, { recursive: true });
   const formats = new Set(options.formats || ["json", "csv", "markdown"]);
-  const reportIssues = annotateIssuesWithJourneys(issues.map((issue) => {
+  const reportIssues = applyUserImpact(annotateIssuesWithJourneys(issues.map((issue) => {
     const enrichedIssue = issue.confidence && issue.category && issue.findingType
       ? issue
       : enrichIssueEvidence(issue);
@@ -50,7 +51,7 @@ export async function writeReports(
         options.frameworkExample
       )
     };
-  }), metrics.plannedScope);
+  }), metrics.plannedScope));
 
   const manualChecklist = options.manualChecklist || (options.semiAuto
     ? createManualChecklist({
@@ -184,6 +185,7 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     byFindingType: countBy(issues, "findingType"),
     byCategory: countBy(issues, "category"),
     byOwnership: countByOwnership(issues),
+    byUserImpact: countUserImpact(issues),
     blockedByHumanVerification: issues.filter((issue) => issue.ruleId === "adapter/human-verification").length,
     byPour: countByPour(issues),
     byWcagLevel: countByWcagLevel(issues),
@@ -227,6 +229,10 @@ export function toSummaryCsv(report: A11yReport): string {
     unmappedFindings: compliance.unmappedFindings,
     likelyRootCauses: summary.rootCauseCount || 0,
     thirdPartyEmbeddedFindings: summary.byOwnership?.["third-party-embed"] || 0,
+    userImpactBlocker: summary.byUserImpact?.blocker || 0,
+    userImpactSignificant: summary.byUserImpact?.significant || 0,
+    userImpactWorkaround: summary.byUserImpact?.workaround || 0,
+    userImpactMinor: summary.byUserImpact?.minor || 0,
     humanVerificationBlocked: summary.blockedByHumanVerification || 0,
     baselineNew: summary.baseline?.newIssues ?? "",
     baselineResolved: summary.baseline?.resolvedIssues ?? "",
@@ -239,7 +245,8 @@ export function toSummaryCsv(report: A11yReport): string {
     "total", "critical", "warning", "info", "rawFindings", "uniqueFindings",
     "duplicatesRemoved", "duplicateRate", "scanDurationMs", "affectedPages",
     "wcagMappedFindings", "bestPracticeFindings", "unmappedFindings",
-    "likelyRootCauses", "baselineNew", "baselineResolved", "retestNew",
+    "likelyRootCauses", "userImpactBlocker", "userImpactSignificant",
+    "userImpactWorkaround", "userImpactMinor", "baselineNew", "baselineResolved", "retestNew",
     "retestFixed", "ignoredFindings", "trackedRemediation",
     "thirdPartyEmbeddedFindings", "humanVerificationBlocked"
   ]);
@@ -306,6 +313,9 @@ export function toFindingsCsv(issues: DedupedIssue[]): string {
     ownershipSource: issue.ownership?.source || "",
     ownershipUrl: issue.ownership?.url || "",
     ownershipNote: issue.ownership?.note || "",
+    userImpact: issue.userImpact?.level || "",
+    affectedUsers: issue.userImpact?.affectedUsers.join(" | ") || "",
+    impactReason: issue.userImpact?.reason || "",
     journeys: issue.journeys?.join(" | ") || "",
     duplicateCount: issue.duplicateCount,
     baselineStatus: issue.baselineStatus || "",
@@ -342,6 +352,9 @@ export function toFindingsCsv(issues: DedupedIssue[]): string {
       "ownershipSource",
       "ownershipUrl",
       "ownershipNote",
+      "userImpact",
+      "affectedUsers",
+      "impactReason",
       "journeys",
       "duplicateCount",
       "baselineStatus",
@@ -412,10 +425,11 @@ export function toMarkdown(report: A11yReport): string {
       const tracking = formatRemediationTracking(issue);
       const ownership = formatOwnership(issue);
       const confidence = formatIssueConfidence(issue);
+      const userImpact = formatUserImpact(issue);
       const findingType = ` type: ${formatFindingType(issue.findingType)}`;
       const category = issue.category ? ` category: ${issue.category}` : "";
       const contrast = formatContrastEvidence(issue);
-      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}${state}${colorScheme}${screenshot}${baseline}${retest}${tracking}${ownership}${findingType}${category}${confidence}: ${issue.message}${contrast}${remediation}`;
+      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}${state}${colorScheme}${screenshot}${baseline}${retest}${tracking}${ownership}${userImpact}${findingType}${category}${confidence}: ${issue.message}${contrast}${remediation}`;
     })
     .join("\n");
 
@@ -445,6 +459,7 @@ ${formatRetentionRows(report.summary.retention)}| Retention evidence | ${formatR
 | WCAG levels | ${formatCountMap(report.summary.byWcagLevel)} |
 | WCAG versions | ${formatCountMap(report.summary.byWcagVersion)} |
 | Confidence | ${formatCountMap(report.summary.byConfidence)} |
+| User impact | ${formatCountMap(report.summary.byUserImpact)} |
 | Color schemes | ${formatCountMap(report.summary.byColorScheme)} |
 | Finding types | ${formatCountMap(report.summary.byFindingType)} |
 | Categories | ${formatCountMap(report.summary.byCategory)} |
@@ -842,6 +857,14 @@ function formatOwnership(issue: DedupedIssue): string {
   const source = issue.ownership.source ? ` source: ${issue.ownership.source}` : "";
   const note = issue.ownership.note ? ` note: ${issue.ownership.note}` : "";
   return ` ownership: ${issue.ownership.label}${source}${note}`;
+}
+
+function formatUserImpact(issue: DedupedIssue): string {
+  if (!issue.userImpact) return "";
+  const users = issue.userImpact.affectedUsers.length > 0
+    ? ` users: ${issue.userImpact.affectedUsers.join(", ")}`
+    : "";
+  return ` user impact: ${issue.userImpact.level}${users}`;
 }
 
 function formatCountMap(counts: Record<string, number> | undefined): string {

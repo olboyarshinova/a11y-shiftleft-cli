@@ -23,16 +23,12 @@ Section 508 certification.
 - Add cross-page consistency analysis for repeated navigation, help mechanisms,
   page titles, and same-purpose control names. Surface differences for review
   rather than asserting that every difference is a WCAG failure.
-- Separate user impact from technical severity and confidence. Add a compact
-  impact field such as `blocker`, `significant`, `workaround`, or `minor`, plus
-  affected-page and repeated-component counts.
+- Add repeated-component counts and affected-page counts to user-impact
+  summaries so teams can distinguish one shared component fix from many local
+  page fixes.
 - Add remediation effort estimates such as `small`, `medium`, and `large`
   based on rule family, affected components, journey impact, and whether the fix
   is local, shared, or architectural.
-- Add affected-user lenses to findings so reports can explain who may be
-  affected, such as keyboard users, screen reader users, low-vision users,
-  users relying on captions, voice-control users, or people under cognitive
-  load.
 - Add report grouping controls for rule, page/state, affected element, WCAG
   criterion, and POUR principle while preserving root-cause grouping.
 - Extend readiness controls beyond a fixed delay with bounded declarative
