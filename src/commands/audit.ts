@@ -11,6 +11,7 @@ import { readScopePlanIfExists } from "../core/scopePlan.js";
 import { detectFramework } from "../core/detectFramework.js";
 import { applyIgnores, DEFAULT_IGNORE_FILE } from "../core/ignore.js";
 import { normalizeIssue } from "../core/normalize.js";
+import { openReportFile } from "../core/openReport.js";
 import { applyRemediationTracking, DEFAULT_REMEDIATION_FILE } from "../core/remediationTracking.js";
 import { triageIssues } from "../core/severity.js";
 import { resolveStandard } from "../core/standards.js";
@@ -54,6 +55,7 @@ interface AuditOptions {
   ignoreFile?: string;
   remediationTracking?: boolean;
   remediationFile?: string;
+  open?: boolean;
   quiet?: boolean;
 }
 
@@ -93,6 +95,7 @@ export function registerAuditCommand(program: Command): void {
     .option("--no-ignore", "Disable scoped ignores")
     .option("--remediation-file <file>", "Remediation status file path", DEFAULT_REMEDIATION_FILE)
     .option("--no-remediation-tracking", "Do not apply remediation statuses")
+    .option("--open", "Open the visual HTML report after the audit finishes")
     .option("--quiet", "Suppress console summary")
     .action(async (options: AuditOptions) => {
       const result = await runAudit(options);
@@ -244,15 +247,27 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
   });
   if (options.pdf) await writeExplorationPdf(effectiveConfig.outputDir, "a11y-report");
 
+  const reportPath = `${effectiveConfig.outputDir}/a11y-report.html`;
+
   if (!options.quiet) {
     console.log([
       "a11y-shiftleft audit",
       `Findings: ${report.summary.total} | critical ${report.summary.critical} | warning ${report.summary.warning} | info ${report.summary.info}`,
       `States: ${exploration.graph.summary.statesVisited} | keyboard steps ${keyboard?.steps.length || 0}`,
       options.withLighthouse ? `Lighthouse: ${lighthouse[0]?.accessibilityScore ?? "not available"}` : "Lighthouse: not requested",
-      `Open: ${effectiveConfig.outputDir}/a11y-report.html`,
+      `Open: ${reportPath}`,
       options.excel ? `Excel tables: ${effectiveConfig.outputDir}/a11y-summary.csv, a11y-pages.csv, a11y-rules.csv, a11y-findings.csv` : "Excel tables: not requested (add --excel)"
     ].join("\n"));
+  }
+
+  if (options.open) {
+    try {
+      await openReportFile(reportPath);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`Could not open the report automatically: ${message}`);
+      console.warn(`Open it manually: ${reportPath}`);
+    }
   }
 
   return { failed: shouldFail(report.summary, config.failOn), outputDir: effectiveConfig.outputDir };

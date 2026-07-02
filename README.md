@@ -198,6 +198,7 @@ most teams need for local review.
 | Goal | Command | Main output |
 |---|---|---|
 | Run the recommended audit | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports` | `a11y-report.html` |
+| Run and open the report | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports --open` | Visual report opened automatically |
 | Audit a slower application | `npx a11y-shiftleft-cli audit --url $APP_URL --wait-ms 1000 --out reports` | Visual report after an extra settle wait |
 | Show only WCAG-mapped findings | `npx a11y-shiftleft-cli audit --url $APP_URL --wcag-only --out reports` | Report without best-practice or unmapped review signals |
 | Skip screenshots for private data | `npx a11y-shiftleft-cli audit --url $APP_URL --no-screenshots --out reports` | Report without images |
