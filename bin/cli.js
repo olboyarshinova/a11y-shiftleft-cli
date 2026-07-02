@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { main } from "../dist/cli.js";
+import { formatCliError } from "../dist/core/friendlyErrors.js";
 
 main().catch((error) => {
-  const message = error instanceof Error ? error.stack || error.message : String(error);
-  console.error(message);
+  console.error(formatCliError(error, process.argv));
   process.exitCode = 1;
 });
