@@ -96,6 +96,14 @@ Add `--excel` for four structured CSV tables, `--pdf` for a portable visual
 report, or `--raw` for the exploration graph. These files are optional so a
 normal local audit remains easy to navigate.
 
+## What You Get
+
+- A visual HTML report with annotated screenshots.
+- WCAG A/AA metadata, severity, confidence, and user-impact labels.
+- Fix guidance for common issues, including contrast ratios and color options.
+- Keyboard evidence and manual-review tasks for checks automation cannot finish.
+- JSON and Markdown outputs for CI, pull requests, and integrations.
+
 ### If The Audit Fails
 
 Make sure your app is still running, then ask the CLI to check the local setup:
@@ -138,6 +146,9 @@ opened dialogs with annotated accessibility findings.
 [![Demo audit report showing summary metrics, affected states, top accessibility rules, and likely root causes](docs/assets/demo-report-overview.png)](docs/assets/demo-report-overview.png)
 
 [![Demo audit report showing the initial page and an opened modal with accessibility findings outlined](docs/assets/demo-report-states.png)](docs/assets/demo-report-states.png)
+
+The demo report shows the core experience: a summary, explored UI states,
+annotated screenshots, modal evidence, WCAG labels, and grouped fix guidance.
 
 ## Built On Trusted Tools
 
@@ -198,6 +209,7 @@ most teams need for local review.
 | Goal | Command | Main output |
 |---|---|---|
 | Run the recommended audit | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports` | `a11y-report.html` |
+| Run the shorter alias | `npx a11y-shiftleft-cli quick --url $APP_URL --out reports` | Same audit report |
 | Run and open the report | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports --open` | Visual report opened automatically |
 | Audit a slower application | `npx a11y-shiftleft-cli audit --url $APP_URL --wait-ms 1000 --out reports` | Visual report after an extra settle wait |
 | Show only WCAG-mapped findings | `npx a11y-shiftleft-cli audit --url $APP_URL --wcag-only --out reports` | Report without best-practice or unmapped review signals |

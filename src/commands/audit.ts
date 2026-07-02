@@ -62,6 +62,7 @@ interface AuditOptions {
 export function registerAuditCommand(program: Command): void {
   program
     .command("audit")
+    .alias("quick")
     .description("Create one visual accessibility report with static, dynamic, keyboard, and manual-review evidence.")
     .option("--cwd <dir>", "Target project directory")
     .option("--config <file>", "Config path relative to cwd")
