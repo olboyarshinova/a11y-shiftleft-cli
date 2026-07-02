@@ -138,17 +138,17 @@ This project turns those pieces into one repeatable developer workflow:
 
 ## See The Visual Report
 
-The `audit` command creates one local HTML report with summary metrics,
-WCAG-aware triage, likely root causes, screenshots, keyboard evidence, manual
-review steps, and fix recommendations. It safely discovers UI states, including
-opened dialogs with annotated accessibility findings.
+The `audit` command creates one local visual HTML report with summary metrics,
+quick triage, screenshots, WCAG metadata, keyboard evidence, manual review
+steps, and fix recommendations. It safely discovers UI states, including opened
+dialogs with annotated accessibility findings.
 
-[![Demo audit report showing summary metrics, affected states, top accessibility rules, and likely root causes](docs/assets/demo-report-overview.png)](docs/assets/demo-report-overview.png)
+[![Demo audit report showing summary metrics, quick review, and evaluation scope](docs/assets/demo-report-overview.png)](docs/assets/demo-report-overview.png)
 
-[![Demo audit report showing the initial page and an opened modal with accessibility findings outlined](docs/assets/demo-report-states.png)](docs/assets/demo-report-states.png)
+[![Demo audit report showing explored UI states, screenshots, WCAG labels, and collapsed fix guidance](docs/assets/demo-report-states.png)](docs/assets/demo-report-states.png)
 
 The demo report shows the core experience: a summary, explored UI states,
-annotated screenshots, modal evidence, WCAG labels, and grouped fix guidance.
+annotated screenshots, modal evidence, WCAG labels, and collapsed fix guidance.
 
 ## Built On Trusted Tools
 

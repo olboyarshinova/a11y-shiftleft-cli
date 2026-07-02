@@ -309,9 +309,10 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /screenshot-frame screenshot-frame-full/);
   assert.match(html, /Open full-page evidence/);
   assert.match(html, /screenshot-frame-full[\s\S]*?object-fit: contain/);
-  assert.match(html, /screenshot-frame-full[\s\S]*?aspect-ratio: auto/);
+  assert.match(html, /screenshot-frame-full[\s\S]*?aspect-ratio: 16 \/ 9/);
   assert.match(html, /screenshot-frame-full[\s\S]*?overflow: hidden/);
-  assert.match(html, /screenshot-frame-full \.screenshot-scroll[\s\S]*?overflow: auto/);
+  assert.match(html, /screenshot-frame-full \.screenshot-scroll[\s\S]*?overflow: hidden/);
+  assert.match(html, /screenshot-frame-full \.screenshot-stage[\s\S]*?min-height: 0/);
   assert.match(html, /<div class="screenshot-scroll">\s*<div class="screenshot-stage">/);
   assert.match(html, /full-page evidence/);
   assert.match(html, /class="state state-critical" id="state-1"/);
@@ -319,7 +320,9 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /state-compact-summary/);
   assert.match(html, /No automated findings in this state\./);
   assert.match(html, /\.state-critical/);
-  assert.doesNotMatch(html, /\.states \{[^}]*align-items: start/);
+  assert.match(html, /\.states \{[\s\S]*?align-items: start/);
+  assert.match(html, /\.screenshot-evidence-grid \{[\s\S]*?align-items: start/);
+  assert.match(html, /aspect-ratio: var\(--screenshot-aspect, 16 \/ 9\)/);
   assert.match(html, /grid-template-rows: auto auto/);
   assert.match(html, /min-height: 0/);
   assert.match(html, /summary::before/);
@@ -582,6 +585,7 @@ test("renderExplorationHtml renders focused evidence crops for long pages", () =
   assert.match(html, /Open focused evidence 1/);
   assert.match(html, /Open focused evidence 2/);
   assert.match(html, /id="screenshot-state-1-2"/);
+  assert.match(html, /style="--screenshot-aspect: 1280 \/ 900"/);
   assert.equal((html.match(/annotation annotation-critical/g) ?? []).length, 4);
 });
 

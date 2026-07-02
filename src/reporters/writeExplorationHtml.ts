@@ -714,6 +714,7 @@ export function renderExplorationHtml(
     }
 
     .states {
+      align-items: start;
       display: grid;
       gap: 16px;
       grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
@@ -764,7 +765,7 @@ export function renderExplorationHtml(
     }
 
     .screenshot-frame {
-      aspect-ratio: 16 / 9;
+      aspect-ratio: var(--screenshot-aspect, 16 / 9);
       background: #eef1f5;
       border-bottom: 1px solid var(--line);
       overflow: hidden;
@@ -772,6 +773,7 @@ export function renderExplorationHtml(
     }
 
     .screenshot-evidence-grid {
+      align-items: start;
       background: #eef1f5;
       display: grid;
       gap: 1px;
@@ -814,20 +816,20 @@ export function renderExplorationHtml(
     }
 
     .screenshot-frame-full {
-      aspect-ratio: auto;
-      height: clamp(260px, 70vh, 560px);
-      min-height: 260px;
+      aspect-ratio: 16 / 9;
+      height: auto;
+      min-height: 0;
       overflow: hidden;
     }
 
     .screenshot-frame-full .screenshot-scroll {
       height: 100%;
-      overflow: auto;
+      overflow: hidden;
     }
 
     .screenshot-frame-full .screenshot-stage {
       height: auto;
-      min-height: 260px;
+      min-height: 0;
     }
 
     .screenshot-open {
@@ -2334,6 +2336,9 @@ function renderEvidenceFrame(
   const frameClass = fullPage
     ? "screenshot-frame screenshot-frame-full"
     : "screenshot-frame";
+  const frameStyle = !fullPage && evidence.width && evidence.height
+    ? ` style="--screenshot-aspect: ${evidence.width} / ${evidence.height}"`
+    : "";
   const openLabel = fullPage
     ? "Open full-page evidence"
     : evidence.kind === "evidence-crop"
@@ -2345,7 +2350,7 @@ function renderEvidenceFrame(
       ? `Focused accessibility evidence ${index + 1} for ${state.id}`
       : `Screenshot for ${state.id}`;
 
-  return `<div class="${frameClass}">
+  return `<div class="${frameClass}"${frameStyle}>
     <div class="screenshot-scroll">
       <div class="screenshot-stage">
         <img src="${escapeAttribute(evidence.path)}" alt="${escapeAttribute(screenshotAlt)}">
@@ -2411,7 +2416,7 @@ function renderAnnotation(
   if (!bounds) return "";
 
   const renderedBounds = evidence?.width && evidence.height && evidence.kind !== "full-page"
-    ? transformBoundsForContainedPreview(bounds, evidence.width, evidence.height)
+    ? transformBoundsForContainedPreview(bounds, evidence.width, evidence.height, evidence.width / evidence.height)
     : bounds;
 
   return `<span
