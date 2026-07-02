@@ -7,78 +7,17 @@
 [Install from npm](https://www.npmjs.com/package/a11y-shiftleft-cli):
 `npm install --save-dev a11y-shiftleft-cli`
 
-Accessibility checks for web apps, pull requests, visual reports, and local
-dashboards.
+One command for visual accessibility reports in web apps.
 
-`a11y-shiftleft-cli` helps teams find accessibility issues earlier, before they
-ship. It scans a running web app in a real browser, optionally adds
-framework-specific static checks, removes duplicate findings, assigns severity
-and confidence, and writes reports that are useful for developers, QA, CI, and
-trend tracking.
+`a11y-shiftleft-cli` helps teams find accessibility issues before they ship. Run
+`audit`, point it at a local or preview URL, and get a visual HTML report with
+screenshots, WCAG metadata, keyboard evidence, user-impact labels, and fix
+guidance.
 
 Dynamic browser checks work with any rendered website available at a local or
 preview URL, regardless of whether it was built with React, Vue, Angular,
 Next.js, Svelte, Astro, Rails, Django, or static HTML. Optional static adapters
 are currently available only for React, Vue, and Angular.
-
-## Built On Trusted Tools
-
-The current CLI combines established open-source tools instead of replacing
-their rule engines:
-
-- [axe-core through `@axe-core/playwright`](https://www.npmjs.com/package/@axe-core/playwright)
-  runs automated accessibility rules against the rendered page.
-- [Playwright](https://playwright.dev/) drives Chromium, explores bounded UI
-  states, captures screenshots, and collects keyboard and accessibility-tree
-  evidence.
-- [ESLint](https://eslint.org/) powers source checks through optional adapters
-  for [`eslint-plugin-jsx-a11y`](https://www.npmjs.com/package/eslint-plugin-jsx-a11y),
-  [`eslint-plugin-vue`](https://www.npmjs.com/package/eslint-plugin-vue), and
-  [Angular ESLint](https://www.npmjs.com/package/@angular-eslint/eslint-plugin-template).
-
-[Lighthouse](https://developer.chrome.com/docs/lighthouse/overview/) is optional
-and not bundled by default. Add `lighthouse` to a project and run
-`audit --with-lighthouse` or `check --with-lighthouse` when teams want its
-familiar accessibility score alongside detailed axe, keyboard, and source
-findings. Reports also show where Lighthouse and the a11y-shiftleft pipeline
-agree or disagree by rule ID, plus Lighthouse descriptions and documentation
-links for failed and manual audits.
-
-## Why Use It?
-
-Most accessibility tools solve one part of the workflow:
-
-- axe-core finds browser-rendered issues.
-- ESLint plugins catch framework-specific patterns.
-- Lighthouse gives a familiar page-level score when enabled, but it is not a
-  WCAG conformance certificate.
-- CI tells you whether a pull request should pass.
-
-This project connects automated checks, evidence, and reporting into one
-repeatable developer workflow:
-
-- Run static and dynamic checks from one command.
-- Deduplicate repeated findings.
-- Map findings to WCAG metadata when available.
-- Prioritize by severity and confidence.
-- Create one visual report that combines screenshots, findings, keyboard
-  evidence, and a manual-review checklist.
-- Show an audit coverage matrix and compact browser accessibility-tree evidence
-  for explored states.
-- Export compact Markdown and JSON by default, with optional Excel and PDF.
-- Add bounded checks to pull requests.
-- Track whether accessibility is getting better or worse over time.
-
-## See The Visual Report
-
-The `audit` command creates one local HTML report with summary metrics,
-WCAG-aware triage, likely root causes, screenshots, keyboard evidence, manual
-review steps, and fix recommendations. It safely discovers UI states, including
-opened dialogs with annotated accessibility findings.
-
-[![Demo exploration report showing summary metrics, affected states, top accessibility rules, and likely root causes](docs/assets/demo-report-overview.png)](docs/assets/demo-report-overview.png)
-
-[![Demo exploration report showing the initial page and an opened modal with accessibility findings outlined](docs/assets/demo-report-states.png)](docs/assets/demo-report-states.png)
 
 ## 2-Minute Quick Start
 
@@ -157,46 +96,68 @@ Add `--excel` for four structured CSV tables, `--pdf` for a portable visual
 report, or `--raw` for the exploration graph. These files are optional so a
 normal local audit remains easy to navigate.
 
-## Optional Project Setup
+## What It Does
 
-Create a config file and add generated reports to `.gitignore`:
+Most accessibility tools solve one part of the workflow:
+
+- axe-core finds browser-rendered issues.
+- ESLint plugins catch framework-specific patterns.
+- Lighthouse gives a familiar page-level score when enabled, but it is not a
+  WCAG conformance certificate.
+- CI tells you whether a pull request should pass.
+
+This project turns those pieces into one repeatable developer workflow:
+
+- Start with one command: `audit`.
+- Review one visual HTML report with screenshots, WCAG metadata, user impact,
+  and recommendations.
+- Use `check` later when you need a faster CI/PR gate.
+- Keep advanced workflows available without making the first run complicated.
+
+## See The Visual Report
+
+The `audit` command creates one local HTML report with summary metrics,
+WCAG-aware triage, likely root causes, screenshots, keyboard evidence, manual
+review steps, and fix recommendations. It safely discovers UI states, including
+opened dialogs with annotated accessibility findings.
+
+[![Demo audit report showing summary metrics, affected states, top accessibility rules, and likely root causes](docs/assets/demo-report-overview.png)](docs/assets/demo-report-overview.png)
+
+[![Demo audit report showing the initial page and an opened modal with accessibility findings outlined](docs/assets/demo-report-states.png)](docs/assets/demo-report-states.png)
+
+## Built On Trusted Tools
+
+The current CLI combines established open-source tools instead of replacing
+their rule engines:
+
+- [axe-core through `@axe-core/playwright`](https://www.npmjs.com/package/@axe-core/playwright)
+  runs automated accessibility rules against the rendered page.
+- [Playwright](https://playwright.dev/) drives Chromium, explores bounded UI
+  states, captures screenshots, and collects keyboard and accessibility-tree
+  evidence.
+- [ESLint](https://eslint.org/) powers source checks through optional adapters
+  for [`eslint-plugin-jsx-a11y`](https://www.npmjs.com/package/eslint-plugin-jsx-a11y),
+  [`eslint-plugin-vue`](https://www.npmjs.com/package/eslint-plugin-vue), and
+  [Angular ESLint](https://www.npmjs.com/package/@angular-eslint/eslint-plugin-template).
+
+[Lighthouse](https://developer.chrome.com/docs/lighthouse/overview/) is optional
+and not bundled by default. Add `lighthouse` to a project and run
+`audit --with-lighthouse` or `check --with-lighthouse` when teams want its
+familiar accessibility score alongside detailed axe, keyboard, and source
+findings. Reports also show where Lighthouse and the a11y-shiftleft pipeline
+agree or disagree by rule ID, plus Lighthouse descriptions and documentation
+links for failed and manual audits.
+
+## Optional Setup
+
+After the first audit works, create a config file and add generated reports to
+`.gitignore`:
 
 ```bash
 npx a11y-shiftleft-cli init --framework auto --gitignore
 ```
 
-Optional: describe what you intend to audit. The generated `a11y-scope.json`
-is picked up automatically by `audit`, `explore`, `check`, and `keyboard`
-reports:
-
-```bash
-npx a11y-shiftleft-cli scope init \
-  --product-name "My App" \
-  --product-type "web application" \
-  --url $APP_URL \
-  --language en \
-  --platform "Desktop Chrome" \
-  --assistive-tech "Keyboard only" \
-  --sample-page "Core page:$APP_URL|Primary app entry" \
-  --random-sample-page "Random content page:$APP_URL/blog/example|Control sample" \
-  --journey "Core task:$APP_URL" \
-  --third-party "YouTube:https://www.youtube.com" \
-  --exclude "Authenticated billing:requires test account"
-```
-
-When a finding URL matches a URL inside a critical journey, reports add that
-journey to the finding and summarize journey impact. This helps teams see
-whether a problem affects a core task such as sign-in, search, checkout, or
-account management.
-
-Use `--sample-page "Type:URL|Reason"` for representative pages on larger sites,
-such as core pages, page types, help pages, accessibility contact pages, or
-other pages that should always be included in the review plan.
-Use `--random-sample-page "Type:URL|Reason"` for control pages. Reports compare
-structured and random samples and recommend expanding the representative sample
-when random pages expose new rule types.
-
-Then use a URL shortcut in your terminal. The examples below use macOS/Linux
+You can use a URL shortcut in your terminal. The examples below use macOS/Linux
 shell syntax:
 
 ```bash
@@ -215,27 +176,21 @@ and pass the URL directly on every operating system.
 npx a11y-shiftleft-cli audit --url http://localhost:4200 --out reports
 ```
 
-## Copy-Paste Recipes
+## Common Commands
 
-Not sure which command to choose? Start with `audit`. It produces the complete
-visual report and includes the other checks most teams need for local review.
-
-### Full Visual Audit
-
-Use `audit` for the normal end-to-end workflow. Its primary output is the visual
-HTML report.
+Use `audit` first. It produces the visual HTML report and includes the checks
+most teams need for local review.
 
 | Goal | Command | Main output |
 |---|---|---|
 | Run the recommended audit | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports` | `a11y-report.html` |
-| Create planned audit scope | `npx a11y-shiftleft-cli scope init --url $APP_URL --product-type "web application"` | `a11y-scope.json` used by later reports |
+| Audit a slower application | `npx a11y-shiftleft-cli audit --url $APP_URL --wait-ms 1000 --out reports` | Visual report after an extra settle wait |
 | Show only WCAG-mapped findings | `npx a11y-shiftleft-cli audit --url $APP_URL --wcag-only --out reports` | Report without best-practice or unmapped review signals |
+| Skip screenshots for private data | `npx a11y-shiftleft-cli audit --url $APP_URL --no-screenshots --out reports` | Report without images |
 | Add optional Lighthouse score | `npm install --save-dev lighthouse && npx a11y-shiftleft-cli audit --url $APP_URL --with-lighthouse --out reports` | Visual report plus score and rule comparison |
 | Add Excel and PDF exports | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports --excel --pdf` | HTML, CSV, and PDF |
-| Force complete page screenshots | `npx a11y-shiftleft-cli audit --url $APP_URL --screenshot-full-page --out reports` | Full-page visual evidence |
-| Audit a slower application | `npx a11y-shiftleft-cli audit --url $APP_URL --wait-ms 1000 --out reports` | Visual report after an extra settle wait |
 
-### Fast Checks For Terminal And CI
+### CI And Pull Requests
 
 Use `check` when speed and machine-readable output matter more than screenshots.
 It writes JSON, Markdown, and optional CSV reports; it does not create a visual
@@ -256,26 +211,17 @@ Lighthouse checks, rule-level comparison evidence, and Lighthouse guidance links
 Treat this as a useful signal for teams and designers, not as WCAG conformance
 proof.
 
-### Visual UI Exploration
+### Advanced Tools
 
-Use `explore` when you specifically need screenshots and a graph of safely
-discovered pages, modals, menus, themes, and other UI states without the combined
-keyboard and manual-review sections from `audit`.
-
-| Goal | Command | Main output |
-|---|---|---|
-| Explore visual UI states | `npx a11y-shiftleft-cli explore --url $APP_URL --depth 2 --out reports` | `exploration.html` |
-| Force complete page screenshots | `npx a11y-shiftleft-cli explore --url $APP_URL --depth 2 --screenshot-full-page --out reports` | Full-page exploration evidence |
-| Wait for a loaded-state selector | `npx a11y-shiftleft-cli explore --url $APP_URL --wait-for-selector "[data-page-ready]" --out reports` | Visual report after the page is ready |
-| Skip screenshots for private data | `npx a11y-shiftleft-cli explore --url $APP_URL --no-screenshots --out reports` | Exploration data without images |
-
-### Development And CI Tools
+You usually do not need these for the first run.
 
 | Goal | Command | Use it for |
 |---|---|---|
 | Verify local setup | `npx a11y-shiftleft-cli doctor --url $APP_URL` | Framework, adapter, browser, and URL diagnostics |
+| Explore visual UI states only | `npx a11y-shiftleft-cli explore --url $APP_URL --depth 2 --out reports` | Lower-level screenshot/state exploration |
 | Audit only keyboard focus | `npx a11y-shiftleft-cli keyboard --url $APP_URL --out reports/keyboard` | Focus order and keyboard evidence |
 | Generate a VoiceOver smoke checklist | `npx a11y-shiftleft-cli screen-reader --profile voiceover --url $APP_URL --out reports/screen-reader` | Manual screen-reader test protocol |
+| Create planned audit scope | `npx a11y-shiftleft-cli scope init --url $APP_URL --product-type "web application"` | Larger audit planning |
 | Refresh reports while coding | `npx a11y-shiftleft-cli watch --url $APP_URL --out reports/watch` | Local development feedback |
 | Generate GitHub Actions workflows | `npx a11y-shiftleft-cli ci --url $APP_URL --start-command "npm run dev"` | Pull-request and scheduled CI |
 | View historical trends | `npx a11y-shiftleft-cli dashboard --reports reports` | Local metrics dashboard |
@@ -311,11 +257,11 @@ you see connection errors or a challenge page, retry from an approved network,
 VPN, staging URL, or allowlisted preview environment before treating the result
 as complete.
 
-For a quick public-site exploration example, replace `https://example.com` with
-a site you are authorized to scan:
+For a quick public-site example, replace `https://example.com` with a site you
+are authorized to scan:
 
 ```bash
-npx a11y-shiftleft-cli explore --url https://example.com --out reports
+npx a11y-shiftleft-cli audit --url https://example.com --out reports
 ```
 
 The top-level report summary includes ownership and human-verification counts
