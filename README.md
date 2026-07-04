@@ -4,13 +4,14 @@
 [![Accessibility Shift-Left](https://github.com/olboyarshinova/a11y-shiftleft-cli/actions/workflows/a11y.yml/badge.svg)](https://github.com/olboyarshinova/a11y-shiftleft-cli/actions/workflows/a11y.yml)
 [![npm version](https://img.shields.io/npm/v/a11y-shiftleft-cli.svg)](https://www.npmjs.com/package/a11y-shiftleft-cli)
 
-Visual accessibility audit reports for web apps.
+Catch accessibility issues before they reach users.
 
 [npm package](https://www.npmjs.com/package/a11y-shiftleft-cli)
 
-Run one command against a local, staging, or preview URL. The CLI opens your page
-in Chromium, checks it with trusted accessibility tools, and creates a local HTML
-report with screenshots, WCAG labels, keyboard evidence, and fix guidance.
+Accessibility bugs are often found late, after a manual review or production
+release. `a11y-shiftleft-cli` helps frontend teams move that review earlier:
+run one command against a local, staging, or preview URL and get a visual report
+with screenshots, WCAG labels, keyboard evidence, and fix guidance.
 
 It works with any rendered website: React, Vue, Angular, Next.js, Svelte, Astro,
 Rails, Django, static HTML, and others. Optional source-code adapters are
@@ -34,11 +35,12 @@ npx playwright install chromium
 npm run dev
 ```
 
-3. Run your first visual audit. Replace the URL with the one printed by your dev
-   server:
+3. Run your first visual audit. Replace `YOUR_PORT` with the port printed by
+   your dev server:
 
 ```bash
-npx a11y-shiftleft-cli audit --url http://localhost:5173 --out reports --open
+export APP_URL=http://localhost:YOUR_PORT
+npx a11y-shiftleft-cli audit --url $APP_URL --out reports --open
 ```
 
 4. If the report does not open automatically:
@@ -59,7 +61,7 @@ Reports are written locally. If your app may show private data, run with
 Optional: after the first local audit works, generate a GitHub Actions workflow:
 
 ```bash
-npx a11y-shiftleft-cli ci --url http://localhost:5173 --start-command "npm run dev"
+npx a11y-shiftleft-cli ci --url $APP_URL --start-command "npm run dev"
 ```
 
 ## What You Get
@@ -89,15 +91,18 @@ This is the main output of `audit`:
 ## Common Commands
 
 Start with `audit`. Use `check` later for faster CI/PR checks.
+The commands below assume `APP_URL` is set to your local, staging, or preview
+URL.
 
 | Need | Command |
 |---|---|
-| First local review | `npx a11y-shiftleft-cli audit --url http://localhost:5173 --out reports --open` |
-| Broader local scan | `npx a11y-shiftleft-cli audit --url http://localhost:5173 --max-depth 3 --limit 50 --out reports` |
-| Fast CI or PR check | `npx a11y-shiftleft-cli check --dynamic --url http://localhost:5173 --out reports` |
-| Diagnose setup problems | `npx a11y-shiftleft-cli doctor --url http://localhost:5173` |
+| First local review | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports --open` |
+| Broader local scan | `npx a11y-shiftleft-cli audit --url $APP_URL --max-depth 3 --limit 50 --out reports` |
+| Fast CI or PR check | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports` |
+| Legacy-project CI gate | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --gate new-critical-only --out reports` |
+| Diagnose setup problems | `npx a11y-shiftleft-cli doctor --url $APP_URL` |
 | Add config and report paths to `.gitignore` | `npx a11y-shiftleft-cli init --framework auto --gitignore` |
-| Generate GitHub Actions workflow files | `npx a11y-shiftleft-cli ci --url http://localhost:5173 --start-command "npm run dev"` |
+| Generate GitHub Actions workflow files | `npx a11y-shiftleft-cli ci --url $APP_URL --start-command "npm run dev"` |
 
 Use `explore` only when you want to debug visual state discovery without the full
 audit workflow.
@@ -107,8 +112,8 @@ By default, `audit` explores up to 2 interaction levels from the start page.
 or "visit every possible page."
 
 ```bash
-npx a11y-shiftleft-cli audit --url http://localhost:5173 --max-depth 1 --out reports
-npx a11y-shiftleft-cli audit --url http://localhost:5173 --max-depth 3 --limit 50 --out reports
+npx a11y-shiftleft-cli audit --url $APP_URL --max-depth 1 --out reports
+npx a11y-shiftleft-cli audit --url $APP_URL --max-depth 3 --limit 50 --out reports
 ```
 
 Use `1` for a quick smoke test, the default `2` for most local reviews, and `3`
@@ -117,7 +122,7 @@ or more only when you intentionally want a broader scan.
 If the first audit fails, run:
 
 ```bash
-npx a11y-shiftleft-cli doctor --url http://localhost:5173
+npx a11y-shiftleft-cli doctor --url $APP_URL
 ```
 
 After the report opens:
@@ -173,8 +178,11 @@ In another terminal:
 ```bash
 nvm use
 npm run build
-node bin/cli.js audit --url http://localhost:5173 --out reports
+export APP_URL=http://localhost:YOUR_PORT
+node bin/cli.js audit --url $APP_URL --out reports
 ```
+
+For the demo command above, replace `YOUR_PORT` with `5173`.
 
 </details>
 

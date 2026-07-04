@@ -179,6 +179,15 @@ export function renderExplorationHtml(
       overflow-wrap: anywhere;
     }
 
+    .scope-summary {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--muted);
+      margin: 10px 0 0;
+      padding: 12px;
+    }
+
     .completeness-grid {
       display: grid;
       gap: 8px;
@@ -1468,8 +1477,6 @@ export function renderExplorationHtml(
 
     ${renderQuickReview(reportIssues, options)}
 
-    ${renderEvaluationScope(graph, options, reportIssues)}
-
     ${renderShareReview()}
 
     ${renderLighthouseComparison(options.lighthouse, reportIssues)}
@@ -1483,6 +1490,8 @@ export function renderExplorationHtml(
     <section class="panel states" aria-label="Checked states">
       ${states.map(renderState).join("\n")}
     </section>
+
+    ${renderEvaluationScope(graph, options, reportIssues)}
 
     ${renderNonVisualIssues(nonVisualIssues)}
 
@@ -1711,22 +1720,33 @@ function renderEvaluationScope(
     .sort((left, right) => right.issueCount - left.issueCount)
     .slice(0, 3)
     .map((state) => `${state.id}: ${state.issueCount} finding${state.issueCount === 1 ? "" : "s"}`);
+  const summary = [
+    `${urls.length} URL${urls.length === 1 ? "" : "s"}`,
+    `${graph.summary.statesVisited} rendered state${graph.summary.statesVisited === 1 ? "" : "s"}`,
+    formatDepthScope(graph.summary.maxDepth),
+    options.keyboard ? "keyboard checked" : "keyboard not included",
+    options.manualChecklist ? "manual checklist included" : "manual review still needed"
+  ].join(" · ");
 
-  return `<section class="panel evaluation-scope" aria-label="Evaluation scope">
-    <h2>Evaluation Scope</h2>
-    <p class="muted">Reproducibility scope, not a WCAG conformance claim.</p>
-    <div class="scope-grid">
-      <div class="scope-item"><strong>Start URL</strong><span>${escapeHtml(graph.startUrl)}</span></div>
-      <div class="scope-item"><strong>URLs included</strong><span>${urls.length}</span></div>
-      <div class="scope-item"><strong>Rendered states</strong><span>${graph.summary.statesVisited} of ${graph.summary.maxStates} max</span></div>
-      <div class="scope-item"><strong>Exploration depth</strong><span>${escapeHtml(formatDepthScope(graph.summary.maxDepth))}</span></div>
-      <div class="scope-item"><strong>Evidence collected</strong><span>${escapeHtml(evidence.join("; "))}</span></div>
-      <div class="scope-item"><strong>Representative states</strong><span>${escapeHtml(mostAffected.length ? mostAffected.join("; ") : "No findings in captured states")}</span></div>
-      <div class="scope-item"><strong>Planned scope</strong><span>${escapeHtml(formatPlannedScopeSummary(options.plannedScope, issues))}</span></div>
-      <div class="scope-item"><strong>Debug data</strong><span>State transitions and skipped actions can be saved to <code>exploration-graph.json</code> with <code>--raw</code>.</span></div>
-    </div>
-    ${renderReportCompleteness(graph, options, sources)}
-    <p class="muted">Full machine-readable details are in <code>evaluation-scope.json</code>.</p>
+  return `<section class="panel evaluation-scope" aria-label="What was checked">
+    <h2>What Was Checked</h2>
+    <p class="scope-summary"><strong>Scope:</strong> ${escapeHtml(summary)}.</p>
+    <p class="muted">This is reproducibility evidence, not a WCAG conformance claim.</p>
+    <details>
+      <summary>Show scope evidence</summary>
+      <div class="scope-grid">
+        <div class="scope-item"><strong>Start URL</strong><span>${escapeHtml(graph.startUrl)}</span></div>
+        <div class="scope-item"><strong>URLs included</strong><span>${urls.length}</span></div>
+        <div class="scope-item"><strong>Rendered states</strong><span>${graph.summary.statesVisited} of ${graph.summary.maxStates} max</span></div>
+        <div class="scope-item"><strong>Exploration depth</strong><span>${escapeHtml(formatDepthScope(graph.summary.maxDepth))}</span></div>
+        <div class="scope-item"><strong>Evidence collected</strong><span>${escapeHtml(evidence.join("; "))}</span></div>
+        <div class="scope-item"><strong>Representative states</strong><span>${escapeHtml(mostAffected.length ? mostAffected.join("; ") : "No findings in captured states")}</span></div>
+        <div class="scope-item"><strong>Planned scope</strong><span>${escapeHtml(formatPlannedScopeSummary(options.plannedScope, issues))}</span></div>
+        <div class="scope-item"><strong>Debug data</strong><span>State transitions and skipped actions can be saved to <code>exploration-graph.json</code> with <code>--raw</code>.</span></div>
+      </div>
+      ${renderReportCompleteness(graph, options, sources)}
+      <p class="muted">Full machine-readable details are in <code>evaluation-scope.json</code>.</p>
+    </details>
   </section>`;
 }
 

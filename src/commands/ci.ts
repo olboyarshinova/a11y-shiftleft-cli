@@ -7,6 +7,7 @@ interface CiOptions {
   url: string[];
   startCommand: string;
   failOn: string;
+  gate?: string;
   fullFailOn: string;
   standard: string;
   profile: string;
@@ -33,6 +34,7 @@ export function registerCiCommand(program: Command): void {
     .option("--url <urls...>", "URL(s) to scan in CI", ["http://localhost:3000"])
     .option("--start-command <command>", "Command that starts the app in CI", "npm run dev -- --host localhost --port 3000")
     .option("--fail-on <severity>", "critical, warning, info, or none", "critical")
+    .option("--gate <profile>", "PR quality gate profile: critical, warning, report-only, or new-critical-only")
     .option("--full-fail-on <severity>", "critical, warning, info, or none for scheduled full-site scans", "none")
     .option("--standard <standard>", "Compliance support preset: wcag22-aa, ada-title-ii, or section508", "wcag22-aa")
     .option("--profile <profile>", "CI profile: pr, full, or split", "pr")
@@ -50,6 +52,7 @@ export function registerCiCommand(program: Command): void {
         urls: parseUrls(options.url),
         startCommand: options.startCommand,
         failOn: options.failOn,
+        gate: options.gate,
         fullFailOn: options.fullFailOn,
         standard: options.standard,
         crawlDepth: toPositiveInteger(options.crawlDepth, 1),
@@ -91,6 +94,7 @@ interface WorkflowTemplateOptions {
   urls: string[];
   startCommand: string;
   failOn: string;
+  gate?: string;
   standard: string;
   crawlDepth?: number;
   crawlLimit?: number;
@@ -103,6 +107,7 @@ export function workflowTemplate(options: WorkflowTemplateOptions): string {
   const urlArgs = scanUrls.join(" ");
   const crawlDepth = toPositiveInteger(options.crawlDepth, 1);
   const crawlLimit = toPositiveInteger(options.crawlLimit, 10);
+  const gateArg = checkGateArgument(options.gate, failOn);
 
   return `name: Accessibility PR
 
@@ -144,7 +149,7 @@ jobs:
           exit 1
 
       - name: Run fast accessibility checks
-        run: npx a11y-shiftleft check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports --fail-on ${failOn} --standard ${standard}
+        run: npx a11y-shiftleft check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard}
 
       - name: Upload accessibility report
         if: always()
@@ -242,6 +247,7 @@ interface WorkflowFilesOptions {
   urls: string[];
   startCommand: string;
   failOn: string;
+  gate?: string;
   fullFailOn: string;
   standard: string;
   crawlDepth: number;
@@ -258,6 +264,7 @@ export function workflowFiles(options: WorkflowFilesOptions): WorkflowFile[] {
       urls: options.urls,
       startCommand: options.startCommand,
       failOn: options.failOn,
+      gate: options.gate,
       standard: options.standard,
       crawlDepth: options.crawlDepth,
       crawlLimit: options.crawlLimit
@@ -279,6 +286,21 @@ export function workflowFiles(options: WorkflowFilesOptions): WorkflowFile[] {
   if (options.profile === "pr") return [prWorkflow];
   if (options.profile === "full") return [fullWorkflow];
   return [prWorkflow, fullWorkflow];
+}
+
+export function checkGateArgument(gate: string | undefined, failOn: string): string {
+  if (!gate) return `--fail-on ${failOn}`;
+  const normalized = gate.trim().toLowerCase();
+  if (
+    normalized === "critical" ||
+    normalized === "warning" ||
+    normalized === "report-only" ||
+    normalized === "new-critical-only"
+  ) {
+    return `--gate ${normalized}`;
+  }
+
+  throw new Error(`Unsupported CI quality gate: ${gate}`);
 }
 
 export function toCiProfile(profile: string): CiProfile {

@@ -146,6 +146,17 @@ Commit `.a11y-baseline.json`. Later CI runs with `--baseline` compare current
 findings against that file and fail only on new findings at the configured
 `--fail-on` severity.
 
+For legacy projects that need a gentle first gate, use the built-in quality
+gate profile:
+
+```bash
+npx a11y-shiftleft check --dynamic --gate new-critical-only --out reports
+```
+
+This is shorthand for baseline comparison plus a critical-only failure gate. It
+allows teams to track existing findings while blocking only newly introduced
+critical issues.
+
 Refresh the baseline only when the current state is intentionally accepted:
 
 ```bash

@@ -39,6 +39,7 @@ export interface CheckOptions {
   format?: string[];
   out?: string;
   failOn?: Severity | "none";
+  gate?: string;
   standard?: string;
   wcagFilter?: string;
   wcagVersion?: string;
@@ -95,6 +96,7 @@ export function registerCheckCommand(program: Command): void {
     .option("--format <formats...>", "Report formats: json, csv, markdown, or all")
     .option("--out <dir>", "Output directory")
     .option("--fail-on <severity>", "critical, warning, info, or none")
+    .option("--gate <profile>", "Quality gate profile: critical, warning, report-only, or new-critical-only")
     .option("--standard <standard>", "Compliance support preset: wcag22-aa, ada-title-ii, or section508")
     .option("--wcag-filter <level>", "Only report findings mapped to WCAG level A, AA, or AAA")
     .option("--wcag-version <version>", "Limit mapped findings to WCAG version 2.0, 2.1, or 2.2")
@@ -122,7 +124,9 @@ export function registerCheckCommand(program: Command): void {
 }
 
 export async function runCheck(options: CheckOptions = {}): Promise<CheckResult> {
-  if (options.retest && (options.baseline || options.updateBaseline)) {
+  const gate = resolveQualityGate(options);
+
+  if (options.retest && (gate.baseline || options.updateBaseline)) {
     throw new Error("Use either --retest or baseline mode, not both.");
   }
 
@@ -137,7 +141,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
     outputDir: options.out,
     standard: toComplianceStandard(options.standard),
     wcagVersion: toWcagVersion(options.wcagVersion),
-    failOn: options.failOn,
+    failOn: gate.failOn,
     static: {
       include: options.include
     },
@@ -275,7 +279,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
     file: options.remediationFile,
     enabled: options.remediationTracking !== false
   });
-  const baselineEnabled = Boolean(options.baseline || options.updateBaseline);
+  const baselineEnabled = Boolean(gate.baseline || options.updateBaseline);
   const baselineResult = baselineEnabled
     ? await applyBaseline(remediationResult.issues, {
       cwd: effectiveConfig.cwd,
@@ -329,6 +333,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
         outputDir: effectiveConfig.outputDir,
         formats,
         baselineEnabled,
+        gateProfile: gate.profile,
         baselineFile: options.baselineFile || ".a11y-baseline.json",
         ignoreEnabled: Boolean(ignoreResult.summary?.enabled),
         ignoreFile: options.ignoreFile || DEFAULT_IGNORE_FILE,
@@ -403,6 +408,41 @@ export interface AdapterRunSummary {
   durationMs: number;
 }
 
+export type QualityGateProfile = "critical" | "warning" | "report-only" | "new-critical-only";
+
+export function resolveQualityGate(options: Pick<CheckOptions, "gate" | "baseline" | "failOn">): {
+  profile?: QualityGateProfile;
+  baseline?: boolean;
+  failOn?: Severity | "none";
+} {
+  if (!options.gate) {
+    return {
+      baseline: options.baseline,
+      failOn: options.failOn
+    };
+  }
+
+  if (options.failOn) {
+    throw new Error("Use either --gate or --fail-on, not both.");
+  }
+
+  const profile = options.gate as QualityGateProfile;
+  if (profile === "critical") {
+    return { profile, baseline: options.baseline, failOn: "critical" };
+  }
+  if (profile === "warning") {
+    return { profile, baseline: options.baseline, failOn: "warning" };
+  }
+  if (profile === "report-only") {
+    return { profile, baseline: options.baseline, failOn: "none" };
+  }
+  if (profile === "new-critical-only") {
+    return { profile, baseline: true, failOn: "critical" };
+  }
+
+  throw new Error(`Unsupported quality gate: ${options.gate}. Use critical, warning, report-only, or new-critical-only.`);
+}
+
 export function formatVerboseCheckSummary(options: {
   framework: Framework;
   runStatic: boolean;
@@ -412,6 +452,7 @@ export function formatVerboseCheckSummary(options: {
   outputDir: string;
   formats: ReportFormat[];
   baselineEnabled: boolean;
+  gateProfile?: QualityGateProfile;
   baselineFile: string;
   ignoreEnabled: boolean;
   ignoreFile: string;
@@ -466,6 +507,7 @@ export function formatVerboseCheckSummary(options: {
     `lighthouse: ${options.lighthouseEnabled ? "enabled" : "disabled"}`,
     `standard: ${options.standard}`,
     `wcag: ${options.wcagVersion} ${options.wcagLevel}`,
+    `gate: ${options.gateProfile || "custom"}`,
     `baseline: ${baseline}`,
     `ignore: ${ignore}`,
     `retention: ${retention}`,

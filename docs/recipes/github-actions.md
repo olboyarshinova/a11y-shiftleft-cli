@@ -19,6 +19,17 @@ The default workflow runs on `pull_request` and uses a bounded crawl
 (`--crawl-depth 1`, `--crawl-limit 10`) so feedback usually stays in the
 30-90 second range for small and medium frontend apps.
 
+For a legacy project with existing findings, start with a baseline-friendly
+gate that blocks only newly introduced critical issues:
+
+```bash
+export APP_URL=http://localhost:5173
+npx a11y-shiftleft ci \
+  --url $APP_URL \
+  --start-command "npm run dev -- --host localhost --port 5173" \
+  --gate new-critical-only
+```
+
 ## Generate Split PR And Full-Site Workflows
 
 ```bash
@@ -77,5 +88,6 @@ git commit -m "Add accessibility CI"
 
 ## Notes
 
+Use `--gate report-only` when the team wants visibility before blocking builds.
+Use `--gate new-critical-only` when an existing project needs a gentle rollout.
 Use `--fail-on warning` when a team is ready to block pull requests on warnings.
-Use `--fail-on none` during early rollout if the team only wants visibility.

@@ -321,7 +321,7 @@ function formatShareScope(scope: unknown): string {
     .map((state) => `${String(state.id || "state")}: ${String(state.findingCount ?? "n/a")} finding(s)`)
     .join("; ") || "none";
 
-  return `## Evaluation Scope
+  return `## What Was Checked
 
 This WCAG-EM-inspired scope summary is sanitized for external review. It is reproducibility evidence, not a WCAG conformance claim.
 
