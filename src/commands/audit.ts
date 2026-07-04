@@ -27,6 +27,7 @@ interface AuditOptions {
   config?: string;
   framework?: string;
   url: string;
+  profile?: string;
   withLighthouse?: boolean;
   out?: string;
   depth?: string;
@@ -69,6 +70,7 @@ export function registerAuditCommand(program: Command): void {
     .option("--config <file>", "Config path relative to cwd")
     .option("--framework <name>", "react, vue, angular, or auto")
     .requiredOption("--url <url>", "Start URL for the running application")
+    .option("--profile <profile>", "Audit goal: risk, validation, or full")
     .option("--with-lighthouse", "Add optional Lighthouse accessibility score comparison")
     .option("--out <dir>", "Output directory", "reports")
     .option("--depth <depth>", "Maximum interaction depth", "2")
@@ -100,13 +102,14 @@ export function registerAuditCommand(program: Command): void {
     .option("--no-remediation-tracking", "Do not apply remediation statuses")
     .option("--open", "Open the visual HTML report after the audit finishes")
     .option("--quiet", "Suppress console summary")
-    .action(async (options: AuditOptions) => {
-      const result = await runAudit(options);
+    .action(async (options: AuditOptions, command: Command) => {
+      const result = await runAudit(resolveAuditProfileOptions(options, command));
       if (result.failed) process.exitCode = 1;
     });
 }
 
 export async function runAudit(options: AuditOptions): Promise<{ failed: boolean; outputDir: string }> {
+  options = resolveAuditProfileOptions(options);
   const startedAt = Date.now();
   const targetUrl = normalizeAuditUrl(options.url);
   const outputDir = normalizeOptionalCliValue(options.out);
@@ -221,7 +224,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
   const formats = options.excel ? ["json", "markdown", "csv"] as const : ["json", "markdown"] as const;
   const report = await writeReports(effectiveConfig.outputDir, remediationResult.issues, {
     commandName: "audit",
-    commandProfile: "visual-audit",
+    commandProfile: auditCommandProfile(options),
     framework,
     cwd: effectiveConfig.cwd,
     urls,
@@ -284,6 +287,89 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
   }
 
   return { failed: shouldFail(report.summary, config.failOn), outputDir: effectiveConfig.outputDir };
+}
+
+type AuditProfile = "risk" | "validation" | "full";
+
+interface AuditProfilePreset {
+  maxDepth: string;
+  limit: string;
+  actionsPerState: string;
+  maxTabs: string;
+  withLighthouse?: boolean;
+  activation?: boolean;
+}
+
+const AUDIT_PROFILE_PRESETS: Record<AuditProfile, AuditProfilePreset> = {
+  risk: {
+    maxDepth: "1",
+    limit: "10",
+    actionsPerState: "4",
+    maxTabs: "25"
+  },
+  validation: {
+    maxDepth: "2",
+    limit: "20",
+    actionsPerState: "8",
+    maxTabs: "40"
+  },
+  full: {
+    maxDepth: "3",
+    limit: "50",
+    actionsPerState: "12",
+    maxTabs: "80",
+    withLighthouse: true,
+    activation: true
+  }
+};
+
+export function resolveAuditProfileOptions(options: AuditOptions, command?: Command): AuditOptions {
+  const profile = toAuditProfile(options.profile);
+  if (!profile) return options;
+  const preset = AUDIT_PROFILE_PRESETS[profile];
+
+  return {
+    ...options,
+    profile,
+    maxDepth: chooseProfileValue(options.maxDepth, preset.maxDepth, command, "maxDepth", "depth"),
+    limit: chooseProfileValue(options.limit, preset.limit, command, "limit"),
+    actionsPerState: chooseProfileValue(options.actionsPerState, preset.actionsPerState, command, "actionsPerState"),
+    maxTabs: chooseProfileValue(options.maxTabs, preset.maxTabs, command, "maxTabs"),
+    withLighthouse: chooseProfileValue(options.withLighthouse, preset.withLighthouse, command, "withLighthouse"),
+    activation: chooseProfileValue(options.activation, preset.activation, command, "activation")
+  };
+}
+
+function auditCommandProfile(options: AuditOptions): string {
+  const profile = toAuditProfile(options.profile);
+  return profile ? `${profile}-audit` : "visual-audit";
+}
+
+function toAuditProfile(value: string | undefined): AuditProfile | undefined {
+  if (value === undefined) return undefined;
+  if (value === "risk" || value === "validation" || value === "full") return value;
+  throw new Error(`Unsupported audit profile: ${value}. Use risk, validation, or full.`);
+}
+
+function optionWasProvided(command: Command | undefined, key: string): boolean {
+  if (!command) return false;
+  const source = command.getOptionValueSource(key);
+  return source !== undefined && source !== "default";
+}
+
+function chooseProfileValue<T>(
+  currentValue: T | undefined,
+  profileValue: T | undefined,
+  command: Command | undefined,
+  key: string,
+  alternateKey?: string
+): T | undefined {
+  if (command) {
+    return optionWasProvided(command, key) || (alternateKey ? optionWasProvided(command, alternateKey) : false)
+      ? currentValue
+      : profileValue;
+  }
+  return currentValue ?? profileValue;
 }
 
 export function resolveAuditDepthOption(options: Pick<AuditOptions, "depth" | "maxDepth">): string | undefined {

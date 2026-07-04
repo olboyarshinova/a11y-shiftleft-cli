@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createProgram } from "../../dist/cli.js";
-import { normalizeAuditUrl, resolveAuditDepthOption } from "../../dist/commands/audit.js";
+import { normalizeAuditUrl, resolveAuditDepthOption, resolveAuditProfileOptions } from "../../dist/commands/audit.js";
 
 test("audit is the unified visual report command with optional extra formats", () => {
   const audit = createProgram().commands.find((command) => command.name() === "audit");
@@ -11,6 +11,7 @@ test("audit is the unified visual report command with optional extra formats", (
   assert.deepEqual(audit.aliases(), ["quick"]);
   const flags = audit.options.map((option) => option.long);
   assert.equal(flags.includes("--url"), true);
+  assert.equal(flags.includes("--profile"), true);
   assert.equal(flags.includes("--with-lighthouse"), true);
   assert.equal(flags.includes("--excel"), true);
   assert.equal(flags.includes("--pdf"), true);
@@ -24,6 +25,67 @@ test("audit is the unified visual report command with optional extra formats", (
   assert.equal(flags.includes("--no-scroll"), true);
   assert.equal(flags.includes("--screenshot-full-page"), true);
   assert.equal(flags.includes("--wcag-only"), true);
+});
+
+test("resolveAuditProfileOptions applies bounded audit profiles", () => {
+  assert.deepEqual(resolveAuditProfileOptions({
+    url: "https://example.com",
+    profile: "risk"
+  }), {
+    url: "https://example.com",
+    profile: "risk",
+    maxDepth: "1",
+    limit: "10",
+    actionsPerState: "4",
+    maxTabs: "25",
+    withLighthouse: undefined,
+    activation: undefined
+  });
+
+  assert.deepEqual(resolveAuditProfileOptions({
+    url: "https://example.com",
+    profile: "full"
+  }), {
+    url: "https://example.com",
+    profile: "full",
+    maxDepth: "3",
+    limit: "50",
+    actionsPerState: "12",
+    maxTabs: "80",
+    withLighthouse: true,
+    activation: true
+  });
+});
+
+test("resolveAuditProfileOptions keeps explicit values when called directly", () => {
+  assert.equal(resolveAuditProfileOptions({
+    url: "https://example.com",
+    profile: "full",
+    maxDepth: "2",
+    limit: "12",
+    withLighthouse: false
+  }).maxDepth, "2");
+  assert.equal(resolveAuditProfileOptions({
+    url: "https://example.com",
+    profile: "full",
+    maxDepth: "2",
+    limit: "12",
+    withLighthouse: false
+  }).limit, "12");
+  assert.equal(resolveAuditProfileOptions({
+    url: "https://example.com",
+    profile: "full",
+    maxDepth: "2",
+    limit: "12",
+    withLighthouse: false
+  }).withLighthouse, false);
+});
+
+test("resolveAuditProfileOptions rejects unknown profiles", () => {
+  assert.throws(
+    () => resolveAuditProfileOptions({ url: "https://example.com", profile: "everything" }),
+    /Unsupported audit profile/
+  );
 });
 
 test("resolveAuditDepthOption prefers explicit max depth over legacy depth", () => {

@@ -135,7 +135,9 @@ URL.
 | Need | Command |
 |---|---|
 | First local review | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports --open` |
+| Quick risk triage | `npx a11y-shiftleft-cli audit --url $APP_URL --profile risk --out reports` |
 | Broader local scan | `npx a11y-shiftleft-cli audit --url $APP_URL --max-depth 3 --limit 50 --out reports` |
+| Fuller evidence package | `npx a11y-shiftleft-cli audit --url $APP_URL --profile full --out reports` |
 | Fast CI or PR check | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports` |
 | Legacy-project CI gate | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --gate new-critical-only --out reports` |
 | Diagnose setup problems | `npx a11y-shiftleft-cli doctor --url $APP_URL` |
@@ -150,12 +152,30 @@ By default, `audit` explores up to 2 interaction levels from the start page.
 or "visit every possible page."
 
 ```bash
+npx a11y-shiftleft-cli audit --url $APP_URL --profile risk --out reports
 npx a11y-shiftleft-cli audit --url $APP_URL --max-depth 1 --out reports
 npx a11y-shiftleft-cli audit --url $APP_URL --max-depth 3 --limit 50 --out reports
 ```
 
 Use `1` for a quick smoke test, the default `2` for most local reviews, and `3`
 or more only when you intentionally want a broader scan.
+
+Audit profiles are shortcuts:
+
+- `risk`: faster triage with lower depth and fewer explored states.
+- `validation`: the standard local evidence profile.
+- `full`: broader scan with keyboard activation checks and Lighthouse comparison.
+  Install `lighthouse` first when you want this comparison:
+
+```bash
+npm install --save-dev lighthouse
+```
+
+Explicit flags override profile defaults, for example:
+
+```bash
+npx a11y-shiftleft-cli audit --url $APP_URL --profile risk --max-depth 2 --out reports
+```
 
 If the first audit fails, run:
 

@@ -13,10 +13,6 @@ Section 508 certification.
 - Promote planned journey matches into a richer journey-review workflow where a
   reviewer can confirm every step, record missing states, and attach manual
   task-completion evidence.
-- Add audit goals or profiles such as `risk`, `validation`, `level-of-effort`,
-  and `full` so reports can explain whether the run is prioritizing blockers,
-  retesting fixes, estimating remediation scope, or building a fuller evidence
-  package.
 - Add a bounded forced-colors diagnostic that compares normal rendering with
   `forced-colors: active` and flags controls, focus indicators, SVGs, and
   information-bearing backgrounds that disappear or become indistinguishable.
