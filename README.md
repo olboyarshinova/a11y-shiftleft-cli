@@ -38,7 +38,7 @@ npm run dev
    server:
 
 ```bash
-npx a11y-shiftleft-cli audit --url http://localhost:5173 --max-depth 2 --out reports --open
+npx a11y-shiftleft-cli audit --url http://localhost:5173 --out reports --open
 ```
 
 4. If the report does not open automatically:
@@ -83,7 +83,7 @@ Start with `audit`. Use `check` later for faster CI/PR checks.
 
 | Need | Command |
 |---|---|
-| First local review | `npx a11y-shiftleft-cli audit --url http://localhost:5173 --max-depth 2 --out reports --open` |
+| First local review | `npx a11y-shiftleft-cli audit --url http://localhost:5173 --out reports --open` |
 | Fast CI or PR check | `npx a11y-shiftleft-cli check --dynamic --url http://localhost:5173 --out reports` |
 | Diagnose setup problems | `npx a11y-shiftleft-cli doctor --url http://localhost:5173` |
 | Add config and report paths to `.gitignore` | `npx a11y-shiftleft-cli init --framework auto --gitignore` |
@@ -92,9 +92,17 @@ Start with `audit`. Use `check` later for faster CI/PR checks.
 Use `explore` only when you want to debug visual state discovery without the full
 audit workflow.
 
-`--max-depth` controls how far the tool follows safe clicks from the start page.
-Use `1` for a quick smoke test, `2` for most local reviews, and `3` or more only
-when you intentionally want a broader scan.
+By default, `audit` explores up to 2 interaction levels from the start page.
+`--max-depth` lets you change that safety limit; it does not mean "scan forever"
+or "visit every possible page."
+
+```bash
+npx a11y-shiftleft-cli audit --url http://localhost:5173 --max-depth 1 --out reports
+npx a11y-shiftleft-cli audit --url http://localhost:5173 --max-depth 3 --limit 50 --out reports
+```
+
+Use `1` for a quick smoke test, the default `2` for most local reviews, and `3`
+or more only when you intentionally want a broader scan.
 
 If the first audit fails, run:
 
