@@ -30,9 +30,10 @@ Each run refreshes:
 ```txt
 reports/watch/a11y-comment.md
 reports/watch/a11y-report.json
-reports/watch/a11y-metrics.csv
-reports/watch/a11y-findings.csv
 ```
+
+Add `--format csv` or `--format all` if you also want spreadsheet exports during
+watch mode.
 
 ## Custom Source Paths
 

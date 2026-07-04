@@ -30,6 +30,7 @@ interface AuditOptions {
   withLighthouse?: boolean;
   out?: string;
   depth?: string;
+  maxDepth?: string;
   limit?: string;
   actionsPerState?: string;
   maxTabs?: string;
@@ -71,6 +72,7 @@ export function registerAuditCommand(program: Command): void {
     .option("--with-lighthouse", "Add optional Lighthouse accessibility score comparison")
     .option("--out <dir>", "Output directory", "reports")
     .option("--depth <depth>", "Maximum interaction depth", "2")
+    .option("--max-depth <depth>", "Maximum interaction depth; clearer alias for --depth")
     .option("--limit <limit>", "Maximum UI states", "20")
     .option("--actions-per-state <limit>", "Maximum safe actions per state", "8")
     .option("--max-tabs <count>", "Maximum Tab presses for keyboard traversal", "40")
@@ -106,12 +108,14 @@ export function registerAuditCommand(program: Command): void {
 
 export async function runAudit(options: AuditOptions): Promise<{ failed: boolean; outputDir: string }> {
   const startedAt = Date.now();
+  const targetUrl = normalizeAuditUrl(options.url);
+  const outputDir = normalizeOptionalCliValue(options.out);
   const config = await loadConfig({ cwd: options.cwd, config: options.config }, {
     framework: toFramework(options.framework),
-    outputDir: options.out,
+    outputDir,
     standard: toStandard(options.standard),
     failOn: options.failOn,
-    dynamic: { enabled: true, urls: [options.url] },
+    dynamic: { enabled: true, urls: [targetUrl] },
     explore: {
       waitMs: optionalNonNegativeInteger(options.waitMs, "Wait time"),
       waitForSelector: options.waitForSelector,
@@ -137,7 +141,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
   const keyboardPromise: Promise<{ result?: KeyboardAuditResult; issues: Issue[] }> = options.keyboard === false
     ? Promise.resolve({ issues: [] })
     : runKeyboardPlaywrightAdapter({
-      url: options.url,
+      url: targetUrl,
       framework,
       maxTabs: boundedInteger(options.maxTabs, 40, 1, 200),
       waitMs: effectiveConfig.explore.waitMs,
@@ -145,23 +149,23 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
       maxActivations: 6,
       safeMode: effectiveConfig.explore.safeMode
     }).then((result) => ({ result, issues: [] })).catch((error: unknown) => ({
-      issues: [createAuditAdapterIssue(framework, options.url, "keyboard", error)]
+      issues: [createAuditAdapterIssue(framework, targetUrl, "keyboard", error)]
     }));
   const lighthousePromise: Promise<{ results: LighthouseAuditResult[]; issues: Issue[] }> = !options.withLighthouse
     ? Promise.resolve({ results: [], issues: [] })
-    : runLighthouseAdapter({ url: options.url })
+    : runLighthouseAdapter({ url: targetUrl, cwd: effectiveConfig.cwd })
       .then((result) => ({ results: [result], issues: [] }))
       .catch((error: unknown) => ({
         results: [],
-        issues: [createAuditAdapterIssue(framework, options.url, "lighthouse", error)]
+        issues: [createAuditAdapterIssue(framework, targetUrl, "lighthouse", error)]
       }));
 
   const [staticIssues, exploration, keyboardOutcome, lighthouseOutcome] = await Promise.all([
     runEslintAdapter(effectiveConfig),
     runExplorePlaywrightAdapter(effectiveConfig, {
-      url: options.url,
+      url: targetUrl,
       outputDir: effectiveConfig.outputDir,
-      maxDepth: boundedInteger(options.depth, 2, 1, 5),
+      maxDepth: boundedInteger(resolveAuditDepthOption(options), 2, 1, 5),
       maxStates: boundedInteger(options.limit, 20, 1, 100),
       maxActionsPerState: boundedInteger(options.actionsPerState, 8, 1, 30),
       screenshots: options.screenshots !== false,
@@ -274,6 +278,10 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
   return { failed: shouldFail(report.summary, config.failOn), outputDir: effectiveConfig.outputDir };
 }
 
+export function resolveAuditDepthOption(options: Pick<AuditOptions, "depth" | "maxDepth">): string | undefined {
+  return options.maxDepth ?? options.depth;
+}
+
 function boundedInteger(value: string | undefined, fallback: number, minimum: number, maximum: number): number {
   const parsed = value === undefined ? fallback : Number(value);
   if (!Number.isInteger(parsed) || parsed < minimum || parsed > maximum) {
@@ -294,6 +302,37 @@ function optionalNonNegativeInteger(value: string | undefined, label: string): n
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 0) throw new Error(`${label} must be a non-negative integer.`);
   return parsed;
+}
+
+export function normalizeAuditUrl(value: string): string {
+  const normalized = normalizeRequiredCliValue(value);
+  let parsed: URL;
+  try {
+    parsed = new URL(normalized);
+  } catch {
+    throw new Error(`Invalid --url value: ${value}. Use a full URL such as https://example.com or http://localhost:5173.`);
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error(`Invalid --url protocol: ${parsed.protocol}. Use http:// or https://.`);
+  }
+
+  return parsed.toString();
+}
+
+function normalizeRequiredCliValue(value: string): string {
+  const normalized = normalizeOptionalCliValue(value);
+  if (!normalized) throw new Error("Expected a non-empty value.");
+  return normalized;
+}
+
+function normalizeOptionalCliValue(value: string | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  return value
+    .trim()
+    .replace(/^[“”"']+/, "")
+    .replace(/[“”"']+$/, "")
+    .trim();
 }
 
 function toFramework(value: string | undefined): Framework | undefined {

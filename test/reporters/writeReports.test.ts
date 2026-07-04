@@ -145,7 +145,8 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
       }
     },
     {
-      frameworkExample: "react"
+      frameworkExample: "react",
+      formats: ["json", "csv", "markdown"]
     }
   );
 
@@ -362,6 +363,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /not a WCAG conformance claim/);
   assert.match(markdown, /evaluation-scope\.json/);
   assert.match(markdown, /Requested URLs \| http:\/\/localhost:3000/);
+  assert.match(markdown, /Exploration depth \| not included/);
   assert.match(markdown, /Evidence collected \| browser exploration not included; axe, eslint; keyboard not included; Lighthouse comparison; manual checklist not included/);
   assert.match(markdown, /## Planned Scope/);
   assert.match(markdown, /Product \| Demo Shop - ecommerce/);
@@ -436,6 +438,102 @@ test("writeReports hides auto-detected framework examples from dynamic findings"
   assert.match(markdown, /Use visible button text when possible/);
 });
 
+test("writeReports groups duplicate Markdown recommendations by rule", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-md-groups-"));
+
+  await writeReports(outputDir, [{
+    source: "axe",
+    framework: "unknown",
+    severity: "critical",
+    ruleId: "button-name",
+    wcag: ["4.1.2"],
+    wcagCriteria: [{
+      id: "4.1.2",
+      title: "Name, Role, Value",
+      level: "A",
+      principle: "robust",
+      introducedIn: "2.0",
+      url: "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
+    }],
+    tags: [],
+    selector: "#open",
+    url: "https://example.com/",
+    message: "Buttons must have discernible text",
+    remediation: {
+      summary: "Give every button an accessible name.",
+      howToFix: ["Use visible button text when possible."],
+      docs: ["https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"]
+    },
+    fingerprint: "button-name::#open",
+    duplicateCount: 0
+  }, {
+    source: "axe",
+    framework: "unknown",
+    severity: "critical",
+    ruleId: "button-name",
+    wcag: ["4.1.2"],
+    wcagCriteria: [{
+      id: "4.1.2",
+      title: "Name, Role, Value",
+      level: "A",
+      principle: "robust",
+      introducedIn: "2.0",
+      url: "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
+    }],
+    tags: [],
+    selector: "#close",
+    url: "https://example.com/modal",
+    message: "Buttons must have discernible text",
+    remediation: {
+      summary: "Give every button an accessible name.",
+      howToFix: ["Use visible button text when possible."],
+      docs: ["https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"]
+    },
+    fingerprint: "button-name::#close",
+    duplicateCount: 1
+  }], {
+    framework: "unknown"
+  });
+
+  const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+
+  assert.equal((markdown.match(/Fix: Give every button an accessible name/g) || []).length, 1);
+  assert.equal((markdown.match(/Step 1: Use visible button text when possible/g) || []).length, 1);
+  assert.match(markdown, /button-name.*3 occurrences/);
+  assert.match(markdown, /targets: #open, #close/);
+  assert.match(markdown, /pages: https:\/\/example\.com\/, https:\/\/example\.com\/modal/);
+});
+
+test("writeReports points truncated finding groups to JSON and visual reports", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-md-truncated-groups-"));
+  const issues = Array.from({ length: 11 }, (_, index) => ({
+    source: "axe" as const,
+    framework: "unknown" as const,
+    severity: "warning" as const,
+    ruleId: `custom-rule-${index + 1}`,
+    wcag: [],
+    wcagCriteria: [],
+    tags: [],
+    selector: `#target-${index + 1}`,
+    url: `https://example.com/page-${index + 1}`,
+    message: `Review custom accessibility condition ${index + 1}`,
+    fingerprint: `custom-rule-${index + 1}::#target-${index + 1}`,
+    duplicateCount: 0
+  }));
+
+  await writeReports(outputDir, issues, {
+    framework: "unknown"
+  });
+
+  const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+
+  assert.match(markdown, /Showing 10 of 11 finding groups/);
+  assert.match(markdown, /a11y-report\.json.*every finding/);
+  assert.match(markdown, /a11y-report\.html.*visual report/);
+  assert.match(markdown, /CSV export only when spreadsheet triage is needed/);
+  assert.doesNotMatch(markdown, /a11y-findings\.csv/);
+});
+
 test("findings CSV neutralizes spreadsheet formulas in report text", async () => {
   const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-csv-safety-"));
 
@@ -448,7 +546,9 @@ test("findings CSV neutralizes spreadsheet formulas in report text", async () =>
     tags: [],
     selector: "@dangerous-cell",
     message: "=HYPERLINK(\"https://example.com\")"
-  }], { framework: "unknown" });
+  }], { framework: "unknown" }, {
+    formats: ["csv"]
+  });
 
   const findingsCsv = await fs.readFile(path.join(outputDir, "a11y-findings.csv"), "utf8");
 
@@ -594,6 +694,9 @@ test("writeReports summarizes rules without WCAG mappings", async () => {
       rawCount: 2,
       uniqueCount: 2,
       duplicateCount: 0
+    },
+    {
+      formats: ["json", "csv", "markdown"]
     }
   );
 
@@ -675,6 +778,9 @@ test("writeReports includes baseline comparison metadata", async () => {
         newWarning: 1,
         newInfo: 0
       }
+    },
+    {
+      formats: ["json", "csv", "markdown"]
     }
   );
 
@@ -726,6 +832,9 @@ test("writeReports includes retest comparison metadata", async () => {
         newWarning: 1,
         newInfo: 0
       }
+    },
+    {
+      formats: ["json", "csv", "markdown"]
     }
   );
 
@@ -781,6 +890,9 @@ test("writeReports includes remediation tracking without hiding findings", async
         staleEntries: 1,
         byStatus: { "in-progress": 1 }
       }
+    },
+    {
+      formats: ["json", "csv", "markdown"]
     }
   );
 
@@ -815,6 +927,9 @@ test("writeReports includes ignore metadata", async () => {
         invalidRules: 1,
         ignoredIssues: 1
       }
+    },
+    {
+      formats: ["json", "csv", "markdown"]
     }
   );
 
@@ -855,6 +970,9 @@ test("writeReports includes retention metadata", async () => {
       uniqueCount: 0,
       duplicateCount: 0,
       retention: retentionSummary
+    },
+    {
+      formats: ["json", "csv", "markdown"]
     }
   );
 
@@ -901,6 +1019,65 @@ test("writeReports can limit output formats", async () => {
   assert.equal(await exists(path.join(outputDir, "a11y-metrics.csv")), false);
   assert.equal(await exists(path.join(outputDir, "a11y-findings.csv")), false);
   assert.equal(await exists(path.join(outputDir, "a11y-comment.md")), false);
+});
+
+test("writeReports defaults to JSON and Markdown without CSV exports", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-default-formats-"));
+
+  await writeReports(
+    outputDir,
+    [],
+    {
+      rawCount: 0,
+      uniqueCount: 0,
+      duplicateCount: 0
+    }
+  );
+
+  assert.equal(await exists(path.join(outputDir, "a11y-report.json")), true);
+  assert.equal(await exists(path.join(outputDir, "a11y-comment.md")), true);
+  assert.equal(await exists(path.join(outputDir, "a11y-metrics.csv")), false);
+  assert.equal(await exists(path.join(outputDir, "a11y-findings.csv")), false);
+  assert.equal(await exists(path.join(outputDir, "a11y-summary.csv")), false);
+});
+
+test("writeReports points long keyboard paths to JSON and visual reports", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-keyboard-path-"));
+  const steps = Array.from({ length: 21 }, (_, index) => ({
+    index: index + 1,
+    role: "button",
+    tagName: "BUTTON",
+    accessibleName: `Action ${index + 1}`,
+    indicatorVisible: true,
+    obscured: false
+  }));
+
+  await writeReports(
+    outputDir,
+    [],
+    {
+      rawCount: 0,
+      uniqueCount: 0,
+      duplicateCount: 0
+    },
+    {
+      keyboard: {
+        url: "https://example.com/",
+        generatedAt: "2026-07-03T00:00:00.000Z",
+        focusableCount: 21,
+        completedCycle: true,
+        steps,
+        backwardSteps: [],
+        issues: []
+      }
+    }
+  );
+
+  const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+
+  assert.match(markdown, /Showing 20 of 21 forward focus steps/);
+  assert.match(markdown, /a11y-report\.json.*complete path/);
+  assert.match(markdown, /a11y-report\.html.*visual keyboard report/);
 });
 
 test("writeReports can generate a semi-automated manual checklist", async () => {

@@ -31,7 +31,7 @@ export async function writeReports(
   options: WriteReportOptions = {}
 ): Promise<A11yReport> {
   await fs.mkdir(outputDir, { recursive: true });
-  const formats = new Set(options.formats || ["json", "csv", "markdown"]);
+  const formats = new Set(options.formats || ["json", "markdown"]);
   const reportIssues = applyUserImpact(annotateIssuesWithJourneys(issues.map((issue) => {
     const enrichedIssue = issue.confidence && issue.category && issue.findingType
       ? issue
@@ -410,28 +410,11 @@ export function toMarkdown(report: A11yReport): string {
     report.summary.byPage || [],
     report.summary.standard
   );
-  const topIssues = report.issues
+  const topIssueGroups = groupTopFindings(report.issues);
+  const topIssues = topIssueGroups
     .slice(0, 10)
-    .map((issue) => {
-      const criteria = formatCriteria(issue);
-      const remediation = formatRemediation(issue);
-      const state = issue.stateLabel ? ` state: ${issue.stateLabel}` : "";
-      const colorScheme = issue.colorScheme
-        ? ` color scheme: ${issue.colorScheme}`
-        : "";
-      const screenshot = issue.screenshot ? ` screenshot: ${issue.screenshot}` : "";
-      const baseline = issue.baselineStatus ? ` baseline: ${issue.baselineStatus}` : "";
-      const retest = issue.retestStatus ? ` retest: ${issue.retestStatus}` : "";
-      const tracking = formatRemediationTracking(issue);
-      const ownership = formatOwnership(issue);
-      const confidence = formatIssueConfidence(issue);
-      const userImpact = formatUserImpact(issue);
-      const findingType = ` type: ${formatFindingType(issue.findingType)}`;
-      const category = issue.category ? ` category: ${issue.category}` : "";
-      const contrast = formatContrastEvidence(issue);
-      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}${state}${colorScheme}${screenshot}${baseline}${retest}${tracking}${ownership}${userImpact}${findingType}${category}${confidence}: ${issue.message}${contrast}${remediation}`;
-    })
-    .join("\n");
+    .map(formatTopFindingGroup)
+    .join("\n\n");
 
   return `## Accessibility Shift-Left Report
 
@@ -489,10 +472,140 @@ ${formatManualReviewSummary(report)}
 
 ${topIssues || "No accessibility findings detected."}
 
-${report.issues.length > 10 ? `Showing 10 of ${report.issues.length} findings. See \`a11y-report.json\` or \`a11y-findings.csv\` for every finding and recommendation.` : ""}
+${topIssueGroups.length > 10 ? `Showing 10 of ${topIssueGroups.length} finding groups. See \`a11y-report.json\` for every finding and \`a11y-report.html\` for the visual report. Add CSV export only when spreadsheet triage is needed.` : ""}
 
 ${formatDisclaimer(report.summary.standard)}
 `;
+}
+
+interface TopFindingGroup {
+  key: string;
+  ruleId: string;
+  severity: Severity;
+  criteria: DedupedIssue["wcagCriteria"];
+  findingType: DedupedIssue["findingType"];
+  category: DedupedIssue["category"];
+  message: string;
+  count: number;
+  occurrenceCount: number;
+  pages: string[];
+  targets: string[];
+  states: string[];
+  colorSchemes: string[];
+  screenshots: string[];
+  sample: DedupedIssue;
+  issues: DedupedIssue[];
+}
+
+function groupTopFindings(issues: DedupedIssue[]): TopFindingGroup[] {
+  const groups = new Map<string, TopFindingGroup>();
+
+  for (const issue of issues) {
+    const criteriaKey = (issue.wcagCriteria || []).map((criterion) => criterion.id).sort().join(",");
+    const remediationKey = issue.remediation?.summary || "";
+    const key = `${issue.ruleId}::${criteriaKey}::${issue.findingType}::${remediationKey}`;
+    const target = issue.file || issue.selector || "";
+    const page = issue.url || "";
+
+    const existing = groups.get(key);
+    if (existing) {
+      existing.issues.push(issue);
+      existing.count += 1;
+      existing.occurrenceCount += 1 + (issue.duplicateCount || 0);
+      existing.severity = severityRank(issue.severity) > severityRank(existing.severity)
+        ? issue.severity
+        : existing.severity;
+      pushUnique(existing.pages, page);
+      pushUnique(existing.targets, target);
+      pushUnique(existing.states, issue.stateLabel || "");
+      pushUnique(existing.colorSchemes, issue.colorScheme || "");
+      pushUnique(existing.screenshots, issue.screenshot || "");
+      continue;
+    }
+
+    groups.set(key, {
+      key,
+      ruleId: issue.ruleId,
+      severity: issue.severity,
+      criteria: issue.wcagCriteria || [],
+      findingType: issue.findingType,
+      category: issue.category,
+      message: issue.message,
+      count: 1,
+      occurrenceCount: 1 + (issue.duplicateCount || 0),
+      pages: page ? [page] : [],
+      targets: target ? [target] : [],
+      states: issue.stateLabel ? [issue.stateLabel] : [],
+      colorSchemes: issue.colorScheme ? [issue.colorScheme] : [],
+      screenshots: issue.screenshot ? [issue.screenshot] : [],
+      sample: issue,
+      issues: [issue]
+    });
+  }
+
+  return [...groups.values()].sort((left, right) => {
+    const severityDiff = severityRank(right.severity) - severityRank(left.severity);
+    if (severityDiff !== 0) return severityDiff;
+    const occurrenceDiff = right.occurrenceCount - left.occurrenceCount;
+    if (occurrenceDiff !== 0) return occurrenceDiff;
+    return left.ruleId.localeCompare(right.ruleId);
+  });
+}
+
+function pushUnique(values: string[], value: string): void {
+  if (value && !values.includes(value)) values.push(value);
+}
+
+function formatTopFindingGroup(group: TopFindingGroup): string {
+  const criteria = formatCriteria(group.sample);
+  const findingType = ` type: ${formatFindingType(group.findingType)}`;
+  const category = group.category ? ` category: ${group.category}` : "";
+  const contrast = formatContrastEvidence(group.sample);
+  const remediation = formatRemediation(group.sample);
+  const ownership = formatOwnership(group.sample);
+  const confidence = formatIssueConfidence(group.sample);
+  const userImpact = formatUserImpact(group.sample);
+  const status = formatGroupStatuses(group);
+  const occurrenceLabel = group.occurrenceCount === 1 ? "1 occurrence" : `${group.occurrenceCount} occurrences`;
+  const affected = [
+    group.pages.length > 0 ? `pages: ${formatLimitedList(group.pages)}` : "",
+    group.targets.length > 0 ? `targets: ${formatLimitedList(group.targets)}` : "",
+    group.states.length > 0 ? `states: ${formatLimitedList(group.states)}` : "",
+    group.colorSchemes.length === 1 ? `color scheme: ${group.colorSchemes[0]}` : "",
+    group.colorSchemes.length > 1 ? `color schemes: ${formatLimitedList(group.colorSchemes)}` : "",
+    group.screenshots.length > 0 ? `screenshots: ${formatLimitedList(group.screenshots)}` : ""
+  ].filter(Boolean);
+
+  return [
+    `- **${group.severity}** \`${group.ruleId}\`${criteria} (${occurrenceLabel})${ownership}${userImpact}${findingType}${category}${confidence}: ${group.message}`,
+    affected.length > 0 ? `\n  - Affected: ${affected.join("; ")}` : "",
+    status,
+    contrast,
+    remediation
+  ].filter(Boolean).join("");
+}
+
+function formatGroupStatuses(group: TopFindingGroup): string {
+  const baselineStatuses = uniqueJoined(group.issues.map((issue) => issue.baselineStatus));
+  const retestStatuses = uniqueJoined(group.issues.map((issue) => issue.retestStatus));
+  const remediationStatuses = uniqueJoined(group.issues.map((issue) => issue.remediationTracking?.status));
+  const remediationOwners = uniqueJoined(group.issues.map((issue) => issue.remediationTracking?.owner));
+  const remediationReviewDates = uniqueJoined(group.issues.map((issue) => issue.remediationTracking?.reviewBy));
+  const parts = [
+    baselineStatuses ? `baseline: ${baselineStatuses}` : "",
+    retestStatuses ? `retest: ${retestStatuses}` : "",
+    remediationStatuses ? `remediation: ${remediationStatuses}` : "",
+    remediationOwners ? `owner: ${remediationOwners}` : "",
+    remediationReviewDates ? `review by: ${remediationReviewDates}` : ""
+  ].filter(Boolean);
+
+  return parts.length > 0 ? `\n  - Status: ${parts.join(" ")}` : "";
+}
+
+function formatLimitedList(values: string[], limit = 3): string {
+  const shown = values.slice(0, limit).join(", ");
+  const remaining = values.length - limit;
+  return remaining > 0 ? `${shown}, +${remaining} more` : shown;
 }
 
 function formatEvaluationScope(report: A11yReport): string {
@@ -525,9 +638,15 @@ This WCAG-EM-inspired scope summary is reproducibility evidence, not a WCAG conf
 | Requested URLs | ${markdownCell((report.summary.urls || []).join(", ") || "none")} |
 | URLs included | ${urls.length} |
 | Rendered states | ${graph ? `${graph.summary.statesVisited} of ${graph.summary.maxStates} max` : "not included"} |
-| Depth | ${graph ? graph.summary.maxDepth : "not included"} |
+| Exploration depth | ${graph ? markdownCell(formatDepthScope(graph.summary.maxDepth)) : "not included"} |
 | Evidence collected | ${markdownCell(evidence)} |
 | Representative states | ${markdownCell(representativeStates || "No findings in captured states")} |`;
+}
+
+function formatDepthScope(maxDepth: number): string {
+  if (maxDepth === 0) return "start page only (depth 0)";
+  const levelLabel = maxDepth === 1 ? "1 interaction level" : `${maxDepth} interaction levels`;
+  return `${levelLabel} from the start page`;
 }
 
 function formatPlannedScope(summary: ReportSummary): string {
@@ -613,7 +732,7 @@ function formatKeyboardEvidence(report: A11yReport): string {
 |---:|---|---|---|---|
 ${path || "| - | - | No focus steps recorded | - | - |"}
 
-${audit.steps.length > 20 ? `Showing 20 of ${audit.steps.length} forward focus steps. See \`a11y-report.json\` for the complete path.` : ""}`;
+${audit.steps.length > 20 ? `Showing 20 of ${audit.steps.length} forward focus steps. See \`a11y-report.json\` for the complete path and \`a11y-report.html\` for the visual keyboard report.` : ""}`;
 }
 
 function formatCoverageMatrix(report: A11yReport): string {

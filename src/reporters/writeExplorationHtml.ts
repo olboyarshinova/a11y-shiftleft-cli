@@ -28,6 +28,11 @@ interface CoverageMatrixRow {
 type CoverageEvidenceState = "passed" | "failed" | "needs-review" | "not-tested" | "unavailable";
 type CoverageStateCounts = Record<CoverageEvidenceState, number>;
 
+interface QuickFindingGroup {
+  issue: DedupedIssue;
+  count: number;
+}
+
 export async function writeExplorationHtml(
   outputDir: string,
   graph: ExplorationGraph,
@@ -315,6 +320,36 @@ export function renderExplorationHtml(
       padding: 4px 4px 14px;
     }
 
+    .keyboard-summary-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      margin: 12px 0 16px;
+    }
+
+    .keyboard-review-card {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--ok);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .keyboard-review-card-warning {
+      background: #fff7e6;
+      border-left-color: var(--warning-marker);
+    }
+
+    .keyboard-review-card strong,
+    .keyboard-review-card span {
+      display: block;
+    }
+
+    .keyboard-review-card span {
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
     .focus-path-item {
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -354,6 +389,24 @@ export function renderExplorationHtml(
 
     .focus-path-item-risk .focus-path-number {
       background: var(--warning);
+    }
+
+    .focus-path-risk-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 8px;
+    }
+
+    .focus-path-risk {
+      background: #ffedd5;
+      border: 1px solid #fed7aa;
+      border-radius: 4px;
+      color: #8a3b0a;
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 5px;
     }
 
     .focus-path-name,
@@ -427,6 +480,50 @@ export function renderExplorationHtml(
     .manual-env-field span {
       color: var(--muted);
       margin-top: 4px;
+    }
+
+    .manual-checklist-progress {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: 8px 0 14px;
+    }
+
+    .manual-checklist-progress-complete {
+      color: var(--ok);
+      font-weight: 700;
+    }
+
+    .manual-checklist-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .manual-checklist-item + .manual-checklist-item {
+      margin-top: 10px;
+    }
+
+    .manual-checklist-item-reviewed {
+      background: #edf9f3;
+      border-color: #9bd8bd;
+    }
+
+    .manual-checklist-item summary {
+      align-items: center;
+      gap: 10px;
+    }
+
+    .manual-checklist-item input[type="checkbox"] {
+      accent-color: var(--ok);
+      flex: 0 0 auto;
+      height: 20px;
+      margin: 0;
+      width: 20px;
+    }
+
+    .manual-checklist-item input[type="checkbox"]:focus-visible {
+      outline: 3px solid var(--info);
+      outline-offset: 3px;
     }
 
     .coverage-table-wrap {
@@ -667,6 +764,13 @@ export function renderExplorationHtml(
       padding: 0;
     }
 
+    .quick-review-note {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.45;
+      margin: -4px 0 10px;
+    }
+
     .quick-review-item {
       border-left: 3px solid var(--line);
       padding: 6px 8px;
@@ -781,6 +885,7 @@ export function renderExplorationHtml(
     }
 
     .screenshot-evidence-grid .screenshot-frame {
+      align-self: start;
       border: 0;
     }
 
@@ -871,7 +976,14 @@ export function renderExplorationHtml(
       max-width: min(1200px, 100%);
       overflow: auto;
       padding: 14px;
+      position: relative;
       width: 100%;
+      z-index: 1;
+    }
+
+    .screenshot-lightbox-backdrop {
+      inset: 0;
+      position: absolute;
     }
 
     .screenshot-lightbox-frame {
@@ -936,9 +1048,16 @@ export function renderExplorationHtml(
     }
 
     .state-body {
+      align-content: start;
+      align-items: start;
       display: grid;
       gap: 10px;
       padding: 12px;
+    }
+
+    .state-body > * {
+      align-self: start;
+      width: 100%;
     }
 
     .state-compact .state-body {
@@ -1019,6 +1138,7 @@ export function renderExplorationHtml(
 
     .issue-list,
     .edge-list {
+      align-items: start;
       display: grid;
       gap: 8px;
       list-style: none;
@@ -1033,6 +1153,7 @@ export function renderExplorationHtml(
     }
 
     .issue {
+      align-self: start;
       position: relative;
     }
 
@@ -1324,10 +1445,11 @@ export function renderExplorationHtml(
 <body data-coverage-report-id="${escapeAttribute(`${graph.startUrl}|${graph.generatedAt}`)}">
   <header>
     <h1>${escapeHtml(options.title || "a11y-shiftleft exploration report")}</h1>
-    <p class="muted">Generated: <time datetime="${escapeAttribute(graph.generatedAt)}">${escapeHtml(formatReportDateUtc(graph.generatedAt))}</time><br>Start URL: ${escapeHtml(graph.startUrl)}<br>Scan scope: depth ${graph.summary.maxDepth}, up to ${graph.summary.maxStates} states, ${graph.summary.statesVisited} rendered</p>
+    <p class="muted">Generated: <time datetime="${escapeAttribute(graph.generatedAt)}">${escapeHtml(formatReportDateUtc(graph.generatedAt))}</time><br>Start URL: ${escapeHtml(graph.startUrl)}<br>Scan depth: ${escapeHtml(formatDepthScope(graph.summary.maxDepth))}<br>Scan scope: up to ${graph.summary.maxStates} states, ${graph.summary.statesVisited} rendered</p>
   </header>
   <main>
     <section class="summary" aria-label="Exploration summary">
+      ${metric("Exploration depth", formatDepthMetric(graph.summary.maxDepth))}
       ${metric("UI states explored", graph.summary.uiStatesVisited ?? graph.summary.statesVisited)}
       ${metric("Pages visited", graph.summary.pagesVisited ?? new Set(graph.states.map((state) => state.url)).size)}
       ${metric("Rendered states", graph.summary.statesVisited)}
@@ -1367,13 +1489,6 @@ export function renderExplorationHtml(
     ${options.keyboard ? renderKeyboardAudit(options.keyboard) : ""}
 
     ${options.manualChecklist ? renderManualChecklist(options.manualChecklist) : ""}
-
-    <section class="panel" aria-label="Exploration details">
-      <h2>Exploration Details</h2>
-      <p class="muted">Use this section for debugging how the page was explored. Start with Triage Overview and Checked States when deciding what to fix.</p>
-      ${renderEdges(graph)}
-      ${renderSkippedActions(graph)}
-    </section>
 
     <section class="panel" aria-label="Manual review note">
       <h2>Coverage Note</h2>
@@ -1442,6 +1557,57 @@ export function renderExplorationHtml(
     })();
 
     (() => {
+      const items = Array.from(document.querySelectorAll('[data-manual-checklist-item]'));
+      const progress = document.querySelector('[data-manual-checklist-progress]');
+      const reportId = document.body.dataset.coverageReportId || 'report';
+      const storageKey = 'a11y-shiftleft:manual-checklist:' + reportId;
+      let saved = {};
+
+      try {
+        saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
+      } catch {
+        saved = {};
+      }
+
+      const update = () => {
+        const completed = {};
+        let remaining = 0;
+
+        for (const item of items) {
+          const checkbox = item.querySelector('[data-manual-checklist-checkbox]');
+          if (!checkbox) continue;
+          const checked = checkbox.checked;
+          item.classList.toggle('manual-checklist-item-reviewed', checked);
+          completed[item.dataset.manualChecklistItem] = checked;
+          if (!checked) remaining += 1;
+        }
+
+        if (progress) {
+          progress.textContent = remaining === 0
+            ? 'Manual checklist complete for this report.'
+            : 'Manual checks remaining: ' + remaining + ' of ' + items.length + '.';
+          progress.classList.toggle('manual-checklist-progress-complete', remaining === 0);
+        }
+
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(completed));
+        } catch {
+          // The report remains usable when storage is unavailable.
+        }
+      };
+
+      for (const item of items) {
+        const checkbox = item.querySelector('[data-manual-checklist-checkbox]');
+        if (!checkbox) continue;
+        checkbox.checked = saved[item.dataset.manualChecklistItem] === true;
+        checkbox.addEventListener('click', (event) => event.stopPropagation());
+        checkbox.addEventListener('change', update);
+      }
+
+      update();
+    })();
+
+    (() => {
       const buttons = Array.from(document.querySelectorAll('[data-copy-issue]'));
 
       const copyText = async (text) => {
@@ -1500,12 +1666,7 @@ function renderShareReview(): string {
 function renderQuickReview(issues: DedupedIssue[], options: ExplorationHtmlOptions): string {
   if (!options.keyboard && !options.manualChecklist) return "";
 
-  const highImpact = [...issues]
-    .sort((left, right) => (
-      severityValue(right.severity) - severityValue(left.severity)
-        || left.ruleId.localeCompare(right.ruleId)
-    ))
-    .slice(0, 3);
+  const highImpact = selectQuickFindings(issues, 3);
   const tabSteps = options.keyboard?.steps.slice(0, 5) || [];
   const manualTasks = [...(options.manualChecklist?.items || [])]
     .sort((left, right) => (right.targets?.length || 0) - (left.targets?.length || 0))
@@ -1520,7 +1681,8 @@ function renderQuickReview(issues: DedupedIssue[], options: ExplorationHtmlOptio
         ${renderQuickFindings(highImpact)}
       </div>
       <div>
-        <h3>First Tab Stops</h3>
+        <h3>Keyboard Start</h3>
+        <p class="quick-review-note">First Tab stops show where keyboard users land at the start of the page. Use this to catch missing skip links, confusing focus order, or focus that is not visible.</p>
         ${renderQuickTabStops(tabSteps, Boolean(options.keyboard))}
       </div>
       <div>
@@ -1557,10 +1719,11 @@ function renderEvaluationScope(
       <div class="scope-item"><strong>Start URL</strong><span>${escapeHtml(graph.startUrl)}</span></div>
       <div class="scope-item"><strong>URLs included</strong><span>${urls.length}</span></div>
       <div class="scope-item"><strong>Rendered states</strong><span>${graph.summary.statesVisited} of ${graph.summary.maxStates} max</span></div>
-      <div class="scope-item"><strong>Depth</strong><span>${graph.summary.maxDepth}</span></div>
+      <div class="scope-item"><strong>Exploration depth</strong><span>${escapeHtml(formatDepthScope(graph.summary.maxDepth))}</span></div>
       <div class="scope-item"><strong>Evidence collected</strong><span>${escapeHtml(evidence.join("; "))}</span></div>
       <div class="scope-item"><strong>Representative states</strong><span>${escapeHtml(mostAffected.length ? mostAffected.join("; ") : "No findings in captured states")}</span></div>
       <div class="scope-item"><strong>Planned scope</strong><span>${escapeHtml(formatPlannedScopeSummary(options.plannedScope, issues))}</span></div>
+      <div class="scope-item"><strong>Debug data</strong><span>State transitions and skipped actions can be saved to <code>exploration-graph.json</code> with <code>--raw</code>.</span></div>
     </div>
     ${renderReportCompleteness(graph, options, sources)}
     <p class="muted">Full machine-readable details are in <code>evaluation-scope.json</code>.</p>
@@ -1695,7 +1858,7 @@ function renderLighthouseComparison(results: LighthouseAuditResult[] | undefined
       ${metric("Failed audits", failedAuditCount, failedAuditCount > 0 ? "warning" : undefined)}
       ${metric("Manual audits", manualAuditCount)}
     </div>
-    <table>
+    <table aria-label="Lighthouse accessibility score comparison">
       <thead><tr><th>URL</th><th>Score</th><th>Failed</th><th>Manual</th><th>Top failed audits</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
@@ -1769,14 +1932,51 @@ function uniqueLighthouseAudits(audits: LighthouseAuditResult["failedAudits"]): 
   return unique.sort((left, right) => left.id.localeCompare(right.id));
 }
 
-function renderQuickFindings(issues: DedupedIssue[]): string {
-  if (issues.length === 0) return `<p class="muted">No automated findings to prioritize.</p>`;
-  return `<ol class="quick-review-list">${issues.map((issue) => {
+function selectQuickFindings(issues: DedupedIssue[], limit: number): QuickFindingGroup[] {
+  const groups = new Map<string, QuickFindingGroup>();
+  for (const issue of issues) {
+    const key = [
+      issue.severity,
+      issue.findingType,
+      issue.ruleId,
+      issue.message,
+      issue.wcagCriteria.map((criterion) => criterion.id).sort().join(",")
+    ].join("::");
+    const existing = groups.get(key);
+    if (existing) {
+      existing.count += 1 + Math.max(0, issue.duplicateCount || 0);
+      if (severityValue(issue.severity) > severityValue(existing.issue.severity)) {
+        existing.issue = issue;
+      }
+      continue;
+    }
+    groups.set(key, {
+      issue,
+      count: 1 + Math.max(0, issue.duplicateCount || 0)
+    });
+  }
+
+  return [...groups.values()]
+    .sort((left, right) => (
+      severityValue(right.issue.severity) - severityValue(left.issue.severity)
+        || right.count - left.count
+        || left.issue.ruleId.localeCompare(right.issue.ruleId)
+    ))
+    .slice(0, limit);
+}
+
+function renderQuickFindings(groups: QuickFindingGroup[]): string {
+  if (groups.length === 0) return `<p class="muted">No automated findings to prioritize.</p>`;
+  return `<ol class="quick-review-list">${groups.map(({ issue, count }) => {
     const target = issue.stateId ? ` href="#${escapeAttribute(issue.stateId)}"` : "";
     const label = issue.stateId ? `<a${target}>${escapeHtml(issue.ruleId)}</a>` : `<strong>${escapeHtml(issue.ruleId)}</strong>`;
     const level = [...new Set(issue.wcagCriteria.map((criterion) => criterion.level))].join("/");
+    const countText = count > 1
+      ? `<span class="focus-path-meta">${count} findings grouped</span>`
+      : "";
     return `<li class="quick-review-item quick-review-item-${issue.severity}">
       ${label} ${severityBadge(issue.severity)}
+      ${countText}
       <span class="focus-path-meta">${escapeHtml(issue.message)}</span>
       ${level ? `<span class="focus-path-meta">WCAG Level ${escapeHtml(level)}</span>` : ""}
     </li>`;
@@ -1813,7 +2013,8 @@ function renderKeyboardAudit(audit: KeyboardAuditResult): string {
   const attempts = audit.activationAttempts || [];
   return `<section class="panel" aria-label="Keyboard audit">
     <h2>Keyboard Audit</h2>
-    <p class="muted">Bounded Tab and Shift+Tab evidence. This supports review but does not replace complete keyboard task testing.</p>
+    <p class="muted">Bounded keyboard evidence for the first Tab path. Use this to spot invisible focus, obscured controls, keyboard traps, and unexpected focus order.</p>
+    ${renderKeyboardReviewSummary(audit)}
     <div class="summary">
       ${metric("Focusable controls", audit.focusableCount)}
       ${metric("Forward steps", audit.steps.length)}
@@ -1823,7 +2024,7 @@ function renderKeyboardAudit(audit: KeyboardAuditResult): string {
     ${renderKeyboardFocusPath(audit.steps)}
     <details>
       <summary>Complete focus path data</summary>
-      <table>
+      <table aria-label="Complete keyboard focus path">
         <thead><tr><th>Step</th><th>Direction</th><th>Target</th><th>Role</th><th>Name</th><th>Indicator</th><th>Obscured</th></tr></thead>
         <tbody>${[...audit.steps, ...audit.backwardSteps].map((step) => `<tr>
           <td>${step.index}</td><td>${escapeHtml(step.direction)}</td><td><code>${escapeHtml(step.selector)}</code></td>
@@ -1832,11 +2033,39 @@ function renderKeyboardAudit(audit: KeyboardAuditResult): string {
         </tr>`).join("") || '<tr><td colspan="7">No focus steps recorded.</td></tr>'}</tbody>
       </table>
     </details>
-    ${attempts.length > 0 ? `<details><summary>Activation evidence</summary><table>
+    ${attempts.length > 0 ? `<details><summary>Activation evidence</summary><table aria-label="Keyboard activation evidence">
       <thead><tr><th>Key</th><th>Target</th><th>Role</th><th>Outcome</th><th>Reason or focus after</th></tr></thead>
       <tbody>${attempts.map((attempt) => `<tr><td>${escapeHtml(attempt.key)}</td><td><code>${escapeHtml(attempt.selector)}</code></td><td>${escapeHtml(attempt.role)}</td><td>${escapeHtml(attempt.outcome)}</td><td>${escapeHtml(attempt.reason || attempt.focusAfter || "none")}</td></tr>`).join("")}</tbody>
     </table></details>` : ""}
   </section>`;
+}
+
+function renderKeyboardReviewSummary(audit: KeyboardAuditResult): string {
+  const risks = audit.steps.filter((step) => keyboardStepRisks(step).length > 0);
+  const cycleStatus = audit.completedCycle
+    ? ["Tab cycle reached the start again", "No obvious keyboard trap in bounded traversal", false] as const
+    : ["Tab cycle incomplete", `Traversal stopped before returning to the start within ${audit.maxTabs} Tab presses`, true] as const;
+  const reverseStatus = audit.reverseOrderMatches === null
+    ? ["Reverse order not checked", "Run Shift+Tab review manually for complex widgets", true] as const
+    : audit.reverseOrderMatches
+      ? ["Shift+Tab order matches", "Forward and reverse traversal were consistent", false] as const
+      : ["Shift+Tab order mismatch", "Review whether backward focus order is logical", true] as const;
+  const visibilityStatus = risks.length === 0
+    ? ["Focus visibility looks ok", "No invisible or obscured focus steps were detected", false] as const
+    : [`${risks.length} focus step${risks.length === 1 ? "" : "s"} need review`, "Check orange steps in the visual Tab order below", true] as const;
+
+  return `<div class="keyboard-summary-grid" aria-label="Keyboard review summary">
+    ${keyboardReviewCard(visibilityStatus[0], visibilityStatus[1], visibilityStatus[2])}
+    ${keyboardReviewCard(cycleStatus[0], cycleStatus[1], cycleStatus[2])}
+    ${keyboardReviewCard(reverseStatus[0], reverseStatus[1], reverseStatus[2])}
+  </div>`;
+}
+
+function keyboardReviewCard(title: string, detail: string, warning: boolean): string {
+  return `<div class="keyboard-review-card${warning ? " keyboard-review-card-warning" : ""}">
+    <strong>${escapeHtml(title)}</strong>
+    <span>${escapeHtml(detail)}</span>
+  </div>`;
 }
 
 function renderKeyboardFocusPath(steps: KeyboardAuditResult["steps"]): string {
@@ -1846,11 +2075,7 @@ function renderKeyboardFocusPath(steps: KeyboardAuditResult["steps"]): string {
 
   const visibleSteps = steps.slice(0, 20);
   const items = visibleSteps.map((step, index) => {
-    const risks = [
-      !step.indicatorVisible ? "focus indicator not detected" : "",
-      step.obscured ? "control may be obscured" : "",
-      !step.visible ? "control is not visibly rendered" : ""
-    ].filter(Boolean);
+    const risks = keyboardStepRisks(step);
     const className = risks.length > 0 ? "focus-path-item focus-path-item-risk" : "focus-path-item";
     const name = step.accessibleName || step.selector || "Unnamed control";
     const role = step.role || step.tagName || "control";
@@ -1860,7 +2085,7 @@ function renderKeyboardFocusPath(steps: KeyboardAuditResult["steps"]): string {
       <span class="visually-hidden">Tab step ${index + 1}: </span>
       <span class="focus-path-name">${escapeHtml(name)}</span>
       <span class="focus-path-meta">${escapeHtml(role)}</span>
-      ${risks.length > 0 ? `<span class="focus-path-meta">Review: ${escapeHtml(risks.join("; "))}</span>` : ""}
+      ${risks.length > 0 ? `<span class="focus-path-risk-list">${risks.map((risk) => `<span class="focus-path-risk">${escapeHtml(risk)}</span>`).join("")}</span>` : ""}
     </li>`;
   }).join("");
   const truncated = steps.length > visibleSteps.length
@@ -1873,6 +2098,14 @@ function renderKeyboardFocusPath(steps: KeyboardAuditResult["steps"]): string {
     <ol class="focus-path">${items}</ol>
     ${truncated}
   </div>`;
+}
+
+function keyboardStepRisks(step: KeyboardAuditResult["steps"][number]): string[] {
+  return [
+    !step.indicatorVisible ? "Focus not visible" : "",
+    step.obscured ? "Obscured" : "",
+    !step.visible ? "Not visibly rendered" : ""
+  ].filter(Boolean);
 }
 
 function renderCoverageMatrix(
@@ -1935,7 +2168,7 @@ function renderCoverageMatrix(
     ${renderCoverageLegend(stateCounts)}
     <p class="coverage-progress" data-coverage-progress aria-live="polite"></p>
     <div class="coverage-table-wrap">
-      <table class="coverage-table">
+      <table class="coverage-table" aria-label="Audit coverage matrix">
         <thead><tr><th scope="col">Review</th><th scope="col">Area</th><th scope="col">Evidence state</th><th scope="col">Status</th><th scope="col">Findings</th><th scope="col">Evidence or next step</th></tr></thead>
         <tbody>${orderedRows.join("\n")}</tbody>
       </table>
@@ -2014,9 +2247,10 @@ function renderManualChecklist(checklist: ManualChecklist): string {
   return `<section class="panel" aria-label="Manual review checklist">
     <h2>Manual Review Checklist</h2>
     <p class="muted">Automated checks cover only part of accessibility. ${targetedItems > 0 ? `${targetedItems} review area${targetedItems === 1 ? " has" : "s have"} observed targets from this audit.` : "Choose representative targets for the areas below."} Record human review evidence and outcomes.</p>
+    <p class="manual-checklist-progress" data-manual-checklist-progress>Manual checks remaining: ${checklist.items.length} of ${checklist.items.length}.</p>
     ${renderManualEnvironmentTemplate()}
-    ${checklist.items.map((item) => `<details>
-      <summary>${escapeHtml(item.title)} (${escapeHtml(item.wcag.join(", "))})${item.targets?.length ? ` — ${item.targets.length} target${item.targets.length === 1 ? "" : "s"}` : ""}</summary>
+    ${checklist.items.map((item) => `<details class="manual-checklist-item" data-manual-checklist-item="${escapeAttribute(item.id)}">
+      <summary><input type="checkbox" aria-label="Mark ${escapeAttribute(item.title)} as reviewed" data-manual-checklist-checkbox> <span>${escapeHtml(item.title)} (${escapeHtml(item.wcag.join(", "))})${item.targets?.length ? ` — ${item.targets.length} target${item.targets.length === 1 ? "" : "s"}` : ""}</span></summary>
       <p>${escapeHtml(item.whyManual)}</p>
       ${renderManualTargets(item.targets)}
       <ol>${item.steps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}</ol>
@@ -2089,12 +2323,10 @@ function renderState(state: StateViewModel): string {
     <div class="badges">
       ${issueBadges}
       ${state.colorScheme ? `<span class="badge">${escapeHtml(state.colorScheme)} color scheme</span>` : ""}
-      ${state.screenshotFullPage ? `<span class="badge">full-page evidence</span>` : ""}
       ${state.screenshotEvidence?.some((evidence) => evidence.kind === "evidence-crop")
         ? `<span class="badge">${state.screenshotEvidence.length} focused evidence capture${state.screenshotEvidence.length === 1 ? "" : "s"}</span>`
         : ""}
       ${state.visualDuplicateOf ? `<span class="badge">visual reused from ${escapeHtml(state.visualDuplicateOf)}</span>` : ""}
-      <span class="badge">${state.actionCount} actions queued</span>
     </div>
     ${renderIssues(state.issues)}
     ${renderAccessibilityTreeEvidence(state)}
@@ -2123,9 +2355,7 @@ function renderCompactState(state: StateViewModel, stateSeverity: string, issueB
     <div class="state-compact-meta">
       <span class="badge">depth ${state.depth}</span>
       ${state.colorScheme ? `<span class="badge">${escapeHtml(state.colorScheme)} color scheme</span>` : ""}
-      ${state.screenshotFullPage ? `<span class="badge">full-page evidence</span>` : ""}
       ${state.visualDuplicateOf ? `<span class="badge">visual reused from ${escapeHtml(state.visualDuplicateOf)}</span>` : ""}
-      <span class="badge">${state.actionCount} actions queued</span>
     </div>
     <p class="muted">No automated findings in this state.</p>
   </div>
@@ -2145,7 +2375,7 @@ function renderDynamicAnnouncementEvidence(state: ExplorationState): string {
       ${metric("Meaningful updates", evidence.meaningfulUpdates)}
     </div>
     ${evidence.updates.length > 0
-      ? `<table><thead><tr><th>Region</th><th>Role</th><th>Politeness</th><th>Observed text</th></tr></thead><tbody>${evidence.updates.map((update) => `<tr><td><code>${escapeHtml(update.selector)}</code></td><td>${escapeHtml(update.role || "none")}</td><td>${escapeHtml(update.politeness)}</td><td>${escapeHtml(update.text || "empty")}</td></tr>`).join("")}</tbody></table>`
+      ? `<table aria-label="Dynamic announcement updates"><thead><tr><th>Region</th><th>Role</th><th>Politeness</th><th>Observed text</th></tr></thead><tbody>${evidence.updates.map((update) => `<tr><td><code>${escapeHtml(update.selector)}</code></td><td>${escapeHtml(update.role || "none")}</td><td>${escapeHtml(update.politeness)}</td><td>${escapeHtml(update.text || "empty")}</td></tr>`).join("")}</tbody></table>`
       : '<p class="muted">No aria-live, alert, or status mutation was observed for this action.</p>'}
     <p class="muted">DOM mutation evidence does not prove how or when a supported screen reader announces the update.</p>
   </details>`;
@@ -2165,7 +2395,7 @@ function renderFormErrorEvidence(state: ExplorationState): string {
       ${metric("Error summaries", evidence.errorSummaryCount)}
     </div>
     ${evidence.invalidFields.length > 0
-      ? `<table><thead><tr><th>Field</th><th>Name</th><th>Error references</th><th>Exposed error text</th><th>Focused</th></tr></thead><tbody>${evidence.invalidFields.map((field) => `<tr><td><code>${escapeHtml(field.selector)}</code></td><td>${escapeHtml(field.accessibleName || "unnamed")}</td><td>${escapeHtml(field.errorReferenceIds.join(", ") || "none")}</td><td>${escapeHtml(field.associatedErrorText || "none")}</td><td>${field.focused ? "yes" : "no"}</td></tr>`).join("")}</tbody></table>`
+      ? `<table aria-label="Form error evidence fields"><thead><tr><th>Field</th><th>Name</th><th>Error references</th><th>Exposed error text</th><th>Focused</th></tr></thead><tbody>${evidence.invalidFields.map((field) => `<tr><td><code>${escapeHtml(field.selector)}</code></td><td>${escapeHtml(field.accessibleName || "unnamed")}</td><td>${escapeHtml(field.errorReferenceIds.join(", ") || "none")}</td><td>${escapeHtml(field.associatedErrorText || "none")}</td><td>${field.focused ? "yes" : "no"}</td></tr>`).join("")}</tbody></table>`
       : '<p class="muted">No fields with explicit <code>aria-invalid="true"</code> were rendered in this state.</p>'}
     <p class="muted">The audit does not submit forms or enter personal data. Review message quality, focus movement, error summaries, and correction workflows manually.</p>
   </details>`;
@@ -2184,7 +2414,7 @@ function renderImageAlternativeEvidence(state: ExplorationState): string {
       ${metric("Repeated-alt groups", evidence.repeatedAlternativeGroups)}
     </div>
     ${evidence.samples.length > 0
-      ? `<table><thead><tr><th>Image</th><th>Current alternative</th><th>Review reasons</th></tr></thead><tbody>${evidence.samples.map((sample) => `<tr><td><code>${escapeHtml(sample.selector)}</code></td><td>${escapeHtml(sample.alt)}</td><td>${escapeHtml(sample.concerns.join(", "))}${sample.repeatedCount ? ` (${sample.repeatedCount} uses)` : ""}</td></tr>`).join("")}</tbody></table>`
+      ? `<table aria-label="Image alternative text evidence"><thead><tr><th>Image</th><th>Current alternative</th><th>Review reasons</th></tr></thead><tbody>${evidence.samples.map((sample) => `<tr><td><code>${escapeHtml(sample.selector)}</code></td><td>${escapeHtml(sample.alt)}</td><td>${escapeHtml(sample.concerns.join(", "))}${sample.repeatedCount ? ` (${sample.repeatedCount} uses)` : ""}</td></tr>`).join("")}</tbody></table>`
       : '<p class="muted">No deterministic alternative-text quality pattern was detected.</p>'}
     <p class="muted">These are medium-confidence review signals. Only a person can decide whether an image is informative, decorative, or accurately described in context.</p>
   </details>`;
@@ -2204,7 +2434,7 @@ function renderMediaEvidence(state: ExplorationState): string {
       ${metric("Active animations", evidence.activeAnimationCount)}
     </div>
     ${evidence.elements.length > 0
-      ? `<table><thead><tr><th>Element</th><th>Kind</th><th>Captions</th><th>Transcript candidate</th><th>Autoplay</th><th>Muted</th><th>Controls</th></tr></thead><tbody>${evidence.elements.map((element) => `<tr><td><code>${escapeHtml(element.selector)}</code></td><td>${element.kind}</td><td>${element.captionTrackCount}</td><td>${element.transcriptCandidate ? "yes" : "no"}</td><td>${element.autoplay ? "yes" : "no"}</td><td>${element.muted ? "yes" : "no"}</td><td>${element.controls ? "yes" : "no"}</td></tr>`).join("")}</tbody></table>`
+      ? `<table aria-label="Media and motion evidence elements"><thead><tr><th>Element</th><th>Kind</th><th>Captions</th><th>Transcript candidate</th><th>Autoplay</th><th>Muted</th><th>Controls</th></tr></thead><tbody>${evidence.elements.map((element) => `<tr><td><code>${escapeHtml(element.selector)}</code></td><td>${element.kind}</td><td>${element.captionTrackCount}</td><td>${element.transcriptCandidate ? "yes" : "no"}</td><td>${element.autoplay ? "yes" : "no"}</td><td>${element.muted ? "yes" : "no"}</td><td>${element.controls ? "yes" : "no"}</td></tr>`).join("")}</tbody></table>`
       : '<p class="muted">No rendered audio or video elements were observed.</p>'}
     <p class="muted">Reduced-motion CSS query detected: ${evidence.reducedMotionQueryDetected ? "yes" : "no"}. Unreadable cross-origin stylesheets: ${evidence.unreadableStylesheetCount}. Caption, transcript, audio-description, motion, and flashing quality require human review.</p>
   </details>`;
@@ -2223,8 +2453,8 @@ function renderEmbeddedContentEvidence(state: ExplorationState): string {
       ${metric("Canvas elements", evidence.canvasCount)}
       ${metric("Canvas alternative gaps", evidence.canvasWithoutAlternativeCount, evidence.canvasWithoutAlternativeCount > 0 ? "warning" : undefined)}
     </div>
-    ${evidence.iframes.length > 0 ? `<h4>Frames</h4><table><thead><tr><th>Frame</th><th>Document</th><th>Origin</th><th>Title</th><th>DOM coverage</th></tr></thead><tbody>${evidence.iframes.map((frame) => `<tr><td><code>${escapeHtml(frame.selector)}</code></td><td>${escapeHtml(frame.url)}</td><td>${frame.sameOrigin ? "same" : "cross"}</td><td>${escapeHtml(frame.title || "missing")}</td><td>${frame.browserAccessible ? "available" : "unavailable"}</td></tr>`).join("")}</tbody></table>` : ""}
-    ${evidence.canvases.length > 0 ? `<h4>Canvas</h4><table><thead><tr><th>Canvas</th><th>Size</th><th>Decorative</th><th>Accessible alternative</th></tr></thead><tbody>${evidence.canvases.map((canvas) => `<tr><td><code>${escapeHtml(canvas.selector)}</code></td><td>${canvas.width} x ${canvas.height}</td><td>${canvas.decorative ? "yes" : "no"}</td><td>${canvas.hasAccessibleAlternative ? "detected" : "not detected"}</td></tr>`).join("")}</tbody></table>` : ""}
+    ${evidence.iframes.length > 0 ? `<h4>Frames</h4><table aria-label="Iframe evidence"><thead><tr><th>Frame</th><th>Document</th><th>Origin</th><th>Title</th><th>DOM coverage</th></tr></thead><tbody>${evidence.iframes.map((frame) => `<tr><td><code>${escapeHtml(frame.selector)}</code></td><td>${escapeHtml(frame.url)}</td><td>${frame.sameOrigin ? "same" : "cross"}</td><td>${escapeHtml(frame.title || "missing")}</td><td>${frame.browserAccessible ? "available" : "unavailable"}</td></tr>`).join("")}</tbody></table>` : ""}
+    ${evidence.canvases.length > 0 ? `<h4>Canvas</h4><table aria-label="Canvas evidence"><thead><tr><th>Canvas</th><th>Size</th><th>Decorative</th><th>Accessible alternative</th></tr></thead><tbody>${evidence.canvases.map((canvas) => `<tr><td><code>${escapeHtml(canvas.selector)}</code></td><td>${canvas.width} x ${canvas.height}</td><td>${canvas.decorative ? "yes" : "no"}</td><td>${canvas.hasAccessibleAlternative ? "detected" : "not detected"}</td></tr>`).join("")}</tbody></table>` : ""}
     <p class="muted">Modern axe scans accessible frame documents recursively. Unavailable frames need a separate audit. Canvas pixels are not interpreted, so meaningful graphics still require contextual human review.</p>
   </details>`;
 }
@@ -2238,7 +2468,7 @@ function renderModalFocusEvidence(state: ExplorationState): string {
 
   return `<details>
     <summary>Modal focus evidence</summary>
-    <table>
+    <table aria-label="Modal focus evidence">
       <tbody>
         <tr><th scope="row">Dialog</th><td><code>${escapeHtml(modal.dialogSelector)}</code></td></tr>
         <tr><th scope="row">Modal semantics</th><td>${modal.isModal ? "modal" : "non-modal or not declared"}</td></tr>
@@ -2384,6 +2614,7 @@ function renderAnnotatedScreenshotView(
   screenshotTargetId: string
 ): string {
   return `<div class="screenshot-lightbox" id="${escapeAttribute(screenshotTargetId)}" role="dialog" aria-label="Annotated screenshot for ${escapeAttribute(state.id)}">
+    <a class="screenshot-lightbox-backdrop" href="#${escapeAttribute(state.id)}" aria-label="Close annotated screenshot"></a>
     <div class="screenshot-lightbox-inner">
       <div class="lightbox-header">
         <div>
@@ -2515,7 +2746,6 @@ function renderTopStates(states: StateViewModel[]): string {
       return `<li class="triage-item">
         <div class="triage-title">
           <a href="#${escapeAttribute(state.id)}"><strong>${escapeHtml(state.id)}</strong></a>
-          <span class="badge">score ${state.severityScore}</span>
         </div>
         <div class="url">${escapeHtml(state.url)}</div>
         <div class="badges">
@@ -2539,7 +2769,6 @@ function renderTopRules(issues: DedupedIssue[]): string {
     ${ruleSummaries.map((rule) => `<li class="triage-item">
       <div class="triage-title">
         <code>${escapeHtml(rule.ruleId)}</code>
-        <span class="badge">score ${rule.severityScore}</span>
       </div>
       <div class="badges">
         ${findingTypeBadge(rule.findingType)}
@@ -2565,10 +2794,7 @@ function renderIssues(issues: DedupedIssue[]): string {
     groups.set(issue.ruleId, current);
   }
 
-  const rankedGroups = [...groups.entries()].sort((left, right) => {
-    const scoreDifference = sumSeverityScore(right[1]) - sumSeverityScore(left[1]);
-    return scoreDifference || right[1].length - left[1].length || left[0].localeCompare(right[0]);
-  });
+  const rankedGroups = [...groups.entries()].sort(compareIssueGroupEntries);
   const visibleGroups = rankedGroups.slice(0, 8);
   const remainingGroups = rankedGroups.slice(8);
 
@@ -2591,28 +2817,29 @@ function renderNonVisualIssues(issues: DedupedIssue[]): string {
 }
 
 function renderStateIssueGroup(ruleId: string, issues: DedupedIssue[]): string {
-  const summary = summarizeIssues(issues);
-  const colorSchemes = [...new Set(issues.map((issue) => issue.colorScheme).filter(Boolean))];
-  const criteria = uniqueWcagCriteria(issues);
+  const sortedIssues = [...issues].sort(compareIssuesForTriage);
+  const summary = summarizeIssues(sortedIssues);
+  const colorSchemes = [...new Set(sortedIssues.map((issue) => issue.colorScheme).filter(Boolean))];
+  const criteria = uniqueWcagCriteria(sortedIssues);
   const levels = [...new Set(criteria.map((criterion) => criterion.level))];
-  const findingTypes = [...new Set(issues.map((issue) => issue.findingType))];
-  const ownershipLabels = [...new Set(issues.map((issue) => issue.ownership?.label).filter(Boolean))];
+  const findingTypes = [...new Set(sortedIssues.map((issue) => issue.findingType))];
+  const ownershipLabels = [...new Set(sortedIssues.map((issue) => issue.ownership?.label).filter(Boolean))];
   const occurrences = `<ul class="finding-occurrences">
-    ${issues.map((issue) => `<li class="finding-occurrence">
-      ${issues.length > 1 ? `<div>${severityBadge(issue.severity)} ${findingTypeBadge(issue.findingType)}</div>` : ""}
-      ${issues.length > 1 && issue.colorScheme ? `<div class="badges"><span class="badge">${escapeHtml(issue.colorScheme)} color scheme</span></div>` : ""}
+    ${sortedIssues.map((issue) => `<li class="finding-occurrence">
+      ${sortedIssues.length > 1 ? `<div>${severityBadge(issue.severity)} ${findingTypeBadge(issue.findingType)}</div>` : ""}
+      ${sortedIssues.length > 1 && issue.colorScheme ? `<div class="badges"><span class="badge">${escapeHtml(issue.colorScheme)} color scheme</span></div>` : ""}
       <div>${escapeHtml(issue.message)}</div>
       ${issue.selector || issue.file ? `<div class="url">${escapeHtml(issue.selector || issue.file || "")}</div>` : ""}
       ${renderOwnership(issue)}
       ${renderHumanVerificationContext(issue)}
-      ${issues.length > 1 ? "" : renderContrastEvidence(issue)}
+      ${sortedIssues.length > 1 ? "" : renderContrastEvidence(issue)}
     </li>`).join("\n")}
   </ul>`;
 
   return `<li class="issue">
     <div class="triage-title">
       <code>${escapeHtml(ruleId)}</code>
-      ${issues.length > 1 ? `<span class="badge">${issues.length} occurrences</span>` : ""}
+      ${sortedIssues.length > 1 ? `<span class="badge">${sortedIssues.length} occurrences</span>` : ""}
     </div>
     <div class="badges">
       ${summary.critical ? badge("critical", `${summary.critical} critical`) : ""}
@@ -2620,16 +2847,16 @@ function renderStateIssueGroup(ruleId: string, issues: DedupedIssue[]): string {
       ${summary.info ? badge("info", `${summary.info} info`) : ""}
       ${findingTypes.map(findingTypeBadge).join("")}
       ${levels.map((level) => `<span class="badge">WCAG Level ${escapeHtml(level)}</span>`).join("")}
-      ${colorSchemes.map((scheme) => `<span class="badge">${escapeHtml(scheme)} color scheme</span>`).join("")}
+    ${colorSchemes.map((scheme) => `<span class="badge">${escapeHtml(scheme)} color scheme</span>`).join("")}
       ${ownershipLabels.map((label) => `<span class="badge">${escapeHtml(label || "")}</span>`).join("")}
     </div>
     ${renderWcagCriteria(criteria)}
-    ${issues.length > 1
-      ? `<details open><summary>Affected findings (${issues.length})</summary>${occurrences}</details>`
+    ${sortedIssues.length > 1
+      ? `<details open><summary>Affected findings (${sortedIssues.length})</summary>${occurrences}</details>`
       : occurrences}
-    ${renderCopyIssueAction(ruleId, issues)}
-    ${issues.length > 1 ? renderGroupedContrastGuidance(issues) : ""}
-    ${renderRemediation(issues[0])}
+    ${renderCopyIssueAction(ruleId, sortedIssues)}
+    ${sortedIssues.length > 1 ? renderGroupedContrastGuidance(sortedIssues) : ""}
+    ${renderRemediation(sortedIssues[0])}
   </li>`;
 }
 
@@ -2640,7 +2867,7 @@ function uniqueWcagCriteria(issues: DedupedIssue[]): DedupedIssue["wcagCriteria"
       if (!criteria.has(criterion.id)) criteria.set(criterion.id, criterion);
     }
   }
-  return [...criteria.values()];
+  return [...criteria.values()].sort(compareWcagCriteriaForTriage);
 }
 
 function renderWcagCriteria(criteria: DedupedIssue["wcagCriteria"]): string {
@@ -2872,67 +3099,6 @@ function renderColorSwatch(color: string): string {
   return `<span class="color-swatch" style="background-color: ${escapeAttribute(color)}" aria-hidden="true"></span>`;
 }
 
-function renderEdges(graph: ExplorationGraph): string {
-  if (graph.edges.length === 0) {
-    return `<details>
-      <summary>State transitions: 0</summary>
-      <p class="muted">No state transitions were recorded.</p>
-    </details>`;
-  }
-
-  const renderEdge = (edge: ExplorationGraph["edges"][number]): string => `<li class="edge">
-      <div><a href="#${escapeAttribute(edge.from)}">${escapeHtml(edge.from)}</a> -> <a href="#${escapeAttribute(edge.to)}">${escapeHtml(edge.to)}</a></div>
-      <div class="muted">${escapeHtml(edge.action.label)}</div>
-      ${edge.action.selector ? `<div><code>${escapeHtml(edge.action.selector)}</code></div>` : ""}
-    </li>`;
-  const visibleEdges = graph.edges.slice(0, 12);
-  const remainingEdges = graph.edges.slice(12);
-
-  return `<details>
-    <summary>State transitions: ${graph.edges.length}</summary>
-    <p class="muted">Transition details are mainly useful for debugging crawl coverage. Full data is available in <code>exploration-graph.json</code>.</p>
-    <ul class="edge-list">
-    ${visibleEdges.map(renderEdge).join("\n")}
-  </ul>
-  ${remainingEdges.length > 0 ? `<details>
-    <summary>Show ${remainingEdges.length} more transition${remainingEdges.length === 1 ? "" : "s"}</summary>
-    <ul class="edge-list">${remainingEdges.map(renderEdge).join("\n")}</ul>
-  </details>` : ""}
-  </details>`;
-}
-
-function renderSkippedActions(graph: ExplorationGraph): string {
-  const skippedActions = graph.skippedActions || [];
-
-  if (skippedActions.length === 0) {
-    return `<details>
-      <summary>Skipped actions: 0</summary>
-      <p class="muted">No skipped actions were recorded.</p>
-    </details>`;
-  }
-
-  const renderAction = (action: NonNullable<ExplorationGraph["skippedActions"]>[number]): string => `<li class="edge">
-      <div><a href="#${escapeAttribute(action.stateId)}">${escapeHtml(action.stateId)}</a>: ${escapeHtml(action.label)}</div>
-      <div class="muted">${escapeHtml(action.reason)}</div>
-      ${action.selector ? `<div><code>${escapeHtml(action.selector)}</code></div>` : ""}
-      ${action.url ? `<div class="url">${escapeHtml(action.url)}</div>` : ""}
-    </li>`;
-  const visibleActions = skippedActions.slice(0, 20);
-  const remainingActions = skippedActions.slice(20);
-
-  return `<details>
-    <summary>Skipped actions: ${skippedActions.length}</summary>
-    <p class="muted">Skipped actions are usually safety decisions, such as avoiding submit, payment, logout, or destructive controls.</p>
-    <ul class="edge-list">
-    ${visibleActions.map(renderAction).join("\n")}
-  </ul>
-  ${remainingActions.length > 0 ? `<details>
-    <summary>Show ${remainingActions.length} more skipped action${remainingActions.length === 1 ? "" : "s"}</summary>
-    <ul class="edge-list">${remainingActions.map(renderAction).join("\n")}</ul>
-  </details>` : ""}
-  </details>`;
-}
-
 function metric(label: string, value: number | string, severity?: Severity): string {
   const className = severity ? `metric metric-${severity}` : "metric";
 
@@ -2940,6 +3106,16 @@ function metric(label: string, value: number | string, severity?: Severity): str
     <strong>${escapeHtml(String(value))}</strong>
     <span>${escapeHtml(label)}</span>
   </div>`;
+}
+
+function formatDepthMetric(maxDepth: number): string {
+  return maxDepth === 1 ? "1 level" : `${maxDepth} levels`;
+}
+
+function formatDepthScope(maxDepth: number): string {
+  if (maxDepth === 0) return "start page only (depth 0)";
+  const levelLabel = maxDepth === 1 ? "1 interaction level" : `${maxDepth} interaction levels`;
+  return `${levelLabel} from the start page`;
 }
 
 function severityBadge(severity: Severity): string {
@@ -2984,9 +3160,61 @@ function severityValue(severity: Severity): number {
   return 1;
 }
 
+function wcagLevelRank(level?: string): number {
+  if (level === "A") return 1;
+  if (level === "AA") return 2;
+  if (level === "AAA") return 3;
+  return 99;
+}
+
+function issuePrimaryWcagLevelRank(issue: DedupedIssue): number {
+  const ranks = (issue.wcagCriteria || []).map((criterion) => wcagLevelRank(criterion.level));
+  return ranks.length > 0 ? Math.min(...ranks) : 99;
+}
+
+function compareIssuesForTriage(left: DedupedIssue, right: DedupedIssue): number {
+  const severityDifference = severityValue(right.severity) - severityValue(left.severity);
+  if (severityDifference) return severityDifference;
+  const levelDifference = issuePrimaryWcagLevelRank(left) - issuePrimaryWcagLevelRank(right);
+  if (levelDifference) return levelDifference;
+  return left.ruleId.localeCompare(right.ruleId)
+    || (left.selector || left.file || "").localeCompare(right.selector || right.file || "")
+    || left.message.localeCompare(right.message);
+}
+
+function compareIssueGroupEntries(
+  left: [string, DedupedIssue[]],
+  right: [string, DedupedIssue[]]
+): number {
+  const leftIssues = left[1];
+  const rightIssues = right[1];
+  const leftHighestSeverity = Math.max(...leftIssues.map((issue) => severityValue(issue.severity)));
+  const rightHighestSeverity = Math.max(...rightIssues.map((issue) => severityValue(issue.severity)));
+  const severityDifference = rightHighestSeverity - leftHighestSeverity;
+  if (severityDifference) return severityDifference;
+
+  const leftLevelRank = Math.min(...leftIssues.map(issuePrimaryWcagLevelRank));
+  const rightLevelRank = Math.min(...rightIssues.map(issuePrimaryWcagLevelRank));
+  const levelDifference = leftLevelRank - rightLevelRank;
+  if (levelDifference) return levelDifference;
+
+  const scoreDifference = sumSeverityScore(rightIssues) - sumSeverityScore(leftIssues);
+  return scoreDifference || rightIssues.length - leftIssues.length || left[0].localeCompare(right[0]);
+}
+
+function compareWcagCriteriaForTriage(
+  left: DedupedIssue["wcagCriteria"][number],
+  right: DedupedIssue["wcagCriteria"][number]
+): number {
+  return wcagLevelRank(left.level) - wcagLevelRank(right.level)
+    || left.id.localeCompare(right.id);
+}
+
 function summarizeRules(issues: DedupedIssue[]): Array<{
   ruleId: string;
   findingType: DedupedIssue["findingType"];
+  highestSeverity: Severity;
+  wcagLevelRank: number;
   critical: number;
   warning: number;
   info: number;
@@ -2997,6 +3225,8 @@ function summarizeRules(issues: DedupedIssue[]): Array<{
   const summaries = new Map<string, {
     ruleId: string;
     findingType: DedupedIssue["findingType"];
+    highestSeverity: Severity;
+    wcagLevelRank: number;
     critical: number;
     warning: number;
     info: number;
@@ -3009,6 +3239,8 @@ function summarizeRules(issues: DedupedIssue[]): Array<{
     const summary = summaries.get(issue.ruleId) || {
       ruleId: issue.ruleId,
       findingType: issue.findingType,
+      highestSeverity: issue.severity,
+      wcagLevelRank: issuePrimaryWcagLevelRank(issue),
       critical: 0,
       warning: 0,
       info: 0,
@@ -3019,6 +3251,10 @@ function summarizeRules(issues: DedupedIssue[]): Array<{
 
     summary[issue.severity] += 1;
     summary.severityScore += severityScore(issue.severity);
+    if (severityValue(issue.severity) > severityValue(summary.highestSeverity)) {
+      summary.highestSeverity = issue.severity;
+    }
+    summary.wcagLevelRank = Math.min(summary.wcagLevelRank, issuePrimaryWcagLevelRank(issue));
     if (issue.stateId) summary.states.add(issue.stateId);
     for (const criterion of issue.wcagCriteria || []) {
       summary.criteria.add(`WCAG ${criterion.id} ${criterion.title}, Level ${criterion.level}`);
@@ -3033,6 +3269,10 @@ function summarizeRules(issues: DedupedIssue[]): Array<{
       criteria: [...summary.criteria].sort()
     }))
     .sort((a, b) => {
+      const severityDifference = severityValue(b.highestSeverity) - severityValue(a.highestSeverity);
+      if (severityDifference) return severityDifference;
+      const levelDifference = a.wcagLevelRank - b.wcagLevelRank;
+      if (levelDifference) return levelDifference;
       if (b.severityScore !== a.severityScore) return b.severityScore - a.severityScore;
       const totalA = a.critical + a.warning + a.info;
       const totalB = b.critical + b.warning + b.info;

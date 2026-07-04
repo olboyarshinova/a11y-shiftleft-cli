@@ -33,6 +33,7 @@ interface ExploreOptions {
   framework?: string;
   url: string;
   depth?: string;
+  maxDepth?: string;
   limit?: string;
   actionsPerState?: string;
   out?: string;
@@ -89,6 +90,7 @@ export function registerExploreCommand(program: Command): void {
     .option("--framework <name>", "react, vue, angular, or auto")
     .requiredOption("--url <url>", "Start URL for UI exploration")
     .option("--depth <depth>", "Maximum interaction depth", "2")
+    .option("--max-depth <depth>", "Maximum interaction depth; clearer alias for --depth")
     .option("--limit <limit>", "Maximum UI states to scan", "20")
     .option("--actions-per-state <limit>", "Maximum safe actions to try per state", "8")
     .option("--out <dir>", "Output directory")
@@ -191,7 +193,7 @@ export function registerExploreCommand(program: Command): void {
         await cleanExploreArtifacts(effectiveConfig.outputDir);
       }
 
-      const maxDepth = toPositiveInteger(options.depth);
+      const maxDepth = toPositiveInteger(resolveDepthOption(options));
       const maxStates = toPositiveInteger(options.limit);
       const maxActionsPerState = toPositiveInteger(options.actionsPerState);
       const waitMs = toNonNegativeInteger(options.waitMs) ?? effectiveConfig.explore.waitMs;
@@ -338,6 +340,10 @@ export function registerExploreCommand(program: Command): void {
         process.exitCode = 1;
       }
     });
+}
+
+export function resolveDepthOption(options: Pick<ExploreOptions, "depth" | "maxDepth">): string | undefined {
+  return options.maxDepth ?? options.depth;
 }
 
 function toFramework(framework: string | undefined): Framework | undefined {

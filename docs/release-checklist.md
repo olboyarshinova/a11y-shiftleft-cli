@@ -123,7 +123,6 @@ Expected files:
 reports-smoke/exploration.html
 reports-smoke/exploration.pdf
 reports-smoke/a11y-report.json
-reports-smoke/a11y-findings.csv
 ```
 
 Verify ticket drafts:
@@ -176,7 +175,7 @@ Expected checks:
 ```txt
 reports-visual-smoke/exploration.html exists
 exploration.html contains "Open annotated screenshot"
-exploration.html contains "Exploration Details"
+exploration.html contains "exploration-graph.json" and "--raw"
 ```
 
 Verify safe-mode and PR-comment behavior:

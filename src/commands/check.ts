@@ -236,7 +236,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
     const adapterStartedAt = Date.now();
     for (const url of effectiveConfig.dynamic.urls) {
       try {
-        lighthouseResults.push(await runLighthouseAdapter({ url }));
+        lighthouseResults.push(await runLighthouseAdapter({ url, cwd: effectiveConfig.cwd }));
       } catch (error) {
         rawIssues.push(createCheckAdapterIssue(framework, url, "lighthouse", error));
       }
@@ -700,7 +700,7 @@ export function filterByWcagConformance(
 
 export function parseFormats(formats?: string[]): ReportFormat[] {
   if (!formats || formats.length === 0) {
-    return ["json", "csv", "markdown"];
+    return ["json", "markdown"];
   }
 
   const normalized = formats

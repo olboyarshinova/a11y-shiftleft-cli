@@ -18,6 +18,39 @@ a replacement for existing tools.
 - If a project already uses GitHub Actions, the CLI can generate or provide a
   reusable accessibility workflow.
 
+Compared with enterprise accessibility platforms, the project should emphasize
+the open-source and local-first niche: no SaaS account is required, reports and
+screenshots stay in the user's workspace by default, and CI can upload visual
+HTML reports as normal build artifacts. Enterprise tools can offer broader
+governance, training, and hosted dashboards; this CLI should win on fast setup,
+transparent evidence, reproducible reports, and practical pull request feedback.
+
+### Differentiation Against Enterprise Platforms
+
+The project should not try to out-enterprise established accessibility
+platforms. It can be better for individual developers, small teams, open-source
+projects, and early CI adoption by focusing on:
+
+- one-command setup with no account, sales call, or hosted dashboard required;
+- visual HTML reports by default instead of dashboard-first workflows;
+- local-first privacy for screenshots, DOM evidence, URLs, and reports;
+- open-source transparency for severity, confidence, WCAG mapping, and known
+  coverage gaps;
+- "fix first" guidance that combines severity, confidence, user impact,
+  affected states, repeated components, and third-party ownership;
+- no-SaaS CI/CD workflows with uploaded artifacts, short PR comments, baseline
+  mode, and gates that fail only on new critical issues;
+- frontend-friendly documentation with small copy-paste examples, screenshots,
+  before/after fixes, and honest notes about manual checks.
+
+The clearest positioning statement is:
+
+```txt
+Enterprise platforms help organizations manage accessibility programs.
+a11y-shiftleft-cli helps developers see where the UI breaks and what to fix
+first, using local visual evidence they can run in a pull request.
+```
+
 ## Near-Term Adoption Channels
 
 ### One-Line npm Scripts
@@ -53,6 +86,19 @@ npx a11y-shiftleft ci \
 ```
 
 This is more reliable than asking users to hand-write workflow YAML.
+
+Next steps for CI/CD adoption:
+
+- Add a "report-only" starter workflow for teams that want visibility before
+  blocking builds.
+- Add a "new critical only" workflow that combines baseline mode with a
+  critical gate for legacy applications.
+- Upload `a11y-report.html`, JSON, Markdown, screenshots, and
+  `evaluation-scope.json` as CI artifacts.
+- Keep pull request comments short and link to the uploaded visual report
+  artifact instead of pasting every finding into the PR.
+- Add GitLab CI, CircleCI, Jenkins, and generic shell examples after the GitHub
+  workflow remains stable across several releases.
 
 ### Documentation Website
 
@@ -105,6 +151,23 @@ Publish a short case study from the demo app or a consenting real project:
 | Automated-only scan | Manual-review checklist generated for follow-up |
 
 This should be written as engineering evidence, not marketing copy.
+
+Include audit-trail details in case studies: CLI version, date, commit SHA,
+target URL, explored states, selected quality gate, generated artifacts, and
+which checks remained manual. This makes the evidence credible without implying
+automated WCAG certification.
+
+Create one case study around a familiar developer pain point:
+
+```txt
+Lighthouse reported a strong accessibility score, but the visual audit still
+found practical UI risks: modal naming, keyboard order, reflow evidence, or
+third-party embedded content requiring review.
+```
+
+This should explain the difference between score-oriented checks and
+state/evidence-oriented review without positioning the project as a replacement
+for Lighthouse or axe.
 
 ### Copy-Paste Recipes
 

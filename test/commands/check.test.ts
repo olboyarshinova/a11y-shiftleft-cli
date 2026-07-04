@@ -97,8 +97,8 @@ test("shouldFail uses only new findings in retest mode", () => {
   }, "warning"), true);
 });
 
-test("parseFormats defaults to all report formats", () => {
-  assert.deepEqual(parseFormats(), ["json", "csv", "markdown"]);
+test("parseFormats defaults to compact report formats", () => {
+  assert.deepEqual(parseFormats(), ["json", "markdown"]);
   assert.deepEqual(parseFormats(["all"]), ["json", "csv", "markdown"]);
 });
 
