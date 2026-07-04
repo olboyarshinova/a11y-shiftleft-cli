@@ -53,6 +53,9 @@ On Linux use `xdg-open reports/a11y-report.html`. On Windows PowerShell use
 The command saves screenshots while it runs. Wait for the terminal to print the
 final `Open:` path before reviewing the report.
 
+Reports are written locally. If your app may show private data, run with
+`--no-screenshots`.
+
 Optional: after the first local audit works, generate a GitHub Actions workflow:
 
 ```bash
@@ -71,19 +74,26 @@ npx a11y-shiftleft-cli ci --url http://localhost:5173 --start-command "npm run d
 
 This is the main output of `audit`:
 
-[![Demo audit report showing summary metrics, quick review, and evaluation scope](docs/assets/demo-report-overview.png)](docs/assets/demo-report-overview.png)
+<a href="docs/assets/demo-report-overview.png">
+  <img src="docs/assets/demo-report-overview.png" width="720" alt="Demo audit report showing summary metrics, quick review, and evaluation scope">
+</a>
 
-[![Demo audit report showing the audit coverage table with automated and manual review checks](docs/assets/demo-report-coverage.png)](docs/assets/demo-report-coverage.png)
+<a href="docs/assets/demo-report-coverage.png">
+  <img src="docs/assets/demo-report-coverage.png" width="720" alt="Demo audit report showing the audit coverage table with automated and manual review checks">
+</a>
 
-[![Demo audit report showing explored UI states, screenshots, WCAG labels, and collapsed fix guidance](docs/assets/demo-report-states.png)](docs/assets/demo-report-states.png)
+<a href="docs/assets/demo-report-states.png">
+  <img src="docs/assets/demo-report-states.png" width="720" alt="Demo audit report showing explored UI states, screenshots, WCAG labels, and collapsed fix guidance">
+</a>
 
-## Which Command Should I Use?
+## Common Commands
 
 Start with `audit`. Use `check` later for faster CI/PR checks.
 
 | Need | Command |
 |---|---|
 | First local review | `npx a11y-shiftleft-cli audit --url http://localhost:5173 --out reports --open` |
+| Broader local scan | `npx a11y-shiftleft-cli audit --url http://localhost:5173 --max-depth 3 --limit 50 --out reports` |
 | Fast CI or PR check | `npx a11y-shiftleft-cli check --dynamic --url http://localhost:5173 --out reports` |
 | Diagnose setup problems | `npx a11y-shiftleft-cli doctor --url http://localhost:5173` |
 | Add config and report paths to `.gitignore` | `npx a11y-shiftleft-cli init --framework auto --gitignore` |
@@ -132,13 +142,16 @@ The CLI orchestrates established tools instead of replacing their rule engines:
   and Angular.
 - [Lighthouse](https://developer.chrome.com/docs/lighthouse/overview/) can be
   enabled with `--with-lighthouse` when teams want its familiar accessibility
-  score alongside detailed findings.
+  score alongside detailed findings. Install `lighthouse` first when you want
+  to use that option.
 
 ## Coverage And Limits
 
 - Automated reports do not certify full WCAG, ADA, or Section 508 conformance.
 - Use the report with manual keyboard, screen-reader, content, and task-flow
   review.
+- It does not replace a full manual WCAG audit, but helps teams find and
+  document issues earlier.
 - Some public websites block automated scans with bot detection or CAPTCHA.
 - Third-party embeds such as YouTube, Vimeo, Spotify, Google Maps, and CodePen
   are marked separately when ownership can be detected.
@@ -159,6 +172,7 @@ In another terminal:
 
 ```bash
 nvm use
+npm run build
 node bin/cli.js audit --url http://localhost:5173 --out reports
 ```
 
