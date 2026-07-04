@@ -5,6 +5,7 @@ import {
   analyzeImageAlternativeEvidence,
   analyzeMediaEvidence,
   createFormErrorIssues,
+  createForcedColorsIssues,
   createImageAlternativeIssues,
   createMediaIssues,
   createModalFocusIssues,
@@ -481,6 +482,42 @@ test("normalizeReflowOverflow ignores small layout bleed but preserves meaningfu
   assert.equal(normalizeReflowOverflow(8), 0);
   assert.equal(normalizeReflowOverflow(16), 0);
   assert.equal(normalizeReflowOverflow(17), 17);
+});
+
+test("createForcedColorsIssues keeps high-contrast findings heuristic and mapped", () => {
+  const issues = createForcedColorsIssues("react", "http://localhost:3000", {
+    stateId: "state-1",
+    stateLabel: "Initial page",
+    colorScheme: undefined
+  }, {
+    supported: true,
+    controlsChecked: 2,
+    focusRiskCount: 1,
+    backgroundImageRiskCount: 1,
+    svgColorRiskCount: 0,
+    forcedColorAdjustNoneCount: 0,
+    samples: [{
+      selector: "#save",
+      concern: "focus-indicator",
+      label: "Save",
+      detail: "No outline, border, or shadow focus indicator was detected while forced-colors was active."
+    }, {
+      selector: ".hero-icon",
+      concern: "background-image",
+      label: "Success",
+      detail: "Meaningful text, role, or accessible name was found on an element that relies on a CSS background image."
+    }]
+  });
+
+  assert.deepEqual(issues.map((issue) => issue.ruleId), [
+    "forced-colors-focus-indicator-risk",
+    "forced-colors-background-image-risk"
+  ]);
+  assert.equal(issues[0].severity, "warning");
+  assert.equal(issues[1].severity, "info");
+  assert.equal(issues[0].confidence, "low");
+  assert.equal(issues[0].findingType, "best-practice");
+  assert.deepEqual(issues[0].wcag, ["2.4.7", "2.4.11"]);
 });
 
 test("isThemeAction recognizes common theme toggles", () => {

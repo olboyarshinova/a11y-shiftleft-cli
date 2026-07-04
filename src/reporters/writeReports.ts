@@ -899,6 +899,8 @@ function formatCoverageMatrix(report: A11yReport): string {
   const formStates = report.exploration?.states.filter((state) => state.formErrors) || [];
   const invalidFields = formStates.reduce((total, state) => total + (state.formErrors?.invalidFieldCount || 0), 0);
   const unassociatedInvalidFields = formStates.reduce((total, state) => total + (state.formErrors?.unassociatedInvalidCount || 0), 0);
+  const forcedColorStates = report.exploration?.states.filter((state) => state.forcedColors) || [];
+  const forcedColorSamples = forcedColorStates.reduce((total, state) => total + (state.forcedColors?.samples.length || 0), 0);
   const imageStates = report.exploration?.states.filter((state) => state.imageAlternatives) || [];
   const suspiciousImages = imageStates.reduce((total, state) => total + (state.imageAlternatives?.suspiciousCount || 0), 0);
   const mediaStates = report.exploration?.states.filter((state) => state.media) || [];
@@ -916,6 +918,7 @@ function formatCoverageMatrix(report: A11yReport): string {
 | Static source analysis | Configuration-dependent | Install the adapter for the detected framework |
 | Keyboard traversal | ${report.keyboard ? "Bounded evidence collected" : "Not included"} | ${report.keyboard ? `${report.keyboard.steps.length} forward focus steps` : "Run audit without --no-keyboard"} |
 | Reflow at 400% (320 CSS px simulation) | ${reflowCount > 0 ? "Heuristic evidence collected" : "Not included"} | ${reflowCount} rendered state${reflowCount === 1 ? "" : "s"} checked for overflow and clipped text |
+| Forced colors / high contrast | ${forcedColorStates.length > 0 ? "Heuristic evidence collected" : "Not included"} | ${forcedColorStates.length} rendered state${forcedColorStates.length === 1 ? "" : "s"} checked; ${forcedColorSamples} review signal${forcedColorSamples === 1 ? "" : "s"} collected |
 | Modal focus behavior | ${modalCount > 0 ? "Heuristic evidence collected" : "No opened modal observed"} | ${modalCount} state${modalCount === 1 ? "" : "s"} checked for name, initial focus, Escape, and restoration |
 | Dynamic announcements | ${announcementStates.length > 0 ? "Mutation evidence collected" : "No action evidence"} | ${announcementUpdates} meaningful live-region update${announcementUpdates === 1 ? "" : "s"} observed after ${announcementStates.length} action${announcementStates.length === 1 ? "" : "s"} |
 | Form error states | ${formStates.length > 0 ? "Rendered-state evidence collected" : "No forms observed"} | ${invalidFields} explicit invalid field${invalidFields === 1 ? "" : "s"}; ${unassociatedInvalidFields} without an exposed associated error |

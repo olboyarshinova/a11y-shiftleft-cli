@@ -2178,6 +2178,9 @@ function renderCoverageMatrix(
   const formStates = graph.states.filter((state) => state.formErrors);
   const invalidFields = formStates.reduce((total, state) => total + (state.formErrors?.invalidFieldCount || 0), 0);
   const unassociatedInvalidFields = formStates.reduce((total, state) => total + (state.formErrors?.unassociatedInvalidCount || 0), 0);
+  const forcedColorStates = graph.states.filter((state) => state.forcedColors);
+  const forcedColorSamples = forcedColorStates.reduce((total, state) => total + (state.forcedColors?.samples.length || 0), 0);
+  const forcedColorUnsupported = forcedColorStates.some((state) => state.forcedColors?.supported === false);
   const imageStates = graph.states.filter((state) => state.imageAlternatives);
   const suspiciousImages = imageStates.reduce((total, state) => total + (state.imageAlternatives?.suspiciousCount || 0), 0);
   const mediaStates = graph.states.filter((state) => state.media);
@@ -2196,12 +2199,14 @@ function renderCoverageMatrix(
   const keyboardCommand = `npx a11y-shiftleft-cli audit --url ${shellQuote(graph.startUrl)} --out reports`;
   const lighthouseCommand = `npx a11y-shiftleft-cli audit --url ${shellQuote(graph.startUrl)} --with-lighthouse --out reports`;
   const embeddedFindingCount = countIssues((issue) => issue.source === "embedded-content");
+  const appearanceFindingCount = countIssues((issue) => issue.category === "contrast" && issue.source !== "forced-colors");
   const rows = [
     coverageRow("browser-automation", "Browser automation", evidenceState(dynamicFindingCount), "Automated", `${graph.summary.statesVisited} rendered state${graph.summary.statesVisited === 1 ? "" : "s"} scanned with axe`, true, dynamicFindingCount),
     coverageRow("static-source", "Static source analysis", staticAdapterFailed ? "unavailable" : evidenceState(staticFindingCount), staticAdapterFailed ? "Setup required" : "Automated", staticAdapterFailed ? "Install or configure the detected framework adapter, then run the audit again" : "Project source files checked with the configured accessibility lint adapter", !staticAdapterFailed, staticFindingCount),
     coverageRow("keyboard", "Keyboard traversal", options.keyboard ? evidenceState(keyboardFindingCount) : "not-tested", options.keyboard ? "Automated evidence" : "Run keyboard audit", options.keyboard ? `${options.keyboard.steps.length} forward focus steps recorded; complete task testing may still be required` : `Run <code>${escapeHtml(keyboardCommand)}</code>`, Boolean(options.keyboard), options.keyboard ? keyboardFindingCount : undefined),
     coverageRow("lighthouse", "Lighthouse score", options.lighthouse ? evidenceState(lighthouseFailedAudits) : "not-tested", options.lighthouse ? "Comparison evidence" : "Optional comparison", options.lighthouse ? `${options.lighthouse.length} page score${options.lighthouse.length === 1 ? "" : "s"} captured` : `Install <code>lighthouse</code>, then run <code>${escapeHtml(lighthouseCommand)}</code>`, Boolean(options.lighthouse), options.lighthouse ? lighthouseFailedAudits : undefined),
-    coverageRow("appearance", "Light and dark appearance", evidenceState(countIssues((issue) => issue.category === "contrast")), "Automated evidence", themes.length > 0 ? escapeHtml(themes.join(", ")) : "No distinct system color-scheme state detected", true, countIssues((issue) => issue.category === "contrast")),
+    coverageRow("appearance", "Light and dark appearance", evidenceState(appearanceFindingCount), "Automated evidence", themes.length > 0 ? escapeHtml(themes.join(", ")) : "No distinct system color-scheme state detected", true, appearanceFindingCount),
+    coverageRow("forced-colors", "Forced colors / high contrast", forcedColorUnsupported ? "unavailable" : evidenceState(countIssues((issue) => issue.source === "forced-colors")), forcedColorUnsupported ? "Browser support unavailable" : "Automated heuristics", forcedColorStates.length > 0 ? `${forcedColorStates.length} state${forcedColorStates.length === 1 ? "" : "s"} checked; ${forcedColorSamples} review signal${forcedColorSamples === 1 ? "" : "s"} collected` : "No forced-colors evidence collected", forcedColorStates.length > 0, forcedColorStates.length > 0 ? countIssues((issue) => issue.source === "forced-colors") : undefined),
     coverageRow("reflow", "Reflow at 400% (320 CSS px simulation)", reflowStates.length > 0 ? evidenceState(countIssues((issue) => issue.source === "layout")) : "not-tested", reflowStates.length > 0 ? "Automated evidence" : "Review required", reflowStates.length > 0 ? `${reflowStates.length} state${reflowStates.length === 1 ? "" : "s"} checked for overflow and clipped text` : "This audit did not collect reflow evidence; run a reflow check to verify overflow and clipped text.", reflowStates.length > 0, reflowStates.length > 0 ? countIssues((issue) => issue.source === "layout") : undefined),
     coverageRow("modal-focus", "Modal focus behavior", modalStates.length > 0 ? evidenceState(countIssues((issue) => issue.source === "modal")) : "needs-review", modalStates.length > 0 ? "Automated evidence" : "Review if applicable", modalStates.length > 0 ? `${modalStates.length} state${modalStates.length === 1 ? "" : "s"} checked for name, initial focus, Escape, and focus restoration` : "No modal opened during this audit; open any dialog and check initial focus, Escape, and focus return manually.", modalStates.length > 0, modalStates.length > 0 ? countIssues((issue) => issue.source === "modal") : undefined),
     coverageRow("announcements", "Dynamic announcements", announcementStates.length > 0 ? "passed" : "needs-review", announcementStates.length > 0 ? "Automated evidence" : "Review if applicable", `${announcementUpdates} meaningful live-region update${announcementUpdates === 1 ? "" : "s"} observed after ${announcementStates.length} action${announcementStates.length === 1 ? "" : "s"}`, announcementStates.length > 0, announcementStates.length > 0 ? 0 : undefined),
@@ -2386,6 +2391,7 @@ function renderState(state: StateViewModel): string {
     ${renderIssues(state.issues)}
     ${renderAccessibilityTreeEvidence(state)}
     ${renderReflowEvidence(state)}
+    ${renderForcedColorsEvidence(state)}
     ${renderModalFocusEvidence(state)}
     ${renderDynamicAnnouncementEvidence(state)}
     ${renderFormErrorEvidence(state)}
@@ -2554,6 +2560,33 @@ function renderReflowEvidence(state: ExplorationState): string {
       ? `<ul>${reflow.clippedTextSample.map((item) => `<li><code>${escapeHtml(item.selector)}</code>: ${escapeHtml(item.text || "unnamed text")} (${item.horizontalOverflowPx}px horizontal, ${item.verticalOverflowPx}px vertical overflow)</li>`).join("")}</ul>`
       : '<p class="muted">No clipped text candidates were detected by the bounded heuristic.</p>'}
     <p class="muted">Review flagged content manually at 400% zoom. Intentional truncation is not automatically a WCAG failure when the complete information remains available.</p>
+  </details>`;
+}
+
+function renderForcedColorsEvidence(state: ExplorationState): string {
+  const evidence = state.forcedColors;
+  if (!evidence || (!evidence.error && evidence.samples.length === 0)) return "";
+  const concernLabel = (value: string): string => ({
+    "focus-indicator": "Focus indicator",
+    "background-image": "Background image",
+    "hard-coded-svg-color": "Hard-coded SVG color",
+    "forced-color-adjust-none": "Opted out of forced colors"
+  }[value] || value);
+
+  return `<details>
+    <summary>Forced colors / high contrast evidence</summary>
+    <div class="summary">
+      ${metric("Controls checked", evidence.controlsChecked)}
+      ${metric("Focus risks", evidence.focusRiskCount, evidence.focusRiskCount > 0 ? "warning" : undefined)}
+      ${metric("Background image risks", evidence.backgroundImageRiskCount, evidence.backgroundImageRiskCount > 0 ? "warning" : undefined)}
+      ${metric("SVG color risks", evidence.svgColorRiskCount, evidence.svgColorRiskCount > 0 ? "warning" : undefined)}
+      ${metric("forced-color-adjust: none", evidence.forcedColorAdjustNoneCount, evidence.forcedColorAdjustNoneCount > 0 ? "warning" : undefined)}
+    </div>
+    ${evidence.error ? `<p class="muted">Forced-colors emulation was unavailable: ${escapeHtml(evidence.error)}</p>` : ""}
+    ${evidence.samples.length > 0
+      ? `<table aria-label="Forced colors and high contrast evidence"><thead><tr><th>Concern</th><th>Element</th><th>Label</th><th>Evidence</th></tr></thead><tbody>${evidence.samples.map((sample) => `<tr><td>${escapeHtml(concernLabel(sample.concern))}</td><td><code>${escapeHtml(sample.selector)}</code></td><td>${escapeHtml(sample.label || "unnamed")}</td><td>${escapeHtml(sample.detail)}</td></tr>`).join("")}</tbody></table>`
+      : '<p class="muted">No deterministic forced-colors review signals were detected.</p>'}
+    <p class="muted">This is a bounded heuristic. Confirm critical controls, icons, and state indicators in Windows High Contrast or another system high-contrast mode.</p>
   </details>`;
 }
 

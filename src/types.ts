@@ -797,6 +797,7 @@ export interface ExplorationState {
   actionCount: number;
   accessibilityTree?: AccessibilityTreeEvidence;
   reflow?: ReflowEvidence;
+  forcedColors?: ForcedColorsEvidence;
   modalFocus?: ModalFocusEvidence;
   dynamicAnnouncements?: DynamicAnnouncementEvidence;
   formErrors?: FormErrorEvidence;
@@ -835,6 +836,30 @@ export interface ReflowEvidence {
   horizontalOverflowPx: number;
   clippedTextCount: number;
   clippedTextSample: ReflowClippedElement[];
+}
+
+export type ForcedColorsConcern =
+  | "focus-indicator"
+  | "background-image"
+  | "hard-coded-svg-color"
+  | "forced-color-adjust-none";
+
+export interface ForcedColorsSample {
+  selector: string;
+  concern: ForcedColorsConcern;
+  label?: string;
+  detail: string;
+}
+
+export interface ForcedColorsEvidence {
+  supported: boolean;
+  controlsChecked: number;
+  focusRiskCount: number;
+  backgroundImageRiskCount: number;
+  svgColorRiskCount: number;
+  forcedColorAdjustNoneCount: number;
+  samples: ForcedColorsSample[];
+  error?: string;
 }
 
 export interface ModalFocusEvidence {

@@ -233,6 +233,56 @@ const RULE_HINTS: Record<string, RemediationHint> = {
       "https://www.w3.org/WAI/WCAG22/Understanding/resize-text.html"
     ]
   },
+  "forced-colors-focus-indicator-risk": {
+    summary: "Make the focused control visible when system forced-colors or high-contrast mode is active.",
+    howToFix: [
+      "Use a real outline or border for :focus-visible instead of relying only on box-shadow or subtle color changes.",
+      "Avoid removing outlines without replacing them with a high-contrast indicator.",
+      "Test the control in Windows High Contrast or forced-colors emulation and confirm the focused item is obvious."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html",
+      "https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html",
+      "https://developer.mozilla.org/en-US/docs/Web/CSS/@media/forced-colors"
+    ]
+  },
+  "forced-colors-background-image-risk": {
+    summary: "Do not rely on CSS background images alone to communicate important information in high-contrast mode.",
+    howToFix: [
+      "Move meaningful icons or labels into semantic HTML, inline SVG using currentColor, or real images with appropriate alternative text.",
+      "Keep text and controls understandable when CSS background images are removed.",
+      "Use forced-colors media queries only for small adjustments; avoid making the high-contrast experience a separate design."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html",
+      "https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html",
+      "https://developer.mozilla.org/en-US/docs/Web/CSS/@media/forced-colors"
+    ]
+  },
+  "forced-colors-hard-coded-svg-color": {
+    summary: "Let SVG icons adapt to system high-contrast colors.",
+    howToFix: [
+      "Prefer fill=\"currentColor\" and stroke=\"currentColor\" for UI icons.",
+      "Avoid hard-coded fills on icons that communicate state, status, or available actions.",
+      "Verify icon visibility in forced-colors mode, especially inside buttons and links."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html",
+      "https://developer.mozilla.org/en-US/docs/Web/CSS/@media/forced-colors"
+    ]
+  },
+  "forced-colors-adjust-none": {
+    summary: "Avoid opting meaningful UI out of system high-contrast color adjustment.",
+    howToFix: [
+      "Remove forced-color-adjust: none from controls, text, and meaningful graphics unless there is a tested replacement.",
+      "Use system colors such as Canvas, CanvasText, ButtonText, and LinkText when custom styling is necessary.",
+      "Confirm text, icons, focus indicators, borders, and state changes remain visible in high-contrast mode."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html",
+      "https://developer.mozilla.org/en-US/docs/Web/CSS/forced-color-adjust"
+    ]
+  },
   "color-contrast": {
     summary: "Increase foreground/background contrast until the text meets the required WCAG ratio.",
     howToFix: [

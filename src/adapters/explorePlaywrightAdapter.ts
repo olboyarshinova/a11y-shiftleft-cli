@@ -19,6 +19,8 @@ import type {
   ExploreAction,
   ExploreSafeModeConfig,
   ExploreSkippedAction,
+  ForcedColorsConcern,
+  ForcedColorsEvidence,
   FormErrorEvidence,
   ImageAlternativeConcern,
   ImageAlternativeEvidence,
@@ -55,6 +57,8 @@ const MAX_ERROR_CROP_HEIGHT = 900;
 const ERROR_CROP_PADDING_X = 80;
 const MAX_ERROR_CROP_WIDTH = 1600;
 const REFLOW_OVERFLOW_TOLERANCE_PX = 16;
+const FORCED_COLORS_CONTROL_SAMPLE_LIMIT = 12;
+const FORCED_COLORS_SAMPLE_LIMIT = 12;
 
 const COOKIE_CONSENT_CONTEXT_PATTERNS = [
   /\b(cookie|cookies|cookiebot|onetrust|consent|tracking|privacy\s*(choices|preferences|settings))\b/i,
@@ -451,6 +455,11 @@ export async function runExplorePlaywrightAdapter(
           stateLabel: actionLabel,
           colorScheme: reportedColorScheme
         });
+        const forcedColors = await auditForcedColors(page, config, {
+          stateId,
+          stateLabel: actionLabel,
+          colorScheme: reportedColorScheme
+        });
         const modalIssues = createModalFocusIssues(config.framework, modalFocus, {
           stateId,
           stateLabel: actionLabel,
@@ -462,7 +471,7 @@ export async function runExplorePlaywrightAdapter(
           screenshot: issue.screenshot
             ? screenshotPathReplacements.get(issue.screenshot) || issue.screenshot
             : undefined
-        })), ...reflow.issues, ...modalIssues];
+        })), ...reflow.issues, ...forcedColors.issues, ...modalIssues];
         const screenshot = screenshotEvidence[0]?.path;
         issues.push(...stateIssues);
 
@@ -482,6 +491,7 @@ export async function runExplorePlaywrightAdapter(
           actionCount: actions.length,
           accessibilityTree,
           reflow: reflow.evidence,
+          forcedColors: forcedColors.evidence,
           modalFocus,
           dynamicAnnouncements,
           formErrors: formErrors.evidence,
@@ -1194,6 +1204,282 @@ export function normalizeReflowOverflow(
 ): number {
   if (!Number.isFinite(overflowPx) || overflowPx <= tolerancePx) return 0;
   return Math.max(0, overflowPx);
+}
+
+async function auditForcedColors(
+  page: Page,
+  config: A11yConfig,
+  state: { stateId: string; stateLabel: string; colorScheme: Issue["colorScheme"] }
+): Promise<{ evidence?: ForcedColorsEvidence; issues: Issue[] }> {
+  try {
+    await page.emulateMedia({ forcedColors: "active" });
+    await page.waitForTimeout(50).catch(() => undefined);
+    const evidence = await page.evaluate(({ controlLimit, sampleLimit }) => {
+      type BrowserForcedColorsConcern =
+        | "focus-indicator"
+        | "background-image"
+        | "hard-coded-svg-color"
+        | "forced-color-adjust-none";
+      type BrowserForcedColorsSample = {
+        selector: string;
+        concern: BrowserForcedColorsConcern;
+        label?: string;
+        detail: string;
+      };
+
+      function isVisible(element: Element): boolean {
+        const rect = element.getBoundingClientRect();
+        const style = window.getComputedStyle(element);
+        return rect.width > 0 && rect.height > 0 &&
+          style.display !== "none" && style.visibility !== "hidden" &&
+          style.opacity !== "0";
+      }
+
+      function escapeAttribute(value: string): string {
+        return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+      }
+
+      function selectorFor(element: Element): string {
+        const id = element.getAttribute("id");
+        if (id) return `[id="${escapeAttribute(id)}"]`;
+        const testId = element.getAttribute("data-testid");
+        if (testId) return `[data-testid="${escapeAttribute(testId)}"]`;
+        const ariaLabel = element.getAttribute("aria-label");
+        if (ariaLabel && ariaLabel.length < 60) {
+          return `${element.tagName.toLowerCase()}[aria-label="${escapeAttribute(ariaLabel)}"]`;
+        }
+
+        const parts: string[] = [];
+        let current: Element | null = element;
+        while (current && current !== document.body && parts.length < 5) {
+          const tag = current.tagName.toLowerCase();
+          const parent: Element | null = current.parentElement;
+          if (!parent) {
+            parts.unshift(tag);
+            break;
+          }
+          const siblings = Array.from(parent.children).filter((sibling) => sibling.tagName === current?.tagName);
+          const index = siblings.indexOf(current) + 1;
+          parts.unshift(siblings.length > 1 ? `${tag}:nth-of-type(${index})` : tag);
+          current = parent;
+        }
+        return parts.join(" > ") || element.tagName.toLowerCase();
+      }
+
+      function nameFor(element: Element): string {
+        return (
+          element.getAttribute("aria-label") ||
+          element.getAttribute("title") ||
+          element.getAttribute("alt") ||
+          element.textContent ||
+          ""
+        ).replace(/\s+/g, " ").trim().slice(0, 80);
+      }
+
+      function addSample(samples: BrowserForcedColorsSample[], sample: BrowserForcedColorsSample): void {
+        if (samples.length < sampleLimit) samples.push(sample);
+      }
+
+      function hasHardCodedSvgColor(svg: SVGElement): boolean {
+        const colored = [svg, ...Array.from(svg.querySelectorAll("*"))].some((element) => {
+          const fill = element.getAttribute("fill");
+          const stroke = element.getAttribute("stroke");
+          const style = element.getAttribute("style") || "";
+          const value = [fill, stroke, style].filter(Boolean).join(" ");
+          return /#(?:[0-9a-f]{3}){1,2}\b|rgb\(|hsl\(|\b(black|white|red|green|blue|gray|grey)\b/i.test(value) &&
+            !/currentColor|CanvasText|ButtonText|LinkText|none/i.test(value);
+        });
+        return colored;
+      }
+
+      function focusIndicatorVisible(element: HTMLElement): boolean {
+        element.focus({ preventScroll: true });
+        const style = window.getComputedStyle(element);
+        const outlineWidth = Number.parseFloat(style.outlineWidth || "0");
+        const borderWidths = [
+          style.borderTopWidth,
+          style.borderRightWidth,
+          style.borderBottomWidth,
+          style.borderLeftWidth
+        ].map((value) => Number.parseFloat(value || "0"));
+        const hasOutline = style.outlineStyle !== "none" && outlineWidth >= 1 && style.outlineColor !== "transparent";
+        const hasBoxShadow = style.boxShadow !== "none" && style.boxShadow !== "";
+        const hasVisibleBorder = borderWidths.some((width) => width >= 2) &&
+          [style.borderTopStyle, style.borderRightStyle, style.borderBottomStyle, style.borderLeftStyle]
+            .some((value) => value !== "none" && value !== "hidden");
+        return hasOutline || hasBoxShadow || hasVisibleBorder;
+      }
+
+      const samples: BrowserForcedColorsSample[] = [];
+      const focusableSelector = [
+        "a[href]",
+        "button",
+        "input:not([type='hidden'])",
+        "select",
+        "textarea",
+        "[role='button']",
+        "[role='link']",
+        "[role='menuitem']",
+        "[role='tab']",
+        "[role='switch']",
+        "[tabindex]:not([tabindex='-1'])"
+      ].join(",");
+      const focusable = Array.from(document.querySelectorAll<HTMLElement>(focusableSelector))
+        .filter((element) => !element.hasAttribute("disabled") && isVisible(element))
+        .slice(0, controlLimit);
+      let focusRiskCount = 0;
+      const activeBefore = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
+
+      for (const element of focusable) {
+        if (!focusIndicatorVisible(element)) {
+          focusRiskCount += 1;
+          addSample(samples, {
+            selector: selectorFor(element),
+            concern: "focus-indicator",
+            label: nameFor(element),
+            detail: "No outline, border, or shadow focus indicator was detected while forced-colors was active."
+          });
+        }
+      }
+      activeBefore?.focus({ preventScroll: true });
+
+      let backgroundImageRiskCount = 0;
+      let forcedColorAdjustNoneCount = 0;
+      let svgColorRiskCount = 0;
+      const elements = Array.from(document.body?.querySelectorAll<HTMLElement>("*") || []);
+
+      for (const element of elements) {
+        if (!isVisible(element)) continue;
+        const style = window.getComputedStyle(element);
+        const label = nameFor(element);
+        const interactive = element.matches(focusableSelector);
+        const hasDirectText = Array.from(element.childNodes).some((node) => (
+          node.nodeType === Node.TEXT_NODE && Boolean(node.textContent?.trim())
+        ));
+        const meaningful = interactive ||
+          element.getAttribute("role") === "img" ||
+          element.hasAttribute("aria-label") ||
+          element.hasAttribute("title") ||
+          hasDirectText;
+
+        if (style.getPropertyValue("forced-color-adjust") === "none" && meaningful) {
+          forcedColorAdjustNoneCount += 1;
+          addSample(samples, {
+            selector: selectorFor(element),
+            concern: "forced-color-adjust-none",
+            label,
+            detail: "`forced-color-adjust: none` can prevent system high-contrast colors from being applied."
+          });
+        }
+
+        if (style.backgroundImage && style.backgroundImage !== "none" && meaningful) {
+          backgroundImageRiskCount += 1;
+          addSample(samples, {
+            selector: selectorFor(element),
+            concern: "background-image",
+            label,
+            detail: "Meaningful text, role, or accessible name was found on an element that relies on a CSS background image."
+          });
+        }
+      }
+
+      for (const svg of Array.from(document.querySelectorAll<SVGElement>("svg"))) {
+        if (!isVisible(svg) || !hasHardCodedSvgColor(svg)) continue;
+        svgColorRiskCount += 1;
+        addSample(samples, {
+          selector: selectorFor(svg),
+          concern: "hard-coded-svg-color",
+          label: nameFor(svg),
+          detail: "SVG uses hard-coded colors; prefer currentColor or system colors for high-contrast compatibility."
+        });
+      }
+
+      return {
+        supported: true,
+        controlsChecked: focusable.length,
+        focusRiskCount,
+        backgroundImageRiskCount,
+        svgColorRiskCount,
+        forcedColorAdjustNoneCount,
+        samples
+      };
+    }, {
+      controlLimit: FORCED_COLORS_CONTROL_SAMPLE_LIMIT,
+      sampleLimit: FORCED_COLORS_SAMPLE_LIMIT
+    });
+
+    return {
+      evidence,
+      issues: createForcedColorsIssues(config.framework, page.url(), state, evidence)
+    };
+  } catch (error) {
+    return {
+      evidence: {
+        supported: false,
+        controlsChecked: 0,
+        focusRiskCount: 0,
+        backgroundImageRiskCount: 0,
+        svgColorRiskCount: 0,
+        forcedColorAdjustNoneCount: 0,
+        samples: [],
+        error: error instanceof Error ? error.message : String(error)
+      },
+      issues: []
+    };
+  } finally {
+    await page.emulateMedia({ forcedColors: "none" }).catch(() => undefined);
+    await page.waitForTimeout(20).catch(() => undefined);
+  }
+}
+
+export function createForcedColorsIssues(
+  framework: A11yConfig["framework"],
+  url: string,
+  state: { stateId: string; stateLabel: string; colorScheme: Issue["colorScheme"] },
+  evidence: ForcedColorsEvidence
+): Issue[] {
+  if (!evidence.supported) return [];
+
+  const ruleForConcern: Record<ForcedColorsConcern, string> = {
+    "focus-indicator": "forced-colors-focus-indicator-risk",
+    "background-image": "forced-colors-background-image-risk",
+    "hard-coded-svg-color": "forced-colors-hard-coded-svg-color",
+    "forced-color-adjust-none": "forced-colors-adjust-none"
+  };
+  const wcagForConcern: Record<ForcedColorsConcern, string[]> = {
+    "focus-indicator": ["2.4.7", "2.4.11"],
+    "background-image": ["1.4.1", "1.4.11"],
+    "hard-coded-svg-color": ["1.4.11"],
+    "forced-color-adjust-none": ["1.4.11"]
+  };
+  const categoryForConcern: Record<ForcedColorsConcern, Issue["category"]> = {
+    "focus-indicator": "focus",
+    "background-image": "contrast",
+    "hard-coded-svg-color": "contrast",
+    "forced-color-adjust-none": "contrast"
+  };
+
+  return evidence.samples.map<Issue>((sample) => ({
+    source: "forced-colors",
+    framework,
+    ruleId: ruleForConcern[sample.concern],
+    wcag: wcagForConcern[sample.concern],
+    tags: ["forced-colors", "high-contrast", "heuristic"],
+    severity: sample.concern === "focus-indicator" || sample.concern === "forced-color-adjust-none"
+      ? "warning"
+      : "info",
+    confidence: "low",
+    confidenceScore: sample.concern === "focus-indicator" ? 65 : 55,
+    confidenceReason: "This is a bounded forced-colors heuristic. Confirm the affected UI in Windows High Contrast or another system high-contrast mode.",
+    category: categoryForConcern[sample.concern],
+    findingType: "best-practice",
+    selector: sample.selector,
+    url,
+    stateId: state.stateId,
+    stateLabel: state.stateLabel,
+    colorScheme: state.colorScheme,
+    message: `${sample.detail}${sample.label ? ` Label: "${sample.label}".` : ""}`
+  }));
 }
 
 async function inspectOpenModal(page: Page): Promise<ModalFocusEvidence | undefined> {
