@@ -79,6 +79,29 @@ Optional: after the first local audit works, generate a GitHub Actions workflow:
 npx a11y-shiftleft-cli ci --url $APP_URL --start-command "npm run dev"
 ```
 
+## Optional Framework Adapters
+
+You do not need an adapter for the visual browser audit. `audit` and dynamic
+`check` run against any rendered URL.
+
+Adapters add source-code checks on top of the browser audit. Install only the
+adapter for the framework your project uses:
+
+| Project | Optional adapter | What it adds |
+|---|---|---|
+| React / Next.js | `@a11y-shiftleft/react` | JSX/TSX accessibility lint rules |
+| Vue | `@a11y-shiftleft/vue` | Vue template accessibility lint support |
+| Angular | `@a11y-shiftleft/angular` | Angular template accessibility lint support |
+
+```bash
+npm install --save-dev @a11y-shiftleft/react
+npm install --save-dev @a11y-shiftleft/vue
+npm install --save-dev @a11y-shiftleft/angular
+```
+
+If you are not sure, skip adapters first and run the browser audit. Add an
+adapter later when you want static source findings in the same report.
+
 ## What You Get
 
 - A local visual HTML report you can open in your browser.
