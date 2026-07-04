@@ -1,4 +1,7 @@
 import net from "node:net";
+import path from "node:path";
+import { createRequire } from "node:module";
+import { pathToFileURL } from "node:url";
 import { chromium, type Browser } from "playwright";
 import type { LighthouseAuditItem, LighthouseAuditResult } from "../types.js";
 
@@ -34,12 +37,13 @@ interface LighthouseResult {
 
 export interface RunLighthouseOptions {
   url: string;
+  cwd?: string;
   runner?: LighthouseRunner;
 }
 
 export async function runLighthouseAdapter(options: RunLighthouseOptions): Promise<LighthouseAuditResult> {
   const startedAt = Date.now();
-  const runner = options.runner || await loadLighthouseRunner();
+  const runner = options.runner || await loadLighthouseRunner(options.cwd);
   const port = await getFreePort();
   let browser: Browser | undefined;
 
@@ -94,16 +98,26 @@ export function summarizeLighthouseResult(
   };
 }
 
-async function loadLighthouseRunner(): Promise<LighthouseRunner> {
+async function loadLighthouseRunner(cwd = process.cwd()): Promise<LighthouseRunner> {
   try {
-    const imported = await dynamicImport("lighthouse") as LighthouseModule;
-    const runner = typeof imported === "function" ? imported : imported.default;
-    if (typeof runner !== "function") throw new Error("The lighthouse module did not expose a runner function.");
-    return runner;
+    return runnerFromModule(await dynamicImport("lighthouse"));
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Lighthouse is optional. Install it with npm install -D lighthouse, then rerun with --with-lighthouse. Original error: ${message}`);
+    try {
+      const requireFromCwd = createRequire(path.join(cwd, "package.json"));
+      const resolved = requireFromCwd.resolve("lighthouse");
+      return runnerFromModule(await dynamicImport(pathToFileURL(resolved).href));
+    } catch (cwdError) {
+      const message = cwdError instanceof Error ? cwdError.message : error instanceof Error ? error.message : String(error);
+      throw new Error(`Lighthouse is optional. Install it with npm install -D lighthouse in the project you are auditing, then rerun with --with-lighthouse. Original error: ${message}`);
+    }
   }
+}
+
+function runnerFromModule(imported: unknown): LighthouseRunner {
+  const module = imported as LighthouseModule;
+  const runner = typeof module === "function" ? module : module.default;
+  if (typeof runner !== "function") throw new Error("The lighthouse module did not expose a runner function.");
+  return runner;
 }
 
 function dynamicImport(specifier: string): Promise<unknown> {

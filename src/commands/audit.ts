@@ -7,9 +7,11 @@ import { loadConfig } from "../config/loadConfig.js";
 import { createManualChecklist } from "../core/manualChecklist.js";
 import { filterReportFindings } from "../core/findingFilter.js";
 import { dedupeIssues } from "../core/dedupe.js";
+import { readScopePlanIfExists } from "../core/scopePlan.js";
 import { detectFramework } from "../core/detectFramework.js";
 import { applyIgnores, DEFAULT_IGNORE_FILE } from "../core/ignore.js";
 import { normalizeIssue } from "../core/normalize.js";
+import { openReportFile } from "../core/openReport.js";
 import { applyRemediationTracking, DEFAULT_REMEDIATION_FILE } from "../core/remediationTracking.js";
 import { triageIssues } from "../core/severity.js";
 import { resolveStandard } from "../core/standards.js";
@@ -28,6 +30,7 @@ interface AuditOptions {
   withLighthouse?: boolean;
   out?: string;
   depth?: string;
+  maxDepth?: string;
   limit?: string;
   actionsPerState?: string;
   maxTabs?: string;
@@ -53,12 +56,14 @@ interface AuditOptions {
   ignoreFile?: string;
   remediationTracking?: boolean;
   remediationFile?: string;
+  open?: boolean;
   quiet?: boolean;
 }
 
 export function registerAuditCommand(program: Command): void {
   program
     .command("audit")
+    .alias("quick")
     .description("Create one visual accessibility report with static, dynamic, keyboard, and manual-review evidence.")
     .option("--cwd <dir>", "Target project directory")
     .option("--config <file>", "Config path relative to cwd")
@@ -67,6 +72,7 @@ export function registerAuditCommand(program: Command): void {
     .option("--with-lighthouse", "Add optional Lighthouse accessibility score comparison")
     .option("--out <dir>", "Output directory", "reports")
     .option("--depth <depth>", "Maximum interaction depth", "2")
+    .option("--max-depth <depth>", "Maximum interaction depth; clearer alias for --depth")
     .option("--limit <limit>", "Maximum UI states", "20")
     .option("--actions-per-state <limit>", "Maximum safe actions per state", "8")
     .option("--max-tabs <count>", "Maximum Tab presses for keyboard traversal", "40")
@@ -92,6 +98,7 @@ export function registerAuditCommand(program: Command): void {
     .option("--no-ignore", "Disable scoped ignores")
     .option("--remediation-file <file>", "Remediation status file path", DEFAULT_REMEDIATION_FILE)
     .option("--no-remediation-tracking", "Do not apply remediation statuses")
+    .option("--open", "Open the visual HTML report after the audit finishes")
     .option("--quiet", "Suppress console summary")
     .action(async (options: AuditOptions) => {
       const result = await runAudit(options);
@@ -101,12 +108,14 @@ export function registerAuditCommand(program: Command): void {
 
 export async function runAudit(options: AuditOptions): Promise<{ failed: boolean; outputDir: string }> {
   const startedAt = Date.now();
+  const targetUrl = normalizeAuditUrl(options.url);
+  const outputDir = normalizeOptionalCliValue(options.out);
   const config = await loadConfig({ cwd: options.cwd, config: options.config }, {
     framework: toFramework(options.framework),
-    outputDir: options.out,
+    outputDir,
     standard: toStandard(options.standard),
     failOn: options.failOn,
-    dynamic: { enabled: true, urls: [options.url] },
+    dynamic: { enabled: true, urls: [targetUrl] },
     explore: {
       waitMs: optionalNonNegativeInteger(options.waitMs, "Wait time"),
       waitForSelector: options.waitForSelector,
@@ -120,6 +129,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
   });
   const framework = config.framework === "auto" ? await detectFramework(config.cwd) : config.framework;
   const standard = resolveStandard(config.standard);
+  const plannedScope = await readScopePlanIfExists(config.cwd);
   const effectiveConfig = {
     ...config,
     framework,
@@ -131,7 +141,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
   const keyboardPromise: Promise<{ result?: KeyboardAuditResult; issues: Issue[] }> = options.keyboard === false
     ? Promise.resolve({ issues: [] })
     : runKeyboardPlaywrightAdapter({
-      url: options.url,
+      url: targetUrl,
       framework,
       maxTabs: boundedInteger(options.maxTabs, 40, 1, 200),
       waitMs: effectiveConfig.explore.waitMs,
@@ -139,23 +149,23 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
       maxActivations: 6,
       safeMode: effectiveConfig.explore.safeMode
     }).then((result) => ({ result, issues: [] })).catch((error: unknown) => ({
-      issues: [createAuditAdapterIssue(framework, options.url, "keyboard", error)]
+      issues: [createAuditAdapterIssue(framework, targetUrl, "keyboard", error)]
     }));
   const lighthousePromise: Promise<{ results: LighthouseAuditResult[]; issues: Issue[] }> = !options.withLighthouse
     ? Promise.resolve({ results: [], issues: [] })
-    : runLighthouseAdapter({ url: options.url })
+    : runLighthouseAdapter({ url: targetUrl, cwd: effectiveConfig.cwd })
       .then((result) => ({ results: [result], issues: [] }))
       .catch((error: unknown) => ({
         results: [],
-        issues: [createAuditAdapterIssue(framework, options.url, "lighthouse", error)]
+        issues: [createAuditAdapterIssue(framework, targetUrl, "lighthouse", error)]
       }));
 
   const [staticIssues, exploration, keyboardOutcome, lighthouseOutcome] = await Promise.all([
     runEslintAdapter(effectiveConfig),
     runExplorePlaywrightAdapter(effectiveConfig, {
-      url: options.url,
+      url: targetUrl,
       outputDir: effectiveConfig.outputDir,
-      maxDepth: boundedInteger(options.depth, 2, 1, 5),
+      maxDepth: boundedInteger(resolveAuditDepthOption(options), 2, 1, 5),
       maxStates: boundedInteger(options.limit, 20, 1, 100),
       maxActionsPerState: boundedInteger(options.actionsPerState, 8, 1, 30),
       screenshots: options.screenshots !== false,
@@ -213,6 +223,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
     framework,
     cwd: effectiveConfig.cwd,
     urls,
+    plannedScope,
     standard,
     ignore: ignoreResult.summary,
     remediationTracking: remediationResult.summary,
@@ -236,9 +247,12 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
     title: "Accessibility Audit Report",
     keyboard,
     manualChecklist,
-    lighthouse
+    lighthouse,
+    plannedScope
   });
   if (options.pdf) await writeExplorationPdf(effectiveConfig.outputDir, "a11y-report");
+
+  const reportPath = `${effectiveConfig.outputDir}/a11y-report.html`;
 
   if (!options.quiet) {
     console.log([
@@ -246,12 +260,26 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
       `Findings: ${report.summary.total} | critical ${report.summary.critical} | warning ${report.summary.warning} | info ${report.summary.info}`,
       `States: ${exploration.graph.summary.statesVisited} | keyboard steps ${keyboard?.steps.length || 0}`,
       options.withLighthouse ? `Lighthouse: ${lighthouse[0]?.accessibilityScore ?? "not available"}` : "Lighthouse: not requested",
-      `Open: ${effectiveConfig.outputDir}/a11y-report.html`,
+      `Open: ${reportPath}`,
       options.excel ? `Excel tables: ${effectiveConfig.outputDir}/a11y-summary.csv, a11y-pages.csv, a11y-rules.csv, a11y-findings.csv` : "Excel tables: not requested (add --excel)"
     ].join("\n"));
   }
 
+  if (options.open) {
+    try {
+      await openReportFile(reportPath);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`Could not open the report automatically: ${message}`);
+      console.warn(`Open it manually: ${reportPath}`);
+    }
+  }
+
   return { failed: shouldFail(report.summary, config.failOn), outputDir: effectiveConfig.outputDir };
+}
+
+export function resolveAuditDepthOption(options: Pick<AuditOptions, "depth" | "maxDepth">): string | undefined {
+  return options.maxDepth ?? options.depth;
 }
 
 function boundedInteger(value: string | undefined, fallback: number, minimum: number, maximum: number): number {
@@ -274,6 +302,37 @@ function optionalNonNegativeInteger(value: string | undefined, label: string): n
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 0) throw new Error(`${label} must be a non-negative integer.`);
   return parsed;
+}
+
+export function normalizeAuditUrl(value: string): string {
+  const normalized = normalizeRequiredCliValue(value);
+  let parsed: URL;
+  try {
+    parsed = new URL(normalized);
+  } catch {
+    throw new Error(`Invalid --url value: ${value}. Use a full URL such as https://example.com or http://localhost:5173.`);
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error(`Invalid --url protocol: ${parsed.protocol}. Use http:// or https://.`);
+  }
+
+  return parsed.toString();
+}
+
+function normalizeRequiredCliValue(value: string): string {
+  const normalized = normalizeOptionalCliValue(value);
+  if (!normalized) throw new Error("Expected a non-empty value.");
+  return normalized;
+}
+
+function normalizeOptionalCliValue(value: string | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  return value
+    .trim()
+    .replace(/^[“”"']+/, "")
+    .replace(/[“”"']+$/, "")
+    .trim();
 }
 
 function toFramework(value: string | undefined): Framework | undefined {

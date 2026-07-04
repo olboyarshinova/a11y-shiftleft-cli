@@ -8,6 +8,8 @@ export type ColorScheme = "light" | "dark";
 
 export type FindingType = "wcag" | "best-practice" | "unmapped";
 
+export type UserImpactLevel = "blocker" | "significant" | "workaround" | "minor";
+
 export type IssueCategory =
   | "aria"
   | "contrast"
@@ -83,6 +85,31 @@ export interface IssueOwnership {
   source?: string;
   url?: string;
   note?: string;
+}
+
+export interface UserImpactEvidence {
+  level: UserImpactLevel;
+  affectedUsers: string[];
+  reason: string;
+}
+
+export interface JourneyImpactSummary {
+  name: string;
+  urls: string[];
+  findingCount: number;
+  critical: number;
+  warning: number;
+  info: number;
+}
+
+export interface SampleComparisonSummary {
+  enabled: boolean;
+  representativeSampleSize: number;
+  randomSampleSize: number;
+  structuredFindingCount: number;
+  randomFindingCount: number;
+  uniqueRandomRules: string[];
+  recommendation: string;
 }
 
 export interface ElementBounds {
@@ -277,6 +304,8 @@ export interface Issue {
   helpUrl?: string;
   colorScheme?: ColorScheme;
   ownership?: IssueOwnership;
+  userImpact?: UserImpactEvidence;
+  journeys?: string[];
   message?: string;
   remediation?: RemediationHint;
 }
@@ -306,6 +335,8 @@ export interface NormalizedIssue extends Required<Pick<Issue, "source" | "framew
   helpUrl?: string;
   colorScheme?: ColorScheme;
   ownership?: IssueOwnership;
+  userImpact?: UserImpactEvidence;
+  journeys?: string[];
 }
 
 export interface TriagedIssue extends NormalizedIssue {
@@ -437,11 +468,61 @@ export interface ReportRetentionEvidence {
   keptRuns: number;
 }
 
+export interface PlannedScopeJourney {
+  name: string;
+  urls: string[];
+  description?: string;
+  notes?: string;
+}
+
+export interface PlannedScopeSamplePage {
+  type: string;
+  url: string;
+  reason?: string;
+}
+
+export interface PlannedScopeThirdPartyContent {
+  name: string;
+  url?: string;
+  owner?: string;
+  reviewStrategy: string;
+}
+
+export interface PlannedScopeExclusion {
+  area: string;
+  reason: string;
+  owner?: string;
+  reviewBy?: string;
+}
+
+export interface PlannedEvaluationScope {
+  version: 1;
+  generatedAt: string;
+  product: {
+    name?: string;
+    type: string;
+    languages: string[];
+  };
+  target: {
+    standard: ComplianceStandard;
+    urls: string[];
+  };
+  supportedPlatforms: string[];
+  assistiveTechnologies: string[];
+  representativeSample: PlannedScopeSamplePage[];
+  randomSample: PlannedScopeSamplePage[];
+  criticalJourneys: PlannedScopeJourney[];
+  thirdPartyContent: PlannedScopeThirdPartyContent[];
+  exclusions: PlannedScopeExclusion[];
+  notes: string[];
+}
+
 export interface ReportMetrics {
   framework?: Framework | string;
   cwd?: string;
   urls?: string[];
   standard?: ComplianceStandardMetadata;
+  plannedScope?: PlannedEvaluationScope;
   lighthouse?: LighthouseAuditResult[];
   baseline?: BaselineComparisonSummary;
   retest?: RetestComparisonSummary;
@@ -574,6 +655,9 @@ export interface ReportSummary {
   framework: Framework | string;
   urls: string[];
   standard?: ComplianceStandardMetadata;
+  plannedScope?: PlannedEvaluationScope;
+  journeyImpact?: JourneyImpactSummary[];
+  sampleComparison?: SampleComparisonSummary;
   baseline?: BaselineComparisonSummary;
   retest?: RetestComparisonSummary;
   remediationTracking?: RemediationTrackingSummary;
@@ -588,6 +672,7 @@ export interface ReportSummary {
   byFindingType?: Record<string, number>;
   byCategory: Record<string, number>;
   byOwnership?: Record<string, number>;
+  byUserImpact?: Record<string, number>;
   blockedByHumanVerification?: number;
   byPour: Record<string, number>;
   byWcagLevel: Record<string, number>;

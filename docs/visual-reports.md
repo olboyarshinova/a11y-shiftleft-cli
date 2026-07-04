@@ -8,28 +8,56 @@ npx a11y-shiftleft audit --url $APP_URL --out reports
 ```
 
 Open `reports/a11y-report.html`. Add `--excel`, `--pdf`, or `--raw` when those
-optional exports are needed. Slow applications can use `--wait-ms 1000` or
+optional exports are needed. `--raw` writes `exploration-graph.json` for
+crawler/state debugging; it is not required for normal review. Slow
+applications can use `--wait-ms 1000` or
 `--wait-for-selector "[data-page-ready]"`; audit auto-scrolls before scanning
 unless `--no-scroll` is passed.
+
+Create `a11y-scope.json` before a run when the report should include planned
+audit context:
+
+```bash
+npx a11y-shiftleft scope init \
+  --url $APP_URL \
+  --product-type "web application" \
+  --sample-page "Core page:$APP_URL|Primary app entry" \
+  --random-sample-page "Random content page:$APP_URL/blog/example|Control sample"
+```
+
+The visual report then shows the planned product type, target standard, and
+representative and random sample counts next to the discovered browser scope.
+The same planned scope is also embedded in `a11y-report.json`,
+`a11y-comment.md`, and `evaluation-scope.json`.
+
+When random sample pages are present, Markdown and JSON reports compare
+structured sample findings with random sample findings. If random pages expose
+rule types not seen in the representative sample, the report recommends
+expanding the structured sample.
+
+Findings are linked to critical journeys when their URL matches a journey URL.
+Markdown and JSON reports include a journey-impact summary, and the findings
+CSV includes a `journeys` column for spreadsheet triage.
 
 Use `explore` when you want the CLI to walk safe parts of a running app and
 produce only the lower-level visual exploration artifacts:
 
 ```bash
-npx a11y-shiftleft explore --url $APP_URL --depth 2 --out reports
+npx a11y-shiftleft explore --url $APP_URL --max-depth 2 --out reports
 ```
 
 `explore` opens the start URL, scans it with axe, then safely follows
 same-origin links and low-risk UI expansion controls such as menu buttons,
 tabs, disclosure widgets, and modal triggers.
 
-`--depth` controls how many transitions may appear in one exploration path; it
-does not mean "visit this many pages." The state and per-state action limits
-also bound the run. Repeated links to the same normalized URL and links back to
-the current page are not queued, and unique same-origin destinations are
-prioritized before ordinary UI clicks. Compare `Pages visited`, `Rendered
-states`, and `Unique screenshots` in the report: screenshot deduplication can
-make the last number smaller without reducing scan coverage.
+`--max-depth` controls how many transitions may appear in one exploration path;
+it does not mean "visit this many pages." `--depth` is still accepted as an
+older alias. The state and per-state action limits also bound the run. Repeated
+links to the same normalized URL and links back to the current page are not
+queued, and unique same-origin destinations are prioritized before ordinary UI
+clicks. Compare `Pages visited`, `Rendered states`, and `Unique screenshots` in
+the report: screenshot deduplication can make the last number smaller without
+reducing scan coverage.
 
 For every discovered state, `explore` automatically compares light and dark
 system color schemes. When the rendered appearance changes, both variants are
@@ -42,16 +70,15 @@ It saves:
 ```txt
 reports/a11y-report.json
 reports/a11y-comment.md
-reports/a11y-findings.csv
-reports/a11y-summary.csv
-reports/a11y-pages.csv
-reports/a11y-rules.csv
 reports/exploration.html
 reports/exploration.pdf       # only when --pdf is used
-reports/exploration-graph.json
+reports/exploration-graph.json # explore debug/state graph output
 reports/screenshots/state-*.jpg
 reports/screenshots/state-*-error-*.jpg   # focused crops on long pages
 ```
+
+CSV files are optional spreadsheet exports. Use `audit --excel` or
+`explore --format csv` only when you need spreadsheet analysis.
 
 `exploration.html` shows summary metrics, checked states, screenshots, top
 findings, recorded transitions, skipped actions, and reviewable overlays around
@@ -173,7 +200,7 @@ Use `--wait-ms` when screenshots are captured before the UI finishes rendering:
 ```bash
 npx a11y-shiftleft explore \
   --url $APP_URL \
-  --depth 2 \
+  --max-depth 2 \
   --wait-ms 1000 \
   --out reports
 ```
@@ -199,7 +226,7 @@ Use `--pdf` when you need a portable copy of the visual report for a pull
 request, remediation ticket, or internal review:
 
 ```bash
-npx a11y-shiftleft-cli explore --url $APP_URL --depth 2 --pdf --out reports
+npx a11y-shiftleft-cli explore --url $APP_URL --max-depth 2 --pdf --out reports
 ```
 
 This writes:
@@ -256,8 +283,11 @@ npx a11y-shiftleft explore \
   --out reports
 ```
 
-Use PNG only when the extra detail is worth the larger artifact size. Force
-full-page evidence only when the complete surrounding page is required:
+Use PNG only when the extra detail is worth the larger artifact size. The
+default automatic crops are usually better for normal audits because they keep
+reports smaller and focus on the regions with evidence. Force full-page
+screenshots only for local debugging when you explicitly need the complete page
+around every captured state:
 
 ```bash
 npx a11y-shiftleft explore \

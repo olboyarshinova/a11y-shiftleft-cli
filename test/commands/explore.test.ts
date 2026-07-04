@@ -4,6 +4,7 @@ import {
   formatExploreConsoleSummary,
   formatExploreProgressMessage,
   formatVerboseExploreSummary,
+  resolveDepthOption,
   resolveFullPageScreenshots
 } from "../../dist/commands/explore.js";
 import type { A11yReport, ExplorationGraph } from "../../dist/types.js";
@@ -70,6 +71,12 @@ test("resolveFullPageScreenshots uses automatic evidence crops by default", () =
     compactScreenshots: true,
     screenshotFullPage: true
   }), false);
+});
+
+test("resolveDepthOption prefers explicit max depth over legacy depth", () => {
+  assert.equal(resolveDepthOption({ depth: "1" }), "1");
+  assert.equal(resolveDepthOption({ maxDepth: "3" }), "3");
+  assert.equal(resolveDepthOption({ depth: "1", maxDepth: "3" }), "3");
 });
 
 test("formatExploreProgressMessage renders compact progress lines", () => {

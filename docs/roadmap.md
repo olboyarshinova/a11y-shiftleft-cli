@@ -10,38 +10,32 @@ Section 508 certification.
 
 ## Near Term
 
-- Represent complete user processes separately from individual pages. Let a
-  reviewer group discovered states into journeys such as sign-in, search,
-  checkout, or form submission and record whether every step was evaluated.
+- Strengthen the "Fix First" section so it ranks findings by severity,
+  confidence, user impact, affected states, repeated-component signals, and
+  third-party ownership. Keep the explanation short enough for pull request
+  review.
+- Add a "new critical only" adoption path that pairs baseline mode with a
+  critical quality gate and clearly explains how legacy projects can start
+  without failing on every existing issue.
+- Promote planned journey matches into a richer journey-review workflow where a
+  reviewer can confirm every step, record missing states, and attach manual
+  task-completion evidence.
 - Add audit goals or profiles such as `risk`, `validation`, `level-of-effort`,
   and `full` so reports can explain whether the run is prioritizing blockers,
   retesting fixes, estimating remediation scope, or building a fuller evidence
   package.
-- Add a guided scope initializer that records product type, target standard,
-  languages, supported platform and assistive-technology combinations, critical
-  journeys, third-party content, and intentionally excluded areas.
-- Add representative sample planning for large sites: core pages, page types,
-  important states, critical journeys, and optional special-purpose pages such
-  as accessibility contact or help pages.
-- Add structured-vs-random sample comparison for larger audits, including
-  random sample size, findings unique to random pages, and a recommendation to
-  expand the representative sample when new issue types appear.
 - Add a bounded forced-colors diagnostic that compares normal rendering with
   `forced-colors: active` and flags controls, focus indicators, SVGs, and
   information-bearing backgrounds that disappear or become indistinguishable.
 - Add cross-page consistency analysis for repeated navigation, help mechanisms,
   page titles, and same-purpose control names. Surface differences for review
   rather than asserting that every difference is a WCAG failure.
-- Separate user impact from technical severity and confidence. Add a compact
-  impact field such as `blocker`, `significant`, `workaround`, or `minor`, plus
-  affected-page and repeated-component counts.
+- Add repeated-component counts and affected-page counts to user-impact
+  summaries so teams can distinguish one shared component fix from many local
+  page fixes.
 - Add remediation effort estimates such as `small`, `medium`, and `large`
   based on rule family, affected components, journey impact, and whether the fix
   is local, shared, or architectural.
-- Add affected-user lenses to findings so reports can explain who may be
-  affected, such as keyboard users, screen reader users, low-vision users,
-  users relying on captions, voice-control users, or people under cognitive
-  load.
 - Add report grouping controls for rule, page/state, affected element, WCAG
   criterion, and POUR principle while preserving root-cause grouping.
 - Extend readiness controls beyond a fixed delay with bounded declarative
@@ -98,6 +92,10 @@ Section 508 certification.
 
 ## Visual Report UX
 
+- Keep the visual HTML report as the primary product experience. Reports should
+  remain useful as a single local file with screenshots, annotations, WCAG
+  metadata, keyboard evidence, manual-review gaps, and copyable fixes before
+  any hosted dashboard or SaaS workflow is considered.
 - Add multi-viewport evidence for 320 CSS px, desktop, and color-scheme states
   so layout, reflow, and visual findings are easier to compare.
 - Add before/after comparison for retest runs, including resolved, new,
@@ -119,9 +117,22 @@ Section 508 certification.
 
 ## Developer Workflow
 
+- Keep the first-run experience centered on one command:
+  `a11y-shiftleft-cli audit --url <app-url> --out reports --open`. Advanced CI,
+  baseline, Lighthouse, PDF, Excel, and dashboard paths should stay discoverable
+  without crowding the beginner path.
 - Harden `watch` with clearer run-to-run deltas, better changed-file grouping,
   affected-route hints, and guidance for mapping changed files to dynamic
   smoke-test URLs.
+- Add a single guided setup command that creates the config, generated report
+  `.gitignore` entries, npm scripts, and CI workflow in one pass, while keeping
+  every generated file visible for review before commit.
+- Add CI presets for GitHub Actions first, then GitLab CI, CircleCI, Jenkins,
+  and generic shell runners. Keep each preset focused on installing the package,
+  starting the app, running `audit` or `check`, and preserving local artifacts.
+- Add clearer quality-gate profiles such as `new-critical-only`, `critical`,
+  `warning`, and `report-only` so teams can adopt the tool without blocking
+  every existing legacy finding.
 - Add optional Git hook setup for Husky and Lefthook so staged accessibility
   checks can run before commits without becoming a hard dependency.
 - Add incremental scan support for pull requests by prioritizing changed static
@@ -129,9 +140,16 @@ Section 508 certification.
   scheduled scans.
 - Continue expanding CLI quality-of-life controls around report paths,
   troubleshooting context, progress output, `--quiet`, and `--verbose`.
-- Improve framework autodetection messaging so React, Vue, and Angular projects
-  receive clear adapter install recommendations when optimized static checks are
-  not available yet.
+- Improve framework autodetection messaging so users clearly understand the
+  difference between browser-based audits for any rendered website and optional
+  source adapters for React, Vue, and Angular.
+- Evaluate Svelte and Astro static adapters only after the browser audit,
+  visual report, keyboard evidence, and React/Vue/Angular adapter path are
+  stable. Next.js should remain covered by the React adapter for JSX/TSX source
+  checks unless a clear Next-specific gap appears.
+- Do not add Rails or Django adapters by default. Treat those stacks as
+  browser-audit targets unless a concrete source-analysis integration proves
+  useful and lightweight.
 - Continue hardening configurable safe-mode policies for `explore`, including
   clearer skip reporting and optional request blocking for external or
   high-risk API traffic.
@@ -140,6 +158,16 @@ Section 508 certification.
 
 ## Integrations And Sharing
 
+- Add CI artifact-link support for visual HTML reports so pull request comments
+  can stay short while linking to the full local-generated evidence uploaded by
+  the CI provider.
+- Add a local audit-trail summary to JSON, Markdown, and HTML reports with tool
+  version, command profile, requested URLs, rendered states, CI provider,
+  commit SHA when available, generated files, and explicit automation/manual
+  coverage boundaries.
+- Add first-class report status summaries that highlight high-confidence,
+  high-impact findings first, separate third-party embedded content, and show
+  which findings are best handled as manual review.
 - Publish a repeatable external-validation protocol that compares the same
   pages and states with Accessibility Insights, ARC Toolkit,
   [WAVE](https://wave.webaim.org/),
@@ -177,6 +205,12 @@ Section 508 certification.
 - After the 1.0 CLI release, create a documentation website with quick start
   guides, framework-specific setup pages, CI and compliance-support examples,
   troubleshooting, privacy notes, and sample visual reports.
+- Add a "CI/CD without SaaS" guide that explains how the CLI differs from
+  enterprise platforms: local-first execution, open-source reports, CI artifacts,
+  explicit manual-review gaps, and no hosted account requirement.
+- Add a "quality gates for existing projects" guide covering baseline mode,
+  `--fail-on`, `--wcag-only`, report-only CI, and staged rollout from warnings
+  to critical blockers.
 - Add a privacy section to the documentation website covering screenshot
   redaction, `--no-screenshots`, generated report directories, `.gitignore`
   setup, baseline files, and safe handling of local artifacts.
@@ -202,6 +236,9 @@ Section 508 certification.
 - Introduce optional AI-assisted remediation through a separate
   `@a11y-shiftleft/ai` package, following the privacy and safety rules in
   [ai-suggestions.md](ai-suggestions.md).
+- Explore an optional IDE/MCP-style companion after the report schema is stable,
+  so editors can surface existing local report findings and deterministic
+  remediation hints without sending source code to a hosted service by default.
 - Prototype a browser overlay mode after `watch` is stable, so local dev pages
   can highlight affected elements from accessibility findings without requiring
   a full browser extension.

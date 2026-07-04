@@ -257,7 +257,10 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /a11y-shiftleft exploration report/);
   assert.match(html, /Generated: <time datetime="2026-06-09T00:00:00.000Z">9 June 2026, 00:00 UTC<\/time>/);
   assert.doesNotMatch(html, />Generated 2026-06-09T/);
-  assert.match(html, /Scan scope: depth 2, up to 20 states, 3 rendered/);
+  assert.match(html, /Scan depth: 2 interaction levels from the start page/);
+  assert.match(html, /Scan scope: up to 20 states, 3 rendered/);
+  assert.match(html, /<span>Exploration depth<\/span>/);
+  assert.match(html, /Exploration depth[\s\S]*?2 interaction levels from the start page/);
   assert.match(html, /UI states explored/);
   assert.match(html, /Rendered states/);
   assert.match(html, /screenshots\/state-1\.png/);
@@ -300,26 +303,38 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /Triage Overview/);
   assert.match(html, /Most Affected States/);
   assert.match(html, /Top Rules/);
-  assert.match(html, /score 5/);
+  assert.doesNotMatch(html, /score 5/);
   assert.match(html, /WCAG 4\.1\.2 Name, Role, Value, Level A/);
   assert.match(html, /annotation annotation-critical/);
   assert.equal((html.match(/annotation annotation-critical/g) ?? []).length, 2);
   assert.match(html, /class="annotation-layer" aria-hidden="true"/);
   assert.match(html, /\.annotation-layer/);
+  assert.match(html, /class="screenshot-lightbox-backdrop" href="#state-1" aria-label="Close annotated screenshot"/);
+  assert.match(html, /\.screenshot-lightbox-backdrop \{/);
   assert.match(html, /screenshot-frame screenshot-frame-full/);
   assert.match(html, /Open full-page evidence/);
   assert.match(html, /screenshot-frame-full[\s\S]*?object-fit: contain/);
-  assert.match(html, /screenshot-frame-full[\s\S]*?aspect-ratio: auto/);
+  assert.match(html, /screenshot-frame-full[\s\S]*?aspect-ratio: 16 \/ 9/);
   assert.match(html, /screenshot-frame-full[\s\S]*?overflow: hidden/);
-  assert.match(html, /screenshot-frame-full \.screenshot-scroll[\s\S]*?overflow: auto/);
+  assert.match(html, /screenshot-frame-full \.screenshot-scroll[\s\S]*?overflow: hidden/);
+  assert.match(html, /screenshot-frame-full \.screenshot-stage[\s\S]*?min-height: 0/);
   assert.match(html, /<div class="screenshot-scroll">\s*<div class="screenshot-stage">/);
-  assert.match(html, /full-page evidence/);
+  assert.match(html, /\.screenshot-evidence-grid \.screenshot-frame \{[\s\S]*?align-self: start/);
+  assert.doesNotMatch(html, /<span class="badge">full-page evidence<\/span>/);
+  assert.doesNotMatch(html, /actions queued/);
   assert.match(html, /class="state state-critical" id="state-1"/);
   assert.match(html, /class="state state-ok state-compact" id="state-2"/);
   assert.match(html, /state-compact-summary/);
   assert.match(html, /No automated findings in this state\./);
   assert.match(html, /\.state-critical/);
-  assert.doesNotMatch(html, /\.states \{[^}]*align-items: start/);
+  assert.match(html, /\.states \{[\s\S]*?align-items: start/);
+  assert.match(html, /\.screenshot-evidence-grid \{[\s\S]*?align-items: start/);
+  assert.match(html, /\.state-body \{[\s\S]*?align-content: start/);
+  assert.match(html, /\.state-body \{[\s\S]*?align-items: start/);
+  assert.match(html, /\.state-body > \* \{[\s\S]*?align-self: start/);
+  assert.match(html, /\.issue-list,[\s\S]*?align-items: start/);
+  assert.match(html, /\.issue \{[\s\S]*?align-self: start/);
+  assert.match(html, /aspect-ratio: var\(--screenshot-aspect, 16 \/ 9\)/);
   assert.match(html, /grid-template-rows: auto auto/);
   assert.match(html, /min-height: 0/);
   assert.match(html, /summary::before/);
@@ -338,13 +353,117 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /id="screenshot-state-1"/);
   assert.match(html, /Annotated screenshot for state-1/);
   assert.match(html, /left: 10%; top: 20%; width: 30%; height: 12%/);
-  assert.match(html, /Exploration Details/);
-  assert.match(html, /Start with Triage Overview and Checked States/);
-  assert.match(html, /State transitions: 1/);
-  assert.match(html, /state-1.*->.*state-2/s);
-  assert.match(html, /Skipped actions: 1/);
-  assert.match(html, /Submit\/reset controls are blocked by safe mode/);
+  assert.doesNotMatch(html, /Exploration Details/);
+  assert.match(html, /State transitions and skipped actions can be saved to <code>exploration-graph\.json<\/code> with <code>--raw<\/code>/);
   assert.match(html, /Coverage Note/);
+});
+
+test("renderExplorationHtml gives every table an accessible name for PDF export", () => {
+  const html = renderExplorationHtml(graph, issues);
+  const tableTags = html.match(/<table\b[^>]*>/g) || [];
+  const unlabeledTables = tableTags.filter((tag) => (
+    !/aria-label=/.test(tag) &&
+    !/aria-labelledby=/.test(tag)
+  ));
+
+  assert.ok(tableTags.length > 0);
+  assert.deepEqual(unlabeledTables, []);
+});
+
+test("renderExplorationHtml groups repeated Fix First findings", () => {
+  const repeatedIssues = [
+    issues[0],
+    {
+      ...issues[0],
+      selector: ".modal-close",
+      fingerprint: "button-name::modal-close",
+      stateId: "state-2",
+      stateLabel: "Click: Open audit modal"
+    },
+    {
+      ...issues[0],
+      selector: ".next-tip",
+      fingerprint: "button-name::next-tip",
+      stateId: "state-1",
+      stateLabel: "Initial page"
+    }
+  ];
+  const html = renderExplorationHtml(graph, repeatedIssues, {
+    manualChecklist: {
+      generatedAt: "2026-06-09T00:00:00.000Z",
+      framework: "react",
+      urls: ["http://localhost:3000/"],
+      items: []
+    }
+  });
+
+  const quickReview = html.match(/<section class="panel quick-review"[\s\S]*?<\/section>/)?.[0] || "";
+
+  assert.match(quickReview, /Fix First/);
+  assert.equal((quickReview.match(/button-name/g) || []).length, 1);
+  assert.match(quickReview, /3 findings grouped/);
+});
+
+test("renderExplorationHtml sorts rule triage by severity and WCAG level", () => {
+  const criterion = (
+    id: string,
+    title: string,
+    level: "A" | "AA" | "AAA"
+  ) => ({
+    id,
+    title,
+    level,
+    principle: "perceivable",
+    introducedIn: "2.0",
+    url: `https://example.com/wcag-${id}`
+  });
+  const triageIssues = [
+    {
+      ...issues[0],
+      ruleId: "warning-a",
+      severity: "warning",
+      wcagCriteria: [criterion("1.1.1", "Non-text Content", "A")],
+      message: "Warning level A issue",
+      fingerprint: "warning-a"
+    },
+    {
+      ...issues[0],
+      ruleId: "critical-aa",
+      severity: "critical",
+      wcagCriteria: [criterion("1.4.3", "Contrast (Minimum)", "AA")],
+      message: "Critical level AA issue",
+      fingerprint: "critical-aa"
+    },
+    {
+      ...issues[0],
+      ruleId: "info-aaa",
+      severity: "info",
+      wcagCriteria: [criterion("2.2.6", "Timeouts", "AAA")],
+      message: "Info level AAA issue",
+      fingerprint: "info-aaa"
+    },
+    {
+      ...issues[0],
+      ruleId: "critical-a",
+      severity: "critical",
+      wcagCriteria: [criterion("2.1.1", "Keyboard", "A")],
+      message: "Critical level A issue",
+      fingerprint: "critical-a"
+    }
+  ];
+  const html = renderExplorationHtml(graph, triageIssues);
+  const topRules = html.match(/<h3>Top Rules<\/h3>\s*<ol class="triage-list">([\s\S]*?)<\/ol>/)?.[1] || "";
+  const stateOne = html.slice(
+    html.indexOf('<article class="state state-critical" id="state-1"'),
+    html.indexOf('<article class="state state-ok state-compact" id="state-2"')
+  );
+  const stateGroupOrder = [...stateOne.matchAll(/<li class="issue">[\s\S]*?<code>(critical-a|critical-aa|warning-a|info-aaa)<\/code>/g)]
+    .map((match) => match[1]);
+
+  assert.ok(topRules.indexOf("critical-a") < topRules.indexOf("critical-aa"));
+  assert.ok(topRules.indexOf("critical-aa") < topRules.indexOf("warning-a"));
+  assert.ok(topRules.indexOf("warning-a") < topRules.indexOf("info-aaa"));
+  assert.deepEqual(stateGroupOrder, ["critical-a", "critical-aa", "warning-a", "info-aaa"]);
 });
 
 test("renderExplorationHtml groups repeated remediation by rule", () => {
@@ -582,6 +701,7 @@ test("renderExplorationHtml renders focused evidence crops for long pages", () =
   assert.match(html, /Open focused evidence 1/);
   assert.match(html, /Open focused evidence 2/);
   assert.match(html, /id="screenshot-state-1-2"/);
+  assert.match(html, /style="--screenshot-aspect: 1280 \/ 900"/);
   assert.equal((html.match(/annotation annotation-critical/g) ?? []).length, 4);
 });
 
@@ -670,7 +790,7 @@ test("renderExplorationHtml provides fallback guidance for unknown rules", () =>
   assert.match(html, /href="https:\/\/example\.com\/custom-rule"/);
 });
 
-test("renderExplorationHtml keeps overflow report data in collapsed sections", () => {
+test("renderExplorationHtml keeps diagnostic exploration data out of the visual report", () => {
   const overflowIssues = Array.from({ length: 9 }, (_, index) => ({
     ...issues[0],
     ruleId: `test-rule-${index + 1}`,
@@ -699,10 +819,11 @@ test("renderExplorationHtml keeps overflow report data in collapsed sections", (
 
   assert.match(html, /Show 1 more rule group/);
   assert.match(html, /Finding 9/);
-  assert.match(html, /Show 1 more transition/);
-  assert.match(html, /Transition 13/);
-  assert.match(html, /Show 1 more skipped action/);
-  assert.match(html, /Skipped action 21/);
+  assert.match(html, /State transitions and skipped actions can be saved to <code>exploration-graph\.json<\/code> with <code>--raw<\/code>/);
+  assert.doesNotMatch(html, /Show 1 more transition/);
+  assert.doesNotMatch(html, /Transition 13/);
+  assert.doesNotMatch(html, /Show 1 more skipped action/);
+  assert.doesNotMatch(html, /Skipped action 21/);
 });
 
 test("writeExplorationHtml writes exploration.html", async () => {
@@ -717,7 +838,12 @@ test("writeExplorationHtml writes exploration.html", async () => {
 
 test("writeExplorationHtml can create a unified audit report", async () => {
   const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-audit-html-"));
-  await writeExplorationHtml(outputDir, graph, issues, {
+  const journeyIssues = issues.map((issue) => (
+    issue.ruleId === "button-name"
+      ? { ...issue, journeys: ["Checkout"] }
+      : issue
+  ));
+  await writeExplorationHtml(outputDir, graph, journeyIssues, {
     fileName: "a11y-report.html",
     title: "Accessibility Audit Report",
     keyboard: {
@@ -835,7 +961,39 @@ test("writeExplorationHtml can create a unified audit report", async () => {
       }],
       notApplicableAudits: 3,
       durationMs: 1500
-    }]
+    }],
+    plannedScope: {
+      version: 1,
+      generatedAt: "2026-06-21T00:00:00.000Z",
+      product: {
+        name: "Demo Shop",
+        type: "ecommerce",
+        languages: ["en"]
+      },
+      target: {
+        standard: "wcag22-aa",
+        urls: ["http://localhost:3000"]
+      },
+      supportedPlatforms: ["Desktop Chrome"],
+      assistiveTechnologies: ["Keyboard only"],
+      representativeSample: [{
+        type: "Core page",
+        url: "http://localhost:3000",
+        reason: "Primary flow"
+      }],
+      randomSample: [{
+        type: "Random product page",
+        url: "http://localhost:3000/products/random",
+        reason: "Control sample"
+      }],
+      criticalJourneys: [{
+        name: "Checkout",
+        urls: ["http://localhost:3000/cart", "http://localhost:3000/checkout"]
+      }],
+      thirdPartyContent: [],
+      exclusions: [],
+      notes: []
+    }
   });
 
   const html = await fs.readFile(path.join(outputDir, "a11y-report.html"), "utf8");
@@ -847,6 +1005,8 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /Report Completeness/);
   assert.match(html, /URL and state scope/);
   assert.match(html, /Automated tools/);
+  assert.match(html, /Planned scope/);
+  assert.match(html, /Demo Shop \(ecommerce\); wcag22-aa; 1 sample page; 1 random sample page; 1 journey; 1 affected/);
   assert.match(html, /Keyboard evidence/);
   assert.match(html, /Manual review records/);
   assert.match(html, /Known limitations/);
@@ -864,7 +1024,8 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /Lighthouse comparison/);
   assert.match(html, /Quick Review/);
   assert.match(html, /Fix First/);
-  assert.match(html, /First Tab Stops/);
+  assert.match(html, /Keyboard Start/);
+  assert.match(html, /First Tab stops show where keyboard users land/);
   assert.match(html, /Human Review Next/);
   assert.match(html, /WCAG Level A/);
   assert.match(html, /Third-party embedded content/);
@@ -876,13 +1037,28 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /review focus visibility/);
   assert.match(html, /1 observed target/);
   assert.match(html, /Keyboard Audit/);
+  assert.match(html, /Keyboard review summary/);
+  assert.match(html, /2 focus steps? need review|1 focus step need review/);
+  assert.match(html, /Tab cycle incomplete/);
+  assert.match(html, /Reverse order not checked/);
+  assert.match(html, /keyboard-review-card-warning/);
   assert.match(html, /Visual Tab Order/);
   assert.match(html, /Search products/);
   assert.match(html, /Buy now/);
-  assert.match(html, /focus indicator not detected; control may be obscured/);
+  assert.match(html, /Focus not visible/);
+  assert.match(html, /Obscured/);
+  assert.match(html, /focus-path-risk/);
   assert.match(html, /class="focus-path-item focus-path-item-risk"/);
   assert.match(html, /Complete focus path data/);
   assert.match(html, /Manual Review Checklist/);
+  assert.match(html, /data-manual-checklist-progress/);
+  assert.match(html, /Manual checks remaining: 1 of 1/);
+  assert.match(html, /data-manual-checklist-item="form-label-quality"/);
+  assert.match(html, /data-manual-checklist-checkbox/);
+  assert.match(html, /Mark Meaningful form labels and instructions as reviewed/);
+  assert.match(html, /a11y-shiftleft:manual-checklist:/);
+  assert.match(html, /manual-checklist-item-reviewed/);
+  assert.match(html, /event\.stopPropagation\(\)/);
   assert.match(html, /Manual test environment fields/);
   assert.match(html, /Operating system/);
   assert.match(html, /Assistive technology/);

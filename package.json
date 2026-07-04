@@ -1,7 +1,7 @@
 {
   "name": "a11y-shiftleft-cli",
-  "version": "0.8.0",
-  "description": "Accessibility testing CLI for web apps, pull requests, visual reports, and dashboards.",
+  "version": "0.7.1",
+  "description": "Visual accessibility audit CLI for web apps using axe, Playwright, Lighthouse, and WCAG metadata.",
   "type": "module",
   "license": "MIT",
   "homepage": "https://github.com/olboyarshinova/a11y-shiftleft-cli#readme",
@@ -19,6 +19,7 @@
     "wcag22",
     "axe",
     "playwright",
+    "visual-report",
     "eslint",
     "github-actions",
     "ci",

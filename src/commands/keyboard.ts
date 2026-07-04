@@ -8,6 +8,7 @@ import { applyIgnores, DEFAULT_IGNORE_FILE } from "../core/ignore.js";
 import { normalizeIssue } from "../core/normalize.js";
 import { applyRemediationTracking, DEFAULT_REMEDIATION_FILE } from "../core/remediationTracking.js";
 import { applyRetest } from "../core/retest.js";
+import { readScopePlanIfExists } from "../core/scopePlan.js";
 import { triageIssues } from "../core/severity.js";
 import { resolveStandard } from "../core/standards.js";
 import { writeKeyboardReport } from "../reporters/writeKeyboardReport.js";
@@ -75,6 +76,7 @@ export function registerKeyboardCommand(program: Command): void {
       });
       const framework = config.framework === "auto" ? await detectFramework(config.cwd) : config.framework;
       const standard = resolveStandard(config.standard);
+      const plannedScope = await readScopePlanIfExists(config.cwd);
       const audit = await runKeyboardPlaywrightAdapter({
         url: options.url,
         framework,
@@ -123,6 +125,7 @@ export function registerKeyboardCommand(program: Command): void {
         framework,
         cwd: config.cwd,
         urls: [options.url],
+        plannedScope,
         standard,
         baseline: baselineResult?.summary,
         retest: retestResult?.summary,

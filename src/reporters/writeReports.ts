@@ -4,9 +4,12 @@ import { stringify } from "csv-stringify/sync";
 import { enrichIssueEvidence } from "../core/classification.js";
 import { createManualChecklist, toManualChecklistMarkdown } from "../core/manualChecklist.js";
 import { writeEvaluationScopeManifest } from "../core/evaluationScope.js";
+import { annotateIssuesWithJourneys, summarizeJourneyImpact } from "../core/journeyImpact.js";
 import { compareLighthouseWithFindings } from "../core/lighthouseComparison.js";
 import { getRemediationHint } from "../core/remediation.js";
 import { summarizeRootCauses } from "../core/rootCauses.js";
+import { summarizeSampleComparison } from "../core/sampleComparison.js";
+import { applyUserImpact, countUserImpact } from "../core/userImpact.js";
 import type { A11yReport, ComplianceEvidenceSummary, ComplianceStandardMetadata, DedupedIssue, Framework, LighthouseAuditResult, LighthouseReportSummary, PageSummary, RemediationHint, ReportFormat, ReportMetrics, ReportSummary, RootCauseGroup, Severity } from "../types.js";
 
 interface WriteReportOptions {
@@ -28,8 +31,8 @@ export async function writeReports(
   options: WriteReportOptions = {}
 ): Promise<A11yReport> {
   await fs.mkdir(outputDir, { recursive: true });
-  const formats = new Set(options.formats || ["json", "csv", "markdown"]);
-  const reportIssues = issues.map((issue) => {
+  const formats = new Set(options.formats || ["json", "markdown"]);
+  const reportIssues = applyUserImpact(annotateIssuesWithJourneys(issues.map((issue) => {
     const enrichedIssue = issue.confidence && issue.category && issue.findingType
       ? issue
       : enrichIssueEvidence(issue);
@@ -48,7 +51,7 @@ export async function writeReports(
         options.frameworkExample
       )
     };
-  });
+  }), metrics.plannedScope));
 
   const manualChecklist = options.manualChecklist || (options.semiAuto
     ? createManualChecklist({
@@ -165,6 +168,9 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     framework: metrics.framework || "unknown",
     urls: metrics.urls || [],
     standard: metrics.standard,
+    plannedScope: metrics.plannedScope,
+    journeyImpact: summarizeJourneyImpact(issues, metrics.plannedScope),
+    sampleComparison: summarizeSampleComparison(issues, metrics.plannedScope),
     baseline: metrics.baseline,
     retest: metrics.retest,
     remediationTracking: metrics.remediationTracking,
@@ -179,6 +185,7 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     byFindingType: countBy(issues, "findingType"),
     byCategory: countBy(issues, "category"),
     byOwnership: countByOwnership(issues),
+    byUserImpact: countUserImpact(issues),
     blockedByHumanVerification: issues.filter((issue) => issue.ruleId === "adapter/human-verification").length,
     byPour: countByPour(issues),
     byWcagLevel: countByWcagLevel(issues),
@@ -222,6 +229,10 @@ export function toSummaryCsv(report: A11yReport): string {
     unmappedFindings: compliance.unmappedFindings,
     likelyRootCauses: summary.rootCauseCount || 0,
     thirdPartyEmbeddedFindings: summary.byOwnership?.["third-party-embed"] || 0,
+    userImpactBlocker: summary.byUserImpact?.blocker || 0,
+    userImpactSignificant: summary.byUserImpact?.significant || 0,
+    userImpactWorkaround: summary.byUserImpact?.workaround || 0,
+    userImpactMinor: summary.byUserImpact?.minor || 0,
     humanVerificationBlocked: summary.blockedByHumanVerification || 0,
     baselineNew: summary.baseline?.newIssues ?? "",
     baselineResolved: summary.baseline?.resolvedIssues ?? "",
@@ -234,7 +245,8 @@ export function toSummaryCsv(report: A11yReport): string {
     "total", "critical", "warning", "info", "rawFindings", "uniqueFindings",
     "duplicatesRemoved", "duplicateRate", "scanDurationMs", "affectedPages",
     "wcagMappedFindings", "bestPracticeFindings", "unmappedFindings",
-    "likelyRootCauses", "baselineNew", "baselineResolved", "retestNew",
+    "likelyRootCauses", "userImpactBlocker", "userImpactSignificant",
+    "userImpactWorkaround", "userImpactMinor", "baselineNew", "baselineResolved", "retestNew",
     "retestFixed", "ignoredFindings", "trackedRemediation",
     "thirdPartyEmbeddedFindings", "humanVerificationBlocked"
   ]);
@@ -301,6 +313,10 @@ export function toFindingsCsv(issues: DedupedIssue[]): string {
     ownershipSource: issue.ownership?.source || "",
     ownershipUrl: issue.ownership?.url || "",
     ownershipNote: issue.ownership?.note || "",
+    userImpact: issue.userImpact?.level || "",
+    affectedUsers: issue.userImpact?.affectedUsers.join(" | ") || "",
+    impactReason: issue.userImpact?.reason || "",
+    journeys: issue.journeys?.join(" | ") || "",
     duplicateCount: issue.duplicateCount,
     baselineStatus: issue.baselineStatus || "",
     retestStatus: issue.retestStatus || "",
@@ -336,6 +352,10 @@ export function toFindingsCsv(issues: DedupedIssue[]): string {
       "ownershipSource",
       "ownershipUrl",
       "ownershipNote",
+      "userImpact",
+      "affectedUsers",
+      "impactReason",
+      "journeys",
       "duplicateCount",
       "baselineStatus",
       "retestStatus",
@@ -390,27 +410,11 @@ export function toMarkdown(report: A11yReport): string {
     report.summary.byPage || [],
     report.summary.standard
   );
-  const topIssues = report.issues
+  const topIssueGroups = groupTopFindings(report.issues);
+  const topIssues = topIssueGroups
     .slice(0, 10)
-    .map((issue) => {
-      const criteria = formatCriteria(issue);
-      const remediation = formatRemediation(issue);
-      const state = issue.stateLabel ? ` state: ${issue.stateLabel}` : "";
-      const colorScheme = issue.colorScheme
-        ? ` color scheme: ${issue.colorScheme}`
-        : "";
-      const screenshot = issue.screenshot ? ` screenshot: ${issue.screenshot}` : "";
-      const baseline = issue.baselineStatus ? ` baseline: ${issue.baselineStatus}` : "";
-      const retest = issue.retestStatus ? ` retest: ${issue.retestStatus}` : "";
-      const tracking = formatRemediationTracking(issue);
-      const ownership = formatOwnership(issue);
-      const confidence = formatIssueConfidence(issue);
-      const findingType = ` type: ${formatFindingType(issue.findingType)}`;
-      const category = issue.category ? ` category: ${issue.category}` : "";
-      const contrast = formatContrastEvidence(issue);
-      return `- **${issue.severity}** \`${issue.ruleId}\`${criteria} ${issue.file || issue.selector || ""}${state}${colorScheme}${screenshot}${baseline}${retest}${tracking}${ownership}${findingType}${category}${confidence}: ${issue.message}${contrast}${remediation}`;
-    })
-    .join("\n");
+    .map(formatTopFindingGroup)
+    .join("\n\n");
 
   return `## Accessibility Shift-Left Report
 
@@ -438,6 +442,7 @@ ${formatRetentionRows(report.summary.retention)}| Retention evidence | ${formatR
 | WCAG levels | ${formatCountMap(report.summary.byWcagLevel)} |
 | WCAG versions | ${formatCountMap(report.summary.byWcagVersion)} |
 | Confidence | ${formatCountMap(report.summary.byConfidence)} |
+| User impact | ${formatCountMap(report.summary.byUserImpact)} |
 | Color schemes | ${formatCountMap(report.summary.byColorScheme)} |
 | Finding types | ${formatCountMap(report.summary.byFindingType)} |
 | Categories | ${formatCountMap(report.summary.byCategory)} |
@@ -446,6 +451,8 @@ ${formatRetentionRows(report.summary.retention)}| Retention evidence | ${formatR
 | Rules without WCAG mapping | ${formatCountMap(report.summary.byUnmappedRule)} |
 
 ${formatEvaluationScope(report)}
+
+${formatPlannedScope(report.summary)}
 
 ${formatCoverageMatrix(report)}
 
@@ -465,10 +472,140 @@ ${formatManualReviewSummary(report)}
 
 ${topIssues || "No accessibility findings detected."}
 
-${report.issues.length > 10 ? `Showing 10 of ${report.issues.length} findings. See \`a11y-report.json\` or \`a11y-findings.csv\` for every finding and recommendation.` : ""}
+${topIssueGroups.length > 10 ? `Showing 10 of ${topIssueGroups.length} finding groups. See \`a11y-report.json\` for every finding and \`a11y-report.html\` for the visual report. Add CSV export only when spreadsheet triage is needed.` : ""}
 
 ${formatDisclaimer(report.summary.standard)}
 `;
+}
+
+interface TopFindingGroup {
+  key: string;
+  ruleId: string;
+  severity: Severity;
+  criteria: DedupedIssue["wcagCriteria"];
+  findingType: DedupedIssue["findingType"];
+  category: DedupedIssue["category"];
+  message: string;
+  count: number;
+  occurrenceCount: number;
+  pages: string[];
+  targets: string[];
+  states: string[];
+  colorSchemes: string[];
+  screenshots: string[];
+  sample: DedupedIssue;
+  issues: DedupedIssue[];
+}
+
+function groupTopFindings(issues: DedupedIssue[]): TopFindingGroup[] {
+  const groups = new Map<string, TopFindingGroup>();
+
+  for (const issue of issues) {
+    const criteriaKey = (issue.wcagCriteria || []).map((criterion) => criterion.id).sort().join(",");
+    const remediationKey = issue.remediation?.summary || "";
+    const key = `${issue.ruleId}::${criteriaKey}::${issue.findingType}::${remediationKey}`;
+    const target = issue.file || issue.selector || "";
+    const page = issue.url || "";
+
+    const existing = groups.get(key);
+    if (existing) {
+      existing.issues.push(issue);
+      existing.count += 1;
+      existing.occurrenceCount += 1 + (issue.duplicateCount || 0);
+      existing.severity = severityRank(issue.severity) > severityRank(existing.severity)
+        ? issue.severity
+        : existing.severity;
+      pushUnique(existing.pages, page);
+      pushUnique(existing.targets, target);
+      pushUnique(existing.states, issue.stateLabel || "");
+      pushUnique(existing.colorSchemes, issue.colorScheme || "");
+      pushUnique(existing.screenshots, issue.screenshot || "");
+      continue;
+    }
+
+    groups.set(key, {
+      key,
+      ruleId: issue.ruleId,
+      severity: issue.severity,
+      criteria: issue.wcagCriteria || [],
+      findingType: issue.findingType,
+      category: issue.category,
+      message: issue.message,
+      count: 1,
+      occurrenceCount: 1 + (issue.duplicateCount || 0),
+      pages: page ? [page] : [],
+      targets: target ? [target] : [],
+      states: issue.stateLabel ? [issue.stateLabel] : [],
+      colorSchemes: issue.colorScheme ? [issue.colorScheme] : [],
+      screenshots: issue.screenshot ? [issue.screenshot] : [],
+      sample: issue,
+      issues: [issue]
+    });
+  }
+
+  return [...groups.values()].sort((left, right) => {
+    const severityDiff = severityRank(right.severity) - severityRank(left.severity);
+    if (severityDiff !== 0) return severityDiff;
+    const occurrenceDiff = right.occurrenceCount - left.occurrenceCount;
+    if (occurrenceDiff !== 0) return occurrenceDiff;
+    return left.ruleId.localeCompare(right.ruleId);
+  });
+}
+
+function pushUnique(values: string[], value: string): void {
+  if (value && !values.includes(value)) values.push(value);
+}
+
+function formatTopFindingGroup(group: TopFindingGroup): string {
+  const criteria = formatCriteria(group.sample);
+  const findingType = ` type: ${formatFindingType(group.findingType)}`;
+  const category = group.category ? ` category: ${group.category}` : "";
+  const contrast = formatContrastEvidence(group.sample);
+  const remediation = formatRemediation(group.sample);
+  const ownership = formatOwnership(group.sample);
+  const confidence = formatIssueConfidence(group.sample);
+  const userImpact = formatUserImpact(group.sample);
+  const status = formatGroupStatuses(group);
+  const occurrenceLabel = group.occurrenceCount === 1 ? "1 occurrence" : `${group.occurrenceCount} occurrences`;
+  const affected = [
+    group.pages.length > 0 ? `pages: ${formatLimitedList(group.pages)}` : "",
+    group.targets.length > 0 ? `targets: ${formatLimitedList(group.targets)}` : "",
+    group.states.length > 0 ? `states: ${formatLimitedList(group.states)}` : "",
+    group.colorSchemes.length === 1 ? `color scheme: ${group.colorSchemes[0]}` : "",
+    group.colorSchemes.length > 1 ? `color schemes: ${formatLimitedList(group.colorSchemes)}` : "",
+    group.screenshots.length > 0 ? `screenshots: ${formatLimitedList(group.screenshots)}` : ""
+  ].filter(Boolean);
+
+  return [
+    `- **${group.severity}** \`${group.ruleId}\`${criteria} (${occurrenceLabel})${ownership}${userImpact}${findingType}${category}${confidence}: ${group.message}`,
+    affected.length > 0 ? `\n  - Affected: ${affected.join("; ")}` : "",
+    status,
+    contrast,
+    remediation
+  ].filter(Boolean).join("");
+}
+
+function formatGroupStatuses(group: TopFindingGroup): string {
+  const baselineStatuses = uniqueJoined(group.issues.map((issue) => issue.baselineStatus));
+  const retestStatuses = uniqueJoined(group.issues.map((issue) => issue.retestStatus));
+  const remediationStatuses = uniqueJoined(group.issues.map((issue) => issue.remediationTracking?.status));
+  const remediationOwners = uniqueJoined(group.issues.map((issue) => issue.remediationTracking?.owner));
+  const remediationReviewDates = uniqueJoined(group.issues.map((issue) => issue.remediationTracking?.reviewBy));
+  const parts = [
+    baselineStatuses ? `baseline: ${baselineStatuses}` : "",
+    retestStatuses ? `retest: ${retestStatuses}` : "",
+    remediationStatuses ? `remediation: ${remediationStatuses}` : "",
+    remediationOwners ? `owner: ${remediationOwners}` : "",
+    remediationReviewDates ? `review by: ${remediationReviewDates}` : ""
+  ].filter(Boolean);
+
+  return parts.length > 0 ? `\n  - Status: ${parts.join(" ")}` : "";
+}
+
+function formatLimitedList(values: string[], limit = 3): string {
+  const shown = values.slice(0, limit).join(", ");
+  const remaining = values.length - limit;
+  return remaining > 0 ? `${shown}, +${remaining} more` : shown;
 }
 
 function formatEvaluationScope(report: A11yReport): string {
@@ -501,9 +638,77 @@ This WCAG-EM-inspired scope summary is reproducibility evidence, not a WCAG conf
 | Requested URLs | ${markdownCell((report.summary.urls || []).join(", ") || "none")} |
 | URLs included | ${urls.length} |
 | Rendered states | ${graph ? `${graph.summary.statesVisited} of ${graph.summary.maxStates} max` : "not included"} |
-| Depth | ${graph ? graph.summary.maxDepth : "not included"} |
+| Exploration depth | ${graph ? markdownCell(formatDepthScope(graph.summary.maxDepth)) : "not included"} |
 | Evidence collected | ${markdownCell(evidence)} |
 | Representative states | ${markdownCell(representativeStates || "No findings in captured states")} |`;
+}
+
+function formatDepthScope(maxDepth: number): string {
+  if (maxDepth === 0) return "start page only (depth 0)";
+  const levelLabel = maxDepth === 1 ? "1 interaction level" : `${maxDepth} interaction levels`;
+  return `${levelLabel} from the start page`;
+}
+
+function formatPlannedScope(summary: ReportSummary): string {
+  const scope = summary.plannedScope;
+  if (!scope) return "";
+  const product = `${scope.product.name ? `${scope.product.name} - ` : ""}${scope.product.type}`;
+  const journeyRows = (summary.journeyImpact || [])
+    .map((journey) => `| ${markdownCell(journey.name)} | ${journey.findingCount} | ${journey.critical} | ${journey.warning} | ${journey.info} | ${markdownCell(journey.urls.join(", "))} |`)
+    .join("\n");
+  return `## Planned Scope
+
+| Scope item | Value |
+|---|---|
+| Product | ${markdownCell(product)} |
+| Target standard | ${scope.target.standard} |
+| Languages | ${markdownCell(scope.product.languages.join(", ") || "not specified")} |
+| Representative URLs | ${markdownCell(scope.target.urls.join(", ") || "not specified")} |
+| Supported platforms | ${markdownCell(scope.supportedPlatforms.join(", ") || "not specified")} |
+| Assistive technologies | ${markdownCell(scope.assistiveTechnologies.join(", ") || "not specified")} |
+| Representative sample | ${scope.representativeSample.length} |
+| Random sample | ${scope.randomSample.length} |
+| Critical journeys | ${scope.criticalJourneys.length} |
+| Third-party content | ${scope.thirdPartyContent.length} |
+| Exclusions | ${scope.exclusions.length} |
+
+${formatRepresentativeSample(scope)}
+${formatSampleComparison(summary.sampleComparison)}
+${journeyRows ? `### Journey Impact
+
+| Journey | Findings | Critical | Warning | Info | URLs |
+|---|---:|---:|---:|---:|---|
+${journeyRows}` : ""}`;
+}
+
+function formatSampleComparison(comparison: ReportSummary["sampleComparison"]): string {
+  if (!comparison) return "";
+  return `### Structured vs Random Sample
+
+| Metric | Value |
+|---|---:|
+| Representative sample pages | ${comparison.representativeSampleSize} |
+| Random sample pages | ${comparison.randomSampleSize} |
+| Structured findings | ${comparison.structuredFindingCount} |
+| Random findings | ${comparison.randomFindingCount} |
+| Random-only rules | ${comparison.uniqueRandomRules.length} |
+
+${markdownCell(comparison.recommendation)}
+${comparison.uniqueRandomRules.length > 0 ? `\nRandom-only rules: ${comparison.uniqueRandomRules.map((rule) => `\`${markdownInline(rule)}\``).join(", ")}\n` : ""}`;
+}
+
+function formatRepresentativeSample(scope: NonNullable<ReportSummary["plannedScope"]>): string {
+  if (scope.representativeSample.length === 0) return "";
+  const rows = scope.representativeSample
+    .map((page) => `| ${markdownCell(page.type)} | ${markdownCell(page.url)} | ${markdownCell(page.reason || "")} |`)
+    .join("\n");
+  return `### Representative Sample
+
+| Type | URL | Reason |
+|---|---|---|
+${rows}
+
+`;
 }
 
 function formatKeyboardEvidence(report: A11yReport): string {
@@ -527,7 +732,7 @@ function formatKeyboardEvidence(report: A11yReport): string {
 |---:|---|---|---|---|
 ${path || "| - | - | No focus steps recorded | - | - |"}
 
-${audit.steps.length > 20 ? `Showing 20 of ${audit.steps.length} forward focus steps. See \`a11y-report.json\` for the complete path.` : ""}`;
+${audit.steps.length > 20 ? `Showing 20 of ${audit.steps.length} forward focus steps. See \`a11y-report.json\` for the complete path and \`a11y-report.html\` for the visual keyboard report.` : ""}`;
 }
 
 function formatCoverageMatrix(report: A11yReport): string {
@@ -771,6 +976,14 @@ function formatOwnership(issue: DedupedIssue): string {
   const source = issue.ownership.source ? ` source: ${issue.ownership.source}` : "";
   const note = issue.ownership.note ? ` note: ${issue.ownership.note}` : "";
   return ` ownership: ${issue.ownership.label}${source}${note}`;
+}
+
+function formatUserImpact(issue: DedupedIssue): string {
+  if (!issue.userImpact) return "";
+  const users = issue.userImpact.affectedUsers.length > 0
+    ? ` users: ${issue.userImpact.affectedUsers.join(", ")}`
+    : "";
+  return ` user impact: ${issue.userImpact.level}${users}`;
 }
 
 function formatCountMap(counts: Record<string, number> | undefined): string {

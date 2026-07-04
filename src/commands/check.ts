@@ -17,6 +17,7 @@ import { applyRemediationTracking, DEFAULT_REMEDIATION_FILE } from "../core/reme
 import { applyIgnores, DEFAULT_IGNORE_FILE } from "../core/ignore.js";
 import { applyReportRetention } from "../core/reportRetention.js";
 import { filterReportFindings } from "../core/findingFilter.js";
+import { readScopePlanIfExists } from "../core/scopePlan.js";
 import type { A11yReport, ComplianceStandard, Framework, Issue, LighthouseAuditResult, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel, WcagVersion } from "../types.js";
 
 export interface CheckOptions {
@@ -171,6 +172,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
   const framework = config.framework === "auto"
     ? await detectFramework(config.cwd)
     : config.framework;
+  const plannedScope = await readScopePlanIfExists(config.cwd);
   const effectiveConfig = {
     ...config,
     framework,
@@ -234,7 +236,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
     const adapterStartedAt = Date.now();
     for (const url of effectiveConfig.dynamic.urls) {
       try {
-        lighthouseResults.push(await runLighthouseAdapter({ url }));
+        lighthouseResults.push(await runLighthouseAdapter({ url, cwd: effectiveConfig.cwd }));
       } catch (error) {
         rawIssues.push(createCheckAdapterIssue(framework, url, "lighthouse", error));
       }
@@ -294,6 +296,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
     framework,
     cwd: effectiveConfig.cwd,
     urls: runDynamic ? effectiveConfig.dynamic.urls : [],
+    plannedScope,
     standard: {
       ...standard,
       wcagVersion: effectiveConfig.wcagVersion,
@@ -697,7 +700,7 @@ export function filterByWcagConformance(
 
 export function parseFormats(formats?: string[]): ReportFormat[] {
   if (!formats || formats.length === 0) {
-    return ["json", "csv", "markdown"];
+    return ["json", "markdown"];
   }
 
   const normalized = formats

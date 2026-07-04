@@ -72,6 +72,45 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
       duplicateCount: 2,
       scanDurationMs: 123,
       urls: ["http://localhost:3000"],
+      plannedScope: {
+        version: 1,
+        generatedAt: "2026-06-01T00:00:00.000Z",
+        product: {
+          name: "Demo Shop",
+          type: "ecommerce",
+          languages: ["en"]
+        },
+        target: {
+          standard: "ada-title-ii",
+          urls: ["http://localhost:3000"]
+        },
+        supportedPlatforms: ["Desktop Chrome"],
+        assistiveTechnologies: ["Keyboard only"],
+        representativeSample: [{
+          type: "Core page",
+          url: "http://localhost:3000",
+          reason: "Primary authenticated page"
+        }],
+        randomSample: [{
+          type: "Random content page",
+          url: "http://localhost:3000/settings",
+          reason: "Control sample"
+        }],
+        criticalJourneys: [{
+          name: "Account settings",
+          urls: ["http://localhost:3000/settings", "http://localhost:3000"]
+        }],
+        thirdPartyContent: [{
+          name: "YouTube",
+          url: "https://youtube.com/embed/demo",
+          reviewStrategy: "Manual verification recommended"
+        }],
+        exclusions: [{
+          area: "Admin billing",
+          reason: "requires production account"
+        }],
+        notes: []
+      },
       lighthouse: [{
         url: "http://localhost:3000",
         finalUrl: "http://localhost:3000/",
@@ -106,7 +145,8 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
       }
     },
     {
-      frameworkExample: "react"
+      frameworkExample: "react",
+      formats: ["json", "csv", "markdown"]
     }
   );
 
@@ -129,6 +169,10 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   });
   assert.deepEqual(report.summary.byOwnership, {
     "third-party-embed": 1
+  });
+  assert.deepEqual(report.summary.byUserImpact, {
+    blocker: 1,
+    workaround: 1
   });
   assert.equal(report.summary.blockedByHumanVerification, 0);
   assert.deepEqual(report.summary.byPour, {
@@ -244,8 +288,15 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   );
 
   assert.equal(json.summary.framework, "react");
+  assert.equal(json.summary.plannedScope.product.name, "Demo Shop");
+  assert.equal(json.summary.journeyImpact[0].name, "Account settings");
+  assert.equal(json.summary.journeyImpact[0].findingCount, 2);
+  assert.equal(json.summary.plannedScope.representativeSample[0].type, "Core page");
+  assert.equal(json.summary.sampleComparison.randomSampleSize, 1);
+  assert.deepEqual(json.issues.map((issue: { journeys?: string[] }) => issue.journeys), [["Account settings"], ["Account settings"]]);
   assert.equal(scope.methodology.name, "WCAG-EM-inspired evaluation scope");
   assert.equal(scope.methodology.conformanceClaim, false);
+  assert.equal(scope.plannedScope.product.type, "ecommerce");
   assert.equal(scope.target.standard.id, "ada-title-ii");
   assert.equal(scope.sample.strategy, "configured-urls");
   assert.deepEqual(scope.evidence.automatedSources, ["axe", "eslint"]);
@@ -255,6 +306,8 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.equal(json.issues[0].confidence, "high");
   assert.equal(json.issues[0].confidenceScore, 95);
   assert.equal(json.issues[0].category, "aria");
+  assert.equal(json.issues[0].userImpact.level, "blocker");
+  assert.deepEqual(json.issues[0].userImpact.affectedUsers, ["Screen reader users", "Voice-control users"]);
   assert.equal(json.issues[0].ownership.source, "youtube.com");
   assert.equal(json.issues[0].ownership.note, "Third-party embedded content. Manual verification recommended.");
   assert.equal(json.issues[0].remediation.summary, "Give every button an accessible name.");
@@ -282,19 +335,23 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(csv, /byColorScheme\.dark,1/);
   assert.match(csv, /byCategory\.aria,1/);
   assert.match(csv, /byOwnership\.third-party-embed,1/);
+  assert.match(csv, /byUserImpact\.blocker,1/);
   assert.match(csv, /blockedByHumanVerification,0/);
   assert.match(csv, /byPour\.robust,1/);
   assert.match(csv, /byWcagVersion\.2\.0,2/);
   assert.match(csv, /byPage\.0\.url,http:\/\/localhost:3000\/settings/);
   assert.match(csv, /byPage\.0\.severityScore,5/);
   assert.match(findingsCsv, /fixSummary,fixSteps,documentation,frameworkExamples/);
-  assert.match(findingsCsv, /ownership,ownershipSource,ownershipUrl,ownershipNote/);
+  assert.match(findingsCsv, /ownership,ownershipSource,ownershipUrl,ownershipNote,userImpact,affectedUsers,impactReason,journeys/);
   assert.match(findingsCsv, /Third-party embedded content,youtube\.com,https:\/\/www\.youtube\.com,Third-party embedded content\. Manual verification recommended\./);
+  assert.match(findingsCsv, /blocker,Screen reader users \| Voice-control users,Controls without accessible names may be impossible to identify or activate by assistive technology\./);
+  assert.match(findingsCsv, /Account settings/);
   assert.match(findingsCsv, /Give every button an accessible name/);
   assert.match(findingsCsv, /Use visible button text when possible/);
   assert.match(findingsCsv, /react: <button type=""button"" aria-label=""Open menu"">/);
   assert.match(summaryCsv, /^generatedAt,framework,urls,standard,wcagVersion,wcagLevel,total,critical,warning,info,/);
   assert.match(summaryCsv, /react.*ada-title-ii.*2\.1,AA,2,1,1,0/);
+  assert.match(summaryCsv, /userImpactBlocker,userImpactSignificant,userImpactWorkaround,userImpactMinor/);
   assert.match(summaryCsv, /thirdPartyEmbeddedFindings,humanVerificationBlocked/);
   assert.match(pagesCsv, /^url,total,critical,warning,info,severityScore/);
   assert.match(pagesCsv, /http:\/\/localhost:3000\/settings,1,1,0,0,5/);
@@ -306,7 +363,19 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /not a WCAG conformance claim/);
   assert.match(markdown, /evaluation-scope\.json/);
   assert.match(markdown, /Requested URLs \| http:\/\/localhost:3000/);
+  assert.match(markdown, /Exploration depth \| not included/);
   assert.match(markdown, /Evidence collected \| browser exploration not included; axe, eslint; keyboard not included; Lighthouse comparison; manual checklist not included/);
+  assert.match(markdown, /## Planned Scope/);
+  assert.match(markdown, /Product \| Demo Shop - ecommerce/);
+  assert.match(markdown, /Representative sample \| 1/);
+  assert.match(markdown, /Random sample \| 1/);
+  assert.match(markdown, /### Representative Sample/);
+  assert.match(markdown, /Core page \| http:\/\/localhost:3000 \| Primary authenticated page/);
+  assert.match(markdown, /### Structured vs Random Sample/);
+  assert.match(markdown, /Random sample pages \| 1/);
+  assert.match(markdown, /Critical journeys \| 1/);
+  assert.match(markdown, /### Journey Impact/);
+  assert.match(markdown, /Account settings \| 2 \| 1 \| 1 \| 0/);
   assert.match(markdown, /Compliance Note/);
   assert.match(markdown, /Compliance Evidence Summary/);
   assert.match(markdown, /WCAG-mapped findings \| 2/);
@@ -316,11 +385,13 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /http:\/\/localhost:3000\/settings \| 1 \| 1 \| 0 \| 0 \| 5/);
   assert.match(markdown, /WCAG versions \| 2\.0: 2/);
   assert.match(markdown, /Confidence \| high: 1, medium: 1/);
+  assert.match(markdown, /User impact \| blocker: 1, workaround: 1/);
   assert.match(markdown, /Color schemes \| dark: 1/);
   assert.match(markdown, /Categories \| aria: 1, images: 1/);
   assert.match(markdown, /Ownership \| third-party-embed: 1/);
   assert.match(markdown, /Human verification blockers \| 0/);
   assert.match(markdown, /category: aria confidence: high 95%/);
+  assert.match(markdown, /user impact: blocker users: Screen reader users, Voice-control users/);
   assert.match(markdown, /ownership: Third-party embedded content source: youtube\.com note: Third-party embedded content\. Manual verification recommended\./);
   assert.match(markdown, /color scheme: dark/);
   assert.match(markdown, /WCAG 4\.1\.2 Name, Role, Value, Level A/);
@@ -367,6 +438,102 @@ test("writeReports hides auto-detected framework examples from dynamic findings"
   assert.match(markdown, /Use visible button text when possible/);
 });
 
+test("writeReports groups duplicate Markdown recommendations by rule", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-md-groups-"));
+
+  await writeReports(outputDir, [{
+    source: "axe",
+    framework: "unknown",
+    severity: "critical",
+    ruleId: "button-name",
+    wcag: ["4.1.2"],
+    wcagCriteria: [{
+      id: "4.1.2",
+      title: "Name, Role, Value",
+      level: "A",
+      principle: "robust",
+      introducedIn: "2.0",
+      url: "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
+    }],
+    tags: [],
+    selector: "#open",
+    url: "https://example.com/",
+    message: "Buttons must have discernible text",
+    remediation: {
+      summary: "Give every button an accessible name.",
+      howToFix: ["Use visible button text when possible."],
+      docs: ["https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"]
+    },
+    fingerprint: "button-name::#open",
+    duplicateCount: 0
+  }, {
+    source: "axe",
+    framework: "unknown",
+    severity: "critical",
+    ruleId: "button-name",
+    wcag: ["4.1.2"],
+    wcagCriteria: [{
+      id: "4.1.2",
+      title: "Name, Role, Value",
+      level: "A",
+      principle: "robust",
+      introducedIn: "2.0",
+      url: "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
+    }],
+    tags: [],
+    selector: "#close",
+    url: "https://example.com/modal",
+    message: "Buttons must have discernible text",
+    remediation: {
+      summary: "Give every button an accessible name.",
+      howToFix: ["Use visible button text when possible."],
+      docs: ["https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"]
+    },
+    fingerprint: "button-name::#close",
+    duplicateCount: 1
+  }], {
+    framework: "unknown"
+  });
+
+  const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+
+  assert.equal((markdown.match(/Fix: Give every button an accessible name/g) || []).length, 1);
+  assert.equal((markdown.match(/Step 1: Use visible button text when possible/g) || []).length, 1);
+  assert.match(markdown, /button-name.*3 occurrences/);
+  assert.match(markdown, /targets: #open, #close/);
+  assert.match(markdown, /pages: https:\/\/example\.com\/, https:\/\/example\.com\/modal/);
+});
+
+test("writeReports points truncated finding groups to JSON and visual reports", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-md-truncated-groups-"));
+  const issues = Array.from({ length: 11 }, (_, index) => ({
+    source: "axe" as const,
+    framework: "unknown" as const,
+    severity: "warning" as const,
+    ruleId: `custom-rule-${index + 1}`,
+    wcag: [],
+    wcagCriteria: [],
+    tags: [],
+    selector: `#target-${index + 1}`,
+    url: `https://example.com/page-${index + 1}`,
+    message: `Review custom accessibility condition ${index + 1}`,
+    fingerprint: `custom-rule-${index + 1}::#target-${index + 1}`,
+    duplicateCount: 0
+  }));
+
+  await writeReports(outputDir, issues, {
+    framework: "unknown"
+  });
+
+  const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+
+  assert.match(markdown, /Showing 10 of 11 finding groups/);
+  assert.match(markdown, /a11y-report\.json.*every finding/);
+  assert.match(markdown, /a11y-report\.html.*visual report/);
+  assert.match(markdown, /CSV export only when spreadsheet triage is needed/);
+  assert.doesNotMatch(markdown, /a11y-findings\.csv/);
+});
+
 test("findings CSV neutralizes spreadsheet formulas in report text", async () => {
   const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-csv-safety-"));
 
@@ -379,7 +546,9 @@ test("findings CSV neutralizes spreadsheet formulas in report text", async () =>
     tags: [],
     selector: "@dangerous-cell",
     message: "=HYPERLINK(\"https://example.com\")"
-  }], { framework: "unknown" });
+  }], { framework: "unknown" }, {
+    formats: ["csv"]
+  });
 
   const findingsCsv = await fs.readFile(path.join(outputDir, "a11y-findings.csv"), "utf8");
 
@@ -525,6 +694,9 @@ test("writeReports summarizes rules without WCAG mappings", async () => {
       rawCount: 2,
       uniqueCount: 2,
       duplicateCount: 0
+    },
+    {
+      formats: ["json", "csv", "markdown"]
     }
   );
 
@@ -606,6 +778,9 @@ test("writeReports includes baseline comparison metadata", async () => {
         newWarning: 1,
         newInfo: 0
       }
+    },
+    {
+      formats: ["json", "csv", "markdown"]
     }
   );
 
@@ -657,6 +832,9 @@ test("writeReports includes retest comparison metadata", async () => {
         newWarning: 1,
         newInfo: 0
       }
+    },
+    {
+      formats: ["json", "csv", "markdown"]
     }
   );
 
@@ -712,6 +890,9 @@ test("writeReports includes remediation tracking without hiding findings", async
         staleEntries: 1,
         byStatus: { "in-progress": 1 }
       }
+    },
+    {
+      formats: ["json", "csv", "markdown"]
     }
   );
 
@@ -746,6 +927,9 @@ test("writeReports includes ignore metadata", async () => {
         invalidRules: 1,
         ignoredIssues: 1
       }
+    },
+    {
+      formats: ["json", "csv", "markdown"]
     }
   );
 
@@ -786,6 +970,9 @@ test("writeReports includes retention metadata", async () => {
       uniqueCount: 0,
       duplicateCount: 0,
       retention: retentionSummary
+    },
+    {
+      formats: ["json", "csv", "markdown"]
     }
   );
 
@@ -832,6 +1019,65 @@ test("writeReports can limit output formats", async () => {
   assert.equal(await exists(path.join(outputDir, "a11y-metrics.csv")), false);
   assert.equal(await exists(path.join(outputDir, "a11y-findings.csv")), false);
   assert.equal(await exists(path.join(outputDir, "a11y-comment.md")), false);
+});
+
+test("writeReports defaults to JSON and Markdown without CSV exports", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-default-formats-"));
+
+  await writeReports(
+    outputDir,
+    [],
+    {
+      rawCount: 0,
+      uniqueCount: 0,
+      duplicateCount: 0
+    }
+  );
+
+  assert.equal(await exists(path.join(outputDir, "a11y-report.json")), true);
+  assert.equal(await exists(path.join(outputDir, "a11y-comment.md")), true);
+  assert.equal(await exists(path.join(outputDir, "a11y-metrics.csv")), false);
+  assert.equal(await exists(path.join(outputDir, "a11y-findings.csv")), false);
+  assert.equal(await exists(path.join(outputDir, "a11y-summary.csv")), false);
+});
+
+test("writeReports points long keyboard paths to JSON and visual reports", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-keyboard-path-"));
+  const steps = Array.from({ length: 21 }, (_, index) => ({
+    index: index + 1,
+    role: "button",
+    tagName: "BUTTON",
+    accessibleName: `Action ${index + 1}`,
+    indicatorVisible: true,
+    obscured: false
+  }));
+
+  await writeReports(
+    outputDir,
+    [],
+    {
+      rawCount: 0,
+      uniqueCount: 0,
+      duplicateCount: 0
+    },
+    {
+      keyboard: {
+        url: "https://example.com/",
+        generatedAt: "2026-07-03T00:00:00.000Z",
+        focusableCount: 21,
+        completedCycle: true,
+        steps,
+        backwardSteps: [],
+        issues: []
+      }
+    }
+  );
+
+  const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+
+  assert.match(markdown, /Showing 20 of 21 forward focus steps/);
+  assert.match(markdown, /a11y-report\.json.*complete path/);
+  assert.match(markdown, /a11y-report\.html.*visual keyboard report/);
 });
 
 test("writeReports can generate a semi-automated manual checklist", async () => {

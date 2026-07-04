@@ -8,6 +8,7 @@ import { triageIssues } from "../core/severity.js";
 import { resolveStandard } from "../core/standards.js";
 import { applyReportRetention } from "../core/reportRetention.js";
 import { filterReportFindings } from "../core/findingFilter.js";
+import { readScopePlanIfExists } from "../core/scopePlan.js";
 import { cleanExploreArtifacts } from "../reporters/cleanExploreArtifacts.js";
 import { writeExplorationHtml } from "../reporters/writeExplorationHtml.js";
 import { writeExplorationPdf } from "../reporters/writeExplorationPdf.js";
@@ -32,6 +33,7 @@ interface ExploreOptions {
   framework?: string;
   url: string;
   depth?: string;
+  maxDepth?: string;
   limit?: string;
   actionsPerState?: string;
   out?: string;
@@ -88,6 +90,7 @@ export function registerExploreCommand(program: Command): void {
     .option("--framework <name>", "react, vue, angular, or auto")
     .requiredOption("--url <url>", "Start URL for UI exploration")
     .option("--depth <depth>", "Maximum interaction depth", "2")
+    .option("--max-depth <depth>", "Maximum interaction depth; clearer alias for --depth")
     .option("--limit <limit>", "Maximum UI states to scan", "20")
     .option("--actions-per-state <limit>", "Maximum safe actions to try per state", "8")
     .option("--out <dir>", "Output directory")
@@ -178,6 +181,7 @@ export function registerExploreCommand(program: Command): void {
       const framework = config.framework === "auto"
         ? await detectFramework(config.cwd)
         : config.framework;
+      const plannedScope = await readScopePlanIfExists(config.cwd);
       const effectiveConfig = {
         ...config,
         framework,
@@ -189,7 +193,7 @@ export function registerExploreCommand(program: Command): void {
         await cleanExploreArtifacts(effectiveConfig.outputDir);
       }
 
-      const maxDepth = toPositiveInteger(options.depth);
+      const maxDepth = toPositiveInteger(resolveDepthOption(options));
       const maxStates = toPositiveInteger(options.limit);
       const maxActionsPerState = toPositiveInteger(options.actionsPerState);
       const waitMs = toNonNegativeInteger(options.waitMs) ?? effectiveConfig.explore.waitMs;
@@ -289,6 +293,7 @@ export function registerExploreCommand(program: Command): void {
         framework,
         cwd: effectiveConfig.cwd,
         urls: [...new Set(exploration.graph.states.map((state) => state.url))],
+        plannedScope,
         standard: {
           ...standard,
           wcagVersion: effectiveConfig.wcagVersion,
@@ -305,7 +310,7 @@ export function registerExploreCommand(program: Command): void {
         semiAuto: Boolean(options.semiAuto)
       });
       if (options.html !== false) {
-        await writeExplorationHtml(effectiveConfig.outputDir, exploration.graph, report.issues);
+        await writeExplorationHtml(effectiveConfig.outputDir, exploration.graph, report.issues, { plannedScope });
       }
       if (options.pdf) {
         await writeExplorationPdf(effectiveConfig.outputDir);
@@ -335,6 +340,10 @@ export function registerExploreCommand(program: Command): void {
         process.exitCode = 1;
       }
     });
+}
+
+export function resolveDepthOption(options: Pick<ExploreOptions, "depth" | "maxDepth">): string | undefined {
+  return options.maxDepth ?? options.depth;
 }
 
 function toFramework(framework: string | undefined): Framework | undefined {

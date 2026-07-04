@@ -48,7 +48,18 @@
 - Added explicit Audit Coverage evidence states (`passed`, `failed`,
   `needs-review`, `not-tested`, `unavailable`) to the visual HTML report.
 
-## 0.8.0 - 2026-06-24
+## 0.7.1 - 2026-07-03
+
+- Simplified the README so new users see the install command, first audit
+  command, visual report screenshots, and the most important workflows before
+  advanced options.
+- Refreshed the README visual report screenshots from the current demo audit.
+- Made full-page screenshot previews more compact in the visual HTML report so
+  state cards do not leave large empty areas under screenshots.
+- Kept advanced commands, report-reading details, and CI examples available in
+  collapsed README sections instead of front-loading them.
+
+## Planned 0.8.0
 
 - Added the first optional Lighthouse comparison path for `check --with-lighthouse`
   and `audit --with-lighthouse`. Lighthouse remains an optional peer dependency

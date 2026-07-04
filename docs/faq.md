@@ -8,7 +8,15 @@ Common questions from new users about installing, running, and reading reports.
 
 ### Do I need React, Vue, or Angular installed to use this CLI?
 
-No. `a11y-shiftleft-cli` works with any web app that runs at a local or preview URL — React, Vue, Angular, Next.js, Svelte, Astro, Rails, Django, static HTML, and others. Framework-specific adapter packages (`@a11y-shiftleft/react`, `/vue`, `/angular`) are optional and only needed for static lint checks on top of the dynamic browser scan.
+No. `a11y-shiftleft-cli` can audit any rendered web app or website that runs at
+a local, staging, or preview URL: React, Vue, Angular, Next.js, Svelte, Astro,
+Rails, Django, static HTML, and others.
+
+Framework-specific adapter packages (`@a11y-shiftleft/react`,
+`@a11y-shiftleft/vue`, and `@a11y-shiftleft/angular`) are optional. They add
+optimized static lint checks for source files. They are not required for dynamic
+browser checks, visual exploration, keyboard evidence, Lighthouse, or manual
+review prompts.
 
 ### Do I need to install Playwright separately?
 
@@ -92,8 +100,8 @@ checklist. Add `--excel`, `--pdf`, or `--raw` only when those exports are needed
 
 ### Should I commit generated reports to my repository?
 
-Usually no. Report files (`a11y-comment.md`, `a11y-report.json`, generated CSV
-tables, visual HTML, and `screenshots/`) change on every run and quickly
+Usually no. Report files (`a11y-comment.md`, `a11y-report.json`, visual HTML,
+optional CSV exports, and `screenshots/`) change on every run and quickly
 inflate repository size. Add the reports folder to `.gitignore`:
 
 ### Why am I seeing findings inside third-party iframes like YouTube or Google Maps?
