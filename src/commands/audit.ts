@@ -220,6 +220,8 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
     });
   const formats = options.excel ? ["json", "markdown", "csv"] as const : ["json", "markdown"] as const;
   const report = await writeReports(effectiveConfig.outputDir, remediationResult.issues, {
+    commandName: "audit",
+    commandProfile: "visual-audit",
     framework,
     cwd: effectiveConfig.cwd,
     urls,
@@ -235,6 +237,11 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
   }, {
     formats: [...formats],
     legacyMetrics: false,
+    generatedFiles: [
+      "a11y-report.html",
+      ...(options.pdf ? ["a11y-report.pdf"] : []),
+      ...(options.raw ? ["exploration-graph.json"] : [])
+    ],
     frameworkExample: config.framework === "auto" || config.framework === "unknown" ? undefined : config.framework,
     exploration: exploration.graph,
     keyboard,
@@ -248,7 +255,8 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
     keyboard,
     manualChecklist,
     lighthouse,
-    plannedScope
+    plannedScope,
+    auditTrail: report.summary.auditTrail
   });
   if (options.pdf) await writeExplorationPdf(effectiveConfig.outputDir, "a11y-report");
 

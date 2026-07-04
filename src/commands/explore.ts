@@ -296,6 +296,8 @@ export function registerExploreCommand(program: Command): void {
       const uniqueIssues = dedupeIssues(filterReportFindings(filtered, { wcagOnly: options.wcagOnly }));
       const retentionSummary = await applyReportRetention(effectiveConfig.outputDir, effectiveConfig.retention);
       const report = await writeReports(effectiveConfig.outputDir, uniqueIssues, {
+        commandName: "explore",
+        commandProfile: "visual-exploration",
         framework,
         cwd: effectiveConfig.cwd,
         urls: [...new Set(exploration.graph.states.map((state) => state.url))],
@@ -312,11 +314,19 @@ export function registerExploreCommand(program: Command): void {
         duplicateCount: filtered.length - uniqueIssues.length
       }, {
         formats,
+        generatedFiles: [
+          ...(options.html === false ? [] : ["exploration.html"]),
+          ...(options.pdf ? ["exploration.pdf"] : []),
+          "exploration-graph.json"
+        ],
         frameworkExample: config.framework === "auto" || config.framework === "unknown" ? undefined : config.framework,
         semiAuto: Boolean(options.semiAuto)
       });
       if (options.html !== false) {
-        await writeExplorationHtml(effectiveConfig.outputDir, exploration.graph, report.issues, { plannedScope });
+        await writeExplorationHtml(effectiveConfig.outputDir, exploration.graph, report.issues, {
+          plannedScope,
+          auditTrail: report.summary.auditTrail
+        });
       }
       if (options.pdf) {
         await writeExplorationPdf(effectiveConfig.outputDir);

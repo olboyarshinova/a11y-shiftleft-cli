@@ -10,10 +10,6 @@ Section 508 certification.
 
 ## Near Term
 
-- Strengthen the "Fix First" section so it ranks findings by severity,
-  confidence, user impact, affected states, repeated-component signals, and
-  third-party ownership. Keep the explanation short enough for pull request
-  review.
 - Promote planned journey matches into a richer journey-review workflow where a
   reviewer can confirm every step, record missing states, and attach manual
   task-completion evidence.
@@ -158,10 +154,6 @@ Section 508 certification.
 - Add CI artifact-link support for visual HTML reports so pull request comments
   can stay short while linking to the full local-generated evidence uploaded by
   the CI provider.
-- Add a local audit-trail summary to JSON, Markdown, and HTML reports with tool
-  version, command profile, requested URLs, rendered states, CI provider,
-  commit SHA when available, generated files, and explicit automation/manual
-  coverage boundaries.
 - Add first-class report status summaries that highlight high-confidence,
   high-impact findings first, separate third-party embedded content, and show
   which findings are best handled as manual review.

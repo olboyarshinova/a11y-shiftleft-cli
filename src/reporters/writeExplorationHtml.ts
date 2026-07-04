@@ -4,7 +4,7 @@ import { enrichIssueEvidence } from "../core/classification.js";
 import { compareLighthouseWithFindings } from "../core/lighthouseComparison.js";
 import { formatReportDateUtc } from "../core/reportDate.js";
 import { getRemediationHint } from "../core/remediation.js";
-import type { DedupedIssue, ExplorationGraph, ExplorationState, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, PlannedEvaluationScope, Severity } from "../types.js";
+import type { DedupedIssue, ExplorationGraph, ExplorationState, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, PlannedEvaluationScope, ReportAuditTrail, Severity } from "../types.js";
 
 interface StateViewModel extends ExplorationState {
   issues: DedupedIssue[];
@@ -17,6 +17,7 @@ interface ExplorationHtmlOptions {
   manualChecklist?: ManualChecklist;
   lighthouse?: LighthouseAuditResult[];
   plannedScope?: PlannedEvaluationScope;
+  auditTrail?: ReportAuditTrail;
 }
 
 interface CoverageMatrixRow {
@@ -1742,6 +1743,7 @@ function renderEvaluationScope(
         <div class="scope-item"><strong>Rendered states</strong><span>${graph.summary.statesVisited} of ${graph.summary.maxStates} max</span></div>
         <div class="scope-item"><strong>Exploration depth</strong><span>${escapeHtml(formatDepthScope(graph.summary.maxDepth))}</span></div>
         <div class="scope-item"><strong>Evidence collected</strong><span>${escapeHtml(evidence.join("; "))}</span></div>
+        ${options.auditTrail ? renderAuditTrailScopeItems(options.auditTrail) : ""}
         <div class="scope-item"><strong>Representative states</strong><span>${escapeHtml(mostAffected.length ? mostAffected.join("; ") : "No findings in captured states")}</span></div>
         <div class="scope-item"><strong>Planned scope</strong><span>${escapeHtml(formatPlannedScopeSummary(options.plannedScope, issues))}</span></div>
         <div class="scope-item"><strong>Debug data</strong><span>State transitions and skipped actions can be saved to <code>exploration-graph.json</code> with <code>--raw</code>.</span></div>
@@ -1750,6 +1752,24 @@ function renderEvaluationScope(
       <p class="muted">Full machine-readable details are in <code>evaluation-scope.json</code>.</p>
     </details>
   </section>`;
+}
+
+function renderAuditTrailScopeItems(trail: ReportAuditTrail): string {
+  const ci = trail.ci
+    ? [
+      trail.ci.provider,
+      trail.ci.workflow,
+      trail.ci.runId ? `run ${trail.ci.runId}` : "",
+      trail.ci.commitSha ? `commit ${trail.ci.commitSha.slice(0, 12)}` : "",
+      trail.ci.branch
+    ].filter(Boolean).join("; ")
+    : "not detected";
+  return [
+    `<div class="scope-item"><strong>Tool</strong><span>${escapeHtml(`${trail.tool.name} ${trail.tool.version} on ${trail.tool.nodeVersion}`)}</span></div>`,
+    `<div class="scope-item"><strong>Command profile</strong><span>${escapeHtml(`${trail.command.name} / ${trail.command.profile}`)}</span></div>`,
+    `<div class="scope-item"><strong>Output files</strong><span>${escapeHtml(trail.generatedFiles.join("; ") || "not recorded")}</span></div>`,
+    `<div class="scope-item"><strong>CI context</strong><span>${escapeHtml(ci)}</span></div>`
+  ].join("");
 }
 
 function formatPlannedScopeSummary(scope: PlannedEvaluationScope | undefined, issues: DedupedIssue[]): string {

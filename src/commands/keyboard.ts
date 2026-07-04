@@ -122,6 +122,8 @@ export function registerKeyboardCommand(program: Command): void {
         : undefined;
       const reportIssues = baselineResult?.issues || retestResult?.issues || remediationResult.issues;
       const report = await writeReports(config.outputDir, reportIssues, {
+        commandName: "keyboard",
+        commandProfile: "keyboard-focus-audit",
         framework,
         cwd: config.cwd,
         urls: [options.url],

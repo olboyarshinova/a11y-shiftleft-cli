@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { stringify } from "csv-stringify/sync";
+import { createReportAuditTrail } from "../core/auditTrail.js";
 import { enrichIssueEvidence } from "../core/classification.js";
 import { createManualChecklist, toManualChecklistMarkdown } from "../core/manualChecklist.js";
 import { writeEvaluationScopeManifest } from "../core/evaluationScope.js";
@@ -16,6 +17,7 @@ interface WriteReportOptions {
   formats?: ReportFormat[];
   semiAuto?: boolean;
   legacyMetrics?: boolean;
+  generatedFiles?: string[];
   frameworkExample?: Framework;
   exploration?: A11yReport["exploration"];
   keyboard?: A11yReport["keyboard"];
@@ -31,7 +33,7 @@ export async function writeReports(
   options: WriteReportOptions = {}
 ): Promise<A11yReport> {
   await fs.mkdir(outputDir, { recursive: true });
-  const formats = new Set(options.formats || ["json", "markdown"]);
+  const formats = new Set<ReportFormat>(options.formats || ["json", "markdown"]);
   const reportIssues = applyUserImpact(annotateIssuesWithJourneys(issues.map((issue) => {
     const enrichedIssue = issue.confidence && issue.category && issue.findingType
       ? issue
@@ -60,9 +62,28 @@ export async function writeReports(
       issues: reportIssues
     })
     : undefined);
+  const generatedFiles = [
+    ...generatedReportFiles(formats, {
+      semiAuto: Boolean(options.semiAuto),
+      legacyMetrics: options.legacyMetrics !== false
+    }),
+    ...(options.generatedFiles || [])
+  ];
+  const auditTrail = createReportAuditTrail({
+    metrics,
+    formats: [...formats],
+    generatedFiles,
+    issueSources: reportIssues.map((issue) => issue.source),
+    report: {
+      exploration: options.exploration,
+      keyboard: options.keyboard,
+      manualChecklist,
+      lighthouse: metrics.lighthouse
+    }
+  });
   const report: A11yReport = {
     generatedAt: new Date().toISOString(),
-    summary: summarize(reportIssues, metrics),
+    summary: summarize(reportIssues, metrics, auditTrail),
     issues: reportIssues,
     exploration: options.exploration,
     keyboard: options.keyboard,
@@ -127,6 +148,21 @@ export async function writeReports(
   return report;
 }
 
+function generatedReportFiles(
+  formats: Set<ReportFormat>,
+  options: { semiAuto: boolean; legacyMetrics: boolean }
+): string[] {
+  const files = ["evaluation-scope.json"];
+  if (formats.has("json")) files.push("a11y-report.json");
+  if (formats.has("markdown")) files.push("a11y-comment.md");
+  if (formats.has("csv")) {
+    if (options.legacyMetrics) files.push("a11y-metrics.csv");
+    files.push("a11y-findings.csv", "a11y-summary.csv", "a11y-pages.csv", "a11y-rules.csv");
+  }
+  if (options.semiAuto) files.push("a11y-manual-checklist.md", "a11y-manual-checklist.json");
+  return files;
+}
+
 function keepRelevantFrameworkExample(
   remediation: RemediationHint,
   issue: DedupedIssue,
@@ -149,7 +185,11 @@ function isExampleFramework(framework: Framework | string | undefined): framewor
   return framework === "react" || framework === "vue" || framework === "angular";
 }
 
-function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummary {
+function summarize(
+  issues: DedupedIssue[],
+  metrics: ReportMetrics,
+  auditTrail: ReportSummary["auditTrail"]
+): ReportSummary {
   const rawCount = metrics.rawCount || issues.length;
   const duplicateCount = metrics.duplicateCount || 0;
   const byPage = summarizePages(issues);
@@ -167,6 +207,7 @@ function summarize(issues: DedupedIssue[], metrics: ReportMetrics): ReportSummar
     scanDurationMs: metrics.scanDurationMs || 0,
     framework: metrics.framework || "unknown",
     urls: metrics.urls || [],
+    auditTrail,
     standard: metrics.standard,
     plannedScope: metrics.plannedScope,
     journeyImpact: summarizeJourneyImpact(issues, metrics.plannedScope),
@@ -494,6 +535,8 @@ ${formatRetentionRows(report.summary.retention)}| Retention evidence | ${formatR
 
 ${formatEvaluationScope(report)}
 
+${formatAuditTrail(report)}
+
 ${formatPlannedScope(report.summary)}
 
 ${formatCoverageMatrix(report)}
@@ -709,6 +752,50 @@ This WCAG-EM-inspired scope summary is reproducibility evidence, not a WCAG conf
 | Exploration depth | ${graph ? markdownCell(formatDepthScope(graph.summary.maxDepth)) : "not included"} |
 | Evidence collected | ${markdownCell(evidence)} |
 | Representative states | ${markdownCell(representativeStates || "No findings in captured states")} |`;
+}
+
+function formatAuditTrail(report: A11yReport): string {
+  const trail = report.summary.auditTrail;
+  if (!trail) return "";
+  const automation = [
+    trail.automation.staticAnalysis ? "static source checks" : "",
+    trail.automation.browserAutomation ? "browser automation" : "",
+    trail.automation.keyboardTraversal ? "keyboard traversal" : "",
+    trail.automation.lighthouseComparison ? "Lighthouse comparison" : "",
+    trail.automation.manualChecklist ? "manual checklist" : ""
+  ].filter(Boolean).join("; ") || "not recorded";
+  const limits = [
+    trail.limits?.maxDepth !== undefined ? `depth ${trail.limits.maxDepth}` : "",
+    trail.limits?.maxStates !== undefined ? `${trail.limits.maxStates} states max` : "",
+    trail.limits?.maxTabs !== undefined ? `${trail.limits.maxTabs} tabs max` : ""
+  ].filter(Boolean).join("; ") || "not recorded";
+  const ci = trail.ci
+    ? [
+      trail.ci.provider,
+      trail.ci.workflow,
+      trail.ci.runId ? `run ${trail.ci.runId}` : "",
+      trail.ci.commitSha ? `commit ${shortSha(trail.ci.commitSha)}` : "",
+      trail.ci.branch
+    ].filter(Boolean).join("; ")
+    : "not detected";
+
+  return `## Audit Trail
+
+| Item | Value |
+|---|---|
+| Tool | ${trail.tool.name} ${trail.tool.version} on ${trail.tool.nodeVersion} |
+| Command profile | ${markdownCell(`${trail.command.name} / ${trail.command.profile}`)} |
+| Requested URLs | ${markdownCell(trail.requestedUrls.join(", ") || "none")} |
+| Included URLs | ${trail.includedUrls.length} |
+| Automation | ${markdownCell(automation)} |
+| Limits | ${markdownCell(limits)} |
+| Output files | ${markdownCell(trail.generatedFiles.join(", ") || "not recorded")} |
+| CI context | ${markdownCell(ci)} |
+| Boundaries | ${markdownCell(trail.boundaries.join(" "))} |`;
+}
+
+function shortSha(value: string): string {
+  return value.length > 12 ? value.slice(0, 12) : value;
 }
 
 function formatDepthScope(maxDepth: number): string {

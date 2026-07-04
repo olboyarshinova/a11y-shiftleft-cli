@@ -297,6 +297,8 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
   const formats = parseFormats(options.format);
   const retentionSummary = await applyReportRetention(effectiveConfig.outputDir, effectiveConfig.retention);
   const report = await writeReports(effectiveConfig.outputDir, reportIssues, {
+    commandName: "check",
+    commandProfile: runStatic && runDynamic ? "static-and-dynamic-check" : runStatic ? "static-check" : "dynamic-check",
     framework,
     cwd: effectiveConfig.cwd,
     urls: runDynamic ? effectiveConfig.dynamic.urls : [],

@@ -521,6 +521,8 @@ export interface ReportMetrics {
   framework?: Framework | string;
   cwd?: string;
   urls?: string[];
+  commandName?: string;
+  commandProfile?: string;
   standard?: ComplianceStandardMetadata;
   plannedScope?: PlannedEvaluationScope;
   lighthouse?: LighthouseAuditResult[];
@@ -533,6 +535,45 @@ export interface ReportMetrics {
   rawCount?: number;
   uniqueCount?: number;
   duplicateCount?: number;
+}
+
+export interface ReportAuditTrail {
+  version: 1;
+  tool: {
+    name: "a11y-shiftleft-cli";
+    version: string;
+    nodeVersion: string;
+  };
+  command: {
+    name: string;
+    profile: string;
+  };
+  requestedUrls: string[];
+  includedUrls: string[];
+  outputFormats: ReportFormat[];
+  generatedFiles: string[];
+  automation: {
+    staticAnalysis: boolean;
+    browserAutomation: boolean;
+    keyboardTraversal: boolean;
+    lighthouseComparison: boolean;
+    manualChecklist: boolean;
+  };
+  limits?: {
+    maxDepth?: number;
+    maxStates?: number;
+    maxTabs?: number;
+  };
+  ci?: {
+    provider: "github-actions" | "unknown-ci";
+    runId?: string;
+    runAttempt?: string;
+    workflow?: string;
+    job?: string;
+    commitSha?: string;
+    branch?: string;
+  };
+  boundaries: string[];
 }
 
 export interface LighthouseAuditItem {
@@ -654,6 +695,7 @@ export interface ReportSummary {
   scanDurationMs: number;
   framework: Framework | string;
   urls: string[];
+  auditTrail: ReportAuditTrail;
   standard?: ComplianceStandardMetadata;
   plannedScope?: PlannedEvaluationScope;
   journeyImpact?: JourneyImpactSummary[];

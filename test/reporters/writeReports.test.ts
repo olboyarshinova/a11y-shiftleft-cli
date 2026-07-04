@@ -66,6 +66,8 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
       }
     ],
     {
+      commandName: "audit",
+      commandProfile: "visual-audit",
       framework: "react",
       rawCount: 4,
       uniqueCount: 2,
@@ -288,6 +290,19 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   );
 
   assert.equal(json.summary.framework, "react");
+  assert.equal(json.summary.auditTrail.tool.name, "a11y-shiftleft-cli");
+  assert.equal(json.summary.auditTrail.command.name, "audit");
+  assert.equal(json.summary.auditTrail.command.profile, "visual-audit");
+  assert.deepEqual(json.summary.auditTrail.requestedUrls, ["http://localhost:3000"]);
+  assert.deepEqual(json.summary.auditTrail.includedUrls, ["http://localhost:3000"]);
+  assert.deepEqual(json.summary.auditTrail.outputFormats, ["json", "csv", "markdown"]);
+  assert.equal(json.summary.auditTrail.automation.staticAnalysis, true);
+  assert.equal(json.summary.auditTrail.automation.browserAutomation, true);
+  assert.equal(json.summary.auditTrail.automation.lighthouseComparison, true);
+  assert.equal(json.summary.auditTrail.automation.keyboardTraversal, false);
+  assert.equal(json.summary.auditTrail.generatedFiles.includes("a11y-report.json"), true);
+  assert.equal(json.summary.auditTrail.generatedFiles.includes("a11y-comment.md"), true);
+  assert.match(json.summary.auditTrail.boundaries.join(" "), /not a WCAG conformance certification/);
   assert.equal(json.summary.plannedScope.product.name, "Demo Shop");
   assert.equal(json.summary.journeyImpact[0].name, "Account settings");
   assert.equal(json.summary.journeyImpact[0].findingCount, 2);
@@ -365,6 +380,11 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /Requested URLs \| http:\/\/localhost:3000/);
   assert.match(markdown, /Exploration depth \| not included/);
   assert.match(markdown, /Evidence collected \| browser exploration not included; axe, eslint; keyboard not included; Lighthouse comparison; manual checklist not included/);
+  assert.match(markdown, /## Audit Trail/);
+  assert.match(markdown, /Command profile \| audit \/ visual-audit/);
+  assert.match(markdown, /Automation \| static source checks; browser automation; Lighthouse comparison/);
+  assert.match(markdown, /Output files \| evaluation-scope\.json, a11y-report\.json, a11y-comment\.md, a11y-metrics\.csv, a11y-findings\.csv, a11y-summary\.csv, a11y-pages\.csv, a11y-rules\.csv/);
+  assert.match(markdown, /CI context \| not detected/);
   assert.match(markdown, /## Planned Scope/);
   assert.match(markdown, /Product \| Demo Shop - ecommerce/);
   assert.match(markdown, /Representative sample \| 1/);
