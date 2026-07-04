@@ -31,6 +31,8 @@ type CoverageStateCounts = Record<CoverageEvidenceState, number>;
 interface QuickFindingGroup {
   issue: DedupedIssue;
   count: number;
+  pages: Set<string>;
+  states: Set<string>;
 }
 
 export async function writeExplorationHtml(
@@ -1965,38 +1967,51 @@ function selectQuickFindings(issues: DedupedIssue[], limit: number): QuickFindin
     const existing = groups.get(key);
     if (existing) {
       existing.count += 1 + Math.max(0, issue.duplicateCount || 0);
-      if (severityValue(issue.severity) > severityValue(existing.issue.severity)) {
+      if (compareIssuesForTriage(issue, existing.issue) < 0) {
         existing.issue = issue;
       }
+      if (issue.url) existing.pages.add(issue.url);
+      if (issue.stateId) existing.states.add(issue.stateId);
       continue;
     }
     groups.set(key, {
       issue,
-      count: 1 + Math.max(0, issue.duplicateCount || 0)
+      count: 1 + Math.max(0, issue.duplicateCount || 0),
+      pages: new Set(issue.url ? [issue.url] : []),
+      states: new Set(issue.stateId ? [issue.stateId] : [])
     });
   }
 
   return [...groups.values()]
-    .sort((left, right) => (
-      severityValue(right.issue.severity) - severityValue(left.issue.severity)
-        || right.count - left.count
-        || left.issue.ruleId.localeCompare(right.issue.ruleId)
-    ))
+    .sort(compareQuickFindingGroups)
     .slice(0, limit);
 }
 
 function renderQuickFindings(groups: QuickFindingGroup[]): string {
   if (groups.length === 0) return `<p class="muted">No automated findings to prioritize.</p>`;
-  return `<ol class="quick-review-list">${groups.map(({ issue, count }) => {
+  return `<ol class="quick-review-list">${groups.map((group) => {
+    const { issue, count } = group;
     const target = issue.stateId ? ` href="#${escapeAttribute(issue.stateId)}"` : "";
     const label = issue.stateId ? `<a${target}>${escapeHtml(issue.ruleId)}</a>` : `<strong>${escapeHtml(issue.ruleId)}</strong>`;
     const level = [...new Set(issue.wcagCriteria.map((criterion) => criterion.level))].join("/");
     const countText = count > 1
       ? `<span class="focus-path-meta">${count} findings grouped</span>`
       : "";
+    const pageText = group.pages.size > 1
+      ? `<span class="focus-path-meta">${group.pages.size} pages affected</span>`
+      : "";
+    const ownershipText = issue.ownership?.kind === "third-party-embed"
+      ? `<span class="focus-path-meta">Third-party embed; verify ownership before assigning</span>`
+      : "";
+    const impactText = issue.userImpact?.level
+      ? `<span class="focus-path-meta">Impact: ${escapeHtml(issue.userImpact.level)}</span>`
+      : "";
     return `<li class="quick-review-item quick-review-item-${issue.severity}">
       ${label} ${severityBadge(issue.severity)}
       ${countText}
+      ${pageText}
+      ${impactText}
+      ${ownershipText}
       <span class="focus-path-meta">${escapeHtml(issue.message)}</span>
       ${level ? `<span class="focus-path-meta">WCAG Level ${escapeHtml(level)}</span>` : ""}
     </li>`;
@@ -3195,11 +3210,29 @@ function issuePrimaryWcagLevelRank(issue: DedupedIssue): number {
 function compareIssuesForTriage(left: DedupedIssue, right: DedupedIssue): number {
   const severityDifference = severityValue(right.severity) - severityValue(left.severity);
   if (severityDifference) return severityDifference;
+  const impactDifference = issueUserImpactValue(right) - issueUserImpactValue(left);
+  if (impactDifference) return impactDifference;
+  const ownershipDifference = issueOwnershipValue(right) - issueOwnershipValue(left);
+  if (ownershipDifference) return ownershipDifference;
   const levelDifference = issuePrimaryWcagLevelRank(left) - issuePrimaryWcagLevelRank(right);
   if (levelDifference) return levelDifference;
+  const confidenceDifference = issueConfidenceValue(right) - issueConfidenceValue(left);
+  if (confidenceDifference) return confidenceDifference;
+  const duplicateDifference = (right.duplicateCount || 0) - (left.duplicateCount || 0);
+  if (duplicateDifference) return duplicateDifference;
   return left.ruleId.localeCompare(right.ruleId)
     || (left.selector || left.file || "").localeCompare(right.selector || right.file || "")
     || left.message.localeCompare(right.message);
+}
+
+function compareQuickFindingGroups(left: QuickFindingGroup, right: QuickFindingGroup): number {
+  const representativeDifference = compareIssuesForTriage(left.issue, right.issue);
+  if (representativeDifference) return representativeDifference;
+  const pageDifference = right.pages.size - left.pages.size;
+  if (pageDifference) return pageDifference;
+  const stateDifference = right.states.size - left.states.size;
+  if (stateDifference) return stateDifference;
+  return right.count - left.count || left.issue.ruleId.localeCompare(right.issue.ruleId);
 }
 
 function compareIssueGroupEntries(
@@ -3213,13 +3246,26 @@ function compareIssueGroupEntries(
   const severityDifference = rightHighestSeverity - leftHighestSeverity;
   if (severityDifference) return severityDifference;
 
+  const impactDifference = maxIssueValue(rightIssues, issueUserImpactValue) - maxIssueValue(leftIssues, issueUserImpactValue);
+  if (impactDifference) return impactDifference;
+
+  const ownershipDifference = maxIssueValue(rightIssues, issueOwnershipValue) - maxIssueValue(leftIssues, issueOwnershipValue);
+  if (ownershipDifference) return ownershipDifference;
+
   const leftLevelRank = Math.min(...leftIssues.map(issuePrimaryWcagLevelRank));
   const rightLevelRank = Math.min(...rightIssues.map(issuePrimaryWcagLevelRank));
   const levelDifference = leftLevelRank - rightLevelRank;
   if (levelDifference) return levelDifference;
 
+  const confidenceDifference = maxIssueValue(rightIssues, issueConfidenceValue) - maxIssueValue(leftIssues, issueConfidenceValue);
+  if (confidenceDifference) return confidenceDifference;
+
   const scoreDifference = sumSeverityScore(rightIssues) - sumSeverityScore(leftIssues);
   return scoreDifference || rightIssues.length - leftIssues.length || left[0].localeCompare(right[0]);
+}
+
+function maxIssueValue(issues: DedupedIssue[], valueOf: (issue: DedupedIssue) => number): number {
+  return Math.max(...issues.map(valueOf));
 }
 
 function compareWcagCriteriaForTriage(
@@ -3309,6 +3355,28 @@ function severityScore(severity: Severity): number {
   if (severity === "critical") return 5;
   if (severity === "warning") return 2;
   return 1;
+}
+
+function issueUserImpactValue(issue: DedupedIssue): number {
+  if (issue.userImpact?.level === "blocker") return 4;
+  if (issue.userImpact?.level === "significant") return 3;
+  if (issue.userImpact?.level === "workaround") return 2;
+  if (issue.userImpact?.level === "minor") return 1;
+  return 0;
+}
+
+function issueOwnershipValue(issue: DedupedIssue): number {
+  if (issue.ownership?.kind === "first-party") return 2;
+  if (issue.ownership?.kind === "third-party-embed") return 0;
+  return 1;
+}
+
+function issueConfidenceValue(issue: DedupedIssue): number {
+  if (Number.isFinite(issue.confidenceScore)) return issue.confidenceScore || 0;
+  if (issue.confidence === "high") return 95;
+  if (issue.confidence === "medium") return 75;
+  if (issue.confidence === "low") return 50;
+  return 0;
 }
 
 function escapeHtml(value: string | number | undefined): string {

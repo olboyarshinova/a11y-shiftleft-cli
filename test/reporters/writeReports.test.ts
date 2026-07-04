@@ -504,6 +504,99 @@ test("writeReports groups duplicate Markdown recommendations by rule", async () 
   assert.match(markdown, /pages: https:\/\/example\.com\/, https:\/\/example\.com\/modal/);
 });
 
+test("writeReports prioritizes first-party high-impact groups before third-party embeds", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-md-priority-"));
+  await writeReports(outputDir, [{
+    source: "axe",
+    framework: "unknown",
+    severity: "critical",
+    ruleId: "button-name",
+    wcag: ["4.1.2"],
+    wcagCriteria: [],
+    tags: [],
+    selector: ".youtube-close",
+    url: "https://example.com/watch",
+    message: "Embedded button is missing an accessible name",
+    ownership: {
+      kind: "third-party-embed",
+      label: "Third-party embedded content",
+      source: "youtube.com",
+      note: "Third-party embedded content. Manual verification recommended."
+    },
+    userImpact: {
+      level: "significant",
+      affectedUsers: ["Screen reader users"],
+      reason: "The embedded control may be difficult to identify."
+    },
+    confidence: "high",
+    confidenceScore: 95,
+    confidenceReason: "Rendered DOM evidence found the unnamed embedded control.",
+    fingerprint: "button-name::youtube",
+    duplicateCount: 0
+  }, {
+    source: "axe",
+    framework: "unknown",
+    severity: "critical",
+    ruleId: "form-invalid-error-not-associated",
+    wcag: ["3.3.1"],
+    wcagCriteria: [],
+    tags: [],
+    selector: "#account-code",
+    url: "https://example.com/account",
+    message: "Input error is not associated with the invalid field",
+    ownership: {
+      kind: "first-party",
+      label: "First-party application code"
+    },
+    userImpact: {
+      level: "blocker",
+      affectedUsers: ["Screen reader users"],
+      reason: "The form may be impossible to correct with assistive technology."
+    },
+    confidence: "high",
+    confidenceScore: 95,
+    confidenceReason: "Rendered form evidence found an invalid field without an associated error.",
+    fingerprint: "form-invalid-error-not-associated::account",
+    duplicateCount: 0
+  }, {
+    source: "axe",
+    framework: "unknown",
+    severity: "critical",
+    ruleId: "form-invalid-error-not-associated",
+    wcag: ["3.3.1"],
+    wcagCriteria: [],
+    tags: [],
+    selector: "#checkout-code",
+    url: "https://example.com/checkout",
+    message: "Input error is not associated with the invalid field",
+    ownership: {
+      kind: "first-party",
+      label: "First-party application code"
+    },
+    userImpact: {
+      level: "blocker",
+      affectedUsers: ["Screen reader users"],
+      reason: "The form may be impossible to correct with assistive technology."
+    },
+    confidence: "high",
+    confidenceScore: 95,
+    confidenceReason: "Rendered form evidence found an invalid field without an associated error.",
+    fingerprint: "form-invalid-error-not-associated::checkout",
+    duplicateCount: 0
+  }], {
+    framework: "unknown"
+  });
+
+  const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+  const topFindings = markdown.slice(markdown.indexOf("## Top Findings And Recommendations"));
+
+  assert.ok(
+    topFindings.indexOf("form-invalid-error-not-associated") < topFindings.indexOf("button-name")
+  );
+  assert.match(topFindings, /Priority signals: impact: blocker; first-party fix; confidence: high; 2 pages/);
+  assert.match(topFindings, /Priority signals: impact: significant; third-party ownership; confidence: high/);
+});
+
 test("writeReports points truncated finding groups to JSON and visual reports", async () => {
   const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-md-truncated-groups-"));
   const issues = Array.from({ length: 11 }, (_, index) => ({

@@ -398,6 +398,48 @@ function severityRank(severity: Severity): number {
   return 1;
 }
 
+function compareIssuesForTriage(left: DedupedIssue, right: DedupedIssue): number {
+  return severityRank(right.severity) - severityRank(left.severity)
+    || issueUserImpactValue(right) - issueUserImpactValue(left)
+    || issueOwnershipValue(right) - issueOwnershipValue(left)
+    || issueConfidenceValue(right) - issueConfidenceValue(left)
+    || left.ruleId.localeCompare(right.ruleId);
+}
+
+function groupUserImpactValue(group: TopFindingGroup): number {
+  return Math.max(...group.issues.map(issueUserImpactValue));
+}
+
+function groupOwnershipValue(group: TopFindingGroup): number {
+  return Math.max(...group.issues.map(issueOwnershipValue));
+}
+
+function groupConfidenceValue(group: TopFindingGroup): number {
+  return Math.max(...group.issues.map(issueConfidenceValue));
+}
+
+function issueUserImpactValue(issue: DedupedIssue): number {
+  if (issue.userImpact?.level === "blocker") return 4;
+  if (issue.userImpact?.level === "significant") return 3;
+  if (issue.userImpact?.level === "workaround") return 2;
+  if (issue.userImpact?.level === "minor") return 1;
+  return 0;
+}
+
+function issueOwnershipValue(issue: DedupedIssue): number {
+  if (issue.ownership?.kind === "first-party") return 2;
+  if (issue.ownership?.kind === "third-party-embed") return 0;
+  return 1;
+}
+
+function issueConfidenceValue(issue: DedupedIssue): number {
+  if (Number.isFinite(issue.confidenceScore)) return issue.confidenceScore || 0;
+  if (issue.confidence === "high") return 95;
+  if (issue.confidence === "medium") return 75;
+  if (issue.confidence === "low") return 50;
+  return 0;
+}
+
 function formatFrameworkExamplesForCsv(issue: DedupedIssue): string {
   return Object.entries(issue.remediation?.frameworkExamples || {})
     .map(([framework, example]) => `${framework}: ${example}`)
@@ -515,6 +557,9 @@ function groupTopFindings(issues: DedupedIssue[]): TopFindingGroup[] {
       existing.severity = severityRank(issue.severity) > severityRank(existing.severity)
         ? issue.severity
         : existing.severity;
+      if (compareIssuesForTriage(issue, existing.sample) < 0) {
+        existing.sample = issue;
+      }
       pushUnique(existing.pages, page);
       pushUnique(existing.targets, target);
       pushUnique(existing.states, issue.stateLabel || "");
@@ -546,6 +591,14 @@ function groupTopFindings(issues: DedupedIssue[]): TopFindingGroup[] {
   return [...groups.values()].sort((left, right) => {
     const severityDiff = severityRank(right.severity) - severityRank(left.severity);
     if (severityDiff !== 0) return severityDiff;
+    const impactDiff = groupUserImpactValue(right) - groupUserImpactValue(left);
+    if (impactDiff !== 0) return impactDiff;
+    const ownershipDiff = groupOwnershipValue(right) - groupOwnershipValue(left);
+    if (ownershipDiff !== 0) return ownershipDiff;
+    const confidenceDiff = groupConfidenceValue(right) - groupConfidenceValue(left);
+    if (confidenceDiff !== 0) return confidenceDiff;
+    const pageDiff = right.pages.length - left.pages.length;
+    if (pageDiff !== 0) return pageDiff;
     const occurrenceDiff = right.occurrenceCount - left.occurrenceCount;
     if (occurrenceDiff !== 0) return occurrenceDiff;
     return left.ruleId.localeCompare(right.ruleId);
@@ -565,6 +618,7 @@ function formatTopFindingGroup(group: TopFindingGroup): string {
   const ownership = formatOwnership(group.sample);
   const confidence = formatIssueConfidence(group.sample);
   const userImpact = formatUserImpact(group.sample);
+  const prioritySignals = formatPrioritySignals(group);
   const status = formatGroupStatuses(group);
   const occurrenceLabel = group.occurrenceCount === 1 ? "1 occurrence" : `${group.occurrenceCount} occurrences`;
   const affected = [
@@ -578,11 +632,25 @@ function formatTopFindingGroup(group: TopFindingGroup): string {
 
   return [
     `- **${group.severity}** \`${group.ruleId}\`${criteria} (${occurrenceLabel})${ownership}${userImpact}${findingType}${category}${confidence}: ${group.message}`,
+    prioritySignals,
     affected.length > 0 ? `\n  - Affected: ${affected.join("; ")}` : "",
     status,
     contrast,
     remediation
   ].filter(Boolean).join("");
+}
+
+function formatPrioritySignals(group: TopFindingGroup): string {
+  const signals = [
+    group.sample.userImpact?.level ? `impact: ${group.sample.userImpact.level}` : "",
+    group.sample.ownership?.kind === "third-party-embed" ? "third-party ownership" : "",
+    group.sample.ownership?.kind === "first-party" ? "first-party fix" : "",
+    group.sample.confidence ? `confidence: ${group.sample.confidence}` : "",
+    group.pages.length > 1 ? `${group.pages.length} pages` : "",
+    group.states.length > 1 ? `${group.states.length} states` : ""
+  ].filter(Boolean);
+
+  return signals.length > 0 ? `\n  - Priority signals: ${signals.join("; ")}` : "";
 }
 
 function formatGroupStatuses(group: TopFindingGroup): string {

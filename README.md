@@ -17,6 +17,21 @@ It works with any rendered website: React, Vue, Angular, Next.js, Svelte, Astro,
 Rails, Django, static HTML, and others. Optional source-code adapters are
 currently available for React, Vue, and Angular.
 
+## Built On Known Tools
+
+The CLI orchestrates established accessibility tooling instead of replacing
+their rule engines:
+
+- axe-core through [`@axe-core/playwright`](https://www.npmjs.com/package/@axe-core/playwright)
+  scans the rendered page for automated accessibility rules.
+- [Playwright](https://playwright.dev/) opens Chromium, explores bounded UI
+  states, captures screenshots, and records keyboard evidence.
+- [ESLint](https://eslint.org/) powers optional source checks for React, Vue,
+  and Angular.
+- [Lighthouse](https://developer.chrome.com/docs/lighthouse/overview/) can be
+  added with `--with-lighthouse` when teams want its familiar accessibility
+  score next to detailed findings.
+
 ## Quick Start
 
 Use this when your app already runs locally. You need Node.js 18 or newer, but
@@ -133,22 +148,6 @@ After the report opens:
 
 Reports and screenshots usually should not be committed. Run `init --gitignore`
 once to add common report paths. For private pages, add `--no-screenshots`.
-
-## Built On
-
-The CLI orchestrates established tools instead of replacing their rule engines:
-
-- axe-core through [`@axe-core/playwright`](https://www.npmjs.com/package/%40axe-core%2Fplaywright)
-  runs automated accessibility rules against the rendered page.
-- [Playwright](https://playwright.dev/) drives Chromium, explores bounded UI
-  states, captures screenshots, and collects keyboard and accessibility-tree
-  evidence.
-- [ESLint](https://eslint.org/) powers optional source checks for React, Vue,
-  and Angular.
-- [Lighthouse](https://developer.chrome.com/docs/lighthouse/overview/) can be
-  enabled with `--with-lighthouse` when teams want its familiar accessibility
-  score alongside detailed findings. Install `lighthouse` first when you want
-  to use that option.
 
 ## Coverage And Limits
 

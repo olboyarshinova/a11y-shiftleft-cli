@@ -404,6 +404,52 @@ test("renderExplorationHtml groups repeated Fix First findings", () => {
   assert.match(quickReview, /3 findings grouped/);
 });
 
+test("renderExplorationHtml prioritizes first-party high-impact Fix First items", () => {
+  const firstPartyIssue = {
+    ...issues[0],
+    ruleId: "form-invalid-error-not-associated",
+    message: "Input error is not associated with the invalid field",
+    selector: "#account-code",
+    fingerprint: "form-invalid-error-not-associated::#account-code",
+    ownership: {
+      kind: "first-party" as const,
+      label: "First-party application code"
+    },
+    userImpact: {
+      level: "blocker" as const,
+      affectedUsers: ["Screen reader users"],
+      reason: "Form errors that are not programmatically associated can block correction."
+    },
+    confidence: "high" as const,
+    confidenceScore: 95,
+    confidenceReason: "Rendered form evidence found an invalid field without an associated error."
+  };
+  const repeatedFirstPartyIssue = {
+    ...firstPartyIssue,
+    url: "http://localhost:3000/settings",
+    stateId: "state-2",
+    stateLabel: "Click: Open menu",
+    fingerprint: "form-invalid-error-not-associated::settings"
+  };
+  const html = renderExplorationHtml(graph, [issues[0], firstPartyIssue, repeatedFirstPartyIssue], {
+    manualChecklist: {
+      generatedAt: "2026-06-09T00:00:00.000Z",
+      framework: "react",
+      urls: ["http://localhost:3000/"],
+      items: []
+    }
+  });
+
+  const quickReview = html.match(/<section class="panel quick-review"[\s\S]*?<\/section>/)?.[0] || "";
+
+  assert.ok(
+    quickReview.indexOf("form-invalid-error-not-associated") < quickReview.indexOf("button-name")
+  );
+  assert.match(quickReview, /2 pages affected/);
+  assert.match(quickReview, /Impact: blocker/);
+  assert.match(quickReview, /Third-party embed; verify ownership before assigning/);
+});
+
 test("renderExplorationHtml sorts rule triage by severity and WCAG level", () => {
   const criterion = (
     id: string,
