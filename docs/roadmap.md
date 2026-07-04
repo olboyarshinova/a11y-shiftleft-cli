@@ -14,9 +14,6 @@ Section 508 certification.
   confidence, user impact, affected states, repeated-component signals, and
   third-party ownership. Keep the explanation short enough for pull request
   review.
-- Add a "new critical only" adoption path that pairs baseline mode with a
-  critical quality gate and clearly explains how legacy projects can start
-  without failing on every existing issue.
 - Promote planned journey matches into a richer journey-review workflow where a
   reviewer can confirm every step, record missing states, and attach manual
   task-completion evidence.
@@ -130,9 +127,9 @@ Section 508 certification.
 - Add CI presets for GitHub Actions first, then GitLab CI, CircleCI, Jenkins,
   and generic shell runners. Keep each preset focused on installing the package,
   starting the app, running `audit` or `check`, and preserving local artifacts.
-- Add clearer quality-gate profiles such as `new-critical-only`, `critical`,
-  `warning`, and `report-only` so teams can adopt the tool without blocking
-  every existing legacy finding.
+- Extend quality-gate profiles beyond `new-critical-only`, `critical`,
+  `warning`, and `report-only` only when real CI users need additional rollout
+  modes.
 - Add optional Git hook setup for Husky and Lefthook so staged accessibility
   checks can run before commits without becoming a hard dependency.
 - Add incremental scan support for pull requests by prioritizing changed static

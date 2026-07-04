@@ -998,10 +998,13 @@ test("writeExplorationHtml can create a unified audit report", async () => {
 
   const html = await fs.readFile(path.join(outputDir, "a11y-report.html"), "utf8");
   assert.match(html, /Accessibility Audit Report/);
-  assert.match(html, /Evaluation Scope/);
+  assert.match(html, /What Was Checked/);
   assert.match(html, /class="panel evaluation-scope"/);
-  assert.match(html, /Reproducibility scope, not a WCAG conformance claim/);
+  assert.match(html, /aria-label="What was checked"/);
+  assert.match(html, /Scope:<\/strong> 1 URL · 3 rendered states · 2 interaction levels from the start page · keyboard checked · manual checklist included/);
+  assert.match(html, /This is reproducibility evidence, not a WCAG conformance claim/);
   assert.match(html, /not a WCAG conformance claim/);
+  assert.match(html, /Show scope evidence/);
   assert.match(html, /Report Completeness/);
   assert.match(html, /URL and state scope/);
   assert.match(html, /Automated tools/);
@@ -1028,6 +1031,7 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /First Tab stops show where keyboard users land/);
   assert.match(html, /Human Review Next/);
   assert.match(html, /WCAG Level A/);
+  assert.ok(html.indexOf("What Was Checked") > html.indexOf("state-1: Initial page"));
   assert.match(html, /Third-party embedded content/);
   assert.match(html, /class="finding-context finding-context-third-party"/);
   assert.match(html, /Ownership: Third-party embedded content/);

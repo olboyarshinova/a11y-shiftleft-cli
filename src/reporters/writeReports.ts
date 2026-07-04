@@ -629,7 +629,7 @@ function formatEvaluationScope(report: A11yReport): string {
       .join("; ")
     : "not applicable";
 
-  return `## Evaluation Scope
+  return `## What Was Checked
 
 This WCAG-EM-inspired scope summary is reproducibility evidence, not a WCAG conformance claim. See \`evaluation-scope.json\` for the machine-readable version.
 

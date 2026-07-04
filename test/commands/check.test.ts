@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { filterByWcagConformance, filterByWcagLevel, formatCheckConsoleSummary, formatCheckProgressMessage, formatVerboseCheckSummary, parseFormats, parseUrls, resolveCheckModes, shouldFail } from "../../dist/commands/check.js";
+import { filterByWcagConformance, filterByWcagLevel, formatCheckConsoleSummary, formatCheckProgressMessage, formatVerboseCheckSummary, parseFormats, parseUrls, resolveCheckModes, resolveQualityGate, shouldFail } from "../../dist/commands/check.js";
 
 const summary = {
   critical: 1,
@@ -17,6 +17,40 @@ test("shouldFail supports severity gates", () => {
 
 test("shouldFail supports disabled failure gate", () => {
   assert.equal(shouldFail(summary, "none"), false);
+});
+
+test("resolveQualityGate maps adoption profiles to existing gate behavior", () => {
+  assert.deepEqual(resolveQualityGate({ gate: "critical" }), {
+    profile: "critical",
+    baseline: undefined,
+    failOn: "critical"
+  });
+  assert.deepEqual(resolveQualityGate({ gate: "warning" }), {
+    profile: "warning",
+    baseline: undefined,
+    failOn: "warning"
+  });
+  assert.deepEqual(resolveQualityGate({ gate: "report-only" }), {
+    profile: "report-only",
+    baseline: undefined,
+    failOn: "none"
+  });
+  assert.deepEqual(resolveQualityGate({ gate: "new-critical-only" }), {
+    profile: "new-critical-only",
+    baseline: true,
+    failOn: "critical"
+  });
+});
+
+test("resolveQualityGate rejects ambiguous or unsupported profiles", () => {
+  assert.throws(
+    () => resolveQualityGate({ gate: "new-critical-only", failOn: "warning" }),
+    /Use either --gate or --fail-on/
+  );
+  assert.throws(
+    () => resolveQualityGate({ gate: "everything" }),
+    /Unsupported quality gate/
+  );
 });
 
 test("shouldFail uses only new findings when baseline mode is enabled", () => {
@@ -176,6 +210,7 @@ test("formatVerboseCheckSummary renders scan context without JSON parsing requir
     outputDir: "reports",
     formats: ["json", "markdown"],
     baselineEnabled: true,
+    gateProfile: "new-critical-only",
     baselineFile: ".a11y-baseline.json",
     ignoreEnabled: true,
     ignoreFile: "a11y-ignore.json",
@@ -191,11 +226,11 @@ test("formatVerboseCheckSummary renders scan context without JSON parsing requir
     scrollStepPx: 800,
     scrollMaxSteps: 25,
     scrollWaitMs: 100,
-      retentionEnabled: true,
-      retentionDryRun: false,
-      retentionPlannedDeletedRuns: 2,
-      retentionDeletedRuns: 2,
-      lighthouseEnabled: true
+    retentionEnabled: true,
+    retentionDryRun: false,
+    retentionPlannedDeletedRuns: 2,
+    retentionDeletedRuns: 2,
+    lighthouseEnabled: true
   });
 
   assert.match(output, /framework: react/);
@@ -204,6 +239,7 @@ test("formatVerboseCheckSummary renders scan context without JSON parsing requir
   assert.match(output, /crawl: enabled depth=1 limit=10/);
   assert.match(output, /scroll: enabled step=800px maxSteps=25 wait=100ms/);
   assert.match(output, /lighthouse: enabled/);
+  assert.match(output, /gate: new-critical-only/);
   assert.match(output, /baseline: enabled file=.a11y-baseline.json/);
   assert.match(output, /ignore: enabled file=a11y-ignore.json ignored=2/);
   assert.match(output, /retention: enabled deletedRuns=2/);

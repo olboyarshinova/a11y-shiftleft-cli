@@ -89,10 +89,9 @@ This is more reliable than asking users to hand-write workflow YAML.
 
 Next steps for CI/CD adoption:
 
-- Add a "report-only" starter workflow for teams that want visibility before
-  blocking builds.
-- Add a "new critical only" workflow that combines baseline mode with a
-  critical gate for legacy applications.
+- Use built-in quality gates such as `--gate report-only` and
+  `--gate new-critical-only` when teams need visibility first or want to block
+  only newly introduced critical findings.
 - Upload `a11y-report.html`, JSON, Markdown, screenshots, and
   `evaluation-scope.json` as CI artifacts.
 - Keep pull request comments short and link to the uploaded visual report

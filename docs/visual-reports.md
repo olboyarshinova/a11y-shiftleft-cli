@@ -102,11 +102,11 @@ browser local storage under an identifier unique to the generated report. They
 are not uploaded, written back into the report files, or treated as proof of
 WCAG conformance.
 
-The Evaluation Scope section includes a Report Completeness checklist. It shows
-whether the visual artifact contains date, URL and state scope, automated-tool
-evidence, keyboard evidence, manual-review records, optional Lighthouse
-comparison, known limitations, and next steps. Items marked for review are
-signals to add manual evidence, not automatic failures.
+The What Was Checked section summarizes the URL, state, depth, keyboard, and
+manual-review scope. Detailed reproducibility evidence, including the Report
+Completeness checklist, is collapsed by default so the main report can focus on
+screenshots and findings first. Items marked for review are signals to add
+manual evidence, not automatic failures.
 
 The manual checklist also includes a structured environment template for human
 review. Record the operating system, browser, assistive technology and version,

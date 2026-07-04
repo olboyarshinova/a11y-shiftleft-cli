@@ -137,7 +137,7 @@ test("prepareShareReport writes sanitized local share artifacts", async () => {
   assert.doesNotMatch(JSON.stringify(shareReport), /token=secret/);
   assert.doesNotMatch(JSON.stringify(shareScope), /token=secret/);
   assert.match(markdown, /Sanitized Accessibility Share Report/);
-  assert.match(markdown, /## Evaluation Scope/);
+  assert.match(markdown, /## What Was Checked/);
   assert.match(markdown, /not a WCAG conformance claim/);
   assert.match(markdown, /Requested URLs \| https:\/\/example.com\/account/);
   assert.match(markdown, /Rendered states \| 2/);

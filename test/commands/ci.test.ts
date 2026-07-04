@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  checkGateArgument,
   fullWorkflowTemplate,
   toCiProfile,
   workflowFiles,
@@ -39,6 +40,25 @@ test("workflowTemplate supports bounded fast PR crawls", () => {
   assert.match(workflow, /pull_request:/);
   assert.match(workflow, /--crawl --crawl-depth 1 --crawl-limit 5/);
   assert.match(workflow, /Comment on PR/);
+});
+
+test("workflowTemplate supports quality gate profiles for PR workflows", () => {
+  const workflow = workflowTemplate({
+    urls: ["http://localhost:3000"],
+    startCommand: "npm run dev -- --host localhost --port 3000",
+    failOn: "critical",
+    gate: "new-critical-only",
+    standard: "wcag22-aa"
+  });
+
+  assert.match(workflow, /--gate new-critical-only --standard wcag22-aa/);
+  assert.doesNotMatch(workflow, /--fail-on critical --standard/);
+});
+
+test("checkGateArgument maps supported gates and rejects unknown profiles", () => {
+  assert.equal(checkGateArgument(undefined, "warning"), "--fail-on warning");
+  assert.equal(checkGateArgument("report-only", "critical"), "--gate report-only");
+  assert.throws(() => checkGateArgument("everything", "critical"), /Unsupported CI quality gate/);
 });
 
 test("fullWorkflowTemplate creates scheduled full-site crawl workflow", () => {
