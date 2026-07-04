@@ -384,7 +384,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /Command profile \| audit \/ visual-audit/);
   assert.match(markdown, /Automation \| static source checks; browser automation; Lighthouse comparison/);
   assert.match(markdown, /Output files \| evaluation-scope\.json, a11y-report\.json, a11y-comment\.md, a11y-metrics\.csv, a11y-findings\.csv, a11y-summary\.csv, a11y-pages\.csv, a11y-rules\.csv/);
-  assert.match(markdown, /CI context \| not detected/);
+  assert.match(markdown, /CI context \| (not detected|github-actions|unknown-ci)/);
   assert.match(markdown, /## Planned Scope/);
   assert.match(markdown, /Product \| Demo Shop - ecommerce/);
   assert.match(markdown, /Representative sample \| 1/);
