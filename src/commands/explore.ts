@@ -8,6 +8,7 @@ import { triageIssues } from "../core/severity.js";
 import { resolveStandard } from "../core/standards.js";
 import { applyReportRetention } from "../core/reportRetention.js";
 import { filterReportFindings } from "../core/findingFilter.js";
+import { openReportFile } from "../core/openReport.js";
 import { readScopePlanIfExists } from "../core/scopePlan.js";
 import { cleanExploreArtifacts } from "../reporters/cleanExploreArtifacts.js";
 import { writeExplorationHtml } from "../reporters/writeExplorationHtml.js";
@@ -71,6 +72,7 @@ interface ExploreOptions {
   retentionMaxRuns?: string;
   retentionMaxAgeDays?: string;
   retentionDryRun?: boolean;
+  open?: boolean;
   quiet?: boolean;
   verbose?: boolean;
   jsonSummary?: boolean;
@@ -128,6 +130,7 @@ export function registerExploreCommand(program: Command): void {
     .option("--retention-max-age-days <days>", "Remove report run directories older than this many days")
     .option("--retention-dry-run", "Preview report retention cleanup without deleting old runs")
     .option("--no-retention", "Disable report retention cleanup")
+    .option("--open", "Open exploration.html after the scan finishes")
     .option("--quiet", "Suppress progress and console summary output")
     .option("--verbose", "Print exploration settings before progress and the summary")
     .option("--json-summary", "Print the machine-readable JSON summary to stdout")
@@ -135,6 +138,9 @@ export function registerExploreCommand(program: Command): void {
       const startedAt = Date.now();
       if (options.pdf && options.html === false) {
         throw new Error("PDF export requires exploration.html. Remove --no-html or omit --pdf.");
+      }
+      if (options.open && options.html === false) {
+        throw new Error("--open requires exploration.html. Remove --no-html or omit --open.");
       }
 
       const config = await loadConfig({
@@ -316,6 +322,8 @@ export function registerExploreCommand(program: Command): void {
         await writeExplorationPdf(effectiveConfig.outputDir);
       }
 
+      const visualReportPath = `${effectiveConfig.outputDir}/exploration.html`;
+
       if (!options.quiet) {
         const summary: ExploreSummaryOutput = {
           ...report.summary,
@@ -334,6 +342,16 @@ export function registerExploreCommand(program: Command): void {
           });
 
         console.log(summaryOutput);
+      }
+
+      if (options.open) {
+        try {
+          await openReportFile(visualReportPath);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          console.warn(`Could not open the report automatically: ${message}`);
+          console.warn(`Open it manually: ${visualReportPath}`);
+        }
       }
 
       if (shouldFail(report.summary, config.failOn)) {

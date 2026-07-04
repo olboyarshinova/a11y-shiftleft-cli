@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { createProgram } from "../../dist/cli.js";
 import {
   formatExploreConsoleSummary,
   formatExploreProgressMessage,
@@ -8,6 +9,14 @@ import {
   resolveFullPageScreenshots
 } from "../../dist/commands/explore.js";
 import type { A11yReport, ExplorationGraph } from "../../dist/types.js";
+
+test("explore supports opening the visual report", () => {
+  const explore = createProgram().commands.find((command) => command.name() === "explore");
+
+  assert.ok(explore);
+  const flags = explore.options.map((option) => option.long);
+  assert.equal(flags.includes("--open"), true);
+});
 
 test("formatVerboseExploreSummary renders exploration context", () => {
   const output = formatVerboseExploreSummary({
