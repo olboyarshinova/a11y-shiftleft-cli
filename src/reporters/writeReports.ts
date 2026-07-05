@@ -11,6 +11,7 @@ import { getRemediationHint } from "../core/remediation.js";
 import { summarizeRootCauses } from "../core/rootCauses.js";
 import { summarizeSampleComparison } from "../core/sampleComparison.js";
 import { applyUserImpact, countUserImpact } from "../core/userImpact.js";
+import { summarizeWcagCoverage } from "../core/wcagCoverage.js";
 import type { A11yReport, ComplianceEvidenceSummary, ComplianceStandardMetadata, DedupedIssue, Framework, LighthouseAuditResult, LighthouseReportSummary, PageSummary, RemediationHint, ReportFormat, ReportMetrics, ReportSummary, RootCauseGroup, Severity } from "../types.js";
 
 interface WriteReportOptions {
@@ -83,7 +84,11 @@ export async function writeReports(
   });
   const report: A11yReport = {
     generatedAt: new Date().toISOString(),
-    summary: summarize(reportIssues, metrics, auditTrail),
+    summary: summarize(reportIssues, metrics, auditTrail, {
+      exploration: options.exploration,
+      keyboard: options.keyboard,
+      manualChecklist
+    }),
     issues: reportIssues,
     exploration: options.exploration,
     keyboard: options.keyboard,
@@ -188,7 +193,8 @@ function isExampleFramework(framework: Framework | string | undefined): framewor
 function summarize(
   issues: DedupedIssue[],
   metrics: ReportMetrics,
-  auditTrail: ReportSummary["auditTrail"]
+  auditTrail: ReportSummary["auditTrail"],
+  evidence: Pick<A11yReport, "exploration" | "keyboard" | "manualChecklist"> = {}
 ): ReportSummary {
   const rawCount = metrics.rawCount || issues.length;
   const duplicateCount = metrics.duplicateCount || 0;
@@ -219,6 +225,15 @@ function summarize(
     retention: summarizeRetention(metrics.retention),
     lighthouse: summarizeLighthouse(metrics.lighthouse, issues),
     complianceEvidence: summarizeComplianceEvidence(issues, byPage, metrics.standard),
+    wcagCoverage: summarizeWcagCoverage({
+      issues,
+      targetVersion: metrics.standard?.wcagVersion,
+      targetLevel: metrics.standard?.wcagLevel,
+      auditTrail,
+      exploration: evidence.exploration,
+      keyboard: evidence.keyboard,
+      manualChecklist: evidence.manualChecklist
+    }),
     bySource: countBy(issues, "source"),
     bySeverity: countBy(issues, "severity"),
     byConfidence: countBy(issues, "confidence"),
@@ -532,6 +547,8 @@ ${formatRetentionRows(report.summary.retention)}| Retention evidence | ${formatR
 | Ownership | ${formatCountMap(report.summary.byOwnership)} |
 | Human verification blockers | ${report.summary.blockedByHumanVerification || 0} |
 | Rules without WCAG mapping | ${formatCountMap(report.summary.byUnmappedRule)} |
+| Tracked WCAG automated coverage | ${formatCoveragePercent(report.summary.wcagCoverage?.automatedCoverage)} |
+| Tracked WCAG assisted coverage | ${formatCoveragePercent(report.summary.wcagCoverage?.assistedCoverage)} |
 
 ${formatEvaluationScope(report)}
 
@@ -540,6 +557,8 @@ ${formatAuditTrail(report)}
 ${formatPlannedScope(report.summary)}
 
 ${formatCoverageMatrix(report)}
+
+${formatTrackedWcagCoverage(report)}
 
 ${formatPageSummary(report.summary.byPage || [])}
 
@@ -935,6 +954,49 @@ function formatCoverageMatrix(report: A11yReport): string {
 | Embedded content | ${embeddedStates.length > 0 ? "Coverage evidence collected" : "No iframe or canvas observed"} | ${iframeCount} iframe${iframeCount === 1 ? "" : "s"}; ${inaccessibleFrames} unavailable; ${canvasGaps} canvas alternative gap${canvasGaps === 1 ? "" : "s"} |
 | Screen reader | Human review required | Test representative tasks with NVDA, JAWS, or VoiceOver |
 | Content and task usability | ${report.manualChecklist ? "Checklist ready" : "Not included"} | Record human evidence and outcome |`;
+}
+
+function formatTrackedWcagCoverage(report: A11yReport): string {
+  const coverage = report.summary.wcagCoverage;
+  if (!coverage) return "";
+  const rows = coverage.criteria
+    .slice()
+    .sort((left, right) => (
+      coverageStatusRank(left.status) - coverageStatusRank(right.status)
+      || left.id.localeCompare(right.id, undefined, { numeric: true })
+    ))
+    .map((criterion) => `| WCAG ${criterion.id} ${markdownCell(criterion.title)} | ${criterion.level} | ${criterion.status} | ${criterion.findingCount} | ${markdownCell(criterion.evidenceSources.join(", ") || criterion.nextStep)} |`)
+    .join("\n");
+
+  return `## Tracked WCAG Coverage
+
+This is evidence coverage for criteria currently tracked by this project, not a WCAG conformance score.
+
+| Metric | Value |
+|---|---:|
+| Target | WCAG ${coverage.targetVersion} Level ${coverage.targetLevel} |
+| Tracked criteria | ${coverage.totalCriteria} |
+| Automated criteria | ${coverage.automatedCriteria} |
+| Heuristic criteria | ${coverage.heuristicCriteria} |
+| Manual-checklist criteria | ${coverage.manualCriteria} |
+| Not covered criteria | ${coverage.notCoveredCriteria} |
+| Automated evidence coverage | ${formatCoveragePercent(coverage.automatedCoverage)} |
+| Assisted evidence coverage | ${formatCoveragePercent(coverage.assistedCoverage)} |
+
+| Criterion | Level | Status | Findings | Evidence or next step |
+|---|---|---:|---:|---|
+${rows}`;
+}
+
+function coverageStatusRank(status: string): number {
+  if (status === "automated") return 1;
+  if (status === "heuristic") return 2;
+  if (status === "manual-required") return 3;
+  return 4;
+}
+
+function formatCoveragePercent(value: number | undefined): string {
+  return value === undefined ? "not calculated" : `${value}%`;
 }
 
 function formatManualReviewSummary(report: A11yReport): string {

@@ -330,6 +330,13 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.equal(scope.evidence.lighthouseComparison, true);
   assert.equal(scope.reviewStatus.needsHumanEvaluation, true);
   assert.equal(json.summary.standard.id, "ada-title-ii");
+  assert.equal(json.summary.wcagCoverage.label, "Tracked WCAG evidence coverage");
+  assert.equal(json.summary.wcagCoverage.targetVersion, "2.1");
+  assert.equal(json.summary.wcagCoverage.targetLevel, "AA");
+  assert.equal(json.summary.wcagCoverage.automatedCoverage > 0, true);
+  assert.equal(json.summary.wcagCoverage.criteria.some((criterion: { id: string; status: string }) => (
+    criterion.id === "1.4.3" && criterion.status === "automated"
+  )), true);
   assert.equal(json.issues[0].confidence, "high");
   assert.equal(json.issues[0].confidenceScore, 95);
   assert.equal(json.issues[0].category, "aria");
@@ -342,6 +349,9 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /Step 1: Use visible button text when possible/);
   assert.match(markdown, /Lighthouse Accessibility Score/);
   assert.match(markdown, /Browser evidence \| Chromium 141\.0\.0\.0 \(dynamic\)/);
+  assert.match(markdown, /Tracked WCAG Coverage/);
+  assert.match(markdown, /Tracked WCAG automated coverage \| \d+(\.\d+)?%/);
+  assert.match(markdown, /WCAG 1\.4\.3 Contrast \(Minimum\) \| AA \| automated/);
   assert.match(markdown, /Average score \| 91/);
   assert.match(markdown, /http:\/\/localhost:3000\/ \| 91 \| 1 \| 1/);
   assert.match(markdown, /Lighthouse And Pipeline Comparison/);

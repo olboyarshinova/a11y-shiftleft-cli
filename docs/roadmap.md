@@ -39,6 +39,20 @@ Section 508 certification.
   [MTS web accessibility guide](https://a11y.mts.ru/web) and
   [MTS testing guide](https://a11y.mts.ru/qa) without treating any single guide
   as a conformance standard. WCAG remains the normative mapping source.
+- Add a WCAG coverage matrix to JSON, Markdown, and the visual HTML report.
+  Report coverage as evidence coverage, not as a claim that a site is
+  accessibility-compliant. Use separate metrics for automated evidence and
+  assisted review evidence:
+  `automatedCoverage = automatedCriteria / targetCriteria` and
+  `assistedCoverage = (automatedCriteria + heuristicCriteria + manualChecklistCriteria) / targetCriteria`.
+- Increase automated and assisted WCAG evidence coverage in this order:
+  keyboard/focus traversal, form validation states, 400% reflow and zoom,
+  target-size and pointer heuristics, media/motion review signals, and screen
+  reader review protocols.
+- Add per-criterion coverage rows with status, evidence source, finding count,
+  and next step: `automated`, `heuristic`, `manual required`, `not covered`, or
+  `not applicable`. Keep untested criteria visible so users understand what the
+  tool cannot prove automatically.
 - Extend reflow evidence with explicit 200%/400% zoom checks and overlapping
   fixed or sticky control checks.
 - Add cross-browser audit evidence. Record the browser engine and version in
@@ -130,6 +144,14 @@ Section 508 certification.
   scheduled scans.
 - Continue expanding CLI quality-of-life controls around report paths,
   troubleshooting context, progress output, `--quiet`, and `--verbose`.
+- After the CLI report schema is stable for 1.0, create a VS Code extension
+  that uses the CLI as its engine, reads `a11y-report.json`, shows source
+  findings in the Problems panel, provides commands to run audits, and opens the
+  visual HTML report from the editor.
+- Add WebStorm and IntelliJ documentation first through External Tools that run
+  the CLI against a configured app URL. Consider a dedicated JetBrains plugin
+  only after the VS Code extension and report schema prove stable with real
+  users.
 - Improve framework autodetection messaging so users clearly understand the
   difference between browser-based audits for any rendered website and optional
   source adapters for React, Vue, and Angular.

@@ -183,6 +183,14 @@ const WCAG_CRITERIA: Record<string, WcagCriterion> = {
     introducedIn: "2.1",
     url: "https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html"
   },
+  "1.4.11": {
+    id: "1.4.11",
+    title: "Non-text Contrast",
+    level: "AA",
+    principle: "perceivable",
+    introducedIn: "2.1",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html"
+  },
   "2.1.1": {
     id: "2.1.1",
     title: "Keyboard",
@@ -303,6 +311,14 @@ const WCAG_CRITERIA: Record<string, WcagCriterion> = {
     introducedIn: "2.0",
     url: "https://www.w3.org/WAI/WCAG22/Understanding/labels-or-instructions.html"
   },
+  "3.3.3": {
+    id: "3.3.3",
+    title: "Error Suggestion",
+    level: "AA",
+    principle: "understandable",
+    introducedIn: "2.0",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/error-suggestion.html"
+  },
   "4.1.2": {
     id: "4.1.2",
     title: "Name, Role, Value",
@@ -310,6 +326,14 @@ const WCAG_CRITERIA: Record<string, WcagCriterion> = {
     principle: "robust",
     introducedIn: "2.0",
     url: "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
+  },
+  "4.1.3": {
+    id: "4.1.3",
+    title: "Status Messages",
+    level: "AA",
+    principle: "robust",
+    introducedIn: "2.1",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html"
   },
   "2.5.7": {
     id: "2.5.7",
@@ -368,6 +392,11 @@ export function getWcagCriteria(ids: string[]): WcagCriterion[] {
     const criterion = getWcagCriterion(id);
     return criterion ? [criterion] : [];
   });
+}
+
+export function listWcagCriteria(): WcagCriterion[] {
+  return Object.values(WCAG_CRITERIA)
+    .sort((left, right) => left.id.localeCompare(right.id, undefined, { numeric: true }));
 }
 
 export function normalizeWcagReferences(references: string[] = []): string[] {

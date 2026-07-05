@@ -717,6 +717,7 @@ export interface ReportSummary {
   retention?: ReportRetentionEvidence;
   lighthouse?: LighthouseReportSummary;
   complianceEvidence: ComplianceEvidenceSummary;
+  wcagCoverage?: WcagCoverageSummary;
   bySource: Record<string, number>;
   bySeverity: Record<string, number>;
   byConfidence: Record<string, number>;
@@ -733,6 +734,37 @@ export interface ReportSummary {
   byPage: PageSummary[];
   rootCauseCount?: number;
   rootCauseGroups?: RootCauseGroup[];
+}
+
+export type WcagCoverageStatus =
+  | "automated"
+  | "heuristic"
+  | "manual-required"
+  | "not-covered";
+
+export interface WcagCoverageCriterionSummary {
+  id: string;
+  title: string;
+  level: WcagLevel;
+  principle: PourPrinciple;
+  status: WcagCoverageStatus;
+  evidenceSources: string[];
+  findingCount: number;
+  nextStep: string;
+}
+
+export interface WcagCoverageSummary {
+  label: string;
+  targetVersion: WcagVersion;
+  targetLevel: WcagLevel;
+  totalCriteria: number;
+  automatedCriteria: number;
+  heuristicCriteria: number;
+  manualCriteria: number;
+  notCoveredCriteria: number;
+  automatedCoverage: number;
+  assistedCoverage: number;
+  criteria: WcagCoverageCriterionSummary[];
 }
 
 export interface A11yReport {

@@ -136,6 +136,7 @@ function sanitizeReport(report: A11yReport, counts: RedactionCounts) {
         ...summary.complianceEvidence,
         topAffectedPages: sanitizePages(summary.complianceEvidence.topAffectedPages || [], counts)
       } : undefined,
+      wcagCoverage: summary.wcagCoverage,
       bySource: summary.bySource,
       bySeverity: summary.bySeverity,
       byFindingType: summary.byFindingType,
