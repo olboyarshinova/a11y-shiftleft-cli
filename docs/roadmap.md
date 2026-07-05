@@ -106,6 +106,18 @@ Section 508 certification.
   remaining, and worsened findings.
 - Add local report history and trend summaries inside visual reports where it
   can be done without storing sensitive data.
+- Add a clearer scan progress experience in the visual report and future watch
+  mode: pending, running, completed, skipped, current URL/state, and completion
+  percentage for each selected check.
+- Add UI-friendly ignore support in HTML reports: copy an `a11y-ignore.json`
+  entry, record an expiry/reason/owner, and keep dismissals explicit instead of
+  silently hiding findings.
+- Add report audience views without duplicating data: developer view for
+  selectors and remediation, QA view for screenshots and reproduction steps,
+  manager view for risk, trends, coverage, and ownership.
+- Make issue lifecycle status visible in reports across baseline, retest,
+  ignores, and remediation tracking: new, accepted, ignored until date, fixed,
+  remaining, needs manual review, and third-party.
 - Add more copyable fix summaries, including targeted snippets for reflow,
   contrast, iframe ownership, and keyboard/focus issues.
 - Reframe selected report labels around potential exclusion risk, affected
@@ -128,6 +140,10 @@ Section 508 certification.
 - Harden `watch` with clearer run-to-run deltas, better changed-file grouping,
   affected-route hints, and guidance for mapping changed files to dynamic
   smoke-test URLs.
+- Add a local `agent` workflow after `watch` and retest are stable. Keep it
+  deterministic at first: run the audit, compare with the previous report,
+  summarize fixed/new/remaining findings, recommend the next CLI command, and
+  refresh the visual report.
 - Add a single guided setup command that creates the config, generated report
   `.gitignore` entries, npm scripts, and CI workflow in one pass, while keeping
   every generated file visible for review before commit.
@@ -152,6 +168,10 @@ Section 508 certification.
   the CLI against a configured app URL. Consider a dedicated JetBrains plugin
   only after the VS Code extension and report schema prove stable with real
   users.
+- Do not prioritize a Chrome extension as a primary product path. The project
+  should differentiate through CLI-driven dynamic exploration, safe automated
+  state discovery, CI reproducibility, visual evidence, and local privacy rather
+  than competing as another current-tab scanner.
 - Improve framework autodetection messaging so users clearly understand the
   difference between browser-based audits for any rendered website and optional
   source adapters for React, Vue, and Angular.
@@ -198,7 +218,9 @@ Section 508 certification.
 - Add optional Jira and Linear export commands after the report schema is stable
   enough for external ticket sync. Keep the first version dry-run first, with
   explicit credentials, duplicate detection, and redaction of sensitive report
-  fields.
+  fields. Support grouped ticket drafts by root cause, affected pages/states,
+  owner, severity, WCAG criterion, and practical user impact before adding API
+  writes.
 - Continue hardening scoped `a11y-ignore.json` support with clearer expiry
   reminders, stale-ignore cleanup guidance, and optional owner summaries.
 - Evaluate an optional public-link publisher only after sanitized export is
@@ -213,6 +235,20 @@ Section 508 certification.
 - After the 1.0 CLI release, create a documentation website with quick start
   guides, framework-specific setup pages, CI and compliance-support examples,
   troubleshooting, privacy notes, and sample visual reports.
+- Use a clearer website headline and README positioning focused on the outcome,
+  not the implementation: one command scans a real web app, explores reachable
+  UI states, and generates a visual accessibility report with WCAG evidence and
+  fix guidance.
+- Add a simple early-access or release-updates waitlist to the future
+  documentation website so interested developers can follow releases without
+  needing a hosted product account.
+- Add a short privacy promise near report examples: reports and screenshots
+  stay local by default, sensitive screenshots can be disabled or redacted, and
+  sharing is always explicit.
+- Add a small "built with trusted engines" section to the website and README
+  that names axe-core through Playwright, Lighthouse where enabled, ESLint
+  adapters, and local browser automation without presenting the project as a
+  replacement for those tools.
 - Add a "CI/CD without SaaS" guide that explains how the CLI differs from
   enterprise platforms: local-first execution, open-source reports, CI artifacts,
   explicit manual-review gaps, and no hosted account requirement.
@@ -233,6 +269,10 @@ Section 508 certification.
   aligned with current CLI capabilities and public documentation.
 - Publish a public demo repository and before/after case study showing a full
   pull request workflow with findings, fixes, and generated reports.
+- Publish short blog and Dev.to posts that point to copy-paste quick starts and
+  visual report screenshots, such as "one command to generate a visual
+  accessibility report" and "adding accessibility evidence to a pull request
+  without a SaaS account".
 - Add GitHub Discussions categories after the first external users appear.
 - Open selected external open-source pull requests after the docs, generated CI
   workflow, and sample reports are stable enough for maintainers to review.
@@ -253,9 +293,9 @@ Section 508 certification.
 - Explore a DevTools-style local inspection layer after the overlay prototype,
   reusing the same core report schema to show rule, severity, WCAG metadata,
   confidence, and suggested remediation next to affected DOM elements.
-- Consider a separate `@a11y-shiftleft/browser` package for a Chrome extension
-  or DevTools panel once CLI reports, live feedback, overlay behavior, and
-  privacy controls are stable enough to justify a browser-specific project.
+- Reconsider a separate browser-specific package only if real users ask for it
+  after dynamic exploration, watch mode, visual reports, overlay behavior, and
+  privacy controls are already stable.
 - Explore VPAT evidence-draft templates for organizations that need Section 508
   procurement documentation. Keep unsupported criteria marked for manual review
   and keep final conformance statements and legal review outside the CLI.

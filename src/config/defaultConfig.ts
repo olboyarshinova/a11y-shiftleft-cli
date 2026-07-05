@@ -18,6 +18,7 @@ export const defaultConfig = {
     crawl: false,
     crawlDepth: 1,
     crawlLimit: 10,
+    scopeSelector: undefined,
     scroll: {
       enabled: true,
       stepPx: 800,
@@ -31,6 +32,7 @@ export const defaultConfig = {
     json: true
   },
   explore: {
+    scopeSelector: undefined,
     waitMs: 250,
     scroll: {
       enabled: true,

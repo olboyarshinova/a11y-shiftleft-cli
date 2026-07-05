@@ -83,6 +83,34 @@ Use `--no-scroll` only when scrolling triggers project-specific side effects.
 For long pages, scheduled full-site scans can increase `--scroll-max-steps`;
 pull request checks should keep the limit bounded.
 
+## Scoped Browser Checks
+
+Use `--scope <selector>` when you want browser checks to stay inside one
+component, dialog, checkout step, or page section:
+
+```bash
+npx a11y-shiftleft audit --url $APP_URL --scope '#checkout' --out reports
+npx a11y-shiftleft check --dynamic --url $APP_URL --scope '#main' --out reports
+```
+
+For shared defaults, use `dynamic.scopeSelector` for `check` and
+`explore.scopeSelector` for visual exploration and `audit`:
+
+```json
+{
+  "dynamic": {
+    "scopeSelector": "#main"
+  },
+  "explore": {
+    "scopeSelector": "#main"
+  }
+}
+```
+
+Scoped checks limit axe scans and safe action discovery to the selected area.
+Page-level and manual-review evidence should still be interpreted with the
+overall page context in mind.
+
 ## Explore Safety
 
 `explore.safeMode.isolateCookies` is enabled by default. It clears browser

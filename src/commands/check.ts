@@ -28,6 +28,7 @@ export interface CheckOptions {
   dynamic?: boolean;
   withLighthouse?: boolean;
   url?: string[];
+  scope?: string;
   crawl?: boolean;
   crawlDepth?: string;
   crawlLimit?: string;
@@ -85,6 +86,7 @@ export function registerCheckCommand(program: Command): void {
     .option("--dynamic", "Run dynamic checks only")
     .option("--with-lighthouse", "Also collect optional Lighthouse accessibility score and audit recommendations")
     .option("--url <urls...>", "Target URL(s) for dynamic scan")
+    .option("--scope <selector>", "Limit dynamic axe checks to one CSS selector on each page")
     .option("--crawl", "Discover and scan same-origin links from dynamic URLs")
     .option("--crawl-depth <depth>", "Maximum same-origin crawl depth", "1")
     .option("--crawl-limit <limit>", "Maximum discovered URLs to scan", "10")
@@ -151,6 +153,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
       crawl: options.crawl ? true : undefined,
       crawlDepth: toPositiveInteger(options.crawlDepth),
       crawlLimit: toPositiveInteger(options.crawlLimit),
+      scopeSelector: options.scope,
       scroll: {
         enabled: options.scroll === false ? false : undefined,
         stepPx: toPositiveInteger(options.scrollStep),
@@ -363,6 +366,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
         scrollStepPx: effectiveConfig.dynamic.scroll.stepPx,
         scrollMaxSteps: effectiveConfig.dynamic.scroll.maxSteps,
         scrollWaitMs: effectiveConfig.dynamic.scroll.waitMs,
+        scopeSelector: effectiveConfig.dynamic.scopeSelector,
         retentionEnabled: retentionSummary.enabled,
         retentionDryRun: retentionSummary.dryRun,
         retentionPlannedDeletedRuns: retentionSummary.plannedDeletedRuns,
@@ -482,6 +486,7 @@ export function formatVerboseCheckSummary(options: {
   scrollStepPx?: number;
   scrollMaxSteps?: number;
   scrollWaitMs?: number;
+  scopeSelector?: string;
   retentionEnabled: boolean;
   retentionDryRun: boolean;
   retentionPlannedDeletedRuns: number;
@@ -517,6 +522,7 @@ export function formatVerboseCheckSummary(options: {
     `modes: static=${options.runStatic ? "on" : "off"}, dynamic=${options.runDynamic ? "on" : "off"}`,
     `urls: ${urls}`,
     `crawl: ${crawl}`,
+    `scope: ${options.scopeSelector || "whole page"}`,
     `scroll: ${scroll}`,
     `lighthouse: ${options.lighthouseEnabled ? "enabled" : "disabled"}`,
     `standard: ${options.standard}`,

@@ -171,6 +171,7 @@ interface ExplorePlaywrightOptions {
   safeMode?: ExploreSafeModeConfig;
   waitMs?: number;
   waitForSelector?: string;
+  scopeSelector?: string;
   scroll?: Partial<PageScrollConfig>;
   onProgress?: (event: ExploreProgressEvent) => void;
 }
@@ -295,6 +296,7 @@ export async function runExplorePlaywrightAdapter(
   const safeMode = normalizeSafeMode(options.safeMode || config.explore.safeMode);
   const waitMs = nonNegativeOrDefault(options.waitMs, DEFAULT_WAIT_MS);
   const waitForSelector = options.waitForSelector;
+  const scopeSelector = normalizeScopeSelector(options.scopeSelector);
   const scroll = normalizePageScrollConfig(options.scroll || config.explore.scroll);
   let actionsTried = 0;
   let screenshotsSaved = 0;
@@ -336,6 +338,7 @@ export async function runExplorePlaywrightAdapter(
       }
 
       const verification = await detectHumanVerification(page);
+      const scope = await resolveScopeAvailability(page, scopeSelector);
       const initialPageState = await fingerprintPage(page);
       const openModal = await inspectOpenModal(page);
       const modalFocus = openModal
@@ -348,7 +351,9 @@ export async function runExplorePlaywrightAdapter(
         ? { actions: [], skipped: [] }
         : verification
           ? { actions: [], skipped: [] }
-        : await discoverSafeActions(page, initialPageState.url, maxActionsPerState, safeMode);
+          : !scope.ok
+            ? { actions: [], skipped: [] }
+            : await discoverSafeActions(page, initialPageState.url, maxActionsPerState, safeMode, scopeSelector);
       const actions = discovery.actions;
       const colorSchemes = await detectPageColorSchemes(page);
       const actionLabel = current.via?.label || "Initial page";
@@ -372,7 +377,8 @@ export async function runExplorePlaywrightAdapter(
         const scannedIssues = await scanState(config, page, {
           stateId,
           stateLabel: actionLabel,
-          colorScheme: reportedColorScheme
+          colorScheme: reportedColorScheme,
+          scopeSelector
         });
         const accessibilityTree = await captureAccessibilityTree(page);
         const formErrors = await auditFormErrors(page, config, {
@@ -561,17 +567,19 @@ export async function runExplorePlaywrightAdapter(
     await browser.close();
   }
 
-  const titleIssues = analyzePageTitles(states.map((state) => ({
-    url: state.url,
-    title: state.title
-  })), config.framework).map((issue) => {
-    const state = states.find((candidate) => candidate.url === issue.url);
-    return {
-      ...issue,
-      stateId: state?.id,
-      stateLabel: state?.actionLabel
-    };
-  });
+  const titleIssues = scopeSelector
+    ? []
+    : analyzePageTitles(states.map((state) => ({
+      url: state.url,
+      title: state.title
+    })), config.framework).map((issue) => {
+      const state = states.find((candidate) => candidate.url === issue.url);
+      return {
+        ...issue,
+        stateId: state?.id,
+        stateLabel: state?.actionLabel
+      };
+    });
   issues.push(...titleIssues);
 
   return {
@@ -590,6 +598,7 @@ export async function runExplorePlaywrightAdapter(
         skippedActions: skippedActions.length,
         screenshots: screenshotsSaved,
         duplicateScreenshots: states.filter((state) => state.visualDuplicateOf).length,
+        scopeSelector,
         maxDepth,
         maxStates,
         browser: browserEvidence
@@ -920,6 +929,33 @@ async function settle(page: Page, wait: ExploreWaitOptions): Promise<void> {
   }
 }
 
+function normalizeScopeSelector(selector: string | undefined): string | undefined {
+  const trimmed = selector?.trim();
+  return trimmed || undefined;
+}
+
+async function resolveScopeAvailability(
+  page: Page,
+  scopeSelector: string | undefined
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  if (!scopeSelector) return { ok: true };
+
+  try {
+    const count = await page.locator(scopeSelector).count();
+    if (count > 0) return { ok: true };
+    return {
+      ok: false,
+      message: `Scope selector "${scopeSelector}" was not found on this page state.`
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      ok: false,
+      message: `Scope selector "${scopeSelector}" could not be evaluated: ${message}`
+    };
+  }
+}
+
 async function fingerprintPage(page: Page): Promise<PageFingerprint> {
   const appearance = await getPageAppearanceSignature(page);
   const snapshot = await page.evaluate(() => {
@@ -962,6 +998,7 @@ async function scanState(
     stateId: string;
     stateLabel: string;
     colorScheme: Issue["colorScheme"];
+    scopeSelector?: string;
   }
 ): Promise<Issue[]> {
   try {
@@ -977,9 +1014,14 @@ async function scanState(
       })];
     }
 
-    const results = await new AxeBuilder({ page })
-      .options(getAxeRunOptions())
-      .analyze();
+    const scope = await resolveScopeAvailability(page, state.scopeSelector);
+    if (!scope.ok) {
+      return [createScopeSelectorIssue(config, page.url(), state, scope.message)];
+    }
+
+    const builder = new AxeBuilder({ page }).options(getAxeRunOptions());
+    if (state.scopeSelector) builder.include(state.scopeSelector);
+    const results = await builder.analyze();
     const issues: Issue[] = [];
     const frames = page.frames().map((frame) => ({ url: frame.url() }));
 
@@ -2733,7 +2775,8 @@ async function discoverSafeActions(
   page: Page,
   baseUrl: string,
   maxActions: number,
-  safeMode: ExploreSafeModeConfig
+  safeMode: ExploreSafeModeConfig,
+  scopeSelector?: string
 ): Promise<ActionDiscoveryResult> {
   const discovery = await page.$$eval(INTERACTIVE_SELECTOR, (elements, input): {
     actions: RawExploreAction[];
@@ -2741,6 +2784,7 @@ async function discoverSafeActions(
   } => {
     const {
       safeMode,
+      scopeSelector,
       cookieConsentPatternSources,
       advertisingPatternSources
     } = input;
@@ -2808,6 +2852,15 @@ async function discoverSafeActions(
           return false;
         }
       });
+    }
+
+    function isInsideScope(element: Element, selector: string | undefined): boolean {
+      if (!selector) return true;
+      try {
+        return element.matches(selector) || Boolean(element.closest(selector));
+      } catch {
+        return false;
+      }
     }
 
     function isCookieConsentControl(element: Element): boolean {
@@ -2928,6 +2981,8 @@ async function discoverSafeActions(
     const skipped: RawSkippedAction[] = [];
 
     for (const element of elements) {
+      if (!isInsideScope(element, scopeSelector)) continue;
+
       if (!isVisible(element)) {
         skipped.push(skippedAction(element, "Element is not visible."));
         continue;
@@ -3016,6 +3071,7 @@ async function discoverSafeActions(
     };
   }, {
     safeMode,
+    scopeSelector,
     cookieConsentPatternSources: COOKIE_CONSENT_CONTEXT_PATTERNS.map(
       (pattern) => pattern.source
     ),
@@ -3291,6 +3347,31 @@ function createExploreErrorIssue(
     severity: "warning",
     url,
     message: `Exploration failed${label}: ${message}`
+  };
+}
+
+function createScopeSelectorIssue(
+  config: A11yConfig,
+  url: string,
+  state: {
+    stateId: string;
+    stateLabel: string;
+    colorScheme?: Issue["colorScheme"];
+    scopeSelector?: string;
+  },
+  message: string
+): Issue {
+  return {
+    source: "axe",
+    framework: config.framework,
+    ruleId: "adapter/scope-selector-not-found",
+    severity: "warning",
+    selector: state.scopeSelector,
+    url,
+    stateId: state.stateId,
+    stateLabel: state.stateLabel,
+    colorScheme: state.colorScheme,
+    message
   };
 }
 

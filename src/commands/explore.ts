@@ -33,6 +33,7 @@ interface ExploreOptions {
   config?: string;
   framework?: string;
   url: string;
+  scope?: string;
   depth?: string;
   maxDepth?: string;
   limit?: string;
@@ -91,6 +92,7 @@ export function registerExploreCommand(program: Command): void {
     .option("--config <file>", "Config path relative to cwd")
     .option("--framework <name>", "react, vue, angular, or auto")
     .requiredOption("--url <url>", "Start URL for UI exploration")
+    .option("--scope <selector>", "Limit axe checks and safe action discovery to one CSS selector")
     .option("--depth <depth>", "Maximum interaction depth", "2")
     .option("--max-depth <depth>", "Maximum interaction depth; clearer alias for --depth")
     .option("--limit <limit>", "Maximum UI states to scan", "20")
@@ -159,6 +161,7 @@ export function registerExploreCommand(program: Command): void {
         explore: {
           waitMs: toNonNegativeInteger(options.waitMs),
           waitForSelector: options.waitForSelector,
+          scopeSelector: options.scope,
           scroll: {
             enabled: options.scroll === false ? false : undefined,
             stepPx: toPositiveInteger(options.scrollStep),
@@ -228,6 +231,7 @@ export function registerExploreCommand(program: Command): void {
           screenshotRedaction: options.screenshotRedaction !== false,
           waitMs,
           waitForSelector: effectiveConfig.explore.waitForSelector,
+          scopeSelector: effectiveConfig.explore.scopeSelector,
           scrollEnabled: effectiveConfig.explore.scroll.enabled,
           scrollStepPx: effectiveConfig.explore.scroll.stepPx,
           scrollMaxSteps: effectiveConfig.explore.scroll.maxSteps,
@@ -257,6 +261,7 @@ export function registerExploreCommand(program: Command): void {
         screenshotRedaction: options.screenshotRedaction,
         waitMs,
         waitForSelector: effectiveConfig.explore.waitForSelector,
+        scopeSelector: effectiveConfig.explore.scopeSelector,
         scroll: effectiveConfig.explore.scroll,
         safeMode: effectiveConfig.explore.safeMode,
         onProgress: (event) => {
@@ -457,6 +462,7 @@ export function formatVerboseExploreSummary(options: {
   screenshotRedaction: boolean;
   waitMs: number;
   waitForSelector?: string;
+  scopeSelector?: string;
   scrollEnabled: boolean;
   scrollStepPx: number;
   scrollMaxSteps: number;
@@ -488,6 +494,7 @@ export function formatVerboseExploreSummary(options: {
     `screenshotCapture: ${options.screenshotFullPage ? "forced full-page" : "automatic error regions"}`,
     `screenshotRedaction: ${options.screenshotRedaction ? "on" : "off"}`,
     `wait: ${options.waitMs}ms${options.waitForSelector ? ` selector=${options.waitForSelector}` : ""}`,
+    `scope: ${options.scopeSelector || "whole page"}`,
     `scroll: ${options.scrollEnabled ? `on step=${options.scrollStepPx}px maxSteps=${options.scrollMaxSteps} wait=${options.scrollWaitMs}ms` : "off"}`,
     `safeMode: ${options.safeModeEnabled ? "on" : "off"}`,
     `safeModeDismissDialogs: ${options.safeModeDismissDialogs ? "on" : "off"}`,
@@ -574,6 +581,7 @@ export function formatExploreConsoleSummary(
     "a11y-shiftleft explore",
     `Status: ${status}`,
     `Exploration: UI states ${uiStatesVisited}/${graph.summary.maxStates} | rendered states ${graph.summary.statesVisited} | actions tried ${graph.summary.actionsTried} | skipped ${graph.summary.skippedActions} | unique screenshots ${graph.summary.screenshots} | duplicate screenshots skipped ${graph.summary.duplicateScreenshots || 0}`,
+    ...(graph.summary.scopeSelector ? [`Scope: ${graph.summary.scopeSelector}`] : []),
     `Findings: total ${summary.total} | CRITICAL ${summary.critical} | WARNING ${summary.warning} | INFO ${summary.info}`,
     `Color schemes: ${colorSchemes}`,
     `Framework: ${summary.framework}`,

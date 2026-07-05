@@ -1458,7 +1458,7 @@ export function renderExplorationHtml(
 <body data-coverage-report-id="${escapeAttribute(`${graph.startUrl}|${graph.generatedAt}`)}">
   <header>
     <h1>${escapeHtml(options.title || "a11y-shiftleft exploration report")}</h1>
-    <p class="muted">Generated: <time datetime="${escapeAttribute(graph.generatedAt)}">${escapeHtml(formatReportDateUtc(graph.generatedAt))}</time><br>Start URL: ${escapeHtml(graph.startUrl)}<br>Scan depth: ${escapeHtml(formatDepthScope(graph.summary.maxDepth))}<br>Scan scope: up to ${graph.summary.maxStates} states, ${graph.summary.statesVisited} rendered</p>
+    <p class="muted">Generated: <time datetime="${escapeAttribute(graph.generatedAt)}">${escapeHtml(formatReportDateUtc(graph.generatedAt))}</time><br>Start URL: ${escapeHtml(graph.startUrl)}<br>Scan depth: ${escapeHtml(formatDepthScope(graph.summary.maxDepth))}<br>Scan scope: ${escapeHtml(graph.summary.scopeSelector ? `selector ${graph.summary.scopeSelector}; up to ${graph.summary.maxStates} states, ${graph.summary.statesVisited} rendered` : `up to ${graph.summary.maxStates} states, ${graph.summary.statesVisited} rendered`)}</p>
   </header>
   <main>
     <section class="summary" aria-label="Exploration summary">
@@ -1745,6 +1745,7 @@ function renderEvaluationScope(
         <div class="scope-item"><strong>URLs included</strong><span>${urls.length}</span></div>
         <div class="scope-item"><strong>Rendered states</strong><span>${graph.summary.statesVisited} of ${graph.summary.maxStates} max</span></div>
         <div class="scope-item"><strong>Exploration depth</strong><span>${escapeHtml(formatDepthScope(graph.summary.maxDepth))}</span></div>
+        <div class="scope-item"><strong>Selector scope</strong><span>${escapeHtml(graph.summary.scopeSelector || "Whole page")}</span></div>
         <div class="scope-item"><strong>Evidence collected</strong><span>${escapeHtml(evidence.join("; "))}</span></div>
         ${options.auditTrail ? renderAuditTrailScopeItems(options.auditTrail) : ""}
         <div class="scope-item"><strong>Representative states</strong><span>${escapeHtml(mostAffected.length ? mostAffected.join("; ") : "No findings in captured states")}</span></div>

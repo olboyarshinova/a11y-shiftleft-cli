@@ -769,6 +769,7 @@ This WCAG-EM-inspired scope summary is reproducibility evidence, not a WCAG conf
 | URLs included | ${urls.length} |
 | Rendered states | ${graph ? `${graph.summary.statesVisited} of ${graph.summary.maxStates} max` : "not included"} |
 | Exploration depth | ${graph ? markdownCell(formatDepthScope(graph.summary.maxDepth)) : "not included"} |
+| Selector scope | ${graph ? markdownCell(graph.summary.scopeSelector || "whole page") : "not included"} |
 | Evidence collected | ${markdownCell(evidence)} |
 | Representative states | ${markdownCell(representativeStates || "No findings in captured states")} |`;
 }

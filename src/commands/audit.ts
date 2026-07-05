@@ -30,6 +30,7 @@ interface AuditOptions {
   profile?: string;
   withLighthouse?: boolean;
   out?: string;
+  scope?: string;
   depth?: string;
   maxDepth?: string;
   limit?: string;
@@ -73,6 +74,7 @@ export function registerAuditCommand(program: Command): void {
     .option("--profile <profile>", "Audit goal: risk, validation, or full")
     .option("--with-lighthouse", "Add optional Lighthouse accessibility score comparison")
     .option("--out <dir>", "Output directory", "reports")
+    .option("--scope <selector>", "Limit visual axe checks and safe action discovery to one CSS selector")
     .option("--depth <depth>", "Maximum interaction depth", "2")
     .option("--max-depth <depth>", "Maximum interaction depth; clearer alias for --depth")
     .option("--limit <limit>", "Maximum UI states", "20")
@@ -122,6 +124,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
     explore: {
       waitMs: optionalNonNegativeInteger(options.waitMs, "Wait time"),
       waitForSelector: options.waitForSelector,
+      scopeSelector: options.scope,
       scroll: {
         enabled: options.scroll === false ? false : undefined,
         stepPx: optionalPositiveInteger(options.scrollStep, "Scroll step"),
@@ -176,6 +179,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
       screenshotFullPage: Boolean(options.screenshotFullPage),
       waitMs: effectiveConfig.explore.waitMs,
       waitForSelector: effectiveConfig.explore.waitForSelector,
+      scopeSelector: effectiveConfig.explore.scopeSelector,
       scroll: effectiveConfig.explore.scroll,
       safeMode: effectiveConfig.explore.safeMode
     }),
@@ -271,6 +275,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
       "a11y-shiftleft audit",
       `Findings: ${report.summary.total} | critical ${report.summary.critical} | warning ${report.summary.warning} | info ${report.summary.info}`,
       `States: ${exploration.graph.summary.statesVisited} | keyboard steps ${keyboard?.steps.length || 0}`,
+      ...(exploration.graph.summary.scopeSelector ? [`Scope: ${exploration.graph.summary.scopeSelector}`] : []),
       options.withLighthouse ? `Lighthouse: ${lighthouse[0]?.accessibilityScore ?? "not available"}` : "Lighthouse: not requested",
       `Open: ${reportPath}`,
       options.excel ? `Excel tables: ${effectiveConfig.outputDir}/a11y-summary.csv, a11y-pages.csv, a11y-rules.csv, a11y-findings.csv` : "Excel tables: not requested (add --excel)"

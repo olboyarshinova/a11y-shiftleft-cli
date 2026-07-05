@@ -54,6 +54,7 @@ export async function runAxePlaywrightAdapter(
   const browser = await chromium.launch();
   const issues: Issue[] = [];
   const pageTitles: PageTitleObservation[] = [];
+  const scopeSelector = normalizeScopeSelector(config.dynamic.scopeSelector);
 
   try {
     const context = await browser.newContext();
@@ -100,16 +101,29 @@ export async function runAxePlaywrightAdapter(
           continue;
         }
         await scrollPageForLazyContent(page, scroll);
-        pageTitles.push({ url, title: await page.title() });
+        if (!scopeSelector) pageTitles.push({ url, title: await page.title() });
+        const scope = await resolveScopeAvailability(page, scopeSelector);
+        if (!scope.ok) {
+          issues.push(createScopeSelectorIssue(config, url, scope.message));
+          options.onProgress?.({
+            type: "scan-complete",
+            url,
+            scannedCount,
+            totalUrls: scanUrls.length,
+            issueCount: 1
+          });
+          continue;
+        }
+
         const colorSchemes = await detectPageColorSchemes(page);
         const pageIssues: Issue[][] = [];
 
         for (const colorScheme of colorSchemes) {
           await applyColorScheme(page, colorScheme);
           await scrollPageForLazyContent(page, scroll);
-          const results = await new AxeBuilder({ page })
-            .options(getAxeRunOptions())
-            .analyze();
+          const builder = new AxeBuilder({ page }).options(getAxeRunOptions());
+          if (scopeSelector) builder.include(scopeSelector);
+          const results = await builder.analyze();
           const reportedColorScheme = colorSchemes.length > 1 ? colorScheme : undefined;
           const colorSchemeIssues: Issue[] = [];
           const frames = page.frames().map((frame) => ({ url: frame.url() }));
@@ -215,6 +229,50 @@ function colorSchemeEvidenceKey(issue: Issue): string {
     issue.impact,
     issue.contrast || null
   ]);
+}
+
+function normalizeScopeSelector(selector: string | undefined): string | undefined {
+  const trimmed = selector?.trim();
+  return trimmed || undefined;
+}
+
+async function resolveScopeAvailability(
+  page: { locator: (selector: string) => { count: () => Promise<number> } },
+  scopeSelector: string | undefined
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const selector = scopeSelector?.trim();
+  if (!selector) return { ok: true };
+
+  try {
+    const count = await page.locator(selector).count();
+    if (count > 0) return { ok: true };
+    return {
+      ok: false,
+      message: `Scope selector "${selector}" was not found on this page.`
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      ok: false,
+      message: `Scope selector "${selector}" could not be evaluated: ${message}`
+    };
+  }
+}
+
+function createScopeSelectorIssue(
+  config: A11yConfig,
+  url: string,
+  message: string
+): Issue {
+  return {
+    source: "axe",
+    framework: config.framework,
+    ruleId: "adapter/scope-selector-not-found",
+    severity: "warning",
+    selector: normalizeScopeSelector(config.dynamic.scopeSelector),
+    url,
+    message
+  };
 }
 
 export async function crawlSameOriginUrls(

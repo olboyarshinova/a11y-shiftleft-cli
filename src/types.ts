@@ -208,6 +208,7 @@ export interface DynamicConfig {
   crawl: boolean;
   crawlDepth: number;
   crawlLimit: number;
+  scopeSelector?: string;
   scroll: PageScrollConfig;
 }
 
@@ -230,6 +231,7 @@ export interface ExploreSafeModeConfig {
 
 export interface ExploreConfig {
   safeMode: ExploreSafeModeConfig;
+  scopeSelector?: string;
   waitMs: number;
   waitForSelector?: string;
   scroll: PageScrollConfig;
@@ -1059,6 +1061,7 @@ export interface ExplorationGraph {
     skippedActions: number;
     screenshots: number;
     duplicateScreenshots?: number;
+    scopeSelector?: string;
     maxDepth: number;
     maxStates: number;
     browser?: BrowserEvidence;

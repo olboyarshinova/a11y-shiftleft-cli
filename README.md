@@ -137,6 +137,7 @@ URL.
 | First local review | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports --open` |
 | Quick risk triage | `npx a11y-shiftleft-cli audit --url $APP_URL --profile risk --out reports` |
 | Broader local scan | `npx a11y-shiftleft-cli audit --url $APP_URL --max-depth 3 --limit 50 --out reports` |
+| Check one component or page area | `npx a11y-shiftleft-cli audit --url $APP_URL --scope '#main' --out reports` |
 | Fuller evidence package | `npx a11y-shiftleft-cli audit --url $APP_URL --profile full --out reports` |
 | Fast CI or PR check | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports` |
 | Legacy-project CI gate | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --gate new-critical-only --out reports` |
@@ -155,10 +156,15 @@ or "visit every possible page."
 npx a11y-shiftleft-cli audit --url $APP_URL --profile risk --out reports
 npx a11y-shiftleft-cli audit --url $APP_URL --max-depth 1 --out reports
 npx a11y-shiftleft-cli audit --url $APP_URL --max-depth 3 --limit 50 --out reports
+npx a11y-shiftleft-cli audit --url $APP_URL --scope '#checkout' --out reports
 ```
 
 Use `1` for a quick smoke test, the default `2` for most local reviews, and `3`
 or more only when you intentionally want a broader scan.
+
+Use `--scope <selector>` when you want browser checks and safe UI-state
+exploration to stay inside one component, dialog, checkout step, or page
+section.
 
 Audit profiles are shortcuts:
 
