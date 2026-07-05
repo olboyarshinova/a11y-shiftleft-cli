@@ -213,6 +213,7 @@ export interface DynamicConfig {
   crawlDepth: number;
   crawlLimit: number;
   scopeSelector?: string;
+  hideElements: string[];
   scroll: PageScrollConfig;
 }
 
@@ -238,6 +239,7 @@ export interface ExploreConfig {
   browser: BrowserEngine;
   device?: string;
   scopeSelector?: string;
+  hideElements: string[];
   waitMs: number;
   waitForSelector?: string;
   scroll: PageScrollConfig;
@@ -1068,6 +1070,7 @@ export interface ExplorationGraph {
     screenshots: number;
     duplicateScreenshots?: number;
     scopeSelector?: string;
+    hideElements?: string[];
     maxDepth: number;
     maxStates: number;
     browser?: BrowserEvidence;

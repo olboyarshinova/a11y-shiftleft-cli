@@ -17,6 +17,7 @@ import { applyRemediationTracking, DEFAULT_REMEDIATION_FILE } from "../core/reme
 import { applyIgnores, DEFAULT_IGNORE_FILE } from "../core/ignore.js";
 import { applyReportRetention } from "../core/reportRetention.js";
 import { filterReportFindings } from "../core/findingFilter.js";
+import { normalizeHideElementSelectors } from "../core/hideElements.js";
 import { readScopePlanIfExists } from "../core/scopePlan.js";
 import { browserEvidenceName, normalizeBrowserEngine, supportedBrowserEnginesText } from "../core/browserRuntime.js";
 import type { A11yReport, ComplianceStandard, Framework, Issue, LighthouseAuditResult, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel, WcagVersion } from "../types.js";
@@ -32,6 +33,7 @@ export interface CheckOptions {
   browser?: string;
   device?: string;
   scope?: string;
+  hideElements?: string[];
   crawl?: boolean;
   crawlDepth?: string;
   crawlLimit?: string;
@@ -92,6 +94,7 @@ export function registerCheckCommand(program: Command): void {
     .option("--browser <engine>", "Browser engine for dynamic checks: chromium, firefox, or webkit")
     .option("--device <name>", "Playwright device preset, for example \"iPhone 13\" or \"Pixel 5\"")
     .option("--scope <selector>", "Limit dynamic axe checks to one CSS selector on each page")
+    .option("--hide-elements <selectors...>", "Hide matching CSS selectors before dynamic browser checks")
     .option("--crawl", "Discover and scan same-origin links from dynamic URLs")
     .option("--crawl-depth <depth>", "Maximum same-origin crawl depth", "1")
     .option("--crawl-limit <limit>", "Maximum discovered URLs to scan", "10")
@@ -161,6 +164,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
       crawlDepth: toPositiveInteger(options.crawlDepth),
       crawlLimit: toPositiveInteger(options.crawlLimit),
       scopeSelector: options.scope,
+      hideElements: options.hideElements ? normalizeHideElementSelectors(options.hideElements) : undefined,
       scroll: {
         enabled: options.scroll === false ? false : undefined,
         stepPx: toPositiveInteger(options.scrollStep),
@@ -376,6 +380,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
         browser: effectiveConfig.dynamic.browser,
         device: effectiveConfig.dynamic.device,
         scopeSelector: effectiveConfig.dynamic.scopeSelector,
+        hideElements: effectiveConfig.dynamic.hideElements,
         retentionEnabled: retentionSummary.enabled,
         retentionDryRun: retentionSummary.dryRun,
         retentionPlannedDeletedRuns: retentionSummary.plannedDeletedRuns,
@@ -498,6 +503,7 @@ export function formatVerboseCheckSummary(options: {
   browser?: string;
   device?: string;
   scopeSelector?: string;
+  hideElements?: string[];
   retentionEnabled: boolean;
   retentionDryRun: boolean;
   retentionPlannedDeletedRuns: number;
@@ -535,6 +541,7 @@ export function formatVerboseCheckSummary(options: {
     `crawl: ${crawl}`,
     `browser: ${options.browser || "chromium"}${options.device ? ` device=${options.device}` : ""}`,
     `scope: ${options.scopeSelector || "whole page"}`,
+    `hideElements: ${formatSelectorList(options.hideElements)}`,
     `scroll: ${scroll}`,
     `lighthouse: ${options.lighthouseEnabled ? "enabled" : "disabled"}`,
     `standard: ${options.standard}`,
@@ -565,6 +572,10 @@ function createCheckAdapterIssue(
     url,
     message: `${adapter} check failed: ${message}`
   };
+}
+
+function formatSelectorList(selectors: string[] | undefined): string {
+  return selectors && selectors.length > 0 ? selectors.join(", ") : "none";
 }
 
 export function formatCheckConsoleSummary(

@@ -6,6 +6,7 @@ import { getAxeRunOptions } from "../core/axeOptions.js";
 import { createIssuesFromAxeResults } from "../core/axeResults.js";
 import { type Browser, type BrowserContext, type BrowserContextOptions, type Page } from "playwright";
 import { launchBrowserRuntime } from "../core/browserRuntime.js";
+import { hidePageElements, normalizeHideElementSelectors } from "../core/hideElements.js";
 import { applyColorScheme, detectPageColorSchemes, getPageAppearanceSignature, normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig } from "../core/pageScroll.js";
 import { createHumanVerificationIssue, detectHumanVerification } from "../core/humanVerification.js";
 import { analyzePageTitles } from "../core/pageTitles.js";
@@ -174,6 +175,7 @@ interface ExplorePlaywrightOptions {
   waitMs?: number;
   waitForSelector?: string;
   scopeSelector?: string;
+  hideElements?: string[];
   scroll?: Partial<PageScrollConfig>;
   onProgress?: (event: ExploreProgressEvent) => void;
 }
@@ -299,6 +301,7 @@ export async function runExplorePlaywrightAdapter(
   const waitMs = nonNegativeOrDefault(options.waitMs, DEFAULT_WAIT_MS);
   const waitForSelector = options.waitForSelector;
   const scopeSelector = normalizeScopeSelector(options.scopeSelector);
+  const hideElements = normalizeHideElementSelectors(options.hideElements || config.explore.hideElements);
   const scroll = normalizePageScrollConfig(options.scroll || config.explore.scroll);
   let actionsTried = 0;
   let screenshotsSaved = 0;
@@ -333,6 +336,7 @@ export async function runExplorePlaywrightAdapter(
           waitMs,
           waitForSelector
         });
+        await hidePageElements(page, hideElements);
         await scrollPageForLazyContent(page, scroll);
       } catch (error) {
         issues.push(createExploreErrorIssue(config, options.url, error, current.via));
@@ -364,6 +368,7 @@ export async function runExplorePlaywrightAdapter(
 
       for (const colorScheme of colorSchemes) {
         await applyColorScheme(page, colorScheme);
+        await hidePageElements(page, hideElements);
         await scrollPageForLazyContent(page, scroll);
         const pageState = await fingerprintPage(page);
         const reportedColorScheme = colorSchemes.length > 1 ? colorScheme : undefined;
@@ -601,6 +606,7 @@ export async function runExplorePlaywrightAdapter(
         screenshots: screenshotsSaved,
         duplicateScreenshots: states.filter((state) => state.visualDuplicateOf).length,
         scopeSelector,
+        hideElements,
         maxDepth,
         maxStates,
         browser: browserEvidence

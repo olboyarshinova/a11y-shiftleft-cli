@@ -9,6 +9,7 @@ import { triageIssues } from "../core/severity.js";
 import { resolveStandard } from "../core/standards.js";
 import { applyReportRetention } from "../core/reportRetention.js";
 import { filterReportFindings } from "../core/findingFilter.js";
+import { normalizeHideElementSelectors } from "../core/hideElements.js";
 import { openReportFile } from "../core/openReport.js";
 import { readScopePlanIfExists } from "../core/scopePlan.js";
 import { cleanExploreArtifacts } from "../reporters/cleanExploreArtifacts.js";
@@ -37,6 +38,7 @@ interface ExploreOptions {
   browser?: string;
   device?: string;
   scope?: string;
+  hideElements?: string[];
   depth?: string;
   maxDepth?: string;
   limit?: string;
@@ -98,6 +100,7 @@ export function registerExploreCommand(program: Command): void {
     .option("--browser <engine>", "Browser engine: chromium, firefox, or webkit")
     .option("--device <name>", "Playwright device preset, for example \"iPhone 13\" or \"Pixel 5\"")
     .option("--scope <selector>", "Limit axe checks and safe action discovery to one CSS selector")
+    .option("--hide-elements <selectors...>", "Hide matching CSS selectors before exploration, screenshots, and checks")
     .option("--depth <depth>", "Maximum interaction depth", "2")
     .option("--max-depth <depth>", "Maximum interaction depth; clearer alias for --depth")
     .option("--limit <limit>", "Maximum UI states to scan", "20")
@@ -169,6 +172,7 @@ export function registerExploreCommand(program: Command): void {
           waitMs: toNonNegativeInteger(options.waitMs),
           waitForSelector: options.waitForSelector,
           scopeSelector: options.scope,
+          hideElements: options.hideElements ? normalizeHideElementSelectors(options.hideElements) : undefined,
           scroll: {
             enabled: options.scroll === false ? false : undefined,
             stepPx: toPositiveInteger(options.scrollStep),
@@ -239,6 +243,7 @@ export function registerExploreCommand(program: Command): void {
           waitMs,
           waitForSelector: effectiveConfig.explore.waitForSelector,
           scopeSelector: effectiveConfig.explore.scopeSelector,
+          hideElements: effectiveConfig.explore.hideElements,
           browser: effectiveConfig.explore.browser,
           device: effectiveConfig.explore.device,
           scrollEnabled: effectiveConfig.explore.scroll.enabled,
@@ -271,6 +276,7 @@ export function registerExploreCommand(program: Command): void {
         waitMs,
         waitForSelector: effectiveConfig.explore.waitForSelector,
         scopeSelector: effectiveConfig.explore.scopeSelector,
+        hideElements: effectiveConfig.explore.hideElements,
         browser: effectiveConfig.explore.browser,
         device: effectiveConfig.explore.device,
         scroll: effectiveConfig.explore.scroll,
@@ -483,6 +489,7 @@ export function formatVerboseExploreSummary(options: {
   waitMs: number;
   waitForSelector?: string;
   scopeSelector?: string;
+  hideElements: string[];
   browser: string;
   device?: string;
   scrollEnabled: boolean;
@@ -518,6 +525,7 @@ export function formatVerboseExploreSummary(options: {
     `wait: ${options.waitMs}ms${options.waitForSelector ? ` selector=${options.waitForSelector}` : ""}`,
     `browser: ${options.browser}${options.device ? ` device=${options.device}` : ""}`,
     `scope: ${options.scopeSelector || "whole page"}`,
+    `hideElements: ${formatPatternList(options.hideElements)}`,
     `scroll: ${options.scrollEnabled ? `on step=${options.scrollStepPx}px maxSteps=${options.scrollMaxSteps} wait=${options.scrollWaitMs}ms` : "off"}`,
     `safeMode: ${options.safeModeEnabled ? "on" : "off"}`,
     `safeModeDismissDialogs: ${options.safeModeDismissDialogs ? "on" : "off"}`,

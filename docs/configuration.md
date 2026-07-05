@@ -111,6 +111,33 @@ Scoped checks limit axe scans and safe action discovery to the selected area.
 Page-level and manual-review evidence should still be interpreted with the
 overall page context in mind.
 
+## Hiding Noisy Overlays
+
+Use `--hide-elements <selectors>` when a cookie banner, sticky ad, chat widget,
+survey prompt, or other overlay makes visual evidence hard to read:
+
+```bash
+npx a11y-shiftleft audit --url $APP_URL --hide-elements ".cookie-banner,.chat-widget" --out reports
+npx a11y-shiftleft check --dynamic --url $APP_URL --hide-elements ".cookie-banner" --out reports
+```
+
+For shared defaults, use `dynamic.hideElements` for `check` and
+`explore.hideElements` for visual exploration and `audit`:
+
+```json
+{
+  "dynamic": {
+    "hideElements": [".cookie-banner"]
+  },
+  "explore": {
+    "hideElements": [".cookie-banner", ".chat-widget"]
+  }
+}
+```
+
+The elements are hidden with CSS during the scan and screenshots. They are not
+deleted from the page, and the selectors are recorded in generated reports.
+
 ## Browser And Device Presets
 
 By default, browser checks run in Chromium. Use `--browser` when you need

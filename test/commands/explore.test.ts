@@ -36,6 +36,7 @@ test("formatVerboseExploreSummary renders exploration context", () => {
     screenshotRedaction: true,
     waitMs: 1000,
     waitForSelector: "[data-loaded]",
+    hideElements: [".cookie-banner", ".chat-widget"],
     scrollEnabled: true,
     scrollStepPx: 800,
     scrollMaxSteps: 25,
@@ -60,6 +61,7 @@ test("formatVerboseExploreSummary renders exploration context", () => {
   assert.match(output, /screenshotCapture: automatic error regions/);
   assert.match(output, /screenshotRedaction: on/);
   assert.match(output, /wait: 1000ms selector=\[data-loaded\]/);
+  assert.match(output, /hideElements: \.cookie-banner, \.chat-widget/);
   assert.match(output, /scroll: on step=800px maxSteps=25 wait=100ms/);
   assert.match(output, /safeMode: on/);
   assert.match(output, /safeModeBlockedText: logout, delete/);

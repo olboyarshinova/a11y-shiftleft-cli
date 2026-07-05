@@ -226,6 +226,7 @@ test("formatVerboseCheckSummary renders scan context without JSON parsing requir
     scrollStepPx: 800,
     scrollMaxSteps: 25,
     scrollWaitMs: 100,
+    hideElements: [".cookie-banner"],
     retentionEnabled: true,
     retentionDryRun: false,
     retentionPlannedDeletedRuns: 2,
@@ -237,6 +238,7 @@ test("formatVerboseCheckSummary renders scan context without JSON parsing requir
   assert.match(output, /modes: static=on, dynamic=on/);
   assert.match(output, /urls: http:\/\/localhost:3000/);
   assert.match(output, /crawl: enabled depth=1 limit=10/);
+  assert.match(output, /hideElements: \.cookie-banner/);
   assert.match(output, /scroll: enabled step=800px maxSteps=25 wait=100ms/);
   assert.match(output, /lighthouse: enabled/);
   assert.match(output, /gate: new-critical-only/);

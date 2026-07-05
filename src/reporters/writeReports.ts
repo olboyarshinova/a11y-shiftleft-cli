@@ -770,6 +770,7 @@ This WCAG-EM-inspired scope summary is reproducibility evidence, not a WCAG conf
 | Rendered states | ${graph ? `${graph.summary.statesVisited} of ${graph.summary.maxStates} max` : "not included"} |
 | Exploration depth | ${graph ? markdownCell(formatDepthScope(graph.summary.maxDepth)) : "not included"} |
 | Selector scope | ${graph ? markdownCell(graph.summary.scopeSelector || "whole page") : "not included"} |
+| Hidden elements | ${graph ? markdownCell(formatHiddenElements(graph.summary.hideElements)) : "not included"} |
 | Evidence collected | ${markdownCell(evidence)} |
 | Representative states | ${markdownCell(representativeStates || "No findings in captured states")} |`;
 }
@@ -830,6 +831,10 @@ function formatDepthScope(maxDepth: number): string {
   if (maxDepth === 0) return "start page only (depth 0)";
   const levelLabel = maxDepth === 1 ? "1 interaction level" : `${maxDepth} interaction levels`;
   return `${levelLabel} from the start page`;
+}
+
+function formatHiddenElements(selectors: string[] | undefined): string {
+  return selectors && selectors.length > 0 ? selectors.join(", ") : "none";
 }
 
 function formatPlannedScope(summary: ReportSummary): string {

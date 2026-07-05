@@ -7,6 +7,7 @@ import { loadConfig } from "../config/loadConfig.js";
 import { createManualChecklist } from "../core/manualChecklist.js";
 import { normalizeBrowserEngine, supportedBrowserEnginesText } from "../core/browserRuntime.js";
 import { filterReportFindings } from "../core/findingFilter.js";
+import { normalizeHideElementSelectors } from "../core/hideElements.js";
 import { dedupeIssues } from "../core/dedupe.js";
 import { readScopePlanIfExists } from "../core/scopePlan.js";
 import { detectFramework } from "../core/detectFramework.js";
@@ -34,6 +35,7 @@ interface AuditOptions {
   browser?: string;
   device?: string;
   scope?: string;
+  hideElements?: string[];
   depth?: string;
   maxDepth?: string;
   limit?: string;
@@ -80,6 +82,7 @@ export function registerAuditCommand(program: Command): void {
     .option("--browser <engine>", "Browser engine for browser and keyboard evidence: chromium, firefox, or webkit")
     .option("--device <name>", "Playwright device preset, for example \"iPhone 13\" or \"Pixel 5\"")
     .option("--scope <selector>", "Limit visual axe checks and safe action discovery to one CSS selector")
+    .option("--hide-elements <selectors...>", "Hide matching CSS selectors before visual browser checks and screenshots")
     .option("--depth <depth>", "Maximum interaction depth", "2")
     .option("--max-depth <depth>", "Maximum interaction depth; clearer alias for --depth")
     .option("--limit <limit>", "Maximum UI states", "20")
@@ -132,6 +135,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
       waitMs: optionalNonNegativeInteger(options.waitMs, "Wait time"),
       waitForSelector: options.waitForSelector,
       scopeSelector: options.scope,
+      hideElements: options.hideElements ? normalizeHideElementSelectors(options.hideElements) : undefined,
       scroll: {
         enabled: options.scroll === false ? false : undefined,
         stepPx: optionalPositiveInteger(options.scrollStep, "Scroll step"),
@@ -189,6 +193,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
       waitMs: effectiveConfig.explore.waitMs,
       waitForSelector: effectiveConfig.explore.waitForSelector,
       scopeSelector: effectiveConfig.explore.scopeSelector,
+      hideElements: effectiveConfig.explore.hideElements,
       browser: effectiveConfig.explore.browser,
       device: effectiveConfig.explore.device,
       scroll: effectiveConfig.explore.scroll,

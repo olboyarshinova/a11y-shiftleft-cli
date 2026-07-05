@@ -3,6 +3,7 @@ import { launchBrowserRuntime } from "../core/browserRuntime.js";
 import { getAxeRunOptions } from "../core/axeOptions.js";
 import { applyColorScheme, detectPageColorSchemes, normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig, type ScrollablePage } from "../core/pageScroll.js";
 import { createIssuesFromAxeResults } from "../core/axeResults.js";
+import { hidePageElements, normalizeHideElementSelectors } from "../core/hideElements.js";
 import { createHumanVerificationIssue, detectHumanVerification } from "../core/humanVerification.js";
 import { analyzePageTitles, type PageTitleObservation } from "../core/pageTitles.js";
 import type { A11yConfig, Issue } from "../types.js";
@@ -59,6 +60,7 @@ export async function runAxePlaywrightAdapter(
   const issues: Issue[] = [];
   const pageTitles: PageTitleObservation[] = [];
   const scopeSelector = normalizeScopeSelector(config.dynamic.scopeSelector);
+  const hideElements = normalizeHideElementSelectors(config.dynamic.hideElements);
 
   try {
     const context = await browser.newContext(runtime.contextOptions);
@@ -104,6 +106,7 @@ export async function runAxePlaywrightAdapter(
           });
           continue;
         }
+        await hidePageElements(page, hideElements);
         await scrollPageForLazyContent(page, scroll);
         if (!scopeSelector) pageTitles.push({ url, title: await page.title() });
         const scope = await resolveScopeAvailability(page, scopeSelector);
@@ -124,6 +127,7 @@ export async function runAxePlaywrightAdapter(
 
         for (const colorScheme of colorSchemes) {
           await applyColorScheme(page, colorScheme);
+          await hidePageElements(page, hideElements);
           await scrollPageForLazyContent(page, scroll);
           const builder = new AxeBuilder({ page }).options(getAxeRunOptions());
           if (scopeSelector) builder.include(scopeSelector);

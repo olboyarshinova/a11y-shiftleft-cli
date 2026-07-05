@@ -20,6 +20,7 @@ export const defaultConfig = {
     crawlDepth: 1,
     crawlLimit: 10,
     scopeSelector: undefined,
+    hideElements: [],
     scroll: {
       enabled: true,
       stepPx: 800,
@@ -36,6 +37,7 @@ export const defaultConfig = {
     browser: "chromium",
     device: undefined,
     scopeSelector: undefined,
+    hideElements: [],
     waitMs: 250,
     scroll: {
       enabled: true,
