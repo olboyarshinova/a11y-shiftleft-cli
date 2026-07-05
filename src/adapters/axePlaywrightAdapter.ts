@@ -1,5 +1,5 @@
-import { chromium } from "playwright";
 import { AxeBuilder } from "@axe-core/playwright";
+import { launchBrowserRuntime } from "../core/browserRuntime.js";
 import { getAxeRunOptions } from "../core/axeOptions.js";
 import { applyColorScheme, detectPageColorSchemes, normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig, type ScrollablePage } from "../core/pageScroll.js";
 import { extractContrastEvidence } from "../core/contrast.js";
@@ -51,13 +51,18 @@ export async function runAxePlaywrightAdapter(
   config: A11yConfig,
   options: AxePlaywrightOptions = {}
 ): Promise<Issue[]> {
-  const browser = await chromium.launch();
+  const runtime = await launchBrowserRuntime({
+    browser: config.dynamic.browser,
+    device: config.dynamic.device,
+    source: "dynamic"
+  });
+  const { browser } = runtime;
   const issues: Issue[] = [];
   const pageTitles: PageTitleObservation[] = [];
   const scopeSelector = normalizeScopeSelector(config.dynamic.scopeSelector);
 
   try {
-    const context = await browser.newContext();
+    const context = await browser.newContext(runtime.contextOptions);
     const page = await context.newPage();
     const scroll = normalizePageScrollConfig(config.dynamic.scroll);
     const scanUrls = config.dynamic.crawl

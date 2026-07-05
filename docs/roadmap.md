@@ -55,9 +55,8 @@ Section 508 certification.
   tool cannot prove automatically.
 - Extend reflow evidence with explicit 200%/400% zoom checks and overlapping
   fixed or sticky control checks.
-- Add cross-browser audit evidence. Record the browser engine and version in
-  every report first, then add `--browser chromium|firefox|webkit`, and later a
-  bounded full-audit profile that compares Chromium, Firefox, and WebKit while
+- Extend cross-browser evidence from single-engine runs into a bounded
+  comparison profile that runs Chromium, Firefox, and WebKit side by side while
   clearly labeling browser-specific differences for manual review.
 - Extend modal checks with additional close, cancel, successful-completion, and
   non-modal dialog paths.

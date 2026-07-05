@@ -5,6 +5,7 @@ import { runKeyboardPlaywrightAdapter } from "../adapters/keyboardPlaywrightAdap
 import { runLighthouseAdapter } from "../adapters/lighthouseAdapter.js";
 import { loadConfig } from "../config/loadConfig.js";
 import { createManualChecklist } from "../core/manualChecklist.js";
+import { normalizeBrowserEngine, supportedBrowserEnginesText } from "../core/browserRuntime.js";
 import { filterReportFindings } from "../core/findingFilter.js";
 import { dedupeIssues } from "../core/dedupe.js";
 import { readScopePlanIfExists } from "../core/scopePlan.js";
@@ -30,6 +31,8 @@ interface AuditOptions {
   profile?: string;
   withLighthouse?: boolean;
   out?: string;
+  browser?: string;
+  device?: string;
   scope?: string;
   depth?: string;
   maxDepth?: string;
@@ -74,6 +77,8 @@ export function registerAuditCommand(program: Command): void {
     .option("--profile <profile>", "Audit goal: risk, validation, or full")
     .option("--with-lighthouse", "Add optional Lighthouse accessibility score comparison")
     .option("--out <dir>", "Output directory", "reports")
+    .option("--browser <engine>", "Browser engine for browser and keyboard evidence: chromium, firefox, or webkit")
+    .option("--device <name>", "Playwright device preset, for example \"iPhone 13\" or \"Pixel 5\"")
     .option("--scope <selector>", "Limit visual axe checks and safe action discovery to one CSS selector")
     .option("--depth <depth>", "Maximum interaction depth", "2")
     .option("--max-depth <depth>", "Maximum interaction depth; clearer alias for --depth")
@@ -122,6 +127,8 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
     failOn: options.failOn,
     dynamic: { enabled: true, urls: [targetUrl] },
     explore: {
+      browser: toBrowserEngine(options.browser),
+      device: options.device,
       waitMs: optionalNonNegativeInteger(options.waitMs, "Wait time"),
       waitForSelector: options.waitForSelector,
       scopeSelector: options.scope,
@@ -151,6 +158,8 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
       framework,
       maxTabs: boundedInteger(options.maxTabs, 40, 1, 200),
       waitMs: effectiveConfig.explore.waitMs,
+      browser: effectiveConfig.explore.browser,
+      device: effectiveConfig.explore.device,
       activation: Boolean(options.activation),
       maxActivations: 6,
       safeMode: effectiveConfig.explore.safeMode
@@ -180,6 +189,8 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
       waitMs: effectiveConfig.explore.waitMs,
       waitForSelector: effectiveConfig.explore.waitForSelector,
       scopeSelector: effectiveConfig.explore.scopeSelector,
+      browser: effectiveConfig.explore.browser,
+      device: effectiveConfig.explore.device,
       scroll: effectiveConfig.explore.scroll,
       safeMode: effectiveConfig.explore.safeMode
     }),
@@ -275,6 +286,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
       "a11y-shiftleft audit",
       `Findings: ${report.summary.total} | critical ${report.summary.critical} | warning ${report.summary.warning} | info ${report.summary.info}`,
       `States: ${exploration.graph.summary.statesVisited} | keyboard steps ${keyboard?.steps.length || 0}`,
+      `Browser: ${exploration.graph.summary.browser?.name || effectiveConfig.explore.browser}`,
       ...(exploration.graph.summary.scopeSelector ? [`Scope: ${exploration.graph.summary.scopeSelector}`] : []),
       options.withLighthouse ? `Lighthouse: ${lighthouse[0]?.accessibilityScore ?? "not available"}` : "Lighthouse: not requested",
       `Open: ${reportPath}`,
@@ -402,6 +414,15 @@ function optionalNonNegativeInteger(value: string | undefined, label: string): n
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 0) throw new Error(`${label} must be a non-negative integer.`);
   return parsed;
+}
+
+function toBrowserEngine(browser: string | undefined) {
+  if (!browser) return undefined;
+  const normalized = normalizeBrowserEngine(browser);
+  if (normalized !== browser) {
+    throw new Error(`Unsupported browser engine: ${browser}. Use ${supportedBrowserEnginesText()}.`);
+  }
+  return normalized;
 }
 
 export function normalizeAuditUrl(value: string): string {

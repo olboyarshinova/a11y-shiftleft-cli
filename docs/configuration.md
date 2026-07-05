@@ -111,6 +111,46 @@ Scoped checks limit axe scans and safe action discovery to the selected area.
 Page-level and manual-review evidence should still be interpreted with the
 overall page context in mind.
 
+## Browser And Device Presets
+
+By default, browser checks run in Chromium. Use `--browser` when you need
+evidence from another browser engine:
+
+```bash
+npx a11y-shiftleft audit --url $APP_URL --browser firefox --out reports
+npx a11y-shiftleft audit --url $APP_URL --browser webkit --device "iPhone 13" --out reports
+npx a11y-shiftleft check --dynamic --url $APP_URL --browser chromium --device "Pixel 5" --out reports
+```
+
+Supported browser engines are `chromium`, `firefox`, and `webkit`. Device names
+come from Playwright device presets, such as `Desktop Chrome`, `Desktop Safari`,
+`iPhone 13`, and `Pixel 5`.
+
+Install the browser engine before using it:
+
+```bash
+npx playwright install firefox
+npx playwright install webkit
+```
+
+For shared defaults:
+
+```json
+{
+  "dynamic": {
+    "browser": "chromium",
+    "device": "Pixel 5"
+  },
+  "explore": {
+    "browser": "webkit",
+    "device": "iPhone 13"
+  }
+}
+```
+
+Lighthouse comparison still runs through Chromium because Lighthouse depends on
+Chrome DevTools behavior.
+
 ## Explore Safety
 
 `explore.safeMode.isolateCookies` is enabled by default. It clears browser

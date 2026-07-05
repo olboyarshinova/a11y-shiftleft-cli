@@ -138,6 +138,7 @@ URL.
 | Quick risk triage | `npx a11y-shiftleft-cli audit --url $APP_URL --profile risk --out reports` |
 | Broader local scan | `npx a11y-shiftleft-cli audit --url $APP_URL --max-depth 3 --limit 50 --out reports` |
 | Check one component or page area | `npx a11y-shiftleft-cli audit --url $APP_URL --scope '#main' --out reports` |
+| Check a mobile browser profile | `npx a11y-shiftleft-cli audit --url $APP_URL --browser webkit --device "iPhone 13" --out reports` |
 | Fuller evidence package | `npx a11y-shiftleft-cli audit --url $APP_URL --profile full --out reports` |
 | Fast CI or PR check | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports` |
 | Legacy-project CI gate | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --gate new-critical-only --out reports` |
@@ -165,6 +166,14 @@ or more only when you intentionally want a broader scan.
 Use `--scope <selector>` when you want browser checks and safe UI-state
 exploration to stay inside one component, dialog, checkout step, or page
 section.
+
+Use `--browser chromium|firefox|webkit` and `--device "<Playwright device>"`
+when you need evidence from another browser engine or mobile profile. Install
+that browser first, for example:
+
+```bash
+npx playwright install webkit
+```
 
 Audit profiles are shortcuts:
 

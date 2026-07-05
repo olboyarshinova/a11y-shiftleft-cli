@@ -1,5 +1,7 @@
 export type Framework = "react" | "vue" | "angular" | "auto" | "unknown";
 
+export type BrowserEngine = "chromium" | "firefox" | "webkit";
+
 export type Severity = "critical" | "warning" | "info";
 
 export type ConfidenceLevel = "high" | "medium" | "low";
@@ -204,7 +206,8 @@ export interface StaticConfig {
 export interface DynamicConfig {
   enabled: boolean;
   urls: string[];
-  browser: "chromium";
+  browser: BrowserEngine;
+  device?: string;
   crawl: boolean;
   crawlDepth: number;
   crawlLimit: number;
@@ -231,6 +234,8 @@ export interface ExploreSafeModeConfig {
 
 export interface ExploreConfig {
   safeMode: ExploreSafeModeConfig;
+  browser: BrowserEngine;
+  device?: string;
   scopeSelector?: string;
   waitMs: number;
   waitForSelector?: string;

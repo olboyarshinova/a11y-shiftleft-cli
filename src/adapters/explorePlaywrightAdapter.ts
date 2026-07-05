@@ -3,7 +3,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { AxeBuilder } from "@axe-core/playwright";
 import { getAxeRunOptions } from "../core/axeOptions.js";
-import { chromium, type Browser, type BrowserContext, type Page } from "playwright";
+import { type Browser, type BrowserContext, type BrowserContextOptions, type Page } from "playwright";
+import { launchBrowserRuntime } from "../core/browserRuntime.js";
 import { applyColorScheme, detectPageColorSchemes, getPageAppearanceSignature, normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig } from "../core/pageScroll.js";
 import { extractContrastEvidence } from "../core/contrast.js";
 import { createHumanVerificationIssue, detectHumanVerification } from "../core/humanVerification.js";
@@ -169,6 +170,8 @@ interface ExplorePlaywrightOptions {
   screenshotFullPage?: boolean;
   screenshotRedaction?: boolean;
   safeMode?: ExploreSafeModeConfig;
+  browser?: string;
+  device?: string;
   waitMs?: number;
   waitForSelector?: string;
   scopeSelector?: string;
@@ -267,13 +270,13 @@ export async function runExplorePlaywrightAdapter(
   config: A11yConfig,
   options: ExplorePlaywrightOptions
 ): Promise<ExploreResult> {
-  const browser = await chromium.launch();
-  const browserEvidence: BrowserEvidence = {
-    engine: "chromium",
-    name: "Chromium",
-    version: browser.version(),
+  const runtime = await launchBrowserRuntime({
+    browser: options.browser || config.explore.browser,
+    device: options.device || config.explore.device,
     source: "exploration"
-  };
+  });
+  const { browser } = runtime;
+  const browserEvidence = runtime.evidence;
   const issues: Issue[] = [];
   const states: ExplorationState[] = [];
   const edges: ExplorationGraph["edges"] = [];
@@ -303,7 +306,7 @@ export async function runExplorePlaywrightAdapter(
   let uniqueUiStates = 0;
 
   try {
-    const context = await browser.newContext();
+    const context = await browser.newContext(runtime.contextOptions);
     const page = await context.newPage();
     attachExplorePopupGuard(page);
     if (safeMode.enabled && safeMode.dismissDialogs) {
@@ -345,7 +348,7 @@ export async function runExplorePlaywrightAdapter(
         ? await auditModalFocusInIsolation(browser, options.url, current.path, {
           waitMs,
           waitForSelector
-        }, openModal)
+        }, openModal, runtime.contextOptions)
         : undefined;
       const discovery = current.depth >= maxDepth
         ? { actions: [], skipped: [] }
@@ -1588,9 +1591,10 @@ async function auditModalFocusInIsolation(
   startUrl: string,
   path: ExploreAction[],
   wait: ExploreWaitOptions,
-  fallback: ModalFocusEvidence
+  fallback: ModalFocusEvidence,
+  contextOptions: BrowserContextOptions = {}
 ): Promise<ModalFocusEvidence> {
-  const context = await browser.newContext();
+  const context = await browser.newContext(contextOptions);
   const page = await context.newPage();
   attachExplorePopupGuard(page);
 

@@ -18,6 +18,7 @@ import { applyIgnores, DEFAULT_IGNORE_FILE } from "../core/ignore.js";
 import { applyReportRetention } from "../core/reportRetention.js";
 import { filterReportFindings } from "../core/findingFilter.js";
 import { readScopePlanIfExists } from "../core/scopePlan.js";
+import { browserEvidenceName, normalizeBrowserEngine, supportedBrowserEnginesText } from "../core/browserRuntime.js";
 import type { A11yReport, ComplianceStandard, Framework, Issue, LighthouseAuditResult, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel, WcagVersion } from "../types.js";
 
 export interface CheckOptions {
@@ -28,6 +29,8 @@ export interface CheckOptions {
   dynamic?: boolean;
   withLighthouse?: boolean;
   url?: string[];
+  browser?: string;
+  device?: string;
   scope?: string;
   crawl?: boolean;
   crawlDepth?: string;
@@ -86,6 +89,8 @@ export function registerCheckCommand(program: Command): void {
     .option("--dynamic", "Run dynamic checks only")
     .option("--with-lighthouse", "Also collect optional Lighthouse accessibility score and audit recommendations")
     .option("--url <urls...>", "Target URL(s) for dynamic scan")
+    .option("--browser <engine>", "Browser engine for dynamic checks: chromium, firefox, or webkit")
+    .option("--device <name>", "Playwright device preset, for example \"iPhone 13\" or \"Pixel 5\"")
     .option("--scope <selector>", "Limit dynamic axe checks to one CSS selector on each page")
     .option("--crawl", "Discover and scan same-origin links from dynamic URLs")
     .option("--crawl-depth <depth>", "Maximum same-origin crawl depth", "1")
@@ -150,6 +155,8 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
     dynamic: {
       enabled: !staticOnly && (options.dynamic || urls.length > 0 || options.crawl) ? true : undefined,
       urls: urls.length > 0 ? urls : undefined,
+      browser: toBrowserEngine(options.browser),
+      device: options.device,
       crawl: options.crawl ? true : undefined,
       crawlDepth: toPositiveInteger(options.crawlDepth),
       crawlLimit: toPositiveInteger(options.crawlLimit),
@@ -308,7 +315,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
     browserEvidence: [
       ...(runDynamic ? [{
         engine: effectiveConfig.dynamic.browser,
-        name: "Chromium",
+        name: browserEvidenceName(effectiveConfig.dynamic.browser, effectiveConfig.dynamic.device),
         source: "dynamic" as const
       }] : []),
       ...(options.withLighthouse ? [{
@@ -366,6 +373,8 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
         scrollStepPx: effectiveConfig.dynamic.scroll.stepPx,
         scrollMaxSteps: effectiveConfig.dynamic.scroll.maxSteps,
         scrollWaitMs: effectiveConfig.dynamic.scroll.waitMs,
+        browser: effectiveConfig.dynamic.browser,
+        device: effectiveConfig.dynamic.device,
         scopeSelector: effectiveConfig.dynamic.scopeSelector,
         retentionEnabled: retentionSummary.enabled,
         retentionDryRun: retentionSummary.dryRun,
@@ -486,6 +495,8 @@ export function formatVerboseCheckSummary(options: {
   scrollStepPx?: number;
   scrollMaxSteps?: number;
   scrollWaitMs?: number;
+  browser?: string;
+  device?: string;
   scopeSelector?: string;
   retentionEnabled: boolean;
   retentionDryRun: boolean;
@@ -522,6 +533,7 @@ export function formatVerboseCheckSummary(options: {
     `modes: static=${options.runStatic ? "on" : "off"}, dynamic=${options.runDynamic ? "on" : "off"}`,
     `urls: ${urls}`,
     `crawl: ${crawl}`,
+    `browser: ${options.browser || "chromium"}${options.device ? ` device=${options.device}` : ""}`,
     `scope: ${options.scopeSelector || "whole page"}`,
     `scroll: ${scroll}`,
     `lighthouse: ${options.lighthouseEnabled ? "enabled" : "disabled"}`,
@@ -845,6 +857,15 @@ function toWcagVersion(version: string | undefined): WcagVersion | undefined {
 function toComplianceStandard(standard: string | undefined): ComplianceStandard | undefined {
   if (standard === "wcag22-aa" || standard === "ada-title-ii" || standard === "section508") return standard;
   return undefined;
+}
+
+function toBrowserEngine(browser: string | undefined) {
+  if (!browser) return undefined;
+  const normalized = normalizeBrowserEngine(browser);
+  if (normalized !== browser) {
+    throw new Error(`Unsupported browser engine: ${browser}. Use ${supportedBrowserEnginesText()}.`);
+  }
+  return normalized;
 }
 
 function toPositiveInteger(value: string | undefined): number | undefined {

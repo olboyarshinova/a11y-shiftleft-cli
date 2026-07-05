@@ -11,6 +11,7 @@ import { applyRetest } from "../core/retest.js";
 import { readScopePlanIfExists } from "../core/scopePlan.js";
 import { triageIssues } from "../core/severity.js";
 import { resolveStandard } from "../core/standards.js";
+import { normalizeBrowserEngine, supportedBrowserEnginesText } from "../core/browserRuntime.js";
 import { writeKeyboardReport } from "../reporters/writeKeyboardReport.js";
 import { writeReports } from "../reporters/writeReports.js";
 import type { Framework, Severity } from "../types.js";
@@ -22,6 +23,8 @@ interface KeyboardOptions {
   framework?: string;
   url: string;
   out?: string;
+  browser?: string;
+  device?: string;
   maxTabs?: string;
   activation?: boolean;
   maxActivations?: string;
@@ -50,6 +53,8 @@ export function registerKeyboardCommand(program: Command): void {
     .option("--framework <name>", "react, vue, angular, or auto")
     .requiredOption("--url <url>", "Page URL to test")
     .option("--out <dir>", "Output directory")
+    .option("--browser <engine>", "Browser engine: chromium, firefox, or webkit")
+    .option("--device <name>", "Playwright device preset, for example \"iPhone 13\" or \"Pixel 5\"")
     .option("--max-tabs <count>", "Maximum Tab key presses", "40")
     .option("--activation", "Test bounded safe Enter, Space, Escape, and arrow-key interactions")
     .option("--max-activations <count>", "Maximum isolated keyboard activation attempts", "6")
@@ -72,7 +77,12 @@ export function registerKeyboardCommand(program: Command): void {
         framework: toFramework(options.framework),
         outputDir: options.out,
         failOn: options.failOn,
-        dynamic: { enabled: true, urls: [options.url] }
+        dynamic: {
+          enabled: true,
+          urls: [options.url],
+          browser: toBrowserEngine(options.browser),
+          device: options.device
+        }
       });
       const framework = config.framework === "auto" ? await detectFramework(config.cwd) : config.framework;
       const standard = resolveStandard(config.standard);
@@ -84,6 +94,8 @@ export function registerKeyboardCommand(program: Command): void {
         activation: Boolean(options.activation),
         maxActivations: parseBoundedInteger(options.maxActivations, 6, 1, 20),
         safeMode: config.explore.safeMode,
+        browser: config.dynamic.browser,
+        device: config.dynamic.device,
         waitMs: parseBoundedInteger(options.waitMs, 250, 0, 30_000),
         onProgress: options.quiet || options.jsonSummary || !process.stdout.isTTY
           ? undefined
@@ -189,6 +201,7 @@ export function keyboardSummary(audit: Pick<Awaited<ReturnType<typeof runKeyboar
 function formatKeyboardSummary(outputDir: string, audit: Awaited<ReturnType<typeof runKeyboardPlaywrightAdapter>>, summary: { total: number; critical: number; warning: number }): string {
   return [
     "a11y-shiftleft keyboard",
+    `Browser: ${audit.browser?.name || "Chromium"}`,
     `Focus path: ${new Set(audit.steps.map((step) => step.selector)).size}/${audit.focusableCount} controls (${audit.steps.length} steps)`,
     `Completed cycle: ${audit.completedCycle ? "yes" : "no"}`,
     `Reverse order: ${audit.reverseOrderMatches === null ? "not tested" : audit.reverseOrderMatches ? "matches" : "mismatch"} (${audit.backwardSteps.length} steps)`,
@@ -203,6 +216,15 @@ function formatKeyboardSummary(outputDir: string, audit: Awaited<ReturnType<type
 function toFramework(value: string | undefined): Framework | undefined {
   if (value === "react" || value === "vue" || value === "angular" || value === "auto" || value === "unknown") return value;
   return undefined;
+}
+
+function toBrowserEngine(browser: string | undefined) {
+  if (!browser) return undefined;
+  const normalized = normalizeBrowserEngine(browser);
+  if (normalized !== browser) {
+    throw new Error(`Unsupported browser engine: ${browser}. Use ${supportedBrowserEnginesText()}.`);
+  }
+  return normalized;
 }
 
 function parseBoundedInteger(value: string | undefined, fallback: number, minimum: number, maximum: number): number {

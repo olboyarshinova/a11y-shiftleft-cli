@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
-import { chromium, type Browser, type Page } from "playwright";
+import { type Browser, type BrowserContextOptions, type Page } from "playwright";
+import { launchBrowserRuntime } from "../core/browserRuntime.js";
 import { getDefaultExploreActionSafety, getExploreActionSafety } from "./explorePlaywrightAdapter.js";
 import type { BrowserEvidence, ElementBounds, ExploreAction, ExploreSafeModeConfig, Framework, Issue, KeyboardActivationAttempt, KeyboardActivationKey, KeyboardAuditResult, KeyboardFocusStep, KeyboardPageStateSnapshot } from "../types.js";
 
@@ -10,6 +11,8 @@ export interface KeyboardAuditOptions {
   activation?: boolean;
   maxActivations?: number;
   safeMode?: ExploreSafeModeConfig;
+  browser?: string;
+  device?: string;
   waitMs?: number;
   onProgress?: (step: KeyboardFocusStep) => void;
 }
@@ -23,13 +26,13 @@ type RawKeyboardSnapshot = Omit<PageKeyboardSnapshot, "pageState"> & {
 export async function runKeyboardPlaywrightAdapter(options: KeyboardAuditOptions): Promise<KeyboardAuditResult> {
   const startedAt = Date.now();
   const maxTabs = normalizeMaxTabs(options.maxTabs);
-  const browser = await chromium.launch();
-  const browserEvidence: BrowserEvidence = {
-    engine: "chromium",
-    name: "Chromium",
-    version: browser.version(),
+  const runtime = await launchBrowserRuntime({
+    browser: options.browser,
+    device: options.device,
     source: "keyboard"
-  };
+  });
+  const { browser } = runtime;
+  const browserEvidence: BrowserEvidence = runtime.evidence;
   const issues: Issue[] = [];
   const steps: KeyboardFocusStep[] = [];
   const backwardSteps: KeyboardFocusStep[] = [];
@@ -40,7 +43,7 @@ export async function runKeyboardPlaywrightAdapter(options: KeyboardAuditOptions
   let activationAttempts: KeyboardActivationAttempt[] = [];
 
   try {
-    const context = await browser.newContext();
+    const context = await browser.newContext(runtime.contextOptions);
     const page = await context.newPage();
     await page.goto(options.url, { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 5_000 }).catch(() => undefined);
@@ -202,6 +205,7 @@ export async function runKeyboardPlaywrightAdapter(options: KeyboardAuditOptions
         steps,
         maxActivations: normalizeMaxActivations(options.maxActivations),
         safeMode: options.safeMode,
+        contextOptions: runtime.contextOptions,
         waitMs: options.waitMs || 0
       });
       activationAttempts = activationResult.attempts;
@@ -495,6 +499,7 @@ interface KeyboardActivationAuditOptions {
   maxActivations: number;
   waitMs: number;
   safeMode?: ExploreSafeModeConfig;
+  contextOptions?: BrowserContextOptions;
 }
 
 export interface ActivationTargetMetadata {
@@ -526,7 +531,7 @@ async function runKeyboardActivationAudit(
   const issues: Issue[] = [];
 
   for (const candidate of candidates) {
-    const activationContext = await browser.newContext();
+    const activationContext = await browser.newContext(options.contextOptions || {});
     const page = await activationContext.newPage();
     let initialLoadComplete = false;
 

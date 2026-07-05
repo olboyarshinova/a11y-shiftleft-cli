@@ -3,6 +3,7 @@ import { runExplorePlaywrightAdapter, writeExplorationGraph, type ScreenshotForm
 import { loadConfig } from "../config/loadConfig.js";
 import { dedupeIssues } from "../core/dedupe.js";
 import { detectFramework } from "../core/detectFramework.js";
+import { normalizeBrowserEngine, supportedBrowserEnginesText } from "../core/browserRuntime.js";
 import { normalizeIssue } from "../core/normalize.js";
 import { triageIssues } from "../core/severity.js";
 import { resolveStandard } from "../core/standards.js";
@@ -33,6 +34,8 @@ interface ExploreOptions {
   config?: string;
   framework?: string;
   url: string;
+  browser?: string;
+  device?: string;
   scope?: string;
   depth?: string;
   maxDepth?: string;
@@ -92,6 +95,8 @@ export function registerExploreCommand(program: Command): void {
     .option("--config <file>", "Config path relative to cwd")
     .option("--framework <name>", "react, vue, angular, or auto")
     .requiredOption("--url <url>", "Start URL for UI exploration")
+    .option("--browser <engine>", "Browser engine: chromium, firefox, or webkit")
+    .option("--device <name>", "Playwright device preset, for example \"iPhone 13\" or \"Pixel 5\"")
     .option("--scope <selector>", "Limit axe checks and safe action discovery to one CSS selector")
     .option("--depth <depth>", "Maximum interaction depth", "2")
     .option("--max-depth <depth>", "Maximum interaction depth; clearer alias for --depth")
@@ -159,6 +164,8 @@ export function registerExploreCommand(program: Command): void {
           urls: [options.url]
         },
         explore: {
+          browser: toBrowserEngine(options.browser),
+          device: options.device,
           waitMs: toNonNegativeInteger(options.waitMs),
           waitForSelector: options.waitForSelector,
           scopeSelector: options.scope,
@@ -232,6 +239,8 @@ export function registerExploreCommand(program: Command): void {
           waitMs,
           waitForSelector: effectiveConfig.explore.waitForSelector,
           scopeSelector: effectiveConfig.explore.scopeSelector,
+          browser: effectiveConfig.explore.browser,
+          device: effectiveConfig.explore.device,
           scrollEnabled: effectiveConfig.explore.scroll.enabled,
           scrollStepPx: effectiveConfig.explore.scroll.stepPx,
           scrollMaxSteps: effectiveConfig.explore.scroll.maxSteps,
@@ -262,6 +271,8 @@ export function registerExploreCommand(program: Command): void {
         waitMs,
         waitForSelector: effectiveConfig.explore.waitForSelector,
         scopeSelector: effectiveConfig.explore.scopeSelector,
+        browser: effectiveConfig.explore.browser,
+        device: effectiveConfig.explore.device,
         scroll: effectiveConfig.explore.scroll,
         safeMode: effectiveConfig.explore.safeMode,
         onProgress: (event) => {
@@ -411,6 +422,15 @@ function toComplianceStandard(standard: string | undefined): ComplianceStandard 
   return undefined;
 }
 
+function toBrowserEngine(browser: string | undefined) {
+  if (!browser) return undefined;
+  const normalized = normalizeBrowserEngine(browser);
+  if (normalized !== browser) {
+    throw new Error(`Unsupported browser engine: ${browser}. Use ${supportedBrowserEnginesText()}.`);
+  }
+  return normalized;
+}
+
 function toPositiveInteger(value: string | undefined): number | undefined {
   if (!value) return undefined;
   const parsed = Number(value);
@@ -463,6 +483,8 @@ export function formatVerboseExploreSummary(options: {
   waitMs: number;
   waitForSelector?: string;
   scopeSelector?: string;
+  browser: string;
+  device?: string;
   scrollEnabled: boolean;
   scrollStepPx: number;
   scrollMaxSteps: number;
@@ -494,6 +516,7 @@ export function formatVerboseExploreSummary(options: {
     `screenshotCapture: ${options.screenshotFullPage ? "forced full-page" : "automatic error regions"}`,
     `screenshotRedaction: ${options.screenshotRedaction ? "on" : "off"}`,
     `wait: ${options.waitMs}ms${options.waitForSelector ? ` selector=${options.waitForSelector}` : ""}`,
+    `browser: ${options.browser}${options.device ? ` device=${options.device}` : ""}`,
     `scope: ${options.scopeSelector || "whole page"}`,
     `scroll: ${options.scrollEnabled ? `on step=${options.scrollStepPx}px maxSteps=${options.scrollMaxSteps} wait=${options.scrollWaitMs}ms` : "off"}`,
     `safeMode: ${options.safeModeEnabled ? "on" : "off"}`,
