@@ -46,6 +46,32 @@ test("enrichIssueEvidence separates axe best practices from WCAG violations", ()
   assert.match(issue.confidenceReason, /best-practice rule/);
 });
 
+test("enrichIssueEvidence keeps axe incomplete findings as needs review", () => {
+  const issue = enrichIssueEvidence({
+    source: "axe",
+    framework: "unknown",
+    ruleId: "color-contrast",
+    wcag: ["1.4.3"],
+    wcagCriteria: [{
+      id: "1.4.3",
+      title: "Contrast (Minimum)",
+      level: "AA",
+      principle: "perceivable",
+      introducedIn: "2.0",
+      url: "https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html"
+    }],
+    tags: ["wcag143", "needs-review", "axe-incomplete"],
+    selector: ".hero-title",
+    message: "Potential color contrast issue needs manual review"
+  });
+
+  assert.equal(issue.findingType, "needs-review");
+  assert.equal(issue.confidence, "low");
+  assert.equal(issue.confidenceScore, 55);
+  assert.equal(issue.category, "contrast");
+  assert.match(issue.confidenceReason, /incomplete/);
+});
+
 test("enrichIssueEvidence marks accessibility lint findings as medium confidence", () => {
   const issue = enrichIssueEvidence({
     source: "eslint",

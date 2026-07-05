@@ -8,7 +8,7 @@ export type ConfidenceLevel = "high" | "medium" | "low";
 
 export type ColorScheme = "light" | "dark";
 
-export type FindingType = "wcag" | "best-practice" | "unmapped";
+export type FindingType = "wcag" | "needs-review" | "best-practice" | "unmapped";
 
 export type UserImpactLevel = "blocker" | "significant" | "workaround" | "minor";
 
@@ -59,6 +59,7 @@ export interface ComplianceEvidenceSummary {
   requiresManualReview: boolean;
   totalFindings: number;
   wcagMappedFindings: number;
+  needsReviewFindings?: number;
   bestPracticeFindings?: number;
   unmappedFindings: number;
   affectedPages: number;

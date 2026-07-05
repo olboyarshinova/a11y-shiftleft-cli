@@ -104,6 +104,9 @@ export function enrichIssueEvidence<T extends NormalizedIssue>(issue: T): T & Co
 }
 
 export function inferFindingType(issue: NormalizedIssue): FindingType {
+  if ((issue.tags || []).some((tag) => tag.toLowerCase() === "needs-review")) {
+    return "needs-review";
+  }
   if ((issue.wcagCriteria || []).length > 0) return "wcag";
   if ((issue.tags || []).some((tag) => tag.toLowerCase() === "best-practice")) {
     return "best-practice";
@@ -154,6 +157,14 @@ export function inferConfidence(issue: NormalizedIssue): ConfidenceResult {
   }
 
   if (issue.source === "axe") {
+    if (inferFindingType(issue) === "needs-review") {
+      return {
+        confidence: "low",
+        confidenceScore: 55,
+        confidenceReason: "Axe marked this result as incomplete; treat it as manual-review evidence rather than a confirmed violation."
+      };
+    }
+
     if (inferFindingType(issue) === "best-practice" && issue.selector) {
       return {
         confidence: "medium",

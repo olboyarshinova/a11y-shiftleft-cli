@@ -2,9 +2,8 @@ import { AxeBuilder } from "@axe-core/playwright";
 import { launchBrowserRuntime } from "../core/browserRuntime.js";
 import { getAxeRunOptions } from "../core/axeOptions.js";
 import { applyColorScheme, detectPageColorSchemes, normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig, type ScrollablePage } from "../core/pageScroll.js";
-import { extractContrastEvidence } from "../core/contrast.js";
+import { createIssuesFromAxeResults } from "../core/axeResults.js";
 import { createHumanVerificationIssue, detectHumanVerification } from "../core/humanVerification.js";
-import { inferIssueOwnership } from "../core/ownership.js";
 import { analyzePageTitles, type PageTitleObservation } from "../core/pageTitles.js";
 import type { A11yConfig, Issue } from "../types.js";
 
@@ -130,29 +129,13 @@ export async function runAxePlaywrightAdapter(
           if (scopeSelector) builder.include(scopeSelector);
           const results = await builder.analyze();
           const reportedColorScheme = colorSchemes.length > 1 ? colorScheme : undefined;
-          const colorSchemeIssues: Issue[] = [];
           const frames = page.frames().map((frame) => ({ url: frame.url() }));
-
-          for (const violation of results.violations) {
-            for (const node of violation.nodes) {
-              const selector = node.target.join(" ");
-              colorSchemeIssues.push({
-                source: "axe",
-                framework: config.framework,
-                ruleId: violation.id,
-                impact: violation.impact || undefined,
-                wcag: violation.tags.filter((tag: string) => tag.startsWith("wcag")),
-                tags: violation.tags,
-                selector,
-                contrast: extractContrastEvidence(violation.id, node),
-                helpUrl: violation.helpUrl,
-                colorScheme: reportedColorScheme,
-                ownership: inferIssueOwnership(selector, url, frames),
-                message: violation.help,
-                url
-              });
-            }
-          }
+          const colorSchemeIssues = createIssuesFromAxeResults(results, {
+            framework: config.framework,
+            url,
+            frames,
+            colorScheme: reportedColorScheme
+          });
 
           pageIssues.push(colorSchemeIssues);
         }

@@ -133,6 +133,14 @@ export function inferUserImpact(issue: DedupedIssue): UserImpactEvidence {
     };
   }
 
+  if (issue.findingType === "needs-review") {
+    return {
+      level: "minor",
+      affectedUsers: ["Low-vision users", "Users in bright environments"],
+      reason: "This is manual-review evidence from an incomplete automated rule, not a confirmed blocking defect."
+    };
+  }
+
   if (issue.findingType === "best-practice" || issue.severity === "info") {
     return {
       level: "minor",

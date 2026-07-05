@@ -1476,6 +1476,7 @@ export function renderExplorationHtml(
       ${metric("Warning", totals.warning, "warning")}
       ${metric("Info", totals.info, "info")}
       ${metric("WCAG findings", findingTypes.wcag)}
+      ${metric("Needs review", findingTypes["needs-review"])}
       ${metric("Best practices", findingTypes["best-practice"])}
     </section>
 
@@ -3278,6 +3279,7 @@ function badge(kind: Severity | "ok", label: string): string {
 
 function findingTypeBadge(type: DedupedIssue["findingType"]): string {
   if (type === "wcag") return `<span class="badge">WCAG violation</span>`;
+  if (type === "needs-review") return `<span class="badge">needs review</span>`;
   if (type === "best-practice") return `<span class="badge">best practice</span>`;
   return `<span class="badge">unmapped review</span>`;
 }
@@ -3288,6 +3290,7 @@ function countFindingTypes(issues: DedupedIssue[]): Record<DedupedIssue["finding
     return counts;
   }, {
     wcag: 0,
+    "needs-review": 0,
     "best-practice": 0,
     unmapped: 0
   });

@@ -1121,8 +1121,9 @@ function summarizeComplianceEvidence(
   standard: ComplianceStandardMetadata | undefined
 ): ComplianceEvidenceSummary {
   const wcagMappedFindings = issues.filter((issue) => issue.findingType === "wcag").length;
+  const needsReviewFindings = issues.filter((issue) => issue.findingType === "needs-review").length;
   const bestPracticeFindings = issues.filter((issue) => issue.findingType === "best-practice").length;
-  const unmappedFindings = issues.length - wcagMappedFindings - bestPracticeFindings;
+  const unmappedFindings = issues.length - wcagMappedFindings - needsReviewFindings - bestPracticeFindings;
 
   return {
     standardId: standard?.id,
@@ -1132,6 +1133,7 @@ function summarizeComplianceEvidence(
     requiresManualReview: true,
     totalFindings: issues.length,
     wcagMappedFindings,
+    ...(needsReviewFindings > 0 ? { needsReviewFindings } : {}),
     bestPracticeFindings,
     unmappedFindings,
     affectedPages: pages.length,
@@ -1449,6 +1451,7 @@ ${rows}`;
 
 function formatFindingType(type: DedupedIssue["findingType"]): string {
   if (type === "wcag") return "WCAG violation";
+  if (type === "needs-review") return "needs review";
   if (type === "best-practice") return "best practice";
   return "unmapped review";
 }

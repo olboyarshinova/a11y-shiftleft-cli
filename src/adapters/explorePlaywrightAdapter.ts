@@ -3,12 +3,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { AxeBuilder } from "@axe-core/playwright";
 import { getAxeRunOptions } from "../core/axeOptions.js";
+import { createIssuesFromAxeResults } from "../core/axeResults.js";
 import { type Browser, type BrowserContext, type BrowserContextOptions, type Page } from "playwright";
 import { launchBrowserRuntime } from "../core/browserRuntime.js";
 import { applyColorScheme, detectPageColorSchemes, getPageAppearanceSignature, normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig } from "../core/pageScroll.js";
-import { extractContrastEvidence } from "../core/contrast.js";
 import { createHumanVerificationIssue, detectHumanVerification } from "../core/humanVerification.js";
-import { inferIssueOwnership } from "../core/ownership.js";
 import { analyzePageTitles } from "../core/pageTitles.js";
 import type {
   A11yConfig,
@@ -1025,32 +1024,15 @@ async function scanState(
     const builder = new AxeBuilder({ page }).options(getAxeRunOptions());
     if (state.scopeSelector) builder.include(state.scopeSelector);
     const results = await builder.analyze();
-    const issues: Issue[] = [];
     const frames = page.frames().map((frame) => ({ url: frame.url() }));
-
-    for (const violation of results.violations) {
-      for (const node of violation.nodes) {
-        const selector = node.target.join(" ");
-
-        issues.push({
-          source: "axe",
-          framework: config.framework,
-          ruleId: violation.id,
-          impact: violation.impact || undefined,
-          wcag: violation.tags.filter((tag: string) => tag.startsWith("wcag")),
-          tags: violation.tags,
-          selector,
-          contrast: extractContrastEvidence(violation.id, node),
-          helpUrl: violation.helpUrl,
-          colorScheme: state.colorScheme,
-          ownership: inferIssueOwnership(selector, page.url(), frames),
-          message: violation.help,
-          url: page.url(),
-          stateId: state.stateId,
-          stateLabel: state.stateLabel
-        });
-      }
-    }
+    const issues = createIssuesFromAxeResults(results, {
+      framework: config.framework,
+      url: page.url(),
+      frames,
+      colorScheme: state.colorScheme,
+      stateId: state.stateId,
+      stateLabel: state.stateLabel
+    });
 
     return issues;
   } catch (error) {
