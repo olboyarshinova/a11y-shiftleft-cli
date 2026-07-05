@@ -1044,6 +1044,59 @@ test("writeExplorationHtml can create a unified audit report", async () => {
       },
       boundaries: ["Automated checks do not replace manual assistive technology review."]
     },
+    wcagCoverage: {
+      label: "Tracked WCAG evidence coverage",
+      targetVersion: "2.2",
+      targetLevel: "AA",
+      totalCriteria: 4,
+      automatedCriteria: 1,
+      heuristicCriteria: 1,
+      manualCriteria: 1,
+      notCoveredCriteria: 1,
+      automatedCoverage: 25,
+      assistedCoverage: 75,
+      criteria: [{
+        id: "4.1.2",
+        title: "Name, Role, Value",
+        level: "A",
+        principle: "robust",
+        url: "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html",
+        status: "automated",
+        evidenceSources: ["browser automation"],
+        findingCount: 1,
+        nextStep: "Review findings and confirm representative states."
+      }, {
+        id: "1.4.10",
+        title: "Reflow",
+        level: "AA",
+        principle: "perceivable",
+        url: "https://www.w3.org/WAI/WCAG22/Understanding/reflow.html",
+        status: "heuristic",
+        evidenceSources: ["400% reflow heuristic"],
+        findingCount: 0,
+        nextStep: "Review heuristic evidence and confirm manually."
+      }, {
+        id: "3.3.3",
+        title: "Error Suggestion",
+        level: "AA",
+        principle: "understandable",
+        url: "https://www.w3.org/WAI/WCAG22/Understanding/error-suggestion.html",
+        status: "manual-required",
+        evidenceSources: ["manual checklist"],
+        findingCount: 0,
+        nextStep: "Complete the manual checklist item."
+      }, {
+        id: "1.2.2",
+        title: "Captions (Prerecorded)",
+        level: "A",
+        principle: "perceivable",
+        url: "https://www.w3.org/WAI/WCAG22/Understanding/captions-prerecorded.html",
+        status: "not-covered",
+        evidenceSources: [],
+        findingCount: 0,
+        nextStep: "Add automated evidence or record manual review."
+      }]
+    },
     plannedScope: {
       version: 1,
       generatedAt: "2026-06-21T00:00:00.000Z",
@@ -1156,6 +1209,17 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /href="#state-1">Open state-1/);
   assert.match(html, /1 review area has observed targets from this audit/);
   assert.match(html, /Audit Coverage/);
+  assert.match(html, /Tracked WCAG Coverage/);
+  assert.match(html, /not a WCAG conformance score/);
+  assert.match(html, /Tracked WCAG coverage summary/);
+  assert.match(html, /<strong>25%<\/strong>[\s\S]*?<span>Automated<\/span>/);
+  assert.match(html, /<strong>75%<\/strong>[\s\S]*?<span>Assisted<\/span>/);
+  assert.match(html, /Tracked WCAG evidence coverage by criterion/);
+  assert.match(html, /WCAG 4\.1\.2 Name, Role, Value/);
+  assert.match(html, /coverage-state-passed">automated/);
+  assert.match(html, /coverage-state-needs-review">heuristic/);
+  assert.match(html, /coverage-state-not-tested">manual-required/);
+  assert.match(html, /coverage-state-unavailable">not-covered/);
   assert.match(html, /Lighthouse Comparison/);
   assert.match(html, /Lighthouse is a score-oriented comparison signal/);
   assert.match(html, /Average score[\s\S]*?91/);

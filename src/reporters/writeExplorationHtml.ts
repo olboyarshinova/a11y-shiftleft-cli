@@ -4,7 +4,7 @@ import { enrichIssueEvidence } from "../core/classification.js";
 import { compareLighthouseWithFindings } from "../core/lighthouseComparison.js";
 import { formatReportDateUtc } from "../core/reportDate.js";
 import { getRemediationHint } from "../core/remediation.js";
-import type { DedupedIssue, ExplorationGraph, ExplorationState, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, PlannedEvaluationScope, ReportAuditTrail, Severity } from "../types.js";
+import type { DedupedIssue, ExplorationGraph, ExplorationState, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, PlannedEvaluationScope, ReportAuditTrail, Severity, WcagCoverageSummary } from "../types.js";
 
 interface StateViewModel extends ExplorationState {
   issues: DedupedIssue[];
@@ -18,6 +18,7 @@ interface ExplorationHtmlOptions {
   lighthouse?: LighthouseAuditResult[];
   plannedScope?: PlannedEvaluationScope;
   auditTrail?: ReportAuditTrail;
+  wcagCoverage?: WcagCoverageSummary;
 }
 
 interface CoverageMatrixRow {
@@ -1486,6 +1487,8 @@ export function renderExplorationHtml(
 
     ${renderCoverageMatrix(graph, options, reportIssues)}
 
+    ${renderTrackedWcagCoverage(options.wcagCoverage)}
+
     <section class="panel triage" aria-label="Triage overview">
       ${renderTriageOverview(states, reportIssues)}
     </section>
@@ -2242,6 +2245,56 @@ function renderCoverageMatrix(
       </table>
     </div>
   </section>`;
+}
+
+function renderTrackedWcagCoverage(coverage: WcagCoverageSummary | undefined): string {
+  if (!coverage) return "";
+  const rows = coverage.criteria
+    .slice()
+    .sort((left, right) => (
+      wcagCoverageStatusRank(left.status) - wcagCoverageStatusRank(right.status)
+      || left.id.localeCompare(right.id, undefined, { numeric: true })
+    ))
+    .map((criterion) => `<tr class="coverage-row-state-${wcagCoverageEvidenceState(criterion.status)}">
+      <th scope="row"><a href="${escapeAttribute(criterion.url)}" target="_blank" rel="noopener noreferrer">WCAG ${escapeHtml(criterion.id)} ${escapeHtml(criterion.title)}</a></th>
+      <td>${escapeHtml(criterion.level)}</td>
+      <td class="coverage-state-cell"><span class="coverage-state coverage-state-${wcagCoverageEvidenceState(criterion.status)}">${escapeHtml(criterion.status)}</span></td>
+      <td class="coverage-findings">${criterion.findingCount}</td>
+      <td>${escapeHtml(criterion.evidenceSources.join(", ") || criterion.nextStep)}</td>
+    </tr>`)
+    .join("\n");
+
+  return `<section class="panel triage" aria-label="Tracked WCAG evidence coverage">
+    <h2>Tracked WCAG Coverage</h2>
+    <p class="muted">This is evidence coverage for criteria currently tracked by this project, not a WCAG conformance score.</p>
+    <div class="summary wcag-coverage-summary" aria-label="Tracked WCAG coverage summary">
+      ${metric("Target", `WCAG ${coverage.targetVersion} ${coverage.targetLevel}`)}
+      ${metric("Tracked criteria", coverage.totalCriteria)}
+      ${metric("Automated", `${coverage.automatedCoverage}%`)}
+      ${metric("Assisted", `${coverage.assistedCoverage}%`)}
+      ${metric("Not covered", coverage.notCoveredCriteria)}
+    </div>
+    <div class="coverage-table-wrap">
+      <table class="coverage-table" aria-label="Tracked WCAG evidence coverage by criterion">
+        <thead><tr><th scope="col">Criterion</th><th scope="col">Level</th><th scope="col">Status</th><th scope="col">Findings</th><th scope="col">Evidence or next step</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  </section>`;
+}
+
+function wcagCoverageStatusRank(status: string): number {
+  if (status === "automated") return 1;
+  if (status === "heuristic") return 2;
+  if (status === "manual-required") return 3;
+  return 4;
+}
+
+function wcagCoverageEvidenceState(status: string): CoverageEvidenceState {
+  if (status === "automated") return "passed";
+  if (status === "heuristic") return "needs-review";
+  if (status === "manual-required") return "not-tested";
+  return "unavailable";
 }
 
 function countCoverageStates(rows: CoverageMatrixRow[]): CoverageStateCounts {

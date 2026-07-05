@@ -259,7 +259,8 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
     manualChecklist,
     lighthouse,
     plannedScope,
-    auditTrail: report.summary.auditTrail
+    auditTrail: report.summary.auditTrail,
+    wcagCoverage: report.summary.wcagCoverage
   });
   if (options.pdf) await writeExplorationPdf(effectiveConfig.outputDir, "a11y-report");
 

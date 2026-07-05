@@ -87,6 +87,7 @@ export function summarizeWcagCoverage(options: WcagCoverageOptions): WcagCoverag
       title: criterion.title,
       level: criterion.level,
       principle: criterion.principle,
+      url: criterion.url,
       status,
       evidenceSources: [...new Set([...automated, ...heuristic, ...manual])],
       findingCount: findingCounts.get(id) || 0,

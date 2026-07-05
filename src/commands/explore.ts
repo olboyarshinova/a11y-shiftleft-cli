@@ -326,7 +326,8 @@ export function registerExploreCommand(program: Command): void {
       if (options.html !== false) {
         await writeExplorationHtml(effectiveConfig.outputDir, exploration.graph, report.issues, {
           plannedScope,
-          auditTrail: report.summary.auditTrail
+          auditTrail: report.summary.auditTrail,
+          wcagCoverage: report.summary.wcagCoverage
         });
       }
       if (options.pdf) {

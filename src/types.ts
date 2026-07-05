@@ -747,6 +747,7 @@ export interface WcagCoverageCriterionSummary {
   title: string;
   level: WcagLevel;
   principle: PourPrinciple;
+  url: string;
   status: WcagCoverageStatus;
   evidenceSources: string[];
   findingCount: number;
