@@ -74,6 +74,12 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
       duplicateCount: 2,
       scanDurationMs: 123,
       urls: ["http://localhost:3000"],
+      browserEvidence: [{
+        engine: "chromium",
+        name: "Chromium",
+        version: "141.0.0.0",
+        source: "dynamic"
+      }],
       plannedScope: {
         version: 1,
         generatedAt: "2026-06-01T00:00:00.000Z",
@@ -300,6 +306,12 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.equal(json.summary.auditTrail.automation.browserAutomation, true);
   assert.equal(json.summary.auditTrail.automation.lighthouseComparison, true);
   assert.equal(json.summary.auditTrail.automation.keyboardTraversal, false);
+  assert.deepEqual(json.summary.auditTrail.browsers, [{
+    engine: "chromium",
+    name: "Chromium",
+    version: "141.0.0.0",
+    source: "dynamic"
+  }]);
   assert.equal(json.summary.auditTrail.generatedFiles.includes("a11y-report.json"), true);
   assert.equal(json.summary.auditTrail.generatedFiles.includes("a11y-comment.md"), true);
   assert.match(json.summary.auditTrail.boundaries.join(" "), /not a WCAG conformance certification/);
@@ -329,6 +341,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.equal(json.lighthouse[0].accessibilityScore, 91);
   assert.match(markdown, /Step 1: Use visible button text when possible/);
   assert.match(markdown, /Lighthouse Accessibility Score/);
+  assert.match(markdown, /Browser evidence \| Chromium 141\.0\.0\.0 \(dynamic\)/);
   assert.match(markdown, /Average score \| 91/);
   assert.match(markdown, /http:\/\/localhost:3000\/ \| 91 \| 1 \| 1/);
   assert.match(markdown, /Lighthouse And Pipeline Comparison/);

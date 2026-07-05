@@ -41,6 +41,10 @@ Section 508 certification.
   as a conformance standard. WCAG remains the normative mapping source.
 - Extend reflow evidence with explicit 200%/400% zoom checks and overlapping
   fixed or sticky control checks.
+- Add cross-browser audit evidence. Record the browser engine and version in
+  every report first, then add `--browser chromium|firefox|webkit`, and later a
+  bounded full-audit profile that compares Chromium, Firefox, and WebKit while
+  clearly labeling browser-specific differences for manual review.
 - Extend modal checks with additional close, cancel, successful-completion, and
   non-modal dialog paths.
 - Extend live-region evidence with validation-error and loading-state

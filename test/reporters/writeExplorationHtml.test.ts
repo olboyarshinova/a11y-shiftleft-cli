@@ -205,7 +205,13 @@ const graph = {
     screenshots: 2,
     duplicateScreenshots: 1,
     maxDepth: 2,
-    maxStates: 20
+    maxStates: 20,
+    browser: {
+      engine: "chromium",
+      name: "Chromium",
+      version: "141.0.0.0",
+      source: "exploration"
+    }
   }
 };
 
@@ -1008,6 +1014,36 @@ test("writeExplorationHtml can create a unified audit report", async () => {
       notApplicableAudits: 3,
       durationMs: 1500
     }],
+    auditTrail: {
+      version: 1,
+      tool: {
+        name: "a11y-shiftleft-cli",
+        version: "0.7.2",
+        nodeVersion: "v22.22.2"
+      },
+      command: {
+        name: "audit",
+        profile: "full-audit"
+      },
+      requestedUrls: ["http://localhost:3000"],
+      includedUrls: ["http://localhost:3000"],
+      outputFormats: ["json", "markdown"],
+      generatedFiles: ["a11y-report.json", "a11y-comment.md", "a11y-report.html"],
+      browsers: [{
+        engine: "chromium",
+        name: "Chromium",
+        version: "141.0.0.0",
+        source: "exploration"
+      }],
+      automation: {
+        staticAnalysis: true,
+        browserAutomation: true,
+        keyboardTraversal: true,
+        lighthouseComparison: true,
+        manualChecklist: true
+      },
+      boundaries: ["Automated checks do not replace manual assistive technology review."]
+    },
     plannedScope: {
       version: 1,
       generatedAt: "2026-06-21T00:00:00.000Z",
@@ -1069,6 +1105,7 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /share-summary\.md/);
   assert.match(html, /Keep screenshots, full visual HTML, raw keyboard traces, and raw browser evidence inside the project/);
   assert.match(html, /Evidence collected[\s\S]*?axe/);
+  assert.match(html, /Browser evidence[\s\S]*?Chromium 141\.0\.0\.0 \(exploration\)/);
   assert.match(html, /keyboard traversal/);
   assert.match(html, /Lighthouse comparison/);
   assert.match(html, /Quick Review/);

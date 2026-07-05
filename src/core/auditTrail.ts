@@ -1,5 +1,5 @@
 import { createRequire } from "node:module";
-import type { A11yReport, ReportAuditTrail, ReportFormat, ReportMetrics } from "../types.js";
+import type { A11yReport, BrowserEvidence, ReportAuditTrail, ReportFormat, ReportMetrics } from "../types.js";
 
 const require = createRequire(import.meta.url);
 const { version } = require("../../package.json") as { version: string };
@@ -22,6 +22,7 @@ export function createReportAuditTrail(options: CreateAuditTrailOptions): Report
   const lighthouse = Boolean(report?.lighthouse?.length || metrics.lighthouse?.length);
   const manualChecklist = Boolean(report?.manualChecklist);
   const exploration = report?.exploration;
+  const browsers = collectBrowserEvidence(metrics, report);
 
   return {
     version: 1,
@@ -38,6 +39,7 @@ export function createReportAuditTrail(options: CreateAuditTrailOptions): Report
     includedUrls,
     outputFormats: [...formats],
     generatedFiles,
+    ...(browsers.length > 0 ? { browsers } : {}),
     automation: {
       staticAnalysis: sources.includes("eslint"),
       browserAutomation: Boolean(exploration || sources.includes("axe")),
@@ -61,6 +63,45 @@ export function createReportAuditTrail(options: CreateAuditTrailOptions): Report
       "Screenshots and raw browser evidence stay local unless the user explicitly shares or exports them."
     ]
   };
+}
+
+function collectBrowserEvidence(
+  metrics: ReportMetrics,
+  report: CreateAuditTrailOptions["report"]
+): BrowserEvidence[] {
+  const candidates = [
+    ...(metrics.browserEvidence || []),
+    report?.exploration?.summary.browser,
+    report?.keyboard?.browser,
+    ...(report?.lighthouse || []).map((result): BrowserEvidence | undefined => (
+      result.userAgent
+        ? {
+          engine: "chromium",
+          name: "Chromium",
+          source: "lighthouse",
+          version: versionFromUserAgent(result.userAgent)
+        }
+        : undefined
+    ))
+  ].filter(Boolean) as BrowserEvidence[];
+  const byKey = new Map<string, BrowserEvidence>();
+
+  for (const browser of candidates) {
+    const key = [
+      browser.source,
+      browser.engine,
+      browser.name,
+      browser.version || ""
+    ].join(":");
+    if (!byKey.has(key)) byKey.set(key, browser);
+  }
+
+  return [...byKey.values()];
+}
+
+function versionFromUserAgent(userAgent: string): string | undefined {
+  const match = userAgent.match(/(?:Chrome|Chromium)\/([0-9.]+)/i);
+  return match?.[1];
 }
 
 function inferProfile(metrics: ReportMetrics, report: CreateAuditTrailOptions["report"]): string {

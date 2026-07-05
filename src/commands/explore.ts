@@ -320,6 +320,7 @@ export function registerExploreCommand(program: Command): void {
           "exploration-graph.json"
         ],
         frameworkExample: config.framework === "auto" || config.framework === "unknown" ? undefined : config.framework,
+        exploration: exploration.graph,
         semiAuto: Boolean(options.semiAuto)
       });
       if (options.html !== false) {

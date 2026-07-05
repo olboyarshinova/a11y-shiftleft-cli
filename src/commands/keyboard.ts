@@ -138,7 +138,8 @@ export function registerKeyboardCommand(program: Command): void {
         uniqueCount: ignoreResult.issues.length,
         duplicateCount: filtered.length - uniqueIssues.length
       }, {
-        frameworkExample: config.framework === "auto" || config.framework === "unknown" ? undefined : config.framework
+        frameworkExample: config.framework === "auto" || config.framework === "unknown" ? undefined : config.framework,
+        keyboard: audit
       });
       await writeKeyboardReport(config.outputDir, { ...audit, issues: report.issues });
 

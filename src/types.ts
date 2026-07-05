@@ -166,6 +166,7 @@ export interface KeyboardAuditResult {
   url: string;
   generatedAt: string;
   durationMs: number;
+  browser?: BrowserEvidence;
   maxTabs: number;
   focusableCount: number;
   completedCycle: boolean;
@@ -523,6 +524,7 @@ export interface ReportMetrics {
   urls?: string[];
   commandName?: string;
   commandProfile?: string;
+  browserEvidence?: BrowserEvidence[];
   standard?: ComplianceStandardMetadata;
   plannedScope?: PlannedEvaluationScope;
   lighthouse?: LighthouseAuditResult[];
@@ -552,6 +554,7 @@ export interface ReportAuditTrail {
   includedUrls: string[];
   outputFormats: ReportFormat[];
   generatedFiles: string[];
+  browsers?: BrowserEvidence[];
   automation: {
     staticAnalysis: boolean;
     browserAutomation: boolean;
@@ -574,6 +577,13 @@ export interface ReportAuditTrail {
     branch?: string;
   };
   boundaries: string[];
+}
+
+export interface BrowserEvidence {
+  engine: "chromium" | "firefox" | "webkit" | string;
+  name: string;
+  version?: string;
+  source: "exploration" | "dynamic" | "keyboard" | "lighthouse" | "pdf" | "unknown";
 }
 
 export interface LighthouseAuditItem {
@@ -1018,5 +1028,6 @@ export interface ExplorationGraph {
     duplicateScreenshots?: number;
     maxDepth: number;
     maxStates: number;
+    browser?: BrowserEvidence;
   };
 }

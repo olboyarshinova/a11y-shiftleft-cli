@@ -769,6 +769,13 @@ function formatAuditTrail(report: A11yReport): string {
     trail.limits?.maxStates !== undefined ? `${trail.limits.maxStates} states max` : "",
     trail.limits?.maxTabs !== undefined ? `${trail.limits.maxTabs} tabs max` : ""
   ].filter(Boolean).join("; ") || "not recorded";
+  const browsers = trail.browsers?.length
+    ? trail.browsers.map((browser) => [
+      browser.name,
+      browser.version || "",
+      `(${browser.source})`
+    ].filter(Boolean).join(" ")).join("; ")
+    : "not recorded";
   const ci = trail.ci
     ? [
       trail.ci.provider,
@@ -788,6 +795,7 @@ function formatAuditTrail(report: A11yReport): string {
 | Requested URLs | ${markdownCell(trail.requestedUrls.join(", ") || "none")} |
 | Included URLs | ${trail.includedUrls.length} |
 | Automation | ${markdownCell(automation)} |
+| Browser evidence | ${markdownCell(browsers)} |
 | Limits | ${markdownCell(limits)} |
 | Output files | ${markdownCell(trail.generatedFiles.join(", ") || "not recorded")} |
 | CI context | ${markdownCell(ci)} |

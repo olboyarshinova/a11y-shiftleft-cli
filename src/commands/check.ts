@@ -302,6 +302,18 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
     framework,
     cwd: effectiveConfig.cwd,
     urls: runDynamic ? effectiveConfig.dynamic.urls : [],
+    browserEvidence: [
+      ...(runDynamic ? [{
+        engine: effectiveConfig.dynamic.browser,
+        name: "Chromium",
+        source: "dynamic" as const
+      }] : []),
+      ...(options.withLighthouse ? [{
+        engine: "chromium",
+        name: "Chromium",
+        source: "lighthouse" as const
+      }] : [])
+    ],
     plannedScope,
     standard: {
       ...standard,

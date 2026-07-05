@@ -1764,9 +1764,17 @@ function renderAuditTrailScopeItems(trail: ReportAuditTrail): string {
       trail.ci.branch
     ].filter(Boolean).join("; ")
     : "not detected";
+  const browsers = trail.browsers?.length
+    ? trail.browsers.map((browser) => [
+      browser.name,
+      browser.version || "",
+      `(${browser.source})`
+    ].filter(Boolean).join(" ")).join("; ")
+    : "not recorded";
   return [
     `<div class="scope-item"><strong>Tool</strong><span>${escapeHtml(`${trail.tool.name} ${trail.tool.version} on ${trail.tool.nodeVersion}`)}</span></div>`,
     `<div class="scope-item"><strong>Command profile</strong><span>${escapeHtml(`${trail.command.name} / ${trail.command.profile}`)}</span></div>`,
+    `<div class="scope-item"><strong>Browser evidence</strong><span>${escapeHtml(browsers)}</span></div>`,
     `<div class="scope-item"><strong>Output files</strong><span>${escapeHtml(trail.generatedFiles.join("; ") || "not recorded")}</span></div>`,
     `<div class="scope-item"><strong>CI context</strong><span>${escapeHtml(ci)}</span></div>`
   ].join("");

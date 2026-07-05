@@ -12,6 +12,7 @@ import { analyzePageTitles } from "../core/pageTitles.js";
 import type {
   A11yConfig,
   AccessibilityTreeEvidence,
+  BrowserEvidence,
   DynamicAnnouncementEvidence,
   EmbeddedContentEvidence,
   ExplorationGraph,
@@ -266,6 +267,12 @@ export async function runExplorePlaywrightAdapter(
   options: ExplorePlaywrightOptions
 ): Promise<ExploreResult> {
   const browser = await chromium.launch();
+  const browserEvidence: BrowserEvidence = {
+    engine: "chromium",
+    name: "Chromium",
+    version: browser.version(),
+    source: "exploration"
+  };
   const issues: Issue[] = [];
   const states: ExplorationState[] = [];
   const edges: ExplorationGraph["edges"] = [];
@@ -584,7 +591,8 @@ export async function runExplorePlaywrightAdapter(
         screenshots: screenshotsSaved,
         duplicateScreenshots: states.filter((state) => state.visualDuplicateOf).length,
         maxDepth,
-        maxStates
+        maxStates,
+        browser: browserEvidence
       }
     }
   };

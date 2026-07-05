@@ -185,8 +185,8 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
   const keyboard = keyboardOutcome.result;
   const lighthouse = lighthouseOutcome.results;
 
-  // Browser evidence comes first so a duplicate static finding cannot replace
-  // its state, screenshot, and element bounds in the unified visual report.
+  // Visual exploration findings come first so a duplicate static finding cannot
+  // replace state, screenshot, and element-bounds evidence in the report.
   const rawIssues = [
     ...exploration.issues,
     ...staticIssues,

@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { chromium, type Browser, type Page } from "playwright";
 import { getDefaultExploreActionSafety, getExploreActionSafety } from "./explorePlaywrightAdapter.js";
-import type { ElementBounds, ExploreAction, ExploreSafeModeConfig, Framework, Issue, KeyboardActivationAttempt, KeyboardActivationKey, KeyboardAuditResult, KeyboardFocusStep, KeyboardPageStateSnapshot } from "../types.js";
+import type { BrowserEvidence, ElementBounds, ExploreAction, ExploreSafeModeConfig, Framework, Issue, KeyboardActivationAttempt, KeyboardActivationKey, KeyboardAuditResult, KeyboardFocusStep, KeyboardPageStateSnapshot } from "../types.js";
 
 export interface KeyboardAuditOptions {
   url: string;
@@ -24,6 +24,12 @@ export async function runKeyboardPlaywrightAdapter(options: KeyboardAuditOptions
   const startedAt = Date.now();
   const maxTabs = normalizeMaxTabs(options.maxTabs);
   const browser = await chromium.launch();
+  const browserEvidence: BrowserEvidence = {
+    engine: "chromium",
+    name: "Chromium",
+    version: browser.version(),
+    source: "keyboard"
+  };
   const issues: Issue[] = [];
   const steps: KeyboardFocusStep[] = [];
   const backwardSteps: KeyboardFocusStep[] = [];
@@ -209,6 +215,7 @@ export async function runKeyboardPlaywrightAdapter(options: KeyboardAuditOptions
     url: options.url,
     generatedAt: new Date().toISOString(),
     durationMs: Date.now() - startedAt,
+    browser: browserEvidence,
     maxTabs,
     focusableCount,
     completedCycle,
