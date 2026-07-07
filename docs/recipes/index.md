@@ -7,6 +7,7 @@ These recipes give teams short copy-paste paths for adding
 - [React/Vite](react-vite.md)
 - [Vue/Vite](vue-vite.md)
 - [Next.js](nextjs.md)
+- [Check, Explore, And Audit](check-explore-audit.md)
 - [Multiple URLs](multiple-urls.md)
 - [GitHub Actions](github-actions.md)
 - [Ticket export](../ticket-export.md)
