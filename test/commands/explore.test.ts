@@ -105,7 +105,7 @@ test("formatExploreProgressMessage renders compact progress lines", () => {
       issueCount: 3,
       actionCount: 4
     }
-  }), "[explore] rendered 2 state-2 depth=1 issues=3 screenshot=screenshots/state-2.jpg");
+  }), "[explore] rendered 2/20 state-2 depth=1 issues=3 screenshot=screenshots/state-2.jpg");
 
   assert.equal(formatExploreProgressMessage({
     type: "actions",

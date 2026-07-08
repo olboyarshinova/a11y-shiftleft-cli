@@ -50,6 +50,12 @@ Section 508 certification.
   assisted review evidence:
   `automatedCoverage = automatedCriteria / targetCriteria` and
   `assistedCoverage = (automatedCriteria + heuristicCriteria + manualChecklistCriteria) / targetCriteria`.
+- Continue modeling compliance context through `--standard` presets rather than
+  country flags. Keep `wcag22-aa`, `section508`, and `ada-title-ii` explicit,
+  and evaluate an `en301549` preset for European public-sector and European
+  Accessibility Act reporting after the US-oriented presets are stable. Presets
+  may adjust labels, evidence guidance, and report context, but must not claim
+  legal certification.
 - Increase automated and assisted WCAG evidence coverage in this order:
   keyboard/focus traversal, form validation states, 400% reflow and zoom,
   target-size and pointer heuristics, media/motion review signals, and screen
@@ -250,12 +256,16 @@ Section 508 certification.
   severity labels when GitHub credentials are available.
 - Extend the post-1.0 GitHub Action wrapper with direct artifact links, preview
   URL inputs, existing-comment updates, and optional severity labels.
-- Add optional Jira and Linear export commands after the report schema is stable
-  enough for external ticket sync. Keep the first version dry-run first, with
-  explicit credentials, duplicate detection, and redaction of sensitive report
-  fields. Support grouped ticket drafts by root cause, affected pages/states,
-  owner, severity, WCAG criterion, and practical user impact before adding API
-  writes.
+- Add optional Jira and Linear ticket workflows after the report schema is
+  stable enough for external ticket sync. Start with safe ticket drafts only:
+  `ticket --from reports/a11y-report.json --out reports/tickets.md` and JSON
+  exports that teams can review before filing bugs. Keep tracker integrations
+  dry-run first, with explicit credentials, duplicate detection, fingerprinted
+  tickets, and redaction of sensitive report fields. Support grouped ticket
+  drafts by root cause, affected pages/states, owner, severity, WCAG criterion,
+  and practical user impact. Do not create tracker issues automatically by
+  default; require an explicit `--create` flag after users have reviewed the
+  generated draft.
 - Continue hardening scoped `a11y-ignore.json` support with clearer expiry
   reminders, stale-ignore cleanup guidance, and optional owner summaries.
 - Evaluate an optional public-link publisher only after sanitized export is

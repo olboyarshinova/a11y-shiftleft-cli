@@ -560,7 +560,7 @@ export function formatExploreProgressMessage(event:
     const colorScheme = event.state.colorScheme
       ? ` color-scheme=${event.state.colorScheme}`
       : "";
-    return `[explore] rendered ${event.visitedStates} ${event.state.id} depth=${event.state.depth} issues=${event.state.issueCount}${colorScheme}${screenshot}`;
+    return `[explore] rendered ${event.visitedStates}/${event.maxStates} ${event.state.id} depth=${event.state.depth} issues=${event.state.issueCount}${colorScheme}${screenshot}`;
   }
 
   return `[explore] ${event.stateId} queued=${event.actionCount} skipped=${event.skippedActionCount}`;
@@ -636,7 +636,7 @@ export function formatExploreConsoleSummary(
 }
 
 function shouldPrintExploreProgress(options: Pick<ExploreOptions, "quiet">): boolean {
-  return Boolean(!options.quiet && process.stdout.isTTY && !process.env.CI);
+  return Boolean(!options.quiet && !process.env.CI);
 }
 
 function shouldPrintExploreJsonSummary(options: Pick<ExploreOptions, "jsonSummary">): boolean {

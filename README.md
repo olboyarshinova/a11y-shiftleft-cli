@@ -7,13 +7,13 @@
 
 Catch accessibility issues before they reach users, with one command.
 
-[npm package](https://www.npmjs.com/package/a11y-shiftleft-cli)
-
 Accessibility bugs are often found late, after a manual review or production
 release. `a11y-shiftleft-cli` helps frontend teams move that review earlier:
-run one command against a local, staging, or preview URL, dynamically check the
-rendered app in a browser, and get a visual report with screenshots, WCAG
-labels, keyboard evidence, and fix guidance.
+it is built for developers who are not accessibility specialists but still need
+clear, practical feedback while they code. Run one command against a local,
+staging, or preview URL, dynamically check the rendered app in a browser, and
+get a visual report with screenshots, WCAG labels, keyboard evidence, and fix
+guidance.
 
 It works with any rendered website: React, Vue, Angular, Next.js, Svelte, Astro,
 Rails, Django, static HTML, and others. Optional source-code adapters are
@@ -34,7 +34,7 @@ their rule engines:
   added with `--with-lighthouse` when teams want its familiar accessibility
   score next to detailed findings.
 
-## Quick Start
+## 2-Minute Quick Start
 
 Use this when your app already runs locally. You need Node.js 18 or newer, but
 you do not need to configure a framework first.
@@ -77,10 +77,31 @@ fields such as passwords, emails, phone numbers, payment inputs, and elements
 marked with `data-a11y-sensitive`. Use `--no-screenshots` for private,
 authenticated, or production customer pages.
 
-Optional: after the first local audit works, generate a GitHub Actions workflow:
+Local-first by default: the CLI runs in your project environment and does not
+upload source code, screenshots, URLs, or report data to an external analysis
+server.
+
+## CI/CD In 1 Minute
+
+After the first local audit works, generate GitHub Actions workflow files:
 
 ```bash
 npx a11y-shiftleft-cli ci --url $APP_URL --start-command "npm run dev"
+```
+
+This creates a pull-request workflow that installs the project, starts your app,
+runs accessibility checks, and keeps the generated reports as CI artifacts. Use
+this path when you want report-only adoption first, then tighten the quality
+gate later.
+
+For an existing pipeline, the smallest integration is one npm script:
+
+```json
+{
+  "scripts": {
+    "test:a11y": "a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports"
+  }
+}
 ```
 
 ## Optional Framework Adapters
@@ -166,6 +187,11 @@ By default, `audit` explores up to 2 interaction levels from the start page.
 `--max-depth` lets you change that safety limit; it does not mean "scan forever"
 or "visit every possible page."
 
+The audit automatically explores safe links, buttons, dialogs, forms, theme
+states, and same-origin UI transitions within bounded depth and state limits.
+It is designed to find issues earlier, not to certify that every page and every
+WCAG criterion has been fully tested.
+
 ```bash
 npx a11y-shiftleft-cli audit --url $APP_URL --profile risk --out reports
 npx a11y-shiftleft-cli audit --url $APP_URL --max-depth 1 --out reports
@@ -223,6 +249,22 @@ After the report opens:
 
 Reports and screenshots usually should not be committed. Run `init --gitignore`
 once to add common report paths. For private pages, add `--no-screenshots`.
+
+## Standards
+
+Use `--standard` for the reporting context you need:
+
+```bash
+npx a11y-shiftleft-cli audit --url $APP_URL --standard wcag22-aa --out reports
+npx a11y-shiftleft-cli audit --url $APP_URL --standard section508 --out reports
+npx a11y-shiftleft-cli audit --url $APP_URL --standard ada-title-ii --out reports
+```
+
+Standards presets adjust labels, evidence guidance, and report context. They do
+not certify legal compliance. The CLI intentionally uses standards rather than
+country flags because accessibility laws often reference WCAG while adding
+different legal scope, procurement, documentation, PDF, mobile, or enforcement
+requirements.
 
 ## Coverage And Limits
 
