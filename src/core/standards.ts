@@ -1,6 +1,6 @@
 import type { ComplianceStandard, ComplianceStandardMetadata } from "../types.js";
 
-const DISCLAIMER = "This report supports accessibility risk detection and remediation tracking. It does not certify legal compliance with ADA, Section 508, or WCAG. Manual review, keyboard testing, screen reader testing, and organizational compliance review are required.";
+const DISCLAIMER = "This report supports accessibility risk detection and remediation tracking. It does not certify legal compliance with ADA, Section 508, EN 301 549, EAA, or WCAG. Manual review, keyboard testing, screen reader testing, and organizational compliance review are required.";
 
 const STANDARDS: Record<ComplianceStandard, ComplianceStandardMetadata> = {
   "wcag22-aa": {
@@ -25,6 +25,15 @@ const STANDARDS: Record<ComplianceStandard, ComplianceStandardMetadata> = {
     id: "section508",
     label: "Section 508 web accessibility support mode",
     wcagVersion: "2.0",
+    wcagLevel: "AA",
+    automatedCoverage: "partial",
+    requiresManualReview: true,
+    disclaimer: DISCLAIMER
+  },
+  en301549: {
+    id: "en301549",
+    label: "EN 301 549 web support mode",
+    wcagVersion: "2.1",
     wcagLevel: "AA",
     automatedCoverage: "partial",
     requiresManualReview: true,

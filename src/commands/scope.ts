@@ -44,7 +44,7 @@ export function registerScopeCommand(program: Command): void {
     .option("--force", "Overwrite an existing scope file")
     .option("--product-name <name>", "Product or application name")
     .option("--product-type <type>", "Product type, such as marketing site, web app, ecommerce, or docs")
-    .option("--standard <standard>", "wcag22-aa, ada-title-ii, or section508", "wcag22-aa")
+    .option("--standard <standard>", "wcag22-aa, ada-title-ii, section508, or en301549", "wcag22-aa")
     .option("--url <url>", "Representative URL to include in scope", collect, [])
     .option("--language <lang>", "Language or locale to include, such as en or es-US", collect, [])
     .option("--platform <target>", "Supported platform/browser combination", collect, [])

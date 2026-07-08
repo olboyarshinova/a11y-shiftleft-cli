@@ -39,7 +39,7 @@ export type WcagLevel = "A" | "AA" | "AAA";
 
 export type PourPrinciple = "perceivable" | "operable" | "understandable" | "robust";
 
-export type ComplianceStandard = "wcag22-aa" | "ada-title-ii" | "section508";
+export type ComplianceStandard = "wcag22-aa" | "ada-title-ii" | "section508" | "en301549";
 
 export interface ComplianceStandardMetadata {
   id: ComplianceStandard;

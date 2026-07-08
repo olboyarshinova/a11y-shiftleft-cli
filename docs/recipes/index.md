@@ -14,6 +14,7 @@ These recipes give teams short copy-paste paths for adding
 - [Ticket export](../ticket-export.md)
 - [ADA Title II](ada-title-ii.md)
 - [Section 508](section-508.md)
+- [EN 301 549](en-301-549.md)
 
 Each recipe intentionally stays small: install commands, package scripts or CI
 commands, and one example report excerpt.

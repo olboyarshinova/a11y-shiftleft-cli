@@ -36,7 +36,7 @@ export function registerCiCommand(program: Command): void {
     .option("--fail-on <severity>", "critical, warning, info, or none", "critical")
     .option("--gate <profile>", "PR quality gate profile: critical, warning, report-only, or new-critical-only")
     .option("--full-fail-on <severity>", "critical, warning, info, or none for scheduled full-site scans", "none")
-    .option("--standard <standard>", "Compliance support preset: wcag22-aa, ada-title-ii, or section508", "wcag22-aa")
+    .option("--standard <standard>", "Compliance support preset: wcag22-aa, ada-title-ii, section508, or en301549", "wcag22-aa")
     .option("--profile <profile>", "CI profile: pr, full, or split", "pr")
     .option("--crawl-depth <depth>", "Fast PR crawl depth", "1")
     .option("--crawl-limit <limit>", "Fast PR crawl URL limit", "10")

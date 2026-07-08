@@ -111,7 +111,7 @@ export function parseExclusion(value: string): PlannedScopeExclusion {
 }
 
 export function toComplianceStandard(value: string | undefined): ComplianceStandard {
-  if (value === "wcag22-aa" || value === "ada-title-ii" || value === "section508") {
+  if (value === "wcag22-aa" || value === "ada-title-ii" || value === "section508" || value === "en301549") {
     return value;
   }
   return "wcag22-aa";

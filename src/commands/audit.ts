@@ -94,7 +94,7 @@ export function registerAuditCommand(program: Command): void {
     .option("--actions-per-state <limit>", "Maximum safe actions per state", "8")
     .option("--max-tabs <count>", "Maximum Tab presses for keyboard traversal", "40")
     .option("--fail-on <severity>", "critical, warning, info, or none")
-    .option("--standard <standard>", "wcag22-aa, ada-title-ii, or section508")
+    .option("--standard <standard>", "wcag22-aa, ada-title-ii, section508, or en301549")
     .option("--wcag-only", "Only report findings mapped to WCAG; exclude best practices and unmapped review signals")
     .option("--no-keyboard", "Skip the bounded keyboard focus traversal")
     .option("--no-manual-review", "Do not embed the manual review checklist")
@@ -499,7 +499,7 @@ function toFramework(value: string | undefined): Framework | undefined {
 }
 
 function toStandard(value: string | undefined): ComplianceStandard | undefined {
-  if (value === "wcag22-aa" || value === "ada-title-ii" || value === "section508") return value;
+  if (value === "wcag22-aa" || value === "ada-title-ii" || value === "section508" || value === "en301549") return value;
   return undefined;
 }
 

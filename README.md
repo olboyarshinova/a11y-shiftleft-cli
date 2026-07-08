@@ -266,6 +266,7 @@ Use `--standard` for the reporting context you need:
 npx a11y-shiftleft-cli audit --url $APP_URL --standard wcag22-aa --out reports
 npx a11y-shiftleft-cli audit --url $APP_URL --standard section508 --out reports
 npx a11y-shiftleft-cli audit --url $APP_URL --standard ada-title-ii --out reports
+npx a11y-shiftleft-cli audit --url $APP_URL --standard en301549 --out reports
 ```
 
 Standards presets adjust labels, evidence guidance, and report context. They do
@@ -273,6 +274,11 @@ not certify legal compliance. The CLI intentionally uses standards rather than
 country flags because accessibility laws often reference WCAG while adding
 different legal scope, procurement, documentation, PDF, mobile, or enforcement
 requirements.
+
+`en301549` is a web-support preset for EN 301 549 evidence context. It does not
+claim full EN 301 549 or European Accessibility Act conformance because those
+contexts can include non-web ICT, procurement, documentation, support, and
+organizational review evidence.
 
 ## Coverage And Limits
 

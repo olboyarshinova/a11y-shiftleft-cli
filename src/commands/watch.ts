@@ -87,7 +87,7 @@ export function registerWatchCommand(program: Command): void {
     .option("--format <formats...>", "Report formats: json, csv, markdown, or all")
     .option("--out <dir>", "Output directory for refreshed reports", DEFAULT_WATCH_OUT)
     .option("--fail-on <severity>", "critical, warning, info, or none")
-    .option("--standard <standard>", "Compliance support preset: wcag22-aa, ada-title-ii, or section508")
+    .option("--standard <standard>", "Compliance support preset: wcag22-aa, ada-title-ii, section508, or en301549")
     .option("--wcag-filter <level>", "Only report findings mapped to WCAG level A, AA, or AAA")
     .option("--wcag-version <version>", "Limit mapped findings to WCAG version 2.0, 2.1, or 2.2")
     .option("--semi-auto", "Generate a Markdown manual review checklist alongside automated reports")

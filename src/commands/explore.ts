@@ -112,7 +112,7 @@ export function registerExploreCommand(program: Command): void {
     .option("--actions-per-state <limit>", "Maximum safe actions to try per state", "8")
     .option("--out <dir>", "Output directory")
     .option("--fail-on <severity>", "critical, warning, info, or none")
-    .option("--standard <standard>", "Compliance support preset: wcag22-aa, ada-title-ii, or section508")
+    .option("--standard <standard>", "Compliance support preset: wcag22-aa, ada-title-ii, section508, or en301549")
     .option("--wcag-filter <level>", "Only report findings mapped to WCAG level A, AA, or AAA")
     .option("--wcag-version <version>", "Limit mapped findings to WCAG version 2.0, 2.1, or 2.2")
     .option("--wcag-only", "Only report findings mapped to WCAG; exclude best practices and unmapped review signals")
@@ -426,7 +426,7 @@ function toWcagVersion(version: string | undefined): WcagVersion | undefined {
 }
 
 function toComplianceStandard(standard: string | undefined): ComplianceStandard | undefined {
-  if (standard === "wcag22-aa" || standard === "ada-title-ii" || standard === "section508") return standard;
+  if (standard === "wcag22-aa" || standard === "ada-title-ii" || standard === "section508" || standard === "en301549") return standard;
   return undefined;
 }
 
