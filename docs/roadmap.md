@@ -24,6 +24,9 @@ Section 508 certification.
   is local, shared, or architectural.
 - Add report grouping controls for rule, page/state, affected element, WCAG
   criterion, and POUR principle while preserving root-cause grouping.
+- Make the PR/CI workflow extremely simple: one generated workflow, one
+  copy-paste command, clear artifact links, and a report-only adoption path for
+  teams that are not ready to fail builds yet.
 - Extend readiness controls beyond a fixed delay with bounded declarative
   conditions such as selector visible/hidden and URL or path reached.
 - Validate structured manual-review records in real keyboard-only, screen
@@ -39,8 +42,10 @@ Section 508 certification.
   [MTS web accessibility guide](https://a11y.mts.ru/web) and
   [MTS testing guide](https://a11y.mts.ru/qa) without treating any single guide
   as a conformance standard. WCAG remains the normative mapping source.
-- Add a WCAG coverage matrix to JSON, Markdown, and the visual HTML report.
-  Report coverage as evidence coverage, not as a claim that a site is
+- Keep WCAG coverage evidence in JSON and internal summaries, but avoid
+  presenting a separate coverage-score section in the primary visual and
+  Markdown reports. Use Audit Coverage as the user-facing checklist. Report
+  internal coverage as evidence coverage, not as a claim that a site is
   accessibility-compliant. Use separate metrics for automated evidence and
   assisted review evidence:
   `automatedCoverage = automatedCriteria / targetCriteria` and
@@ -49,6 +54,25 @@ Section 508 certification.
   keyboard/focus traversal, form validation states, 400% reflow and zoom,
   target-size and pointer heuristics, media/motion review signals, and screen
   reader review protocols.
+- Grow custom assisted checks for WCAG criteria that ordinary axe/Lighthouse
+  scans cannot fully prove. Prioritize evidence-based checks that produce
+  `needs review` rather than false pass/fail claims: meaningful sequence
+  (`1.3.2`), sensory-only instructions (`1.3.3`), use-of-color context
+  (`1.4.1`), text spacing (`1.4.12`), hover/focus content (`1.4.13`),
+  focus appearance (`2.4.13`, tracked as advisory before AAA reporting),
+  pointer cancellation and dragging alternatives (`2.5.2`, `2.5.7`),
+  consistent navigation/identification/help (`3.2.3`, `3.2.4`, `3.2.6`),
+  redundant entry (`3.3.7`), accessible authentication (`3.3.8`), and status
+  messages (`4.1.3`). Each check must include visual evidence, WCAG mapping,
+  confidence, and a clear manual confirmation step.
+- Track competitor coverage as evidence, not marketing claims. Current local
+  comparison baseline: Oobee `0.10.95` exposes 26 WCAG-linked criteria in its
+  report catalog, including 20 WCAG A/AA criteria and 6 AAA criteria. The
+  a11y-shiftleft catalog currently tracks 34 WCAG 2.2 A/AA criteria; the
+  coverage matrix records 23 of 55 A/AA criteria with installed automated
+  signals and 33 of 55 with automated, heuristic, or mapped manual-review
+  evidence. Recheck these numbers before public comparison posts or release
+  notes.
 - Add per-criterion coverage rows with status, evidence source, finding count,
   and next step: `automated`, `heuristic`, `manual required`, `not covered`, or
   `not applicable`. Keep untested criteria visible so users understand what the
@@ -64,6 +88,12 @@ Section 508 certification.
 - Extend cross-browser evidence from single-engine runs into a bounded
   comparison profile that runs Chromium, Firefox, and WebKit side by side while
   clearly labeling browser-specific differences for manual review.
+- Extend mobile web evidence with simple `--mobile` and `--tablet` flags backed
+  by Playwright device profiles such as iPhone, Pixel, and tablet presets. Treat
+  this as responsive/mobile browser testing for rendered websites, not as
+  native iOS or Android app auditing. The visual report should label each
+  viewport profile clearly so users can compare desktop, mobile, and tablet
+  findings without memorizing device names.
 - Extend modal checks with additional close, cancel, successful-completion, and
   non-modal dialog paths.
 - Extend live-region evidence with validation-error and loading-state
@@ -313,4 +343,7 @@ Section 508 certification.
 - No ML-based triage in the core CLI.
 - No automatic AI code changes in the core CLI.
 - No browser extension bundled into the core CLI.
+- No native mobile app auditing in the core CLI: no APK/IPA scanning, Appium
+  runner, XCTest, Espresso, or direct TalkBack/VoiceOver automation for native
+  applications before 1.0.
 - No mandatory SaaS authorization or hosted dashboard in the core CLI.

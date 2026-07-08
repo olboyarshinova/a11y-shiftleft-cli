@@ -97,6 +97,7 @@ test("resolveAuditDepthOption prefers explicit max depth over legacy depth", () 
 test("normalizeAuditUrl trims whitespace and smart quotes", () => {
   assert.equal(normalizeAuditUrl(" https://binaryville.com/ "), "https://binaryville.com/");
   assert.equal(normalizeAuditUrl("“https://binaryville.com/”"), "https://binaryville.com/");
+  assert.equal(normalizeAuditUrl("«https://binaryville.com/»"), "https://binaryville.com/");
 });
 
 test("normalizeAuditUrl rejects non-http URLs", () => {

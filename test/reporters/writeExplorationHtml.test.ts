@@ -266,7 +266,7 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /Scan depth: 2 interaction levels from the start page/);
   assert.match(html, /Scan scope: up to 20 states, 3 rendered/);
   assert.match(html, /<span>Exploration depth<\/span>/);
-  assert.match(html, /Exploration depth[\s\S]*?2 interaction levels from the start page/);
+  assert.match(html, /2 interaction levels from the start page[\s\S]*?<span>Exploration depth<\/span>/);
   assert.match(html, /UI states explored/);
   assert.match(html, /Rendered states/);
   assert.match(html, /screenshots\/state-1\.png/);
@@ -360,7 +360,7 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /Annotated screenshot for state-1/);
   assert.match(html, /left: 10%; top: 20%; width: 30%; height: 12%/);
   assert.doesNotMatch(html, /Exploration Details/);
-  assert.match(html, /State transitions and skipped actions can be saved to <code>exploration-graph\.json<\/code> with <code>--raw<\/code>/);
+  assert.doesNotMatch(html, /State transitions and skipped actions can be saved to <code>exploration-graph\.json<\/code> with <code>--raw<\/code>/);
   assert.match(html, /Coverage Note/);
 });
 
@@ -871,7 +871,7 @@ test("renderExplorationHtml keeps diagnostic exploration data out of the visual 
 
   assert.match(html, /Show 1 more rule group/);
   assert.match(html, /Finding 9/);
-  assert.match(html, /State transitions and skipped actions can be saved to <code>exploration-graph\.json<\/code> with <code>--raw<\/code>/);
+  assert.doesNotMatch(html, /State transitions and skipped actions can be saved to <code>exploration-graph\.json<\/code> with <code>--raw<\/code>/);
   assert.doesNotMatch(html, /Show 1 more transition/);
   assert.doesNotMatch(html, /Transition 13/);
   assert.doesNotMatch(html, /Show 1 more skipped action/);
@@ -1013,153 +1013,22 @@ test("writeExplorationHtml can create a unified audit report", async () => {
       }],
       notApplicableAudits: 3,
       durationMs: 1500
-    }],
-    auditTrail: {
-      version: 1,
-      tool: {
-        name: "a11y-shiftleft-cli",
-        version: "0.7.2",
-        nodeVersion: "v22.22.2"
-      },
-      command: {
-        name: "audit",
-        profile: "full-audit"
-      },
-      requestedUrls: ["http://localhost:3000"],
-      includedUrls: ["http://localhost:3000"],
-      outputFormats: ["json", "markdown"],
-      generatedFiles: ["a11y-report.json", "a11y-comment.md", "a11y-report.html"],
-      browsers: [{
-        engine: "chromium",
-        name: "Chromium",
-        version: "141.0.0.0",
-        source: "exploration"
-      }],
-      automation: {
-        staticAnalysis: true,
-        browserAutomation: true,
-        keyboardTraversal: true,
-        lighthouseComparison: true,
-        manualChecklist: true
-      },
-      boundaries: ["Automated checks do not replace manual assistive technology review."]
-    },
-    wcagCoverage: {
-      label: "Tracked WCAG evidence coverage",
-      targetVersion: "2.2",
-      targetLevel: "AA",
-      totalCriteria: 4,
-      automatedCriteria: 1,
-      heuristicCriteria: 1,
-      manualCriteria: 1,
-      notCoveredCriteria: 1,
-      automatedCoverage: 25,
-      assistedCoverage: 75,
-      criteria: [{
-        id: "4.1.2",
-        title: "Name, Role, Value",
-        level: "A",
-        principle: "robust",
-        url: "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html",
-        status: "automated",
-        evidenceSources: ["browser automation"],
-        findingCount: 1,
-        nextStep: "Review findings and confirm representative states."
-      }, {
-        id: "1.4.10",
-        title: "Reflow",
-        level: "AA",
-        principle: "perceivable",
-        url: "https://www.w3.org/WAI/WCAG22/Understanding/reflow.html",
-        status: "heuristic",
-        evidenceSources: ["400% reflow heuristic"],
-        findingCount: 0,
-        nextStep: "Review heuristic evidence and confirm manually."
-      }, {
-        id: "3.3.3",
-        title: "Error Suggestion",
-        level: "AA",
-        principle: "understandable",
-        url: "https://www.w3.org/WAI/WCAG22/Understanding/error-suggestion.html",
-        status: "manual-required",
-        evidenceSources: ["manual checklist"],
-        findingCount: 0,
-        nextStep: "Complete the manual checklist item."
-      }, {
-        id: "1.2.2",
-        title: "Captions (Prerecorded)",
-        level: "A",
-        principle: "perceivable",
-        url: "https://www.w3.org/WAI/WCAG22/Understanding/captions-prerecorded.html",
-        status: "not-covered",
-        evidenceSources: [],
-        findingCount: 0,
-        nextStep: "Add automated evidence or record manual review."
-      }]
-    },
-    plannedScope: {
-      version: 1,
-      generatedAt: "2026-06-21T00:00:00.000Z",
-      product: {
-        name: "Demo Shop",
-        type: "ecommerce",
-        languages: ["en"]
-      },
-      target: {
-        standard: "wcag22-aa",
-        urls: ["http://localhost:3000"]
-      },
-      supportedPlatforms: ["Desktop Chrome"],
-      assistiveTechnologies: ["Keyboard only"],
-      representativeSample: [{
-        type: "Core page",
-        url: "http://localhost:3000",
-        reason: "Primary flow"
-      }],
-      randomSample: [{
-        type: "Random product page",
-        url: "http://localhost:3000/products/random",
-        reason: "Control sample"
-      }],
-      criticalJourneys: [{
-        name: "Checkout",
-        urls: ["http://localhost:3000/cart", "http://localhost:3000/checkout"]
-      }],
-      thirdPartyContent: [],
-      exclusions: [],
-      notes: []
-    }
+    }]
   });
 
   const html = await fs.readFile(path.join(outputDir, "a11y-report.html"), "utf8");
   assert.match(html, /Accessibility Audit Report/);
-  assert.match(html, /What Was Checked/);
-  assert.match(html, /class="panel evaluation-scope"/);
-  assert.match(html, /aria-label="What was checked"/);
-  assert.match(html, /Scope:<\/strong> 1 URL · 3 rendered states · 2 interaction levels from the start page · keyboard checked · manual checklist included/);
-  assert.match(html, /This is reproducibility evidence, not a WCAG conformance claim/);
-  assert.match(html, /not a WCAG conformance claim/);
-  assert.match(html, /Show scope evidence/);
-  assert.match(html, /Report Completeness/);
-  assert.match(html, /URL and state scope/);
-  assert.match(html, /Automated tools/);
-  assert.match(html, /Planned scope/);
-  assert.match(html, /Demo Shop \(ecommerce\); wcag22-aa; 1 sample page; 1 random sample page; 1 journey; 1 affected/);
-  assert.match(html, /Keyboard evidence/);
-  assert.match(html, /Manual review records/);
-  assert.match(html, /Known limitations/);
-  assert.match(html, /Next steps/);
-  assert.match(html, /completeness-status completeness-ready/);
-  assert.match(html, /Lighthouse comparison[\s\S]*?included/);
-  assert.match(html, /evaluation-scope\.json/);
+  assert.doesNotMatch(html, /What Was Checked/);
+  assert.doesNotMatch(html, /class="panel evaluation-scope"/);
+  assert.doesNotMatch(html, /aria-label="What was checked"/);
+  assert.doesNotMatch(html, /Show scope evidence/);
+  assert.doesNotMatch(html, /Report Completeness/);
+  assert.doesNotMatch(html, /completeness-status/);
   assert.match(html, /Share Review Copy/);
   assert.match(html, /\.share-review \{[\s\S]*?grid-column: 1 \/ -1/);
   assert.match(html, /npx a11y-shiftleft-cli share prepare --report reports --out a11y-share/);
   assert.match(html, /share-summary\.md/);
   assert.match(html, /Keep screenshots, full visual HTML, raw keyboard traces, and raw browser evidence inside the project/);
-  assert.match(html, /Evidence collected[\s\S]*?axe/);
-  assert.match(html, /Browser evidence[\s\S]*?Chromium 141\.0\.0\.0 \(exploration\)/);
-  assert.match(html, /keyboard traversal/);
   assert.match(html, /Lighthouse comparison/);
   assert.match(html, /Quick Review/);
   assert.match(html, /Fix First/);
@@ -1167,7 +1036,6 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /First Tab stops show where keyboard users land/);
   assert.match(html, /Human Review Next/);
   assert.match(html, /WCAG Level A/);
-  assert.ok(html.indexOf("What Was Checked") > html.indexOf("state-1: Initial page"));
   assert.match(html, /Third-party embedded content/);
   assert.match(html, /class="finding-context finding-context-third-party"/);
   assert.match(html, /Ownership: Third-party embedded content/);
@@ -1209,17 +1077,9 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /href="#state-1">Open state-1/);
   assert.match(html, /1 review area has observed targets from this audit/);
   assert.match(html, /Audit Coverage/);
-  assert.match(html, /Tracked WCAG Coverage/);
-  assert.match(html, /not a WCAG conformance score/);
-  assert.match(html, /Tracked WCAG coverage summary/);
-  assert.match(html, /<strong>25%<\/strong>[\s\S]*?<span>Automated<\/span>/);
-  assert.match(html, /<strong>75%<\/strong>[\s\S]*?<span>Assisted<\/span>/);
-  assert.match(html, /Tracked WCAG evidence coverage by criterion/);
-  assert.match(html, /WCAG 4\.1\.2 Name, Role, Value/);
-  assert.match(html, /coverage-state-passed">automated/);
-  assert.match(html, /coverage-state-needs-review">heuristic/);
-  assert.match(html, /coverage-state-not-tested">manual-required/);
-  assert.match(html, /coverage-state-unavailable">not-covered/);
+  assert.doesNotMatch(html, /Tracked WCAG Coverage/);
+  assert.doesNotMatch(html, /Tracked WCAG evidence coverage/);
+  assert.doesNotMatch(html, /not a WCAG conformance score/);
   assert.match(html, /Lighthouse Comparison/);
   assert.match(html, /Lighthouse is a score-oriented comparison signal/);
   assert.match(html, /Average score[\s\S]*?91/);

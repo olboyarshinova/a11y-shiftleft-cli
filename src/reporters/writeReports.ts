@@ -509,10 +509,7 @@ export function toMarkdown(report: A11yReport): string {
     report.summary.standard
   );
   const topIssueGroups = groupTopFindings(report.issues);
-  const topIssues = topIssueGroups
-    .slice(0, 10)
-    .map(formatTopFindingGroup)
-    .join("\n\n");
+  const topIssues = formatTopFindingSections(topIssueGroups.slice(0, 10));
 
   return `## Accessibility Shift-Left Report
 
@@ -547,8 +544,6 @@ ${formatRetentionRows(report.summary.retention)}| Retention evidence | ${formatR
 | Ownership | ${formatCountMap(report.summary.byOwnership)} |
 | Human verification blockers | ${report.summary.blockedByHumanVerification || 0} |
 | Rules without WCAG mapping | ${formatCountMap(report.summary.byUnmappedRule)} |
-| Tracked WCAG automated coverage | ${formatCoveragePercent(report.summary.wcagCoverage?.automatedCoverage)} |
-| Tracked WCAG assisted coverage | ${formatCoveragePercent(report.summary.wcagCoverage?.assistedCoverage)} |
 
 ${formatEvaluationScope(report)}
 
@@ -557,8 +552,6 @@ ${formatAuditTrail(report)}
 ${formatPlannedScope(report.summary)}
 
 ${formatCoverageMatrix(report)}
-
-${formatTrackedWcagCoverage(report)}
 
 ${formatPageSummary(report.summary.byPage || [])}
 
@@ -665,6 +658,28 @@ function groupTopFindings(issues: DedupedIssue[]): TopFindingGroup[] {
     if (occurrenceDiff !== 0) return occurrenceDiff;
     return left.ruleId.localeCompare(right.ruleId);
   });
+}
+
+function formatTopFindingSections(groups: TopFindingGroup[]): string {
+  const sections = (["critical", "warning", "info"] as Severity[])
+    .map((severity) => {
+      const severityGroups = groups.filter((group) => group.severity === severity);
+      if (severityGroups.length === 0) return "";
+
+      return [
+        `### ${formatSeverityHeading(severity)}`,
+        severityGroups.map(formatTopFindingGroup).join("\n\n")
+      ].join("\n\n");
+    })
+    .filter(Boolean);
+
+  return sections.join("\n\n");
+}
+
+function formatSeverityHeading(severity: Severity): string {
+  if (severity === "critical") return "Critical";
+  if (severity === "warning") return "Warning";
+  return "Info";
 }
 
 function pushUnique(values: string[], value: string): void {
@@ -960,49 +975,6 @@ function formatCoverageMatrix(report: A11yReport): string {
 | Embedded content | ${embeddedStates.length > 0 ? "Coverage evidence collected" : "No iframe or canvas observed"} | ${iframeCount} iframe${iframeCount === 1 ? "" : "s"}; ${inaccessibleFrames} unavailable; ${canvasGaps} canvas alternative gap${canvasGaps === 1 ? "" : "s"} |
 | Screen reader | Human review required | Test representative tasks with NVDA, JAWS, or VoiceOver |
 | Content and task usability | ${report.manualChecklist ? "Checklist ready" : "Not included"} | Record human evidence and outcome |`;
-}
-
-function formatTrackedWcagCoverage(report: A11yReport): string {
-  const coverage = report.summary.wcagCoverage;
-  if (!coverage) return "";
-  const rows = coverage.criteria
-    .slice()
-    .sort((left, right) => (
-      coverageStatusRank(left.status) - coverageStatusRank(right.status)
-      || left.id.localeCompare(right.id, undefined, { numeric: true })
-    ))
-    .map((criterion) => `| WCAG ${criterion.id} ${markdownCell(criterion.title)} | ${criterion.level} | ${criterion.status} | ${criterion.findingCount} | ${markdownCell(criterion.evidenceSources.join(", ") || criterion.nextStep)} |`)
-    .join("\n");
-
-  return `## Tracked WCAG Coverage
-
-This is evidence coverage for criteria currently tracked by this project, not a WCAG conformance score.
-
-| Metric | Value |
-|---|---:|
-| Target | WCAG ${coverage.targetVersion} Level ${coverage.targetLevel} |
-| Tracked criteria | ${coverage.totalCriteria} |
-| Automated criteria | ${coverage.automatedCriteria} |
-| Heuristic criteria | ${coverage.heuristicCriteria} |
-| Manual-checklist criteria | ${coverage.manualCriteria} |
-| Not covered criteria | ${coverage.notCoveredCriteria} |
-| Automated evidence coverage | ${formatCoveragePercent(coverage.automatedCoverage)} |
-| Assisted evidence coverage | ${formatCoveragePercent(coverage.assistedCoverage)} |
-
-| Criterion | Level | Status | Findings | Evidence or next step |
-|---|---|---:|---:|---|
-${rows}`;
-}
-
-function coverageStatusRank(status: string): number {
-  if (status === "automated") return 1;
-  if (status === "heuristic") return 2;
-  if (status === "manual-required") return 3;
-  return 4;
-}
-
-function formatCoveragePercent(value: number | undefined): string {
-  return value === undefined ? "not calculated" : `${value}%`;
 }
 
 function formatManualReviewSummary(report: A11yReport): string {

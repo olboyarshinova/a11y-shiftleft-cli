@@ -3,15 +3,17 @@
 [![Quality](https://github.com/olboyarshinova/a11y-shiftleft-cli/actions/workflows/quality.yml/badge.svg)](https://github.com/olboyarshinova/a11y-shiftleft-cli/actions/workflows/quality.yml)
 [![Accessibility Shift-Left](https://github.com/olboyarshinova/a11y-shiftleft-cli/actions/workflows/a11y.yml/badge.svg)](https://github.com/olboyarshinova/a11y-shiftleft-cli/actions/workflows/a11y.yml)
 [![npm version](https://img.shields.io/npm/v/a11y-shiftleft-cli.svg)](https://www.npmjs.com/package/a11y-shiftleft-cli)
+[![Node.js >=18](https://img.shields.io/badge/node-%3E%3D18-339933.svg)](https://nodejs.org/)
 
-Catch accessibility issues before they reach users.
+Catch accessibility issues before they reach users, with one command.
 
 [npm package](https://www.npmjs.com/package/a11y-shiftleft-cli)
 
 Accessibility bugs are often found late, after a manual review or production
 release. `a11y-shiftleft-cli` helps frontend teams move that review earlier:
-run one command against a local, staging, or preview URL and get a visual report
-with screenshots, WCAG labels, keyboard evidence, and fix guidance.
+run one command against a local, staging, or preview URL, dynamically check the
+rendered app in a browser, and get a visual report with screenshots, WCAG
+labels, keyboard evidence, and fix guidance.
 
 It works with any rendered website: React, Vue, Angular, Next.js, Svelte, Astro,
 Rails, Django, static HTML, and others. Optional source-code adapters are
@@ -70,8 +72,10 @@ On Linux use `xdg-open reports/a11y-report.html`. On Windows PowerShell use
 The command saves screenshots while it runs. Wait for the terminal to print the
 final `Open:` path before reviewing the report.
 
-Reports are written locally. If your app may show private data, run with
-`--no-screenshots`.
+Privacy note: reports stay local by default. Screenshots mask common sensitive
+fields such as passwords, emails, phone numbers, payment inputs, and elements
+marked with `data-a11y-sensitive`. Use `--no-screenshots` for private,
+authenticated, or production customer pages.
 
 Optional: after the first local audit works, generate a GitHub Actions workflow:
 
@@ -117,7 +121,7 @@ adapter later when you want static source findings in the same report.
 This is the main output of `audit`:
 
 <a href="docs/assets/demo-report-overview.png">
-  <img src="docs/assets/demo-report-overview.png" width="720" alt="Demo audit report showing summary metrics, quick review, and evaluation scope">
+  <img src="docs/assets/demo-report-overview.png" width="720" alt="Demo audit report showing summary metrics and quick review">
 </a>
 
 <a href="docs/assets/demo-report-coverage.png">
@@ -144,6 +148,8 @@ URL.
 | Check a mobile browser profile | `npx a11y-shiftleft-cli audit --url $APP_URL --browser webkit --device "iPhone 13" --out reports` |
 | Fuller evidence package | `npx a11y-shiftleft-cli audit --url $APP_URL --profile full --out reports` |
 | Fast CI or PR check | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports` |
+| Save current findings as an accepted baseline | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --update-baseline --out reports` |
+| Fail only on new findings | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --baseline --out reports` |
 | Legacy-project CI gate | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --gate new-critical-only --out reports` |
 | Diagnose setup problems | `npx a11y-shiftleft-cli doctor --url $APP_URL` |
 | Add config and report paths to `.gitignore` | `npx a11y-shiftleft-cli init --framework auto --gitignore` |
@@ -151,6 +157,10 @@ URL.
 
 Use `explore` only when you want to debug visual state discovery without the full
 audit workflow.
+
+Use baseline mode when an existing project already has known findings. First
+save the current state with `--update-baseline`, commit `.a11y-baseline.json`,
+then run later checks with `--baseline` so CI focuses on new regressions.
 
 By default, `audit` explores up to 2 interaction levels from the start page.
 `--max-depth` lets you change that safety limit; it does not mean "scan forever"

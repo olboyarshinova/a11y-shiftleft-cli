@@ -102,11 +102,10 @@ browser local storage under an identifier unique to the generated report. They
 are not uploaded, written back into the report files, or treated as proof of
 WCAG conformance.
 
-The What Was Checked section summarizes the URL, state, depth, keyboard, and
-manual-review scope. Detailed reproducibility evidence, including the Report
-Completeness checklist, is collapsed by default so the main report can focus on
-screenshots and findings first. Items marked for review are signals to add
-manual evidence, not automatic failures.
+Detailed reproducibility evidence is kept in machine-readable outputs such as
+`a11y-report.json` and `evaluation-scope.json` instead of taking space in the
+visual report. The main HTML report focuses on screenshots, findings, Audit
+Coverage, keyboard evidence, and manual-review tasks.
 
 The manual checklist also includes a structured environment template for human
 review. Record the operating system, browser, assistive technology and version,

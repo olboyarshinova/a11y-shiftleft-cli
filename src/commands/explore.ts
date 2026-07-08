@@ -346,11 +346,7 @@ export function registerExploreCommand(program: Command): void {
         semiAuto: Boolean(options.semiAuto)
       });
       if (options.html !== false) {
-        await writeExplorationHtml(effectiveConfig.outputDir, exploration.graph, report.issues, {
-          plannedScope,
-          auditTrail: report.summary.auditTrail,
-          wcagCoverage: report.summary.wcagCoverage
-        });
+        await writeExplorationHtml(effectiveConfig.outputDir, exploration.graph, report.issues);
       }
       if (options.pdf) {
         await writeExplorationPdf(effectiveConfig.outputDir);

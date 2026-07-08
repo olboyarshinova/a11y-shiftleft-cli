@@ -155,6 +155,17 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
   };
   await cleanExploreArtifacts(effectiveConfig.outputDir);
 
+  const maxDepth = boundedInteger(resolveAuditDepthOption(options), 2, 1, 5);
+  const maxStates = boundedInteger(options.limit, 20, 1, 100);
+  const maxActionsPerState = boundedInteger(options.actionsPerState, 8, 1, 30);
+  const progressEnabled = shouldPrintAuditProgress(options);
+  let visitedStates = 0;
+  if (progressEnabled) {
+    console.log(`[audit] Starting ${targetUrl}`);
+    console.log(`[audit] Output: ${effectiveConfig.outputDir}`);
+    console.log(`[audit] Exploring browser states and capturing ${options.screenshots === false ? "no screenshots" : "screenshots"}`);
+  }
+
   const keyboardPromise: Promise<{ result?: KeyboardAuditResult; issues: Issue[] }> = options.keyboard === false
     ? Promise.resolve({ issues: [] })
     : runKeyboardPlaywrightAdapter({
@@ -184,9 +195,9 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
     runExplorePlaywrightAdapter(effectiveConfig, {
       url: targetUrl,
       outputDir: effectiveConfig.outputDir,
-      maxDepth: boundedInteger(resolveAuditDepthOption(options), 2, 1, 5),
-      maxStates: boundedInteger(options.limit, 20, 1, 100),
-      maxActionsPerState: boundedInteger(options.actionsPerState, 8, 1, 30),
+      maxDepth,
+      maxStates,
+      maxActionsPerState,
       screenshots: options.screenshots !== false,
       screenshotRedaction: options.screenshotRedaction !== false,
       screenshotFullPage: Boolean(options.screenshotFullPage),
@@ -197,11 +208,25 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
       browser: effectiveConfig.explore.browser,
       device: effectiveConfig.explore.device,
       scroll: effectiveConfig.explore.scroll,
-      safeMode: effectiveConfig.explore.safeMode
+      safeMode: effectiveConfig.explore.safeMode,
+      onProgress: (event) => {
+        if (!progressEnabled) return;
+
+        if (event.type === "state") {
+          visitedStates += 1;
+          const screenshot = event.state.screenshot ? ` screenshot=${event.state.screenshot}` : "";
+          console.log(`[audit] rendered ${visitedStates}/${maxStates} ${event.state.id} depth=${event.state.depth} issues=${event.state.issueCount}${screenshot}`);
+        }
+
+        if (event.type === "actions") {
+          console.log(`[audit] ${event.stateId} actions queued=${event.actionCount} skipped=${event.skippedActionCount}`);
+        }
+      }
     }),
     keyboardPromise,
     lighthousePromise
   ]);
+  if (progressEnabled) console.log("[audit] Writing reports");
   const keyboard = keyboardOutcome.result;
   const lighthouse = lighthouseOutcome.results;
 
@@ -277,10 +302,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
     title: "Accessibility Audit Report",
     keyboard,
     manualChecklist,
-    lighthouse,
-    plannedScope,
-    auditTrail: report.summary.auditTrail,
-    wcagCoverage: report.summary.wcagCoverage
+    lighthouse
   });
   if (options.pdf) await writeExplorationPdf(effectiveConfig.outputDir, "a11y-report");
 
@@ -456,9 +478,13 @@ function normalizeOptionalCliValue(value: string | undefined): string | undefine
   if (value === undefined) return undefined;
   return value
     .trim()
-    .replace(/^[“”"']+/, "")
-    .replace(/[“”"']+$/, "")
+    .replace(/^[“”"«»']+/, "")
+    .replace(/[“”"«»']+$/, "")
     .trim();
+}
+
+function shouldPrintAuditProgress(options: Pick<AuditOptions, "quiet">): boolean {
+  return Boolean(!options.quiet && !process.env.CI);
 }
 
 function toFramework(value: string | undefined): Framework | undefined {

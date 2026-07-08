@@ -1,6 +1,6 @@
 {
   "name": "a11y-shiftleft-cli",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "Visual accessibility audit CLI for web apps using axe, Playwright, Lighthouse, and WCAG metadata.",
   "type": "module",
   "license": "MIT",

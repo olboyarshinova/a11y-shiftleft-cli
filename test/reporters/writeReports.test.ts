@@ -349,9 +349,8 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /Step 1: Use visible button text when possible/);
   assert.match(markdown, /Lighthouse Accessibility Score/);
   assert.match(markdown, /Browser evidence \| Chromium 141\.0\.0\.0 \(dynamic\)/);
-  assert.match(markdown, /Tracked WCAG Coverage/);
-  assert.match(markdown, /Tracked WCAG automated coverage \| \d+(\.\d+)?%/);
-  assert.match(markdown, /WCAG 1\.4\.3 Contrast \(Minimum\) \| AA \| automated/);
+  assert.doesNotMatch(markdown, /Tracked WCAG Coverage/);
+  assert.doesNotMatch(markdown, /Tracked WCAG automated coverage/);
   assert.match(markdown, /Average score \| 91/);
   assert.match(markdown, /http:\/\/localhost:3000\/ \| 91 \| 1 \| 1/);
   assert.match(markdown, /Lighthouse And Pipeline Comparison/);
@@ -638,6 +637,60 @@ test("writeReports prioritizes first-party high-impact groups before third-party
   );
   assert.match(topFindings, /Priority signals: impact: blocker; first-party fix; confidence: high; 2 pages/);
   assert.match(topFindings, /Priority signals: impact: significant; third-party ownership; confidence: high/);
+});
+
+test("writeReports orders top finding sections from critical to lower severity", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-md-severity-order-"));
+  await writeReports(outputDir, [{
+    source: "axe",
+    framework: "unknown",
+    severity: "info",
+    ruleId: "region",
+    wcag: [],
+    wcagCriteria: [],
+    tags: [],
+    selector: "main",
+    url: "https://example.com/",
+    message: "Page content should be contained by landmarks.",
+    fingerprint: "region::main",
+    duplicateCount: 0
+  }, {
+    source: "axe",
+    framework: "unknown",
+    severity: "warning",
+    ruleId: "page-has-heading-one",
+    wcag: [],
+    wcagCriteria: [],
+    tags: [],
+    selector: "html",
+    url: "https://example.com/",
+    message: "Page should contain a level-one heading.",
+    fingerprint: "page-has-heading-one::html",
+    duplicateCount: 0
+  }, {
+    source: "axe",
+    framework: "unknown",
+    severity: "critical",
+    ruleId: "button-name",
+    wcag: ["4.1.2"],
+    wcagCriteria: [],
+    tags: [],
+    selector: "button",
+    url: "https://example.com/",
+    message: "Buttons must have discernible text.",
+    fingerprint: "button-name::button",
+    duplicateCount: 0
+  }], {
+    framework: "unknown"
+  });
+
+  const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+  const topFindings = markdown.slice(markdown.indexOf("## Top Findings And Recommendations"));
+
+  assert.ok(topFindings.indexOf("### Critical") < topFindings.indexOf("### Warning"));
+  assert.ok(topFindings.indexOf("### Warning") < topFindings.indexOf("### Info"));
+  assert.ok(topFindings.indexOf("button-name") < topFindings.indexOf("page-has-heading-one"));
+  assert.ok(topFindings.indexOf("page-has-heading-one") < topFindings.indexOf("region"));
 });
 
 test("writeReports points truncated finding groups to JSON and visual reports", async () => {
