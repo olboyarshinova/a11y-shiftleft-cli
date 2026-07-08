@@ -83,7 +83,7 @@ Local-first by default: the CLI runs in your project environment and does not
 upload source code, screenshots, URLs, or report data to an external analysis
 server.
 
-## CI/CD In 1 Minute
+## Add CI/CD
 
 After the first local audit works, generate GitHub Actions workflow files:
 
