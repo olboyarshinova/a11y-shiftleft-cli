@@ -3,6 +3,7 @@ import { runExplorePlaywrightAdapter, writeExplorationGraph, type ScreenshotForm
 import { loadConfig } from "../config/loadConfig.js";
 import { dedupeIssues } from "../core/dedupe.js";
 import { detectFramework } from "../core/detectFramework.js";
+import { resolveDevicePreset } from "../core/devicePresets.js";
 import { normalizeBrowserEngine, supportedBrowserEnginesText } from "../core/browserRuntime.js";
 import { normalizeIssue } from "../core/normalize.js";
 import { triageIssues } from "../core/severity.js";
@@ -37,6 +38,8 @@ interface ExploreOptions {
   url: string;
   browser?: string;
   device?: string;
+  mobile?: boolean;
+  tablet?: boolean;
   scope?: string;
   hideElements?: string[];
   depth?: string;
@@ -99,6 +102,8 @@ export function registerExploreCommand(program: Command): void {
     .requiredOption("--url <url>", "Start URL for UI exploration")
     .option("--browser <engine>", "Browser engine: chromium, firefox, or webkit")
     .option("--device <name>", "Playwright device preset, for example \"iPhone 13\" or \"Pixel 5\"")
+    .option("--mobile", "Use the default mobile browser profile (iPhone 13)")
+    .option("--tablet", "Use the default tablet browser profile (iPad gen 7)")
     .option("--scope <selector>", "Limit axe checks and safe action discovery to one CSS selector")
     .option("--hide-elements <selectors...>", "Hide matching CSS selectors before exploration, screenshots, and checks")
     .option("--depth <depth>", "Maximum interaction depth", "2")
@@ -153,6 +158,7 @@ export function registerExploreCommand(program: Command): void {
         throw new Error("--open requires exploration.html. Remove --no-html or omit --open.");
       }
 
+      const device = resolveDevicePreset(options);
       const config = await loadConfig({
         cwd: options.cwd,
         config: options.config
@@ -168,7 +174,7 @@ export function registerExploreCommand(program: Command): void {
         },
         explore: {
           browser: toBrowserEngine(options.browser),
-          device: options.device,
+          device,
           waitMs: toNonNegativeInteger(options.waitMs),
           waitForSelector: options.waitForSelector,
           scopeSelector: options.scope,

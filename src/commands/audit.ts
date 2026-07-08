@@ -11,6 +11,7 @@ import { normalizeHideElementSelectors } from "../core/hideElements.js";
 import { dedupeIssues } from "../core/dedupe.js";
 import { readScopePlanIfExists } from "../core/scopePlan.js";
 import { detectFramework } from "../core/detectFramework.js";
+import { resolveDevicePreset } from "../core/devicePresets.js";
 import { applyIgnores, DEFAULT_IGNORE_FILE } from "../core/ignore.js";
 import { normalizeIssue } from "../core/normalize.js";
 import { openReportFile } from "../core/openReport.js";
@@ -34,6 +35,8 @@ interface AuditOptions {
   out?: string;
   browser?: string;
   device?: string;
+  mobile?: boolean;
+  tablet?: boolean;
   scope?: string;
   hideElements?: string[];
   depth?: string;
@@ -81,6 +84,8 @@ export function registerAuditCommand(program: Command): void {
     .option("--out <dir>", "Output directory", "reports")
     .option("--browser <engine>", "Browser engine for browser and keyboard evidence: chromium, firefox, or webkit")
     .option("--device <name>", "Playwright device preset, for example \"iPhone 13\" or \"Pixel 5\"")
+    .option("--mobile", "Use the default mobile browser profile (iPhone 13)")
+    .option("--tablet", "Use the default tablet browser profile (iPad gen 7)")
     .option("--scope <selector>", "Limit visual axe checks and safe action discovery to one CSS selector")
     .option("--hide-elements <selectors...>", "Hide matching CSS selectors before visual browser checks and screenshots")
     .option("--depth <depth>", "Maximum interaction depth", "2")
@@ -123,6 +128,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
   const startedAt = Date.now();
   const targetUrl = normalizeAuditUrl(options.url);
   const outputDir = normalizeOptionalCliValue(options.out);
+  const device = resolveDevicePreset(options);
   const config = await loadConfig({ cwd: options.cwd, config: options.config }, {
     framework: toFramework(options.framework),
     outputDir,
@@ -131,7 +137,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
     dynamic: { enabled: true, urls: [targetUrl] },
     explore: {
       browser: toBrowserEngine(options.browser),
-      device: options.device,
+      device,
       waitMs: optionalNonNegativeInteger(options.waitMs, "Wait time"),
       waitForSelector: options.waitForSelector,
       scopeSelector: options.scope,

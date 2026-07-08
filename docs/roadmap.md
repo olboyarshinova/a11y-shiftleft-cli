@@ -100,12 +100,10 @@ Section 508 certification.
 - Extend cross-browser evidence from single-engine runs into a bounded
   comparison profile that runs Chromium, Firefox, and WebKit side by side while
   clearly labeling browser-specific differences for manual review.
-- Extend mobile web evidence with simple `--mobile` and `--tablet` flags backed
-  by Playwright device profiles such as iPhone, Pixel, and tablet presets. Treat
-  this as responsive/mobile browser testing for rendered websites, not as
-  native iOS or Android app auditing. The visual report should label each
-  viewport profile clearly so users can compare desktop, mobile, and tablet
-  findings without memorizing device names.
+- Extend responsive web evidence beyond the current `--mobile`, `--tablet`, and
+  `--device` profiles with optional multi-device comparison matrices. Treat
+  this as responsive/mobile browser testing for rendered websites, not as native
+  iOS or Android app auditing.
 - Extend modal checks with additional close, cancel, successful-completion, and
   non-modal dialog paths.
 - Extend live-region evidence with validation-error and loading-state

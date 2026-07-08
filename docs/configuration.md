@@ -145,13 +145,15 @@ evidence from another browser engine:
 
 ```bash
 npx a11y-shiftleft audit --url $APP_URL --browser firefox --out reports
-npx a11y-shiftleft audit --url $APP_URL --browser webkit --device "iPhone 13" --out reports
+npx a11y-shiftleft audit --url $APP_URL --browser webkit --mobile --out reports
+npx a11y-shiftleft audit --url $APP_URL --browser webkit --tablet --out reports
 npx a11y-shiftleft check --dynamic --url $APP_URL --browser chromium --device "Pixel 5" --out reports
 ```
 
 Supported browser engines are `chromium`, `firefox`, and `webkit`. Device names
 come from Playwright device presets, such as `Desktop Chrome`, `Desktop Safari`,
-`iPhone 13`, and `Pixel 5`.
+`iPhone 13`, and `Pixel 5`. For visual reports, `audit --mobile` is a shortcut
+for `iPhone 13`, and `audit --tablet` is a shortcut for `iPad (gen 7)`.
 
 Install the browser engine before using it:
 

@@ -16,6 +16,8 @@ test("explore supports opening the visual report", () => {
   assert.ok(explore);
   const flags = explore.options.map((option) => option.long);
   assert.equal(flags.includes("--open"), true);
+  assert.equal(flags.includes("--mobile"), true);
+  assert.equal(flags.includes("--tablet"), true);
 });
 
 test("formatVerboseExploreSummary renders exploration context", () => {

@@ -172,7 +172,8 @@ URL.
 | Broader local scan | `npx a11y-shiftleft-cli audit --url $APP_URL --max-depth 3 --limit 50 --out reports` |
 | Check one component or page area | `npx a11y-shiftleft-cli audit --url $APP_URL --scope '#main' --out reports` |
 | Hide noisy overlays | `npx a11y-shiftleft-cli audit --url $APP_URL --hide-elements ".cookie-banner,.chat-widget" --out reports` |
-| Check a mobile browser profile | `npx a11y-shiftleft-cli audit --url $APP_URL --browser webkit --device "iPhone 13" --out reports` |
+| Check a mobile browser profile | `npx a11y-shiftleft-cli audit --url $APP_URL --browser webkit --mobile --out reports` |
+| Check a tablet browser profile | `npx a11y-shiftleft-cli audit --url $APP_URL --browser webkit --tablet --out reports` |
 | Fuller evidence package | `npx a11y-shiftleft-cli audit --url $APP_URL --profile full --out reports` |
 | Fast CI or PR check | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports` |
 | Save current findings as an accepted baseline | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --update-baseline --out reports` |
@@ -216,9 +217,10 @@ Use `--hide-elements <selectors>` when cookie banners, sticky ads, chat widgets,
 or other non-product overlays make screenshots noisy. Hidden selectors are
 recorded in the visual and Markdown reports.
 
-Use `--browser chromium|firefox|webkit` and `--device "<Playwright device>"`
-when you need evidence from another browser engine or mobile profile. Install
-that browser first, for example:
+Use `--browser chromium|firefox|webkit` when you need evidence from another
+browser engine. Use `--mobile` for the default phone profile, `--tablet` for the
+default tablet profile, or `--device "<Playwright device>"` when you need an
+exact Playwright preset. Install that browser first, for example:
 
 ```bash
 npx playwright install webkit
