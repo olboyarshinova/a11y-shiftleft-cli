@@ -10,6 +10,7 @@ These recipes give teams short copy-paste paths for adding
 - [Check, Explore, And Audit](check-explore-audit.md)
 - [Multiple URLs](multiple-urls.md)
 - [GitHub Actions](github-actions.md)
+- [GitLab CI](gitlab-ci.md)
 - [Ticket export](../ticket-export.md)
 - [ADA Title II](ada-title-ii.md)
 - [Section 508](section-508.md)

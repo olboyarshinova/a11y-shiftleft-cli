@@ -56,6 +56,12 @@ Section 508 certification.
   Accessibility Act reporting after the US-oriented presets are stable. Presets
   may adjust labels, evidence guidance, and report context, but must not claim
   legal certification.
+- When adding `en301549`, scope the first version to web evidence only:
+  WCAG-oriented automated findings, assisted review prompts, and explicit gaps
+  for non-web EN 301 549 areas such as PDF/documents, software outside the
+  browser, hardware, support services, procurement evidence, and documentation.
+  The report should label this as "EN 301 549 web support mode", not full EN
+  301 549 conformance certification.
 - Increase automated and assisted WCAG evidence coverage in this order:
   keyboard/focus traversal, form validation states, 400% reflow and zoom,
   target-size and pointer heuristics, media/motion review signals, and screen
@@ -341,9 +347,35 @@ Section 508 certification.
 - Reconsider a separate browser-specific package only if real users ask for it
   after dynamic exploration, watch mode, visual reports, overlay behavior, and
   privacy controls are already stable.
-- Explore VPAT evidence-draft templates for organizations that need Section 508
-  procurement documentation. Keep unsupported criteria marked for manual review
-  and keep final conformance statements and legal review outside the CLI.
+## Compliance Evidence Roadmap
+
+- Keep WCAG as the technical source of truth for web checks. Treat ADA,
+  Section 508, EN 301 549, EAA, CVAA, APAC, and "global compliance" as
+  reporting contexts or documentation needs, not as separate automatic
+  pass/fail engines.
+- Avoid country flags such as `--country us` or `--country eu` because regional
+  accessibility obligations often share WCAG criteria while differing in legal
+  scope, procurement, documentation, PDF, mobile, telecom/video, enforcement,
+  and review process. Prefer explicit standards presets such as
+  `--standard wcag22-aa`, `--standard section508`, `--standard ada-title-ii`,
+  and future `--standard en301549`.
+- Add EAA/EN 301 549 documentation only after the `en301549` web-support preset
+  exists. Make clear that the CLI can provide web evidence and manual-review
+  gaps, not a full European Accessibility Act or EN 301 549 certification.
+- Track CVAA as a future media/communications context only. Do not add a CVAA
+  claim until caption, transcript, audio-description, player-control, and
+  communications-specific review workflows have real evidence.
+- Treat APAC as a regional documentation topic, not a standard. If users ask for
+  Singapore, Australia, Japan, India, or other APAC guidance, document how the
+  current WCAG-oriented evidence may support those reviews while keeping legal
+  interpretation outside the CLI.
+- Explore VPAT evidence-draft templates for organizations that need Section
+  508, WCAG, or EN 301 549 procurement documentation. Keep unsupported criteria
+  marked for manual review and keep final conformance statements and legal
+  review outside the CLI.
+- Avoid "global compliance" marketing claims. Use safer wording such as
+  "WCAG-oriented evidence and reporting presets that can support accessibility
+  reviews for Section 508, ADA Title II, and future EN 301 549/EAA workflows."
 
 ## Non-Goals
 

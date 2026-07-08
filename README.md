@@ -5,19 +5,21 @@
 [![npm version](https://img.shields.io/npm/v/a11y-shiftleft-cli.svg)](https://www.npmjs.com/package/a11y-shiftleft-cli)
 [![Node.js >=18](https://img.shields.io/badge/node-%3E%3D18-339933.svg)](https://nodejs.org/)
 
-Catch accessibility issues before they reach users, with one command.
+Catch accessibility issues while you code, not after release.
 
-Accessibility bugs are often found late, after a manual review or production
-release. `a11y-shiftleft-cli` helps frontend teams move that review earlier:
-it is built for developers who are not accessibility specialists but still need
-clear, practical feedback while they code. Run one command against a local,
-staging, or preview URL, dynamically check the rendered app in a browser, and
-get a visual report with screenshots, WCAG labels, keyboard evidence, and fix
+`a11y-shiftleft-cli` is a local-first, shift-left accessibility audit tool for
+frontend developers who are not accessibility specialists. Run one command
+against a local, staging, or preview URL, and it will open your app in a
+browser, safely explore UI states, check for WCAG-oriented issues, and generate
+a visual HTML report with screenshots, keyboard evidence, and practical fix
 guidance.
 
-It works with any rendered website: React, Vue, Angular, Next.js, Svelte, Astro,
-Rails, Django, static HTML, and others. Optional source-code adapters are
-currently available for React, Vue, and Angular.
+Use it locally during development or add it to CI/CD so pull requests get
+repeatable accessibility feedback before issues reach production.
+
+It works with any rendered web app or website, including React, Vue, Angular,
+Next.js, Svelte, Astro, Rails, Django, and static HTML. Optional source-code
+adapters add framework-aware checks for React, Vue, and Angular.
 
 ## Built On Known Tools
 
@@ -93,6 +95,10 @@ This creates a pull-request workflow that installs the project, starts your app,
 runs accessibility checks, and keeps the generated reports as CI artifacts. Use
 this path when you want report-only adoption first, then tighten the quality
 gate later.
+
+Copy-paste CI examples are available for
+[GitHub Actions](docs/recipes/github-actions.md) and
+[GitLab CI](docs/recipes/gitlab-ci.md).
 
 For an existing pipeline, the smallest integration is one npm script:
 
