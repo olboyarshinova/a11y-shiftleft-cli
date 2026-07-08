@@ -32,6 +32,7 @@ interface QuickFindingGroup {
   count: number;
   pages: Set<string>;
   states: Set<string>;
+  targets: Set<string>;
 }
 
 export async function writeExplorationHtml(
@@ -1745,13 +1746,15 @@ function selectQuickFindings(issues: DedupedIssue[], limit: number): QuickFindin
       }
       if (issue.url) existing.pages.add(issue.url);
       if (issue.stateId) existing.states.add(issue.stateId);
+      addQuickTarget(existing.targets, issue);
       continue;
     }
     groups.set(key, {
       issue,
       count: 1 + Math.max(0, issue.duplicateCount || 0),
       pages: new Set(issue.url ? [issue.url] : []),
-      states: new Set(issue.stateId ? [issue.stateId] : [])
+      states: new Set(issue.stateId ? [issue.stateId] : []),
+      targets: new Set(quickTarget(issue) ? [quickTarget(issue)] : [])
     });
   }
 
@@ -1779,16 +1782,47 @@ function renderQuickFindings(groups: QuickFindingGroup[]): string {
     const impactText = issue.userImpact?.level
       ? `<span class="focus-path-meta">Impact: ${escapeHtml(issue.userImpact.level)}</span>`
       : "";
+    const fixScopeText = formatQuickFixScope(group);
     return `<li class="quick-review-item quick-review-item-${issue.severity}">
       ${label} ${severityBadge(issue.severity)}
       ${countText}
       ${pageText}
       ${impactText}
+      ${fixScopeText}
       ${ownershipText}
       <span class="focus-path-meta">${escapeHtml(issue.message)}</span>
       ${level ? `<span class="focus-path-meta">WCAG Level ${escapeHtml(level)}</span>` : ""}
     </li>`;
   }).join("")}</ol>`;
+}
+
+function addQuickTarget(targets: Set<string>, issue: DedupedIssue): void {
+  const target = quickTarget(issue);
+  if (target) targets.add(target);
+}
+
+function quickTarget(issue: DedupedIssue): string {
+  return issue.file || issue.selector || "";
+}
+
+function formatQuickFixScope(group: QuickFindingGroup): string {
+  if (group.issue.ownership?.kind === "third-party-embed") {
+    return `<span class="focus-path-meta">Fix scope: third-party embed</span>`;
+  }
+
+  if (group.pages.size > 1 && group.targets.size <= 1) {
+    return `<span class="focus-path-meta">Fix scope: likely shared UI</span>`;
+  }
+
+  if (group.pages.size > 1) {
+    return `<span class="focus-path-meta">Fix scope: cross-page pattern</span>`;
+  }
+
+  if (group.count > 1) {
+    return `<span class="focus-path-meta">Fix scope: repeated local pattern</span>`;
+  }
+
+  return "";
 }
 
 function renderQuickTabStops(steps: KeyboardAuditResult["steps"], included: boolean): string {

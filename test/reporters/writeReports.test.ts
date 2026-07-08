@@ -636,7 +636,9 @@ test("writeReports prioritizes first-party high-impact groups before third-party
     topFindings.indexOf("form-invalid-error-not-associated") < topFindings.indexOf("button-name")
   );
   assert.match(topFindings, /Priority signals: impact: blocker; first-party fix; confidence: high; 2 pages/);
+  assert.match(topFindings, /Fix scope: cross-page pattern across 2 pages/);
   assert.match(topFindings, /Priority signals: impact: significant; third-party ownership; confidence: high/);
+  assert.match(topFindings, /Fix scope: third-party embedded content/);
 });
 
 test("writeReports orders top finding sections from critical to lower severity", async () => {

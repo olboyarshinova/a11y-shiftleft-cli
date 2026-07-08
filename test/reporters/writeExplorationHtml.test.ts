@@ -377,17 +377,24 @@ test("renderExplorationHtml gives every table an accessible name for PDF export"
 });
 
 test("renderExplorationHtml groups repeated Fix First findings", () => {
+  const firstPartyButtonIssue = {
+    ...issues[0],
+    ownership: {
+      kind: "first-party" as const,
+      label: "First-party application code"
+    }
+  };
   const repeatedIssues = [
-    issues[0],
+    firstPartyButtonIssue,
     {
-      ...issues[0],
+      ...firstPartyButtonIssue,
       selector: ".modal-close",
       fingerprint: "button-name::modal-close",
       stateId: "state-2",
       stateLabel: "Click: Open audit modal"
     },
     {
-      ...issues[0],
+      ...firstPartyButtonIssue,
       selector: ".next-tip",
       fingerprint: "button-name::next-tip",
       stateId: "state-1",
@@ -408,6 +415,7 @@ test("renderExplorationHtml groups repeated Fix First findings", () => {
   assert.match(quickReview, /Fix First/);
   assert.equal((quickReview.match(/button-name/g) || []).length, 1);
   assert.match(quickReview, /3 findings grouped/);
+  assert.match(quickReview, /Fix scope: repeated local pattern/);
 });
 
 test("renderExplorationHtml prioritizes first-party high-impact Fix First items", () => {
@@ -453,6 +461,7 @@ test("renderExplorationHtml prioritizes first-party high-impact Fix First items"
   );
   assert.match(quickReview, /2 pages affected/);
   assert.match(quickReview, /Impact: blocker/);
+  assert.match(quickReview, /Fix scope: likely shared UI/);
   assert.match(quickReview, /Third-party embed; verify ownership before assigning/);
 });
 

@@ -696,6 +696,7 @@ function formatTopFindingGroup(group: TopFindingGroup): string {
   const confidence = formatIssueConfidence(group.sample);
   const userImpact = formatUserImpact(group.sample);
   const prioritySignals = formatPrioritySignals(group);
+  const fixScope = formatFixScope(group);
   const status = formatGroupStatuses(group);
   const occurrenceLabel = group.occurrenceCount === 1 ? "1 occurrence" : `${group.occurrenceCount} occurrences`;
   const affected = [
@@ -710,11 +711,36 @@ function formatTopFindingGroup(group: TopFindingGroup): string {
   return [
     `- **${group.severity}** \`${group.ruleId}\`${criteria} (${occurrenceLabel})${ownership}${userImpact}${findingType}${category}${confidence}: ${group.message}`,
     prioritySignals,
+    fixScope,
     affected.length > 0 ? `\n  - Affected: ${affected.join("; ")}` : "",
     status,
     contrast,
     remediation
   ].filter(Boolean).join("");
+}
+
+function formatFixScope(group: TopFindingGroup): string {
+  if (group.sample.ownership?.kind === "third-party-embed") {
+    return "\n  - Fix scope: third-party embedded content; verify ownership before assigning remediation.";
+  }
+
+  if (group.pages.length > 1 && group.targets.length <= 1) {
+    return `\n  - Fix scope: likely shared UI/component; one target pattern appears on ${group.pages.length} pages. Check the shared component, layout, or template first.`;
+  }
+
+  if (group.pages.length > 1) {
+    return `\n  - Fix scope: cross-page pattern across ${group.pages.length} pages. Check shared layout, routing, or design-system code before fixing pages one by one.`;
+  }
+
+  if (group.occurrenceCount > 1 && group.targets.length <= 3) {
+    return `\n  - Fix scope: repeated local pattern; ${group.occurrenceCount} related occurrences may share one page-level or component-level fix.`;
+  }
+
+  if (group.targets.length > 3) {
+    return `\n  - Fix scope: multiple target patterns on one page/state. Check whether this is a shared component variant or a local template issue.`;
+  }
+
+  return "";
 }
 
 function formatPrioritySignals(group: TopFindingGroup): string {
