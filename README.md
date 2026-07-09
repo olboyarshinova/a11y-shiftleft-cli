@@ -23,11 +23,12 @@ adapters add framework-aware checks for React, Vue, and Angular.
 
 ## Why It Helps
 
-- Combines browser checks, optional source checks, keyboard evidence, and
-  manual-review prompts in one workflow.
-- Shows where issues happen with screenshots and grouped findings.
-- Reduces report noise by deduplicating overlapping results.
-- Runs locally by default and can be added to CI/CD when the workflow is ready.
+- Replaces several separate review steps with one developer-friendly workflow.
+- Turns raw rule output into grouped, prioritized findings.
+- Helps developers understand what to fix without becoming accessibility
+  specialists first.
+- Lets teams start report-only, then tighten CI gates after they understand the
+  findings.
 
 ## Built On Known Tools
 
