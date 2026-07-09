@@ -19,9 +19,6 @@ Section 508 certification.
 - Add repeated-component counts and affected-page counts to user-impact
   summaries so teams can distinguish one shared component fix from many local
   page fixes.
-- Add remediation effort estimates such as `small`, `medium`, and `large`
-  based on rule family, affected components, journey impact, and whether the fix
-  is local, shared, or architectural.
 - Add report grouping controls for rule, page/state, affected element, WCAG
   criterion, and POUR principle while preserving root-cause grouping.
 - Make the PR/CI workflow extremely simple: one generated workflow, one
@@ -90,6 +87,8 @@ Section 508 certification.
   explanation, but do not count it as a confirmed violation until a reviewer
   confirms it. This closes the gap where tools such as Pa11y surface axe
   `needsFurtherReview` findings that currently do not appear in our reports.
+  Make these findings visually distinct from confirmed violations so teams can
+  investigate possible false negatives without inflating defect counts.
 - Extend reflow evidence with explicit 200%/400% zoom checks and overlapping
   fixed or sticky control checks.
 - Extend cross-browser evidence from single-engine runs into a bounded
@@ -154,7 +153,8 @@ Section 508 certification.
   silently hiding findings.
 - Add report audience views without duplicating data: developer view for
   selectors and remediation, QA view for screenshots and reproduction steps,
-  manager view for risk, trends, coverage, and ownership.
+  manager view for risk, trends, coverage, and ownership. Use these views to
+  reduce report overwhelm while preserving the same underlying evidence.
 - Make issue lifecycle status visible in reports across baseline, retest,
   ignores, and remediation tracking: new, accepted, ignored until date, fixed,
   remaining, needs manual review, and third-party.
@@ -186,7 +186,10 @@ Section 508 certification.
   refresh the visual report.
 - Add a single guided setup command that creates the config, generated report
   `.gitignore` entries, npm scripts, and CI workflow in one pass, while keeping
-  every generated file visible for review before commit.
+  every generated file visible for review before commit. The target experience
+  should be a one-command path such as
+  `a11y-shiftleft-cli setup --ci github --url <app-url>` for teams that want
+  the fastest possible first CI integration.
 - Add CI presets for GitHub Actions first, then GitLab CI, CircleCI, Jenkins,
   and generic shell runners. Keep each preset focused on installing the package,
   starting the app, running `audit` or `check`, and preserving local artifacts.
@@ -198,6 +201,10 @@ Section 508 certification.
 - Add incremental scan support for pull requests by prioritizing changed static
   files and a small configured set of dynamic smoke-test URLs before broader
   scheduled scans.
+- Add explicit PR scan presets that separate fast pull-request checks from
+  slower scheduled or manual full audits. Keep the default PR path short,
+  bounded, and baseline-friendly so teams do not disable the tool because of
+  noisy legacy findings.
 - Continue expanding CLI quality-of-life controls around report paths,
   troubleshooting context, progress output, `--quiet`, and `--verbose`.
 - After the CLI report schema is stable for 1.0, create a VS Code extension
@@ -236,6 +243,9 @@ Section 508 certification.
 - Add first-class report status summaries that highlight high-confidence,
   high-impact findings first, separate third-party embedded content, and show
   which findings are best handled as manual review.
+- Expand manual-review records from a checklist into structured local evidence:
+  status, reviewer, notes, evidence links, pass/fail/needs-follow-up state, and
+  timestamp. Keep it local-first and avoid collecting unnecessary personal data.
 - Publish a repeatable external-validation protocol that compares the same
   pages and states with Accessibility Insights, ARC Toolkit,
   [WAVE](https://wave.webaim.org/),
