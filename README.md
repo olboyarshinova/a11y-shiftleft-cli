@@ -10,9 +10,9 @@ Catch accessibility issues while you code, not after release.
 `a11y-shiftleft-cli` is a local-first, shift-left accessibility audit tool for
 frontend developers who are not accessibility specialists. Run one command
 against a local, staging, or preview URL, and it will open your app in a
-browser, safely explore UI states, check for WCAG-oriented issues, and generate
-a visual HTML report with screenshots, keyboard evidence, and practical fix
-guidance.
+browser, safely explore UI states, check for WCAG-oriented issues, deduplicate
+overlapping findings, and generate a visual HTML report with screenshots,
+keyboard evidence, grouped issues, and practical fix guidance.
 
 Use it locally during development or add it to CI/CD so pull requests get
 repeatable accessibility feedback before issues reach production.
