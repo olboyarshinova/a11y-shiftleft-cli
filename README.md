@@ -85,6 +85,9 @@ If your app requires login, create a local Playwright auth state first. The CLI
 opens a real browser; you log in manually, including 2FA if needed, and then the
 session is saved locally.
 
+Enter your username, password, and 2FA code in the browser window opened by the
+command, not in the terminal. The CLI does not ask for or store your password.
+
 Authenticated scans are still local-first: login cookies, storage state,
 screenshots, URLs, and reports are not sent to an external server by the CLI.
 
