@@ -28,7 +28,8 @@ type WorkflowFile = {
 
 export function registerCiCommand(program: Command): void {
   program
-    .command("ci")
+    .command("generate-ci")
+    .alias("ci")
     .description("Generate GitHub Actions workflow for accessibility checks.")
     .option("--cwd <dir>", "Target project directory")
     .option("--url <urls...>", "URL(s) to scan in CI", ["http://localhost:3000"])

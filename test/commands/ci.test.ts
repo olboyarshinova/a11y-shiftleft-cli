@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { createProgram } from "../../dist/cli.js";
 import {
   checkGateArgument,
   fullWorkflowTemplate,
@@ -7,6 +8,16 @@ import {
   workflowFiles,
   workflowTemplate
 } from "../../dist/commands/ci.js";
+
+test("generate-ci is the documented command and ci remains a short alias", () => {
+  const command = createProgram().commands.find((item) => item.name() === "generate-ci");
+
+  assert.ok(command);
+  assert.deepEqual(command.aliases(), ["ci"]);
+  assert.match(command.description(), /Generate GitHub Actions workflow/);
+  const flags = command.options.map((option) => option.long);
+  assert.equal(flags.includes("--start-command"), true);
+});
 
 test("workflowTemplate includes compliance standard and multiple URLs", () => {
   const workflow = workflowTemplate({

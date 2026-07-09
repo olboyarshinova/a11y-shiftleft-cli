@@ -79,7 +79,7 @@ Add package scripts:
 Generate workflow:
 
 ```bash
-npx a11y-shiftleft ci \
+npx a11y-shiftleft generate-ci \
   --url http://localhost:3000 \
   --start-command "npm run start:a11y" \
   --fail-on none

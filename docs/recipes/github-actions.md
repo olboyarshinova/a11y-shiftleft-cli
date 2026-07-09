@@ -7,7 +7,7 @@ every PR wait for a full-site crawl.
 
 ```bash
 export APP_URL=http://localhost:5173
-npx a11y-shiftleft ci \
+npx a11y-shiftleft generate-ci \
   --url $APP_URL \
   --start-command "npm run dev -- --host localhost --port 5173" \
   --fail-on warning
@@ -24,7 +24,7 @@ gate that blocks only newly introduced critical issues:
 
 ```bash
 export APP_URL=http://localhost:5173
-npx a11y-shiftleft ci \
+npx a11y-shiftleft generate-ci \
   --url $APP_URL \
   --start-command "npm run dev -- --host localhost --port 5173" \
   --gate new-critical-only
@@ -34,7 +34,7 @@ npx a11y-shiftleft ci \
 
 ```bash
 export APP_URL=http://localhost:5173
-npx a11y-shiftleft ci \
+npx a11y-shiftleft generate-ci \
   --profile split \
   --url $APP_URL \
   --start-command "npm run dev -- --host localhost --port 5173" \

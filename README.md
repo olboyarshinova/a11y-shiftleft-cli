@@ -104,7 +104,7 @@ commit auth-state files because they may contain session cookies.
 After the first local audit works, generate GitHub Actions workflow files:
 
 ```bash
-npx a11y-shiftleft-cli ci --url $APP_URL --start-command "npm run dev"
+npx a11y-shiftleft-cli generate-ci --url $APP_URL --start-command "npm run dev"
 ```
 
 This creates a pull-request workflow that installs the project, starts your app,
@@ -213,7 +213,7 @@ URL.
 | Legacy-project CI gate | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --gate new-critical-only --out reports` |
 | Diagnose setup problems | `npx a11y-shiftleft-cli doctor --url $APP_URL` |
 | Add config and report paths to `.gitignore` | `npx a11y-shiftleft-cli init --framework auto --gitignore` |
-| Generate GitHub Actions workflow files | `npx a11y-shiftleft-cli ci --url $APP_URL --start-command "npm run dev"` |
+| Generate GitHub Actions workflow files | `npx a11y-shiftleft-cli generate-ci --url $APP_URL --start-command "npm run dev"` |
 
 Use `explore` only when you want to debug visual state discovery without the full
 audit workflow.

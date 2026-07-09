@@ -78,7 +78,7 @@ Add accessibility checks to CI in one npm script.
 The built-in generator should remain the primary adoption path:
 
 ```bash
-npx a11y-shiftleft ci \
+npx a11y-shiftleft generate-ci \
   --url http://localhost:4200 http://localhost:4200/favorites \
   --start-command "npm run dev -- --host localhost --port 4200" \
   --fail-on warning \
