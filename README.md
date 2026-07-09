@@ -79,9 +79,6 @@ open reports/a11y-report.html
 On Linux use `xdg-open reports/a11y-report.html`. On Windows PowerShell use
 `start reports/a11y-report.html`.
 
-The command saves screenshots while it runs. Wait for the terminal to print the
-final `Open:` path before reviewing the report.
-
 ## Authenticated Pages
 
 If your app requires login, create a local Playwright auth state first. The CLI
