@@ -19,7 +19,9 @@ repeatable accessibility feedback before issues reach production.
 
 It works with any rendered web app or website, including React, Vue, Angular,
 Next.js, Svelte, Astro, Rails, Django, and static HTML. Optional source-code
-adapters add framework-aware checks for React, Vue, and Angular.
+adapters add framework-aware checks for React, Vue, and Angular. For SPAs and
+dynamic pages, the browser audit checks the rendered UI after client-side data
+loads, not just the initial HTML source.
 
 ## Why It Helps
 
@@ -225,6 +227,13 @@ or more only when you intentionally want a broader scan.
 Use `--scope <selector>` when you want browser checks and safe UI-state
 exploration to stay inside one component, dialog, checkout step, or page
 section.
+
+Use `--wait-ms <ms>` or `--wait-for-selector <selector>` when a SPA loads data,
+cards, tables, or authenticated content after the first render:
+
+```bash
+npx a11y-shiftleft-cli audit --url $APP_URL --wait-for-selector "[data-page-ready]" --out reports
+```
 
 Use `--hide-elements <selectors>` when cookie banners, sticky ads, chat widgets,
 or other non-product overlays make screenshots noisy. Hidden selectors are
