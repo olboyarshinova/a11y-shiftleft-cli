@@ -84,6 +84,26 @@ On Linux use `xdg-open reports/a11y-report.html`. On Windows PowerShell use
 Expected result: `reports/a11y-report.html` opens with summary metrics,
 screenshots, grouped findings, WCAG labels, and fix guidance.
 
+## Authenticated Pages
+
+If your app requires login, create a local Playwright auth state first. The CLI
+opens a real browser; you log in manually, including 2FA if needed, and then the
+session is saved locally.
+
+Enter your username, password, and 2FA code in the browser window opened by the
+command, not in the terminal. The CLI does not ask for or store your password.
+
+Authenticated scans are still local-first: login cookies, storage state,
+screenshots, URLs, and reports are not sent to an external server by the CLI.
+
+```bash
+npx a11y-shiftleft-cli auth login --url https://example.com/login
+npx a11y-shiftleft-cli audit --url https://example.com/account --auth-state .a11y-auth/state.json --out reports --open
+```
+
+The generated `.a11y-auth/` folder is added to `.gitignore` by default. Do not
+commit auth-state files because they may contain session cookies.
+
 ## Add CI/CD
 
 After the first local audit works, generate GitHub Actions workflow files:
@@ -248,26 +268,6 @@ once to add common report paths. For private pages, add `--no-screenshots`.
 More recipes for baseline mode, legacy-project gates, browser profiles, hidden
 overlays, and advanced configuration are in [Configuration](docs/configuration.md)
 and [Recipes](docs/recipes/index.md).
-
-## Authenticated Pages
-
-If your app requires login, create a local Playwright auth state first. The CLI
-opens a real browser; you log in manually, including 2FA if needed, and then the
-session is saved locally.
-
-Enter your username, password, and 2FA code in the browser window opened by the
-command, not in the terminal. The CLI does not ask for or store your password.
-
-Authenticated scans are still local-first: login cookies, storage state,
-screenshots, URLs, and reports are not sent to an external server by the CLI.
-
-```bash
-npx a11y-shiftleft-cli auth login --url https://example.com/login
-npx a11y-shiftleft-cli audit --url https://example.com/account --auth-state .a11y-auth/state.json --out reports --open
-```
-
-The generated `.a11y-auth/` folder is added to `.gitignore` by default. Do not
-commit auth-state files because they may contain session cookies.
 
 ## Standards
 
