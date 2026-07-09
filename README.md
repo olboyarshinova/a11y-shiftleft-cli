@@ -41,6 +41,14 @@ their rule engines:
 Use this when your app already runs locally. You need Node.js 18 or newer, but
 you do not need to configure a framework first.
 
+Privacy first: the CLI runs in your project environment and does not upload
+source code, screenshots, URLs, cookies, auth state, or report data to an
+external analysis server. Reports stay local by default.
+
+Screenshots mask common sensitive fields such as passwords, emails, phone
+numbers, payment inputs, and elements marked with `data-a11y-sensitive`. Use
+`--no-screenshots` for private, authenticated, or production customer pages.
+
 1. Install the CLI and the Chromium browser used by Playwright:
 
 ```bash
@@ -74,15 +82,6 @@ On Linux use `xdg-open reports/a11y-report.html`. On Windows PowerShell use
 The command saves screenshots while it runs. Wait for the terminal to print the
 final `Open:` path before reviewing the report.
 
-Privacy note: reports stay local by default. Screenshots mask common sensitive
-fields such as passwords, emails, phone numbers, payment inputs, and elements
-marked with `data-a11y-sensitive`. Use `--no-screenshots` for private,
-authenticated, or production customer pages.
-
-Local-first by default: the CLI runs in your project environment and does not
-upload source code, screenshots, URLs, or report data to an external analysis
-server.
-
 ## Audit Or Check?
 
 Start with `audit` when a person needs to review the result. Use `check` when a
@@ -103,6 +102,9 @@ to CI.
 If your app requires login, create a local Playwright auth state first. The CLI
 opens a real browser; you log in manually, including 2FA if needed, and then the
 session is saved locally.
+
+Authenticated scans are still local-first: login cookies, storage state,
+screenshots, URLs, and reports are not sent to an external server by the CLI.
 
 ```bash
 npx a11y-shiftleft-cli auth login --url https://example.com/login
