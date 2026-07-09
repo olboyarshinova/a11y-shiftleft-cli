@@ -9,6 +9,17 @@ Set the URL once:
 export APP_URL=http://localhost:5173
 ```
 
+## Quick Decision Table
+
+| Command | Use it when | Main output | Best for |
+|---|---|---|---|
+| `audit` | A person needs to inspect the result and understand what to fix | Visual HTML report with screenshots, keyboard evidence, manual-review checklist, JSON, and Markdown | Local review, design/dev discussion, evidence sharing |
+| `check` | CI needs a fast automated signal against known URL(s) | JSON and Markdown reports with optional baseline and failure gate | Pull requests, npm scripts, regression checks |
+| `explore` | You need to debug how the tool discovers UI states | Visual exploration report with screenshots and safe interactions | Tuning depth, safe-mode rules, screenshots, and state discovery |
+
+For most teams: start with `audit` locally, then add `check` to CI once the
+workflow is stable.
+
 ## `check`
 
 Use `check` for fast feedback in CI or pull requests. It can run dynamic browser

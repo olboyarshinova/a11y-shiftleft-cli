@@ -83,6 +83,21 @@ Local-first by default: the CLI runs in your project environment and does not
 upload source code, screenshots, URLs, or report data to an external analysis
 server.
 
+## Audit Or Check?
+
+Start with `audit` when a person needs to review the result. Use `check` when a
+pipeline needs a fast pass/fail signal.
+
+| Command | Use it when | Main output | Best for | Typical runtime |
+|---|---|---|---|---|
+| `audit` | You want a deeper local review with visual evidence | Visual HTML report with screenshots, explored states, keyboard evidence, manual-review checklist, JSON, and Markdown | Local debugging, design/dev review, sharing evidence with a team | Slower |
+| `check` | You want a quick automated check against known URL(s) | JSON and Markdown reports, optional CI summary and baseline comparison | Pull requests, CI gates, npm scripts, regression checks | Faster |
+| `explore` | You want to debug UI-state discovery itself | Visual exploration report for safe clicks, links, dialogs, and screenshots | Tuning depth, safe-mode blocks, screenshots, and state discovery | Medium |
+
+Rule of thumb: run `audit --url $APP_URL --out reports --open` first. After the
+main issues are understood, add `check --dynamic --url $APP_URL --out reports`
+to CI.
+
 ## Authenticated Pages
 
 If your app requires login, create a local Playwright auth state first. The CLI
