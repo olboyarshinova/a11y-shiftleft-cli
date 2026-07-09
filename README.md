@@ -9,10 +9,10 @@ Catch accessibility issues while you code, not after release.
 
 `a11y-shiftleft-cli` is a local-first, shift-left accessibility audit tool for
 frontend developers who are not accessibility specialists. Run one command
-against a local, staging, or preview URL, and it will open your app in a
-browser, safely explore UI states, check for WCAG-oriented issues, deduplicate
-overlapping findings, and generate a visual HTML report with screenshots,
-keyboard evidence, grouped issues, and practical fix guidance.
+against a local, staging, or preview URL. It opens your app in a browser,
+safely explores UI states, deduplicates overlapping WCAG-oriented findings, and
+generates a visual HTML report with screenshots, keyboard evidence, grouped
+issues, and practical fix guidance.
 
 Use it locally during development or add it to CI/CD so pull requests get
 repeatable accessibility feedback before issues reach production.
@@ -21,20 +21,21 @@ It works with any rendered web app or website, including React, Vue, Angular,
 Next.js, Svelte, Astro, Rails, Django, and static HTML. Optional source-code
 adapters add framework-aware checks for React, Vue, and Angular.
 
+## Why It Helps
+
+- Combines browser checks, optional source checks, keyboard evidence, and
+  manual-review prompts in one workflow.
+- Shows where issues happen with screenshots and grouped findings.
+- Reduces report noise by deduplicating overlapping results.
+- Runs locally by default and can be added to CI/CD when the workflow is ready.
+
 ## Built On Known Tools
 
-The CLI orchestrates established accessibility tooling instead of replacing
-their rule engines:
-
-- axe-core through [`@axe-core/playwright`](https://www.npmjs.com/package/@axe-core/playwright)
-  scans the rendered page for automated accessibility rules.
-- [Playwright](https://playwright.dev/) opens Chromium, explores bounded UI
-  states, captures screenshots, and records keyboard evidence.
-- [ESLint](https://eslint.org/) powers optional source checks for React, Vue,
-  and Angular.
-- [Lighthouse](https://developer.chrome.com/docs/lighthouse/overview/) can be
-  added with `--with-lighthouse` when teams want its familiar accessibility
-  score next to detailed findings.
+The CLI orchestrates established tools instead of replacing their rule engines:
+axe-core through [`@axe-core/playwright`](https://www.npmjs.com/package/@axe-core/playwright),
+[Playwright](https://playwright.dev/), optional [ESLint](https://eslint.org/)
+adapters, and optional
+[Lighthouse](https://developer.chrome.com/docs/lighthouse/overview/) comparison.
 
 ## 2-Minute Quick Start
 
@@ -79,25 +80,8 @@ open reports/a11y-report.html
 On Linux use `xdg-open reports/a11y-report.html`. On Windows PowerShell use
 `start reports/a11y-report.html`.
 
-## Authenticated Pages
-
-If your app requires login, create a local Playwright auth state first. The CLI
-opens a real browser; you log in manually, including 2FA if needed, and then the
-session is saved locally.
-
-Enter your username, password, and 2FA code in the browser window opened by the
-command, not in the terminal. The CLI does not ask for or store your password.
-
-Authenticated scans are still local-first: login cookies, storage state,
-screenshots, URLs, and reports are not sent to an external server by the CLI.
-
-```bash
-npx a11y-shiftleft-cli auth login --url https://example.com/login
-npx a11y-shiftleft-cli audit --url https://example.com/account --auth-state .a11y-auth/state.json --out reports --open
-```
-
-The generated `.a11y-auth/` folder is added to `.gitignore` by default. Do not
-commit auth-state files because they may contain session cookies.
+Expected result: `reports/a11y-report.html` opens with summary metrics,
+screenshots, grouped findings, WCAG labels, and fix guidance.
 
 ## Add CI/CD
 
@@ -200,25 +184,12 @@ The commands below assume `APP_URL` is set to your local, staging, or preview UR
 | Quick risk triage | `npx a11y-shiftleft-cli audit --url $APP_URL --profile risk --out reports` |
 | Broader local scan | `npx a11y-shiftleft-cli audit --url $APP_URL --max-depth 3 --limit 50 --out reports` |
 | Check one component or page area | `npx a11y-shiftleft-cli audit --url $APP_URL --scope '#main' --out reports` |
-| Hide noisy overlays | `npx a11y-shiftleft-cli audit --url $APP_URL --hide-elements ".cookie-banner,.chat-widget" --out reports` |
-| Check a mobile browser profile | `npx a11y-shiftleft-cli audit --url $APP_URL --browser webkit --mobile --out reports` |
-| Check a tablet browser profile | `npx a11y-shiftleft-cli audit --url $APP_URL --browser webkit --tablet --out reports` |
-| Audit after login | `npx a11y-shiftleft-cli auth login --url https://example.com/login` then `npx a11y-shiftleft-cli audit --url $APP_URL --auth-state .a11y-auth/state.json --out reports` |
-| Fuller evidence package | `npx a11y-shiftleft-cli audit --url $APP_URL --profile full --out reports` |
 | Fast CI or PR check | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports` |
-| Save current findings as an accepted baseline | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --update-baseline --out reports` |
-| Fail only on new findings | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --baseline --out reports` |
-| Legacy-project CI gate | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --gate new-critical-only --out reports` |
-| Diagnose setup problems | `npx a11y-shiftleft-cli doctor --url $APP_URL` |
-| Add config and report paths to `.gitignore` | `npx a11y-shiftleft-cli init --framework auto --gitignore` |
 | Generate GitHub Actions workflow files | `npx a11y-shiftleft-cli generate-ci --url $APP_URL --start-command "npm run dev"` |
+| Diagnose setup problems | `npx a11y-shiftleft-cli doctor --url $APP_URL` |
 
 Use `explore` only when you want to debug visual state discovery without the full
 audit workflow.
-
-Use baseline mode when an existing project already has known findings. First
-save the current state with `--update-baseline`, commit `.a11y-baseline.json`,
-then run later checks with `--baseline` so CI focuses on new regressions.
 
 By default, `audit` explores up to 2 interaction levels from the start page.
 `--max-depth` lets you change that safety limit; it does not mean "scan forever"
@@ -266,12 +237,6 @@ Explicit flags override profile defaults, for example:
 npx a11y-shiftleft-cli audit --url $APP_URL --profile risk --max-depth 2 --out reports
 ```
 
-If the first audit fails, run:
-
-```bash
-npx a11y-shiftleft-cli doctor --url $APP_URL
-```
-
 After the report opens:
 
 1. Start with the "Fix First" and screenshot sections.
@@ -281,35 +246,50 @@ After the report opens:
 Reports and screenshots usually should not be committed. Run `init --gitignore`
 once to add common report paths. For private pages, add `--no-screenshots`.
 
-## Standards
+More recipes for baseline mode, legacy-project gates, browser profiles, hidden
+overlays, and advanced configuration are in [Configuration](docs/configuration.md)
+and [Recipes](docs/recipes/index.md).
 
-Use `--standard` for the reporting context you need:
+## Authenticated Pages
+
+If your app requires login, create a local Playwright auth state first. The CLI
+opens a real browser; you log in manually, including 2FA if needed, and then the
+session is saved locally.
+
+Enter your username, password, and 2FA code in the browser window opened by the
+command, not in the terminal. The CLI does not ask for or store your password.
+
+Authenticated scans are still local-first: login cookies, storage state,
+screenshots, URLs, and reports are not sent to an external server by the CLI.
 
 ```bash
-npx a11y-shiftleft-cli audit --url $APP_URL --standard wcag22-aa --out reports
-npx a11y-shiftleft-cli audit --url $APP_URL --standard section508 --out reports
-npx a11y-shiftleft-cli audit --url $APP_URL --standard ada-title-ii --out reports
-npx a11y-shiftleft-cli audit --url $APP_URL --standard en301549 --out reports
+npx a11y-shiftleft-cli auth login --url https://example.com/login
+npx a11y-shiftleft-cli audit --url https://example.com/account --auth-state .a11y-auth/state.json --out reports --open
 ```
 
-Standards presets adjust labels, evidence guidance, and report context. They do
-not certify legal compliance. The CLI intentionally uses standards rather than
-country flags because accessibility laws often reference WCAG while adding
-different legal scope, procurement, documentation, PDF, mobile, or enforcement
-requirements.
+The generated `.a11y-auth/` folder is added to `.gitignore` by default. Do not
+commit auth-state files because they may contain session cookies.
 
-`en301549` is a web-support preset for EN 301 549 evidence context. It does not
-claim full EN 301 549 or European Accessibility Act conformance because those
-contexts can include non-web ICT, procurement, documentation, support, and
-organizational review evidence.
+## Standards
+
+Use `--standard` when the report needs a specific evidence context:
+
+```bash
+npx a11y-shiftleft-cli audit --url $APP_URL --standard section508 --out reports
+```
+
+Available presets: `wcag22-aa`, `section508`, `ada-title-ii`, and `en301549`.
+They adjust labels, evidence guidance, and report context; they do not certify
+legal compliance. See the [Section 508](docs/recipes/section-508.md),
+[ADA Title II](docs/recipes/ada-title-ii.md), and
+[EN 301 549](docs/recipes/en-301-549.md) recipes for more context.
 
 ## Coverage And Limits
 
-- Automated reports do not certify full WCAG, ADA, or Section 508 conformance.
-- Use the report with manual keyboard, screen-reader, content, and task-flow
-  review.
-- It does not replace a full manual WCAG audit, but helps teams find and
-  document issues earlier.
+- The report supports accessibility review; it is not a WCAG, ADA, Section 508,
+  EN 301 549, or EAA certification.
+- Use automated evidence together with manual keyboard, screen-reader, content,
+  and task-flow review.
 - Some public websites block automated scans with bot detection or CAPTCHA.
 - Third-party embeds such as YouTube, Vimeo, Spotify, Google Maps, and CodePen
   are marked separately when ownership can be detected.
