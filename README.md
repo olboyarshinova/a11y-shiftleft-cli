@@ -179,18 +179,16 @@ to CI.
 
 The commands below assume `APP_URL` is set to your local, staging, or preview URL.
 
-| Need | Command |
-|---|---|
-| First local review | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports --open` |
-| Quick risk triage | `npx a11y-shiftleft-cli audit --url $APP_URL --profile risk --out reports` |
-| Broader local scan | `npx a11y-shiftleft-cli audit --url $APP_URL --max-depth 3 --limit 50 --out reports` |
-| Check one component or page area | `npx a11y-shiftleft-cli audit --url $APP_URL --scope '#main' --out reports` |
-| Fast CI or PR check | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports` |
-| Generate GitHub Actions workflow files | `npx a11y-shiftleft-cli generate-ci --url $APP_URL --start-command "npm run dev"` |
-| Diagnose setup problems | `npx a11y-shiftleft-cli doctor --url $APP_URL` |
-
-Use `explore` only when you want to debug visual state discovery without the full
-audit workflow.
+| Command type | Need | Command |
+|---|---|---|
+| `audit` | First local review | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports --open` |
+| `audit` | Quick risk triage | `npx a11y-shiftleft-cli audit --url $APP_URL --profile risk --out reports` |
+| `audit` | Broader local scan | `npx a11y-shiftleft-cli audit --url $APP_URL --max-depth 3 --limit 50 --out reports` |
+| `audit` | Check one component or page area | `npx a11y-shiftleft-cli audit --url $APP_URL --scope '#main' --out reports` |
+| `check` | Fast CI or PR check | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports` |
+| `explore` | Debug visual state discovery | `npx a11y-shiftleft-cli explore --url $APP_URL --out reports` |
+| `setup` | Generate GitHub Actions workflow files | `npx a11y-shiftleft-cli generate-ci --url $APP_URL --start-command "npm run dev"` |
+| `setup` | Diagnose setup problems | `npx a11y-shiftleft-cli doctor --url $APP_URL` |
 
 By default, `audit` explores up to 2 interaction levels from the start page.
 `--max-depth` lets you change that safety limit; it does not mean "scan forever"
