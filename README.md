@@ -192,9 +192,7 @@ to CI.
 
 ## Common Commands
 
-Start with `audit`. Use `check` later for faster CI/PR checks.
-The commands below assume `APP_URL` is set to your local, staging, or preview
-URL.
+The commands below assume `APP_URL` is set to your local, staging, or preview URL.
 
 | Need | Command |
 |---|---|
@@ -230,13 +228,6 @@ The audit automatically explores safe links, buttons, dialogs, forms, theme
 states, and same-origin UI transitions within bounded depth and state limits.
 It is designed to find issues earlier, not to certify that every page and every
 WCAG criterion has been fully tested.
-
-```bash
-npx a11y-shiftleft-cli audit --url $APP_URL --profile risk --out reports
-npx a11y-shiftleft-cli audit --url $APP_URL --max-depth 1 --out reports
-npx a11y-shiftleft-cli audit --url $APP_URL --max-depth 3 --limit 50 --out reports
-npx a11y-shiftleft-cli audit --url $APP_URL --scope '#checkout' --out reports
-```
 
 Use `1` for a quick smoke test, the default `2` for most local reviews, and `3`
 or more only when you intentionally want a broader scan.
