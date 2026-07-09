@@ -274,7 +274,10 @@ commit auth-state files because they may contain session cookies.
 Use `--standard` when the report needs a specific evidence context:
 
 ```bash
+npx a11y-shiftleft-cli audit --url $APP_URL --standard wcag22-aa --out reports
 npx a11y-shiftleft-cli audit --url $APP_URL --standard section508 --out reports
+npx a11y-shiftleft-cli audit --url $APP_URL --standard ada-title-ii --out reports
+npx a11y-shiftleft-cli audit --url $APP_URL --standard en301549 --out reports
 ```
 
 Available presets: `wcag22-aa`, `section508`, `ada-title-ii`, and `en301549`.
