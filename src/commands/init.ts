@@ -2,6 +2,7 @@ import type { Command } from "commander";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { defaultConfig } from "../config/defaultConfig.js";
+import { AUTH_GITIGNORE_ENTRIES } from "../core/authState.js";
 import type { A11yConfig, Framework } from "../types.js";
 
 interface InitOptions {
@@ -13,7 +14,8 @@ interface InitOptions {
 
 export const GITIGNORE_REPORT_ENTRIES = [
   "reports/",
-  ".a11y-reports/"
+  ".a11y-reports/",
+  ...AUTH_GITIGNORE_ENTRIES
 ];
 
 interface GitignoreUpdateResult {
@@ -29,7 +31,7 @@ export function registerInitCommand(program: Command): void {
     .option("--cwd <dir>", "Target project directory")
     .option("--framework <name>", "Target framework: auto, react, vue, angular, or unknown")
     .option("--force", "Overwrite existing config")
-    .option("--gitignore", "Add generated accessibility report directories to .gitignore")
+    .option("--gitignore", "Add generated report and auth-state paths to .gitignore")
     .action(async (options: InitOptions) => {
       const cwd = path.resolve(options.cwd || process.cwd());
       const target = path.join(cwd, ".a11y-shiftleft.json");
@@ -47,7 +49,7 @@ export function registerInitCommand(program: Command): void {
         const result = await addReportEntriesToGitignore(cwd);
         const summary = result.added.length > 0
           ? `Added ${result.added.join(", ")} to ${result.path}`
-          : `${result.path} already ignores generated report directories.`;
+          : `${result.path} already ignores generated a11y artifacts.`;
 
         console.log(summary);
       }
@@ -110,7 +112,7 @@ function appendGitignoreBlock(existing: string, entries: string[]): string {
     : existing;
   const prefix = normalized.trim().length > 0 ? "\n" : "";
 
-  return `${normalized}${prefix}# a11y-shiftleft generated reports\n${entries.join("\n")}\n`;
+  return `${normalized}${prefix}# a11y-shiftleft generated artifacts\n${entries.join("\n")}\n`;
 }
 
 function hasGitignoreEntry(content: string, entry: string): boolean {

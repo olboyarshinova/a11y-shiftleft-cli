@@ -18,6 +18,7 @@ test("explore supports opening the visual report", () => {
   assert.equal(flags.includes("--open"), true);
   assert.equal(flags.includes("--mobile"), true);
   assert.equal(flags.includes("--tablet"), true);
+  assert.equal(flags.includes("--auth-state"), true);
 });
 
 test("formatVerboseExploreSummary renders exploration context", () => {

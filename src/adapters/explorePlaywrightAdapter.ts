@@ -172,6 +172,7 @@ interface ExplorePlaywrightOptions {
   safeMode?: ExploreSafeModeConfig;
   browser?: string;
   device?: string;
+  authState?: string;
   waitMs?: number;
   waitForSelector?: string;
   scopeSelector?: string;
@@ -271,9 +272,11 @@ export async function runExplorePlaywrightAdapter(
   config: A11yConfig,
   options: ExplorePlaywrightOptions
 ): Promise<ExploreResult> {
+  const authState = options.authState || config.explore.authState;
   const runtime = await launchBrowserRuntime({
     browser: options.browser || config.explore.browser,
     device: options.device || config.explore.device,
+    storageState: authState,
     source: "exploration"
   });
   const { browser } = runtime;
@@ -329,7 +332,7 @@ export async function runExplorePlaywrightAdapter(
 
       try {
         await applyColorScheme(page, "light");
-        if (safeMode.isolateCookies) {
+        if (safeMode.isolateCookies && !authState) {
           await clearContextCookies(context);
         }
         dynamicAnnouncements = await replayPath(page, options.url, current.path, {

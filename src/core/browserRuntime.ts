@@ -13,6 +13,8 @@ export interface BrowserRuntimeOptions {
   browser?: BrowserEngine | string;
   device?: string;
   source: BrowserEvidence["source"];
+  headless?: boolean;
+  storageState?: string;
 }
 
 export interface BrowserRuntime {
@@ -26,12 +28,17 @@ export const SUPPORTED_BROWSER_ENGINES: BrowserEngine[] = ["chromium", "firefox"
 export async function launchBrowserRuntime(options: BrowserRuntimeOptions): Promise<BrowserRuntime> {
   const engine = normalizeBrowserEngine(options.browser);
   const browserType = browserTypeForEngine(engine);
-  const browser = await browserType.launch();
+  const browser = await browserType.launch({
+    headless: options.headless ?? true
+  });
   const device = resolveDeviceDescriptor(options.device);
 
   return {
     browser,
-    contextOptions: device.contextOptions,
+    contextOptions: {
+      ...device.contextOptions,
+      ...(options.storageState ? { storageState: options.storageState } : {})
+    },
     evidence: {
       engine,
       name: browserName(engine, device.name),

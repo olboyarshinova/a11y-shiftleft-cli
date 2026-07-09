@@ -209,6 +209,7 @@ export interface DynamicConfig {
   urls: string[];
   browser: BrowserEngine;
   device?: string;
+  authState?: string;
   crawl: boolean;
   crawlDepth: number;
   crawlLimit: number;
@@ -238,6 +239,7 @@ export interface ExploreConfig {
   safeMode: ExploreSafeModeConfig;
   browser: BrowserEngine;
   device?: string;
+  authState?: string;
   scopeSelector?: string;
   hideElements: string[];
   waitMs: number;
@@ -593,7 +595,7 @@ export interface BrowserEvidence {
   engine: "chromium" | "firefox" | "webkit" | string;
   name: string;
   version?: string;
-  source: "exploration" | "dynamic" | "keyboard" | "lighthouse" | "pdf" | "unknown";
+  source: "auth" | "exploration" | "dynamic" | "keyboard" | "lighthouse" | "pdf" | "unknown";
 }
 
 export interface LighthouseAuditItem {

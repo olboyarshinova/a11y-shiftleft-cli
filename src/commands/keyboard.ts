@@ -9,6 +9,7 @@ import { normalizeIssue } from "../core/normalize.js";
 import { applyRemediationTracking, DEFAULT_REMEDIATION_FILE } from "../core/remediationTracking.js";
 import { applyRetest } from "../core/retest.js";
 import { readScopePlanIfExists } from "../core/scopePlan.js";
+import { resolveAuthStatePath } from "../core/authState.js";
 import { triageIssues } from "../core/severity.js";
 import { resolveStandard } from "../core/standards.js";
 import { normalizeBrowserEngine, supportedBrowserEnginesText } from "../core/browserRuntime.js";
@@ -25,6 +26,7 @@ interface KeyboardOptions {
   out?: string;
   browser?: string;
   device?: string;
+  authState?: string;
   maxTabs?: string;
   activation?: boolean;
   maxActivations?: string;
@@ -55,6 +57,7 @@ export function registerKeyboardCommand(program: Command): void {
     .option("--out <dir>", "Output directory")
     .option("--browser <engine>", "Browser engine: chromium, firefox, or webkit")
     .option("--device <name>", "Playwright device preset, for example \"iPhone 13\" or \"Pixel 5\"")
+    .option("--auth-state <file>", "Playwright storage state file for authenticated keyboard checks")
     .option("--max-tabs <count>", "Maximum Tab key presses", "40")
     .option("--activation", "Test bounded safe Enter, Space, Escape, and arrow-key interactions")
     .option("--max-activations <count>", "Maximum isolated keyboard activation attempts", "6")
@@ -73,6 +76,7 @@ export function registerKeyboardCommand(program: Command): void {
     .action(async (options: KeyboardOptions) => {
       validateKeyboardComparisonOptions(options);
       const startedAt = Date.now();
+      const authState = resolveAuthStatePath(options.authState, options.cwd);
       const config = await loadConfig({ cwd: options.cwd, config: options.config }, {
         framework: toFramework(options.framework),
         outputDir: options.out,
@@ -81,7 +85,8 @@ export function registerKeyboardCommand(program: Command): void {
           enabled: true,
           urls: [options.url],
           browser: toBrowserEngine(options.browser),
-          device: options.device
+          device: options.device,
+          authState
         }
       });
       const framework = config.framework === "auto" ? await detectFramework(config.cwd) : config.framework;
@@ -96,6 +101,7 @@ export function registerKeyboardCommand(program: Command): void {
         safeMode: config.explore.safeMode,
         browser: config.dynamic.browser,
         device: config.dynamic.device,
+        authState: config.dynamic.authState,
         waitMs: parseBoundedInteger(options.waitMs, 250, 0, 30_000),
         onProgress: options.quiet || options.jsonSummary || !process.stdout.isTTY
           ? undefined

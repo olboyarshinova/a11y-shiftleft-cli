@@ -12,6 +12,7 @@ import { applyReportRetention } from "../core/reportRetention.js";
 import { filterReportFindings } from "../core/findingFilter.js";
 import { normalizeHideElementSelectors } from "../core/hideElements.js";
 import { openReportFile } from "../core/openReport.js";
+import { resolveAuthStatePath } from "../core/authState.js";
 import { readScopePlanIfExists } from "../core/scopePlan.js";
 import { cleanExploreArtifacts } from "../reporters/cleanExploreArtifacts.js";
 import { writeExplorationHtml } from "../reporters/writeExplorationHtml.js";
@@ -38,6 +39,7 @@ interface ExploreOptions {
   url: string;
   browser?: string;
   device?: string;
+  authState?: string;
   mobile?: boolean;
   tablet?: boolean;
   scope?: string;
@@ -102,6 +104,7 @@ export function registerExploreCommand(program: Command): void {
     .requiredOption("--url <url>", "Start URL for UI exploration")
     .option("--browser <engine>", "Browser engine: chromium, firefox, or webkit")
     .option("--device <name>", "Playwright device preset, for example \"iPhone 13\" or \"Pixel 5\"")
+    .option("--auth-state <file>", "Playwright storage state file for authenticated exploration")
     .option("--mobile", "Use the default mobile browser profile (iPhone 13)")
     .option("--tablet", "Use the default tablet browser profile (iPad gen 7)")
     .option("--scope <selector>", "Limit axe checks and safe action discovery to one CSS selector")
@@ -159,6 +162,7 @@ export function registerExploreCommand(program: Command): void {
       }
 
       const device = resolveDevicePreset(options);
+      const authState = resolveAuthStatePath(options.authState, options.cwd);
       const config = await loadConfig({
         cwd: options.cwd,
         config: options.config
@@ -170,11 +174,13 @@ export function registerExploreCommand(program: Command): void {
         failOn: options.failOn,
         dynamic: {
           enabled: true,
-          urls: [options.url]
+          urls: [options.url],
+          authState
         },
         explore: {
           browser: toBrowserEngine(options.browser),
           device,
+          authState,
           waitMs: toNonNegativeInteger(options.waitMs),
           waitForSelector: options.waitForSelector,
           scopeSelector: options.scope,
@@ -193,7 +199,7 @@ export function registerExploreCommand(program: Command): void {
             blockedSelectors: toPatternList(options.safeBlockSelector),
             allowedSelectors: toPatternList(options.safeAllowSelector),
             dismissDialogs: options.dismissDialogs === false ? false : undefined,
-            isolateCookies: options.isolateCookies === false ? false : undefined
+            isolateCookies: authState ? false : options.isolateCookies === false ? false : undefined
           }
         },
         retention: {
@@ -285,6 +291,7 @@ export function registerExploreCommand(program: Command): void {
         hideElements: effectiveConfig.explore.hideElements,
         browser: effectiveConfig.explore.browser,
         device: effectiveConfig.explore.device,
+        authState: effectiveConfig.explore.authState,
         scroll: effectiveConfig.explore.scroll,
         safeMode: effectiveConfig.explore.safeMode,
         onProgress: (event) => {

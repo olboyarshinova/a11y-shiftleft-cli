@@ -39,9 +39,11 @@ test("addReportEntriesToGitignore creates an idempotent report ignore block", as
   assert.deepEqual(second.added, []);
   assert.deepEqual(second.alreadyPresent, GITIGNORE_REPORT_ENTRIES);
   assert.equal(firstContent, secondContent);
-  assert.match(firstContent, /# a11y-shiftleft generated reports/);
+  assert.match(firstContent, /# a11y-shiftleft generated artifacts/);
   assert.match(firstContent, /^reports\/$/m);
   assert.match(firstContent, /^\.a11y-reports\/$/m);
+  assert.match(firstContent, /^\.a11y-auth\/$/m);
+  assert.match(firstContent, /^\*\.storageState\.json$/m);
 });
 
 test("addReportEntriesToGitignore preserves existing project ignores", async () => {
@@ -53,9 +55,11 @@ test("addReportEntriesToGitignore preserves existing project ignores", async () 
   const result = await addReportEntriesToGitignore(cwd);
   const content = await fs.readFile(gitignorePath, "utf8");
 
-  assert.deepEqual(result.added, [".a11y-reports/"]);
+  assert.deepEqual(result.added, [".a11y-reports/", ".a11y-auth/", "*.storageState.json"]);
   assert.deepEqual(result.alreadyPresent, ["reports/"]);
   assert.match(content, /^node_modules\/$/m);
   assert.match(content, /^reports\*\/$/m);
   assert.match(content, /^\.a11y-reports\/$/m);
+  assert.match(content, /^\.a11y-auth\/$/m);
+  assert.match(content, /^\*\.storageState\.json$/m);
 });

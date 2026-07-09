@@ -83,6 +83,20 @@ Local-first by default: the CLI runs in your project environment and does not
 upload source code, screenshots, URLs, or report data to an external analysis
 server.
 
+## Authenticated Pages
+
+If your app requires login, create a local Playwright auth state first. The CLI
+opens a real browser; you log in manually, including 2FA if needed, and then the
+session is saved locally.
+
+```bash
+npx a11y-shiftleft-cli auth login --url https://example.com/login
+npx a11y-shiftleft-cli audit --url https://example.com/account --auth-state .a11y-auth/state.json --out reports --open
+```
+
+The generated `.a11y-auth/` folder is added to `.gitignore` by default. Do not
+commit auth-state files because they may contain session cookies.
+
 ## Add CI/CD
 
 After the first local audit works, generate GitHub Actions workflow files:
@@ -174,6 +188,7 @@ URL.
 | Hide noisy overlays | `npx a11y-shiftleft-cli audit --url $APP_URL --hide-elements ".cookie-banner,.chat-widget" --out reports` |
 | Check a mobile browser profile | `npx a11y-shiftleft-cli audit --url $APP_URL --browser webkit --mobile --out reports` |
 | Check a tablet browser profile | `npx a11y-shiftleft-cli audit --url $APP_URL --browser webkit --tablet --out reports` |
+| Audit after login | `npx a11y-shiftleft-cli auth login --url https://example.com/login` then `npx a11y-shiftleft-cli audit --url $APP_URL --auth-state .a11y-auth/state.json --out reports` |
 | Fuller evidence package | `npx a11y-shiftleft-cli audit --url $APP_URL --profile full --out reports` |
 | Fast CI or PR check | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports` |
 | Save current findings as an accepted baseline | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --update-baseline --out reports` |

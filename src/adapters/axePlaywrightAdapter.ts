@@ -54,6 +54,7 @@ export async function runAxePlaywrightAdapter(
   const runtime = await launchBrowserRuntime({
     browser: config.dynamic.browser,
     device: config.dynamic.device,
+    storageState: config.dynamic.authState,
     source: "dynamic"
   });
   const { browser } = runtime;

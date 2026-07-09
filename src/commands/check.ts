@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { Command } from "commander";
 import { loadConfig } from "../config/loadConfig.js";
 import { runEslintAdapter } from "../adapters/eslintAdapter.js";
@@ -20,6 +21,7 @@ import { filterReportFindings } from "../core/findingFilter.js";
 import { normalizeHideElementSelectors } from "../core/hideElements.js";
 import { readScopePlanIfExists } from "../core/scopePlan.js";
 import { browserEvidenceName, normalizeBrowserEngine, supportedBrowserEnginesText } from "../core/browserRuntime.js";
+import { resolveAuthStatePath } from "../core/authState.js";
 import type { A11yReport, ComplianceStandard, Framework, Issue, LighthouseAuditResult, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel, WcagVersion } from "../types.js";
 
 export interface CheckOptions {
@@ -32,6 +34,7 @@ export interface CheckOptions {
   url?: string[];
   browser?: string;
   device?: string;
+  authState?: string;
   scope?: string;
   hideElements?: string[];
   crawl?: boolean;
@@ -93,6 +96,7 @@ export function registerCheckCommand(program: Command): void {
     .option("--url <urls...>", "Target URL(s) for dynamic scan")
     .option("--browser <engine>", "Browser engine for dynamic checks: chromium, firefox, or webkit")
     .option("--device <name>", "Playwright device preset, for example \"iPhone 13\" or \"Pixel 5\"")
+    .option("--auth-state <file>", "Playwright storage state file for authenticated browser checks")
     .option("--scope <selector>", "Limit dynamic axe checks to one CSS selector on each page")
     .option("--hide-elements <selectors...>", "Hide matching CSS selectors before dynamic browser checks")
     .option("--crawl", "Discover and scan same-origin links from dynamic URLs")
@@ -142,6 +146,8 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
 
   const startedAt = Date.now();
   const urls = parseUrls(options.url);
+  const cwd = options.cwd ? path.resolve(options.cwd) : process.cwd();
+  const authState = resolveAuthStatePath(options.authState, cwd);
   const staticOnly = Boolean(options.static && !options.dynamic);
   const config = await loadConfig({
     cwd: options.cwd,
@@ -160,6 +166,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
       urls: urls.length > 0 ? urls : undefined,
       browser: toBrowserEngine(options.browser),
       device: options.device,
+      authState,
       crawl: options.crawl ? true : undefined,
       crawlDepth: toPositiveInteger(options.crawlDepth),
       crawlLimit: toPositiveInteger(options.crawlLimit),

@@ -24,6 +24,14 @@ Section 508 certification.
 - Make the PR/CI workflow extremely simple: one generated workflow, one
   copy-paste command, clear artifact links, and a report-only adoption path for
   teams that are not ready to fail builds yet.
+- Extend authenticated testing beyond manual `auth login` with CI-safe custom
+  flows: a scripted auth module that reads usernames, passwords, and tokens from
+  environment variables or CI secrets, then saves a temporary Playwright
+  `storageState` file without logging credentials.
+- Add documentation for teams that already use Playwright authentication setup:
+  show how to pass an existing `storageState` file into `audit`, `explore`,
+  `check`, and `keyboard`, including recommended `.gitignore` and screenshot
+  privacy settings.
 - Extend readiness controls beyond a fixed delay with bounded declarative
   conditions such as selector visible/hidden and URL or path reached.
 - Validate structured manual-review records in real keyboard-only, screen

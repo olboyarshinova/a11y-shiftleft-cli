@@ -13,6 +13,7 @@ export interface KeyboardAuditOptions {
   safeMode?: ExploreSafeModeConfig;
   browser?: string;
   device?: string;
+  authState?: string;
   waitMs?: number;
   onProgress?: (step: KeyboardFocusStep) => void;
 }
@@ -29,6 +30,7 @@ export async function runKeyboardPlaywrightAdapter(options: KeyboardAuditOptions
   const runtime = await launchBrowserRuntime({
     browser: options.browser,
     device: options.device,
+    storageState: options.authState,
     source: "keyboard"
   });
   const { browser } = runtime;

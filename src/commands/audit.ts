@@ -15,6 +15,7 @@ import { resolveDevicePreset } from "../core/devicePresets.js";
 import { applyIgnores, DEFAULT_IGNORE_FILE } from "../core/ignore.js";
 import { normalizeIssue } from "../core/normalize.js";
 import { openReportFile } from "../core/openReport.js";
+import { resolveAuthStatePath } from "../core/authState.js";
 import { applyRemediationTracking, DEFAULT_REMEDIATION_FILE } from "../core/remediationTracking.js";
 import { triageIssues } from "../core/severity.js";
 import { resolveStandard } from "../core/standards.js";
@@ -35,6 +36,7 @@ interface AuditOptions {
   out?: string;
   browser?: string;
   device?: string;
+  authState?: string;
   mobile?: boolean;
   tablet?: boolean;
   scope?: string;
@@ -84,6 +86,7 @@ export function registerAuditCommand(program: Command): void {
     .option("--out <dir>", "Output directory", "reports")
     .option("--browser <engine>", "Browser engine for browser and keyboard evidence: chromium, firefox, or webkit")
     .option("--device <name>", "Playwright device preset, for example \"iPhone 13\" or \"Pixel 5\"")
+    .option("--auth-state <file>", "Playwright storage state file for authenticated audits")
     .option("--mobile", "Use the default mobile browser profile (iPhone 13)")
     .option("--tablet", "Use the default tablet browser profile (iPad gen 7)")
     .option("--scope <selector>", "Limit visual axe checks and safe action discovery to one CSS selector")
@@ -129,15 +132,17 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
   const targetUrl = normalizeAuditUrl(options.url);
   const outputDir = normalizeOptionalCliValue(options.out);
   const device = resolveDevicePreset(options);
+  const authState = resolveAuthStatePath(options.authState, options.cwd);
   const config = await loadConfig({ cwd: options.cwd, config: options.config }, {
     framework: toFramework(options.framework),
     outputDir,
     standard: toStandard(options.standard),
     failOn: options.failOn,
-    dynamic: { enabled: true, urls: [targetUrl] },
+    dynamic: { enabled: true, urls: [targetUrl], authState },
     explore: {
       browser: toBrowserEngine(options.browser),
       device,
+      authState,
       waitMs: optionalNonNegativeInteger(options.waitMs, "Wait time"),
       waitForSelector: options.waitForSelector,
       scopeSelector: options.scope,
@@ -147,6 +152,9 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
         stepPx: optionalPositiveInteger(options.scrollStep, "Scroll step"),
         maxSteps: optionalPositiveInteger(options.scrollMaxSteps, "Scroll maximum steps"),
         waitMs: optionalNonNegativeInteger(options.scrollWaitMs, "Scroll wait time")
+      },
+      safeMode: {
+        isolateCookies: authState ? false : undefined
       }
     }
   });
@@ -181,6 +189,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
       waitMs: effectiveConfig.explore.waitMs,
       browser: effectiveConfig.explore.browser,
       device: effectiveConfig.explore.device,
+      authState: effectiveConfig.explore.authState,
       activation: Boolean(options.activation),
       maxActivations: 6,
       safeMode: effectiveConfig.explore.safeMode
@@ -213,6 +222,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
       hideElements: effectiveConfig.explore.hideElements,
       browser: effectiveConfig.explore.browser,
       device: effectiveConfig.explore.device,
+      authState: effectiveConfig.explore.authState,
       scroll: effectiveConfig.explore.scroll,
       safeMode: effectiveConfig.explore.safeMode,
       onProgress: (event) => {

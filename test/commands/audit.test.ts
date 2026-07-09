@@ -20,6 +20,7 @@ test("audit is the unified visual report command with optional extra formats", (
   assert.equal(flags.includes("--max-depth"), true);
   assert.equal(flags.includes("--mobile"), true);
   assert.equal(flags.includes("--tablet"), true);
+  assert.equal(flags.includes("--auth-state"), true);
   assert.equal(flags.includes("--no-keyboard"), true);
   assert.equal(flags.includes("--no-manual-review"), true);
   assert.equal(flags.includes("--wait-ms"), true);

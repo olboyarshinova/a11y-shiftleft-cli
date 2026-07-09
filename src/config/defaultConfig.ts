@@ -16,6 +16,7 @@ export const defaultConfig = {
     urls: ["http://localhost:3000"],
     browser: "chromium",
     device: undefined,
+    authState: undefined,
     crawl: false,
     crawlDepth: 1,
     crawlLimit: 10,
@@ -36,6 +37,7 @@ export const defaultConfig = {
   explore: {
     browser: "chromium",
     device: undefined,
+    authState: undefined,
     scopeSelector: undefined,
     hideElements: [],
     waitMs: 250,
