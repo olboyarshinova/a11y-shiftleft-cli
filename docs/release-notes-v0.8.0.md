@@ -20,6 +20,16 @@ workflow; Lighthouse is added as a familiar score-oriented comparison layer.
   totals, and tool-difference counts.
 - Lighthouse score trend bars in the dashboard alongside the existing findings
   trend.
+- Clearer visual-report handling for axe `incomplete` findings. Potential
+  contrast issues over images, gradients, video, or complex overlays are shown
+  as `needs review` evidence instead of confirmed violations.
+- Screenshot marker summaries for grouped findings, including a note when only
+  part of a large group is numbered on the screenshot.
+- Automatic scrollable full-page screenshots for states with many findings,
+  while keeping focused crops for smaller or extremely long states.
+- Optional `share prepare --include-html` export for a self-contained visual
+  HTML copy with embedded screenshots, intended for carefully reviewed local
+  sharing.
 
 ## Why It Matters
 
@@ -27,6 +37,10 @@ Lighthouse is widely recognized, but its score is not a WCAG conformance
 certificate. This release lets teams use the score as a shared reference while
 still seeing detailed rule evidence, keyboard findings, visual screenshots,
 manual-review gaps, and WCAG metadata from the normal a11y-shiftleft pipeline.
+
+The visual report also separates confirmed violations from items that need
+human review, so teams can investigate likely problems without inflating defect
+counts or hiding uncertainty.
 
 ## Try It
 
@@ -52,6 +66,14 @@ After several saved reports, open the local dashboard:
 
 ```bash
 npx a11y-shiftleft-cli dashboard --reports reports
+```
+
+Prepare a sanitized share package. Add `--include-html` only after reviewing
+that screenshots are approved for sharing:
+
+```bash
+npx a11y-shiftleft-cli share prepare --report reports --out a11y-share
+npx a11y-shiftleft-cli share prepare --report reports --out a11y-share --include-html
 ```
 
 ## Update

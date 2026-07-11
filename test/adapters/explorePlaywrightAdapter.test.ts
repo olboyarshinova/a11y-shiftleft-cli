@@ -420,6 +420,9 @@ test("shouldCaptureFullPageScreenshot captures finding states automatically", ()
   assert.equal(shouldCaptureFullPageScreenshot(false, 1), true);
   assert.equal(shouldCaptureFullPageScreenshot(false, 1, 5000), true);
   assert.equal(shouldCaptureFullPageScreenshot(false, 1, 7000), false);
+  assert.equal(shouldCaptureFullPageScreenshot(false, 10, 7000), true);
+  assert.equal(shouldCaptureFullPageScreenshot(false, 9, 7000), false);
+  assert.equal(shouldCaptureFullPageScreenshot(false, 10, 13000), false);
   assert.equal(shouldCaptureFullPageScreenshot(true, 0), true);
 });
 

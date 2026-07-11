@@ -89,14 +89,6 @@ Section 508 certification.
   and next step: `automated`, `heuristic`, `manual required`, `not covered`, or
   `not applicable`. Keep untested criteria visible so users understand what the
   tool cannot prove automatically.
-- Add axe `incomplete` result handling as a separate `needs review` evidence
-  class. Start with `color-contrast` over images, gradients, video, and complex
-  overlays: preserve the affected selector, WCAG mapping, screenshot, and
-  explanation, but do not count it as a confirmed violation until a reviewer
-  confirms it. This closes the gap where tools such as Pa11y surface axe
-  `needsFurtherReview` findings that currently do not appear in our reports.
-  Make these findings visually distinct from confirmed violations so teams can
-  investigate possible false negatives without inflating defect counts.
 - Extend reflow evidence with explicit 200%/400% zoom checks and overlapping
   fixed or sticky control checks.
 - Extend cross-browser evidence from single-engine runs into a bounded

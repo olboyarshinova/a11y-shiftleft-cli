@@ -4,10 +4,12 @@ import { enrichIssueEvidence } from "../core/classification.js";
 import { compareLighthouseWithFindings } from "../core/lighthouseComparison.js";
 import { formatReportDateUtc } from "../core/reportDate.js";
 import { getRemediationHint } from "../core/remediation.js";
-import type { DedupedIssue, ExplorationGraph, ExplorationState, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, Severity } from "../types.js";
+import type { DedupedIssue, ElementBounds, ExplorationGraph, ExplorationState, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, Severity } from "../types.js";
 
 interface StateViewModel extends ExplorationState {
   issues: DedupedIssue[];
+  annotationSeverityByKey: Record<string, Severity>;
+  annotationNumberByIssueKey: Record<string, number>;
 }
 
 interface ExplorationHtmlOptions {
@@ -56,10 +58,18 @@ export function renderExplorationHtml(
   const reportIssues = issues.map((issue) => issue.findingType
     ? issue
     : enrichIssueEvidence(issue));
-  const states = graph.states.map((state) => ({
-    ...state,
-    issues: reportIssues.filter((issue) => issue.stateId === state.id)
-  }));
+  const annotationSeverityByKey = buildAnnotationSeverityByKey(reportIssues);
+  const reportIssuesByStateId = groupIssuesByStateId(reportIssues);
+  const displayIssuesByStateId = filterRepeatedStateIssues(graph.states, reportIssuesByStateId);
+  const states = graph.states.map((state) => {
+    const stateIssues = displayIssuesByStateId.get(state.id) || [];
+    return {
+      ...state,
+      issues: stateIssues,
+      annotationSeverityByKey,
+      annotationNumberByIssueKey: buildAnnotationNumberByIssueKey(state, stateIssues)
+    };
+  });
   const visualStateIds = new Set(graph.states.map((state) => state.id));
   const nonVisualIssues = reportIssues.filter((issue) => !issue.stateId || !visualStateIds.has(issue.stateId));
   const totals = summarizeIssues(reportIssues);
@@ -77,12 +87,12 @@ export function renderExplorationHtml(
       --bg: #f6f7f9;
       --panel: #ffffff;
       --ink: #1e2430;
-      --muted: #5d6675;
+      --muted: #46515f;
       --line: #d9dde5;
-      --critical: #b42318;
-      --warning: #b54708;
+      --critical: #d0001b;
+      --warning: #c2410c;
       --warning-marker: #f97316;
-      --info: #175cd3;
+      --info: #005fcc;
       --ok: #067647;
     }
 
@@ -103,6 +113,17 @@ export function renderExplorationHtml(
       padding: 24px;
     }
 
+    .report-header-grid {
+      align-items: start;
+      display: grid;
+      gap: 16px;
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .report-header-main {
+      min-width: 0;
+    }
+
     h1,
     h2,
     h3,
@@ -113,6 +134,24 @@ export function renderExplorationHtml(
     h1 {
       font-size: 24px;
       margin-bottom: 4px;
+    }
+
+    .report-product {
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .report-product strong {
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .report-product a {
+      color: var(--info);
+      font-weight: 700;
     }
 
     h2 {
@@ -155,6 +194,39 @@ export function renderExplorationHtml(
     .share-review {
       border-left: 4px solid var(--info);
       grid-column: 1 / -1;
+    }
+
+    .ticket-drafts {
+      background: #f8fcfa;
+      border-left: 4px solid var(--ok);
+      justify-self: end;
+      max-width: 380px;
+      padding: 12px;
+      width: 100%;
+    }
+
+    .ticket-drafts-header {
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: space-between;
+    }
+
+    .ticket-drafts-header h2 {
+      margin-bottom: 0;
+    }
+
+    .ticket-drafts p {
+      font-size: 12px;
+      line-height: 1.35;
+      margin: 6px 0 0;
+    }
+
+    .ticket-drafts .issue-actions {
+      justify-content: flex-end;
+      margin-top: 8px;
+      width: 100%;
     }
 
     .share-review-grid {
@@ -238,13 +310,81 @@ export function renderExplorationHtml(
       overflow: visible;
     }
 
+    .panel-full-width {
+      grid-column: 1 / -1;
+      width: 100%;
+    }
+
+    .panel:has(.remediation[open]) {
+      position: relative;
+      z-index: 70;
+    }
+
+    .keyboard-audit {
+      grid-column: 1 / -1;
+    }
+
+    .focus-path-scroll-wrapper {
+      display: grid;
+      gap: 6px;
+    }
+
     .focus-path {
       display: flex;
       gap: 24px;
       list-style: none;
-      margin: 16px 0 8px;
+      margin: 16px 0 0;
       overflow-x: auto;
       padding: 4px 4px 14px;
+      scrollbar-color: #8b96a8 #e5e7eb;
+      scrollbar-gutter: stable;
+      scrollbar-width: auto;
+    }
+
+    .focus-path::-webkit-scrollbar {
+      height: 12px;
+    }
+
+    .focus-path::-webkit-scrollbar-track {
+      background: #e5e7eb;
+      border-radius: 999px;
+    }
+
+    .focus-path::-webkit-scrollbar-thumb {
+      background: #8b96a8;
+      border: 2px solid #e5e7eb;
+      border-radius: 999px;
+    }
+
+    .focus-path-scrollbar {
+      background: #e5e7eb;
+      border: 1px solid #c7ced9;
+      border-radius: 999px;
+      height: 14px;
+      overflow: hidden;
+      position: relative;
+      width: 100%;
+    }
+
+    .focus-path-scrollbar-thumb {
+      background: #6b7585;
+      border-radius: 999px;
+      display: block;
+      height: 100%;
+      min-width: 36px;
+      transform: translateX(0);
+      width: 36px;
+    }
+
+    .focus-path-scrollbar-disabled .focus-path-scrollbar-thumb {
+      background: #9ca3af;
+      opacity: 0.7;
+      width: 100%;
+    }
+
+    .focus-path:focus-visible {
+      outline: 3px solid var(--info);
+      outline-offset: 4px;
     }
 
     .keyboard-summary-grid {
@@ -278,6 +418,7 @@ export function renderExplorationHtml(
     }
 
     .focus-path-item {
+      background: #ffffff;
       border: 1px solid var(--line);
       border-radius: 8px;
       flex: 0 0 190px;
@@ -338,6 +479,7 @@ export function renderExplorationHtml(
 
     .focus-path-name,
     .focus-path-meta {
+      background-color: inherit;
       display: block;
       overflow-wrap: anywhere;
     }
@@ -435,17 +577,27 @@ export function renderExplorationHtml(
       border-color: #9bd8bd;
     }
 
-    .manual-checklist-item summary {
+    .manual-checklist-header {
       align-items: center;
+      display: flex;
       gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .manual-checklist-title {
+      font-weight: 700;
     }
 
     .manual-checklist-item input[type="checkbox"] {
       accent-color: var(--ok);
       flex: 0 0 auto;
-      height: 20px;
+      height: 24px;
       margin: 0;
-      width: 20px;
+      width: 24px;
+    }
+
+    .manual-checklist-item details {
+      margin-left: 34px;
     }
 
     .manual-checklist-item input[type="checkbox"]:focus-visible {
@@ -496,8 +648,8 @@ export function renderExplorationHtml(
     }
 
     .coverage-legend-failed {
-      background: #fff1f0;
-      border-color: #f4b5ae;
+      background: #fff0f3;
+      border-color: #ff9aaa;
     }
 
     .coverage-legend-failed .coverage-legend-swatch {
@@ -673,19 +825,42 @@ export function renderExplorationHtml(
 
     .triage-grid {
       display: grid;
-      gap: 16px;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    .triage h2 {
+      margin-bottom: 8px;
+    }
+
+    .triage h3 {
+      font-size: 14px;
+      margin-bottom: 8px;
     }
 
     .quick-review-grid {
       display: grid;
-      gap: 16px;
+      gap: 10px;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    .quick-review h2 {
+      margin-bottom: 6px;
+    }
+
+    .quick-review h3 {
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    .quick-review > .muted {
+      font-size: 13px;
+      margin-bottom: 10px;
     }
 
     .quick-review-list {
       display: grid;
-      gap: 8px;
+      gap: 5px;
       list-style: none;
       margin: 0;
       padding: 0;
@@ -693,14 +868,14 @@ export function renderExplorationHtml(
 
     .quick-review-note {
       color: var(--muted);
-      font-size: 0.88rem;
-      line-height: 1.45;
-      margin: -4px 0 10px;
+      font-size: 12px;
+      line-height: 1.35;
+      margin: -2px 0 6px;
     }
 
     .quick-review-item {
       border-left: 3px solid var(--line);
-      padding: 6px 8px;
+      padding: 4px 7px;
     }
 
     .quick-review-item-critical {
@@ -716,9 +891,31 @@ export function renderExplorationHtml(
       font-weight: 700;
     }
 
+    .quick-review-action,
+    .quick-review-evidence {
+      display: block;
+      font-size: 12px;
+      line-height: 1.35;
+      margin-top: 3px;
+    }
+
+    .quick-review-action {
+      color: var(--text);
+    }
+
+    .quick-review-evidence {
+      color: var(--muted);
+    }
+
+    .quick-review-link {
+      display: inline-block;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
     .triage-list {
       display: grid;
-      gap: 10px;
+      gap: 6px;
       list-style: none;
       margin: 0;
       padding: 0;
@@ -726,10 +923,11 @@ export function renderExplorationHtml(
 
     .triage-item {
       border: 1px solid var(--line);
-      border-radius: 8px;
+      border-radius: 6px;
       display: grid;
-      gap: 6px;
-      padding: 10px;
+      gap: 4px 8px;
+      grid-template-columns: minmax(0, 1fr);
+      padding: 8px 10px;
     }
 
     .triage-title {
@@ -737,6 +935,15 @@ export function renderExplorationHtml(
       display: flex;
       gap: 8px;
       justify-content: space-between;
+      min-width: 0;
+    }
+
+    .triage-title-main {
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-width: 0;
     }
 
     .triage-title a,
@@ -744,11 +951,29 @@ export function renderExplorationHtml(
       color: inherit;
     }
 
+    .triage-item .badges {
+      justify-content: start;
+    }
+
+    .triage-item .url {
+      grid-column: 1 / -1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .triage-more {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
     .states {
       align-items: start;
       display: grid;
       gap: 16px;
       grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+      position: relative;
     }
 
     .state {
@@ -759,13 +984,26 @@ export function renderExplorationHtml(
       position: relative;
     }
 
+    .state:has(details[open]) {
+      z-index: 12;
+    }
+
+    .state:has(.remediation[open]) {
+      z-index: 80;
+    }
+
+    .states:has(.screenshot-lightbox:target),
+    .state:has(.screenshot-lightbox:target) {
+      z-index: 1000;
+    }
+
     .state-critical {
-      border-color: #e59a92;
+      border-color: #ff9aaa;
       box-shadow: inset 4px 0 0 var(--critical);
     }
 
     .state-critical .state-body {
-      background: #fff7f6;
+      background: #ffffff;
     }
 
     .state-warning {
@@ -774,7 +1012,7 @@ export function renderExplorationHtml(
     }
 
     .state-warning .state-body {
-      background: #fff8f1;
+      background: #ffffff;
     }
 
     .state-info {
@@ -783,7 +1021,20 @@ export function renderExplorationHtml(
     }
 
     .state-info .state-body {
-      background: #f7faff;
+      background: #ffffff;
+    }
+
+    .non-visual-finding-summary {
+      align-items: center;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      display: flex;
+      font-weight: 700;
+      justify-content: center;
+      min-height: 120px;
+      padding: 16px;
+      text-align: center;
     }
 
     .state-ok {
@@ -848,15 +1099,18 @@ export function renderExplorationHtml(
     }
 
     .screenshot-frame-full {
-      aspect-ratio: 16 / 9;
+      aspect-ratio: auto;
       height: auto;
+      max-height: min(420px, 62vh);
       min-height: 0;
       overflow: hidden;
     }
 
     .screenshot-frame-full .screenshot-scroll {
-      height: 100%;
-      overflow: hidden;
+      height: auto;
+      max-height: min(420px, 62vh);
+      overflow: auto;
+      scrollbar-gutter: stable both-edges;
     }
 
     .screenshot-frame-full .screenshot-stage {
@@ -865,7 +1119,7 @@ export function renderExplorationHtml(
     }
 
     .screenshot-open {
-      background: rgb(255 255 255 / 92%);
+      background: #ffffff;
       border: 1px solid var(--line);
       border-radius: 4px;
       bottom: 8px;
@@ -879,6 +1133,21 @@ export function renderExplorationHtml(
       z-index: 2;
     }
 
+    .screenshot-reuse-note {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 700;
+      left: 8px;
+      max-width: calc(100% - 16px);
+      padding: 5px 7px;
+      position: absolute;
+      top: 8px;
+      z-index: 2;
+    }
+
     .screenshot-lightbox {
       align-items: center;
       background: rgb(30 36 48 / 82%);
@@ -886,7 +1155,7 @@ export function renderExplorationHtml(
       inset: 0;
       padding: 24px;
       position: fixed;
-      z-index: 20;
+      z-index: 1001;
     }
 
     .screenshot-lightbox:target {
@@ -950,6 +1219,7 @@ export function renderExplorationHtml(
       background: rgb(249 115 22 / 10%);
       box-sizing: border-box;
       box-shadow: 0 0 0 1px rgb(249 115 22 / 28%);
+      color: var(--warning);
       min-height: 10px;
       min-width: 10px;
       pointer-events: none;
@@ -957,21 +1227,59 @@ export function renderExplorationHtml(
     }
 
     .annotation-critical {
-      background: rgb(180 35 24 / 10%);
+      background: rgb(208 0 27 / 12%);
       border-color: var(--critical);
-      box-shadow: 0 0 0 1px rgb(180 35 24 / 30%);
+      box-shadow: 0 0 0 1px rgb(208 0 27 / 38%);
+      color: var(--critical);
     }
 
     .annotation-warning {
       background: rgb(249 115 22 / 10%);
       border-color: var(--warning-marker);
       box-shadow: 0 0 0 1px rgb(249 115 22 / 28%);
+      color: var(--warning);
     }
 
     .annotation-info {
-      background: rgb(23 92 211 / 8%);
+      background: rgb(0 95 204 / 10%);
       border-color: var(--info);
-      box-shadow: 0 0 0 1px rgb(23 92 211 / 22%);
+      box-shadow: 0 0 0 1px rgb(0 95 204 / 28%);
+      color: var(--info);
+    }
+
+    .annotation-number {
+      align-items: center;
+      background: var(--warning-marker);
+      border: 2px solid #ffffff;
+      border-radius: 999px;
+      box-shadow: 0 2px 6px rgb(0 0 0 / 24%);
+      color: #ffffff;
+      display: inline-flex;
+      font-size: 11px;
+      font-weight: 800;
+      height: 22px;
+      justify-content: center;
+      left: 0;
+      line-height: 1;
+      min-width: 22px;
+      padding: 0 5px;
+      position: absolute;
+      top: 0;
+      transform: translate(-50%, -50%);
+      z-index: 1;
+    }
+
+    .annotation-critical .annotation-number {
+      background: var(--critical);
+    }
+
+    .annotation-warning .annotation-number {
+      background: var(--warning-marker);
+      color: #111827;
+    }
+
+    .annotation-info .annotation-number {
+      background: var(--info);
     }
 
     .state-body {
@@ -1014,15 +1322,29 @@ export function renderExplorationHtml(
 
     .state-title {
       align-items: start;
+      background-color: inherit;
       display: flex;
       gap: 8px;
       justify-content: space-between;
     }
 
+    .state-title > div,
     .state-title h3 {
+      background-color: inherit;
       font-size: 14px;
       margin-bottom: 2px;
       word-break: break-word;
+    }
+
+    .state-title .url,
+    .state-body > .badges,
+    .issue-list,
+    .issue,
+    .issue .triage-title,
+    .issue .triage-title > *,
+    .issue .badges,
+    .issue .url {
+      background-color: inherit;
     }
 
     .badges {
@@ -1032,7 +1354,8 @@ export function renderExplorationHtml(
     }
 
     .badge {
-      color: var(--muted);
+      background-color: inherit;
+      color: var(--ink);
       display: inline-flex;
       font-size: 12px;
       font-weight: 600;
@@ -1048,11 +1371,11 @@ export function renderExplorationHtml(
     }
 
     .badge-critical {
-      color: var(--critical);
+      color: #d0001b;
     }
 
     .badge-warning {
-      color: var(--warning);
+      color: #c2410c;
     }
 
     .badge-info {
@@ -1060,7 +1383,7 @@ export function renderExplorationHtml(
     }
 
     .badge-ok {
-      color: var(--ok);
+      color: #05603a;
     }
 
     .issue-list,
@@ -1071,6 +1394,15 @@ export function renderExplorationHtml(
       list-style: none;
       margin: 0;
       padding: 0;
+    }
+
+    .issue-list:has(details[open]) {
+      position: relative;
+      z-index: 7;
+    }
+
+    .issue-list:has(.remediation[open]) {
+      z-index: 75;
     }
 
     .issue,
@@ -1086,6 +1418,10 @@ export function renderExplorationHtml(
 
     .issue:has(details[open]) {
       z-index: 6;
+    }
+
+    .issue:has(.remediation[open]) {
+      z-index: 85;
     }
 
     .issue code,
@@ -1107,6 +1443,72 @@ export function renderExplorationHtml(
     .finding-occurrence + .finding-occurrence {
       border-top: 1px solid var(--line);
       padding-top: 8px;
+    }
+
+    .finding-targets {
+      display: grid;
+      gap: 6px;
+      margin: 8px 0 0;
+      padding-left: 24px;
+    }
+
+    .finding-targets li::marker {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .finding-target-note {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      list-style: none;
+      margin-left: -24px;
+    }
+
+    .finding-target {
+      align-items: start;
+      display: flex;
+      gap: 8px;
+    }
+
+    .finding-marker {
+      align-items: center;
+      background: var(--ink);
+      border-radius: 999px;
+      color: #ffffff;
+      display: inline-flex;
+      flex: 0 0 auto;
+      font-size: 11px;
+      font-weight: 800;
+      height: 22px;
+      justify-content: center;
+      line-height: 1;
+      margin-top: 2px;
+      min-width: 22px;
+      padding: 0 6px;
+      white-space: nowrap;
+    }
+
+    .finding-marker-critical {
+      background: var(--critical);
+    }
+
+    .finding-marker-warning {
+      background: var(--warning-marker);
+      color: #111827;
+    }
+
+    .finding-marker-info {
+      background: var(--info);
+    }
+
+    .finding-review-note {
+      background: #fff7ed;
+      border-left: 3px solid var(--warning-marker);
+      color: #7c2d12;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 10px;
     }
 
     .finding-context {
@@ -1143,6 +1545,12 @@ export function renderExplorationHtml(
       flex-wrap: wrap;
       gap: 8px;
       margin-top: 8px;
+    }
+
+    .triage-title .issue-actions {
+      flex: 0 0 auto;
+      justify-content: flex-end;
+      margin-top: 0;
     }
 
     .copy-issue {
@@ -1241,9 +1649,12 @@ export function renderExplorationHtml(
       gap: 6px 12px;
     }
 
-    .remediation,
-    .contrast-guidance {
+    .remediation {
       position: relative;
+    }
+
+    .remediation[open] {
+      z-index: 90;
     }
 
     .remediation-body,
@@ -1252,8 +1663,30 @@ export function renderExplorationHtml(
       gap: 8px;
     }
 
-    .remediation[open] .remediation-body,
-    .contrast-guidance[open] .contrast-guidance-body {
+    .contrast-guidance-title {
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-weight: 700;
+    }
+
+    .contrast-guidance-body {
+      gap: 6px;
+    }
+
+    .contrast-guidance .contrast-measurement {
+      gap: 5px;
+    }
+
+    .contrast-guidance-markers {
+      align-items: center;
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .remediation[open] .remediation-body {
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 6px;
@@ -1265,7 +1698,7 @@ export function renderExplorationHtml(
       position: absolute;
       right: 0;
       top: calc(100% + 6px);
-      z-index: 8;
+      z-index: 100;
     }
 
     details {
@@ -1355,6 +1788,10 @@ export function renderExplorationHtml(
     }
 
     @media (min-width: 1100px) {
+      .report-header-grid {
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
+      }
+
       main {
         grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
       }
@@ -1363,16 +1800,28 @@ export function renderExplorationHtml(
       .quick-review,
       .share-review,
       .triage,
+      .keyboard-audit,
       .states {
         grid-column: 1 / -1;
       }
+
     }
   </style>
 </head>
 <body data-coverage-report-id="${escapeAttribute(`${graph.startUrl}|${graph.generatedAt}`)}">
   <header>
-    <h1>${escapeHtml(options.title || "a11y-shiftleft exploration report")}</h1>
-    <p class="muted">Generated: <time datetime="${escapeAttribute(graph.generatedAt)}">${escapeHtml(formatReportDateUtc(graph.generatedAt))}</time><br>Start URL: ${escapeHtml(graph.startUrl)}<br>Scan depth: ${escapeHtml(formatDepthScope(graph.summary.maxDepth))}<br>Scan scope: ${escapeHtml(graph.summary.scopeSelector ? `selector ${graph.summary.scopeSelector}; up to ${graph.summary.maxStates} states, ${graph.summary.statesVisited} rendered` : `up to ${graph.summary.maxStates} states, ${graph.summary.statesVisited} rendered`)}<br>Hidden elements: ${escapeHtml(formatHiddenElements(graph.summary.hideElements))}</p>
+    <div class="report-header-grid">
+      <div class="report-header-main">
+        <div class="report-product">
+          <strong>a11y-shiftleft-cli</strong>
+          <span class="muted">Visual accessibility report generated by the open-source project.</span>
+          <a href="https://github.com/olboyarshinova/a11y-shiftleft-cli" target="_blank" rel="noopener noreferrer">Project on GitHub</a>
+        </div>
+        <h1>${escapeHtml(options.title || "a11y-shiftleft exploration report")}</h1>
+        <p class="muted">Generated: <time datetime="${escapeAttribute(graph.generatedAt)}">${escapeHtml(formatReportDateUtc(graph.generatedAt))}</time><br>Start URL: ${escapeHtml(graph.startUrl)}<br>Scan depth: ${escapeHtml(formatDepthScope(graph.summary.maxDepth))}<br>Scan scope: ${escapeHtml(graph.summary.scopeSelector ? `selector ${graph.summary.scopeSelector}; up to ${graph.summary.maxStates} states, ${graph.summary.statesVisited} rendered` : `up to ${graph.summary.maxStates} states, ${graph.summary.statesVisited} rendered`)}<br>Hidden elements: ${escapeHtml(formatHiddenElements(graph.summary.hideElements))}</p>
+      </div>
+      ${renderTicketDraftsPanel(reportIssues)}
+    </div>
   </header>
   <main>
     <section class="summary" aria-label="Exploration summary">
@@ -1396,8 +1845,6 @@ export function renderExplorationHtml(
 
     ${renderQuickReview(reportIssues, options)}
 
-    ${renderShareReview()}
-
     ${renderLighthouseComparison(options.lighthouse, reportIssues)}
 
     ${renderCoverageMatrix(graph, options, reportIssues)}
@@ -1408,15 +1855,16 @@ export function renderExplorationHtml(
 
     <section class="panel states" aria-label="Checked states">
       ${states.map(renderState).join("\n")}
+      ${renderNonVisualIssues(nonVisualIssues)}
     </section>
-
-    ${renderNonVisualIssues(nonVisualIssues)}
 
     ${options.keyboard ? renderKeyboardAudit(options.keyboard) : ""}
 
     ${options.manualChecklist ? renderManualChecklist(options.manualChecklist) : ""}
 
-    <section class="panel" aria-label="Manual review note">
+    ${renderShareReview()}
+
+    <section class="panel panel-full-width coverage-note" aria-label="Manual review note">
       <h2>Coverage Note</h2>
       <p class="muted">This report shows automated exploration evidence only. It does not certify WCAG, ADA, or Section 508 compliance. Manual keyboard, screen reader, content, and task-flow review is still required.</p>
     </section>
@@ -1534,6 +1982,54 @@ export function renderExplorationHtml(
     })();
 
     (() => {
+      const paths = Array.from(document.querySelectorAll('[data-focus-path-scroll]'));
+
+      const updateScrollbar = (path) => {
+        const wrapper = path.closest('.focus-path-scroll-wrapper');
+        const track = wrapper ? wrapper.querySelector('[data-focus-path-scrollbar]') : null;
+        const thumb = track ? track.querySelector('[data-focus-path-scrollbar-thumb]') : null;
+        if (!track || !thumb) return;
+
+        const viewportWidth = path.clientWidth;
+        const contentWidth = path.scrollWidth;
+        const trackWidth = track.clientWidth;
+        const hasOverflow = contentWidth > viewportWidth + 1;
+        track.classList.toggle('focus-path-scrollbar-disabled', !hasOverflow);
+
+        if (!trackWidth || !contentWidth || !viewportWidth) return;
+
+        const thumbWidth = hasOverflow
+          ? Math.max(36, Math.round((viewportWidth / contentWidth) * trackWidth))
+          : trackWidth;
+        const maxScrollLeft = Math.max(1, contentWidth - viewportWidth);
+        const maxThumbLeft = Math.max(0, trackWidth - thumbWidth);
+        const thumbLeft = hasOverflow ? Math.round((path.scrollLeft / maxScrollLeft) * maxThumbLeft) : 0;
+
+        thumb.style.width = thumbWidth + 'px';
+        thumb.style.transform = 'translateX(' + thumbLeft + 'px)';
+      };
+
+      for (const path of paths) {
+        const wrapper = path.closest('.focus-path-scroll-wrapper');
+        const track = wrapper ? wrapper.querySelector('[data-focus-path-scrollbar]') : null;
+
+        path.addEventListener('scroll', () => updateScrollbar(path), { passive: true });
+        if (track) {
+          track.addEventListener('pointerdown', (event) => {
+            const rect = track.getBoundingClientRect();
+            const ratio = rect.width > 0 ? Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)) : 0;
+            path.scrollLeft = ratio * Math.max(0, path.scrollWidth - path.clientWidth);
+            updateScrollbar(path);
+          });
+        }
+
+        updateScrollbar(path);
+        requestAnimationFrame(() => updateScrollbar(path));
+        window.addEventListener('resize', () => updateScrollbar(path));
+      }
+    })();
+
+    (() => {
       const buttons = Array.from(document.querySelectorAll('[data-copy-issue]'));
 
       const copyText = async (text) => {
@@ -1558,7 +2054,26 @@ export function renderExplorationHtml(
           const status = button.parentElement?.querySelector('[data-copy-issue-status]');
           try {
             await copyText(decodeURIComponent(button.dataset.copyIssue || ''));
-            if (status) status.textContent = 'Copied';
+            if (status) status.textContent = 'Copied ticket draft';
+          } catch {
+            if (status) status.textContent = 'Copy failed';
+          }
+        });
+      }
+
+      const allTicketsButton = document.querySelector('[data-copy-all-ticket-drafts]');
+      const allTicketsTemplate = document.querySelector('#all-ticket-drafts');
+      if (allTicketsButton && allTicketsTemplate) {
+        allTicketsButton.addEventListener('click', async () => {
+          const status = allTicketsButton.parentElement?.querySelector('[data-copy-all-ticket-drafts-status]');
+          try {
+            const text = allTicketsTemplate.content?.textContent || allTicketsTemplate.textContent || '';
+            if (!text.trim()) {
+              if (status) status.textContent = 'Nothing to copy';
+              return;
+            }
+            await copyText(text);
+            if (status) status.textContent = 'Copied all ticket drafts';
           } catch {
             if (status) status.textContent = 'Copy failed';
           }
@@ -1574,18 +2089,39 @@ export function renderExplorationHtml(
 function renderShareReview(): string {
   return `<section class="panel share-review" aria-label="Share review copy">
     <h2>Share Review Copy</h2>
-    <p class="muted">Before sending evidence outside the team, create a smaller sanitized copy. It removes screenshots, raw keyboard data, exploration graphs, raw Lighthouse payloads, query strings, hashes, obvious local paths, and common secret patterns.</p>
+    <p class="muted">Before sending evidence outside the team, create a smaller sanitized copy. By default it removes screenshots, raw keyboard data, exploration graphs, raw Lighthouse payloads, query strings, hashes, obvious local paths, and common secret patterns.</p>
     <div class="share-review-grid">
       <div class="share-review-card">
-        <strong>Use for external review</strong>
+        <strong>Text-first review copy</strong>
         <span>Share <code>share-summary.md</code>, <code>share-report.json</code>, <code>privacy-summary.json</code>, and <code>share-evaluation-scope.json</code> when it exists.</span>
       </div>
       <div class="share-review-card">
-        <strong>Keep local by default</strong>
-        <span>Keep screenshots, full visual HTML, raw keyboard traces, and raw browser evidence inside the project unless your team has explicitly approved sharing them.</span>
+        <strong>One-file visual HTML</strong>
+        <span>Add <code>--include-html</code> only when screenshots are approved for sharing. It creates <code>share-report.html</code> with embedded screenshots.</span>
       </div>
     </div>
     <code class="share-command">npx a11y-shiftleft-cli share prepare --report reports --out a11y-share</code>
+    <code class="share-command">npx a11y-shiftleft-cli share prepare --report reports --out a11y-share --include-html</code>
+  </section>`;
+}
+
+function renderTicketDraftsPanel(issues: DedupedIssue[]): string {
+  const groups = collectTicketDraftGroups(issues);
+  if (groups.length === 0) return "";
+  const markdown = buildAllTicketDraftsMarkdown(groups);
+
+  return `<section class="panel ticket-drafts" aria-label="Ticket drafts">
+    <div class="ticket-drafts-header">
+      <div>
+        <h2>Ticket Drafts</h2>
+        <p class="muted">Copy local Markdown drafts grouped by issue type. Nothing is sent to GitHub, Jira, or Linear automatically.</p>
+      </div>
+      <div class="issue-actions">
+        <span class="copy-issue-status" data-copy-all-ticket-drafts-status aria-live="polite"></span>
+        <button class="copy-issue" type="button" title="Copy Markdown drafts grouped by issue type" data-copy-all-ticket-drafts>Copy all ticket drafts (${groups.length})</button>
+      </div>
+    </div>
+    <template id="all-ticket-drafts">${escapeHtml(markdown)}</template>
   </section>`;
 }
 
@@ -1600,7 +2136,7 @@ function renderQuickReview(issues: DedupedIssue[], options: ExplorationHtmlOptio
 
   return `<section class="panel quick-review" aria-label="Quick review">
     <h2>Quick Review</h2>
-    <p class="muted">Start here for a compact review of high-impact findings, keyboard order, and human checks. Full evidence remains in the sections below.</p>
+    <p class="muted">Compact view of priority fixes, keyboard start, and human checks.</p>
     <div class="quick-review-grid">
       <div>
         <h3>Fix First</h3>
@@ -1608,11 +2144,12 @@ function renderQuickReview(issues: DedupedIssue[], options: ExplorationHtmlOptio
       </div>
       <div>
         <h3>Keyboard Start</h3>
-        <p class="quick-review-note">First Tab stops show where keyboard users land at the start of the page. Use this to catch missing skip links, confusing focus order, or focus that is not visible.</p>
+        <p class="quick-review-note">Start here: press Tab from the top of the page, compare the first focus stops below, and confirm every focused element is visible.</p>
         ${renderQuickTabStops(tabSteps, Boolean(options.keyboard))}
       </div>
       <div>
-        <h3>Human Review Next</h3>
+        <h3>Manual Checks</h3>
+        <p class="quick-review-note">Automated scans cannot prove these; test and record evidence.</p>
         ${renderQuickManualTasks(manualTasks)}
       </div>
     </div>
@@ -1779,16 +2316,10 @@ function renderQuickFindings(groups: QuickFindingGroup[]): string {
     const ownershipText = issue.ownership?.kind === "third-party-embed"
       ? `<span class="focus-path-meta">Third-party embed; verify ownership before assigning</span>`
       : "";
-    const impactText = issue.userImpact?.level
-      ? `<span class="focus-path-meta">Impact: ${escapeHtml(issue.userImpact.level)}</span>`
-      : "";
-    const fixScopeText = formatQuickFixScope(group);
     return `<li class="quick-review-item quick-review-item-${issue.severity}">
       ${label} ${severityBadge(issue.severity)}
       ${countText}
       ${pageText}
-      ${impactText}
-      ${fixScopeText}
       ${ownershipText}
       <span class="focus-path-meta">${escapeHtml(issue.message)}</span>
       ${level ? `<span class="focus-path-meta">WCAG Level ${escapeHtml(level)}</span>` : ""}
@@ -1805,55 +2336,43 @@ function quickTarget(issue: DedupedIssue): string {
   return issue.file || issue.selector || "";
 }
 
-function formatQuickFixScope(group: QuickFindingGroup): string {
-  if (group.issue.ownership?.kind === "third-party-embed") {
-    return `<span class="focus-path-meta">Fix scope: third-party embed</span>`;
-  }
-
-  if (group.pages.size > 1 && group.targets.size <= 1) {
-    return `<span class="focus-path-meta">Fix scope: likely shared UI</span>`;
-  }
-
-  if (group.pages.size > 1) {
-    return `<span class="focus-path-meta">Fix scope: cross-page pattern</span>`;
-  }
-
-  if (group.count > 1) {
-    return `<span class="focus-path-meta">Fix scope: repeated local pattern</span>`;
-  }
-
-  return "";
-}
-
 function renderQuickTabStops(steps: KeyboardAuditResult["steps"], included: boolean): string {
   if (!included) return `<p class="muted">Keyboard evidence was not included.</p>`;
   if (steps.length === 0) return `<p class="muted">No forward Tab stops were recorded.</p>`;
-  return `<ol class="quick-review-list">${steps.map((step, index) => {
+  const items = steps.map((step, index) => {
     const risk = !step.indicatorVisible || step.obscured || !step.visible;
     return `<li class="quick-review-item${risk ? " quick-review-item-warning" : ""}">
       <strong>${index + 1}. ${escapeHtml(step.accessibleName || step.selector || "Unnamed control")}</strong>
       <span class="focus-path-meta">${escapeHtml(step.role || step.tagName)}${risk ? " · review focus visibility" : ""}</span>
     </li>`;
-  }).join("")}</ol>`;
+  }).join("");
+  return `<ol class="quick-review-list">${items}</ol>
+    <p class="quick-review-note">
+      <strong>Do:</strong> verify this order manually with Tab and Shift+Tab.
+      <span class="quick-review-action">Fix first if focus disappears, lands on hidden content, or jumps out of the expected visual order.</span>
+      <a class="quick-review-link" href="#keyboard-audit">Open full keyboard audit</a>
+    </p>`;
 }
 
 function renderQuickManualTasks(items: ManualChecklist["items"]): string {
   if (items.length === 0) return `<p class="muted">No manual-review checklist was included.</p>`;
   return `<ol class="quick-review-list">${items.map((item) => {
-    const firstTarget = item.targets?.[0];
-    const title = firstTarget
-      ? `<a href="#${escapeAttribute(firstTarget.stateId)}">${escapeHtml(item.title)}</a>`
-      : `<strong>${escapeHtml(item.title)}</strong>`;
+    const targetCount = item.targets?.length || 0;
+    const firstStep = item.steps[0] || "Run the manual review steps for this area.";
+    const firstEvidence = item.evidence[0] || "Record notes, screenshots, or issue links.";
     return `<li class="quick-review-item">
-      ${title}
-      <span class="focus-path-meta">${item.targets?.length ? `${item.targets.length} observed target${item.targets.length === 1 ? "" : "s"}` : "Choose a representative target"}</span>
+      <strong>${escapeHtml(item.title)}</strong>
+      <span class="focus-path-meta">${targetCount ? `${targetCount} observed target${targetCount === 1 ? "" : "s"}` : "Choose a representative target"}</span>
+      <span class="quick-review-action"><strong>Do:</strong> ${escapeHtml(firstStep)}</span>
+      <span class="quick-review-evidence"><strong>Record:</strong> ${escapeHtml(firstEvidence)}</span>
+      <a class="quick-review-link" href="#manual-review-checklist">Open full checklist</a>
     </li>`;
   }).join("")}</ol>`;
 }
 
 function renderKeyboardAudit(audit: KeyboardAuditResult): string {
   const attempts = audit.activationAttempts || [];
-  return `<section class="panel" aria-label="Keyboard audit">
+  return `<section class="panel keyboard-audit" id="keyboard-audit" aria-label="Keyboard audit">
     <h2>Keyboard Audit</h2>
     <p class="muted">Bounded keyboard evidence for the first Tab path. Use this to spot invisible focus, obscured controls, keyboard traps, and unexpected focus order.</p>
     ${renderKeyboardReviewSummary(audit)}
@@ -1937,7 +2456,12 @@ function renderKeyboardFocusPath(steps: KeyboardAuditResult["steps"]): string {
   return `<div aria-label="Visual Tab order">
     <h3>Visual Tab Order</h3>
     <p class="muted">Follow the numbered controls from left to right. Orange steps require review.</p>
-    <ol class="focus-path">${items}</ol>
+    <div class="focus-path-scroll-wrapper">
+      <ol class="focus-path" tabindex="0" aria-label="Forward keyboard focus path" data-focus-path-scroll>${items}</ol>
+      <div class="focus-path-scrollbar" aria-hidden="true" data-focus-path-scrollbar>
+        <span class="focus-path-scrollbar-thumb" data-focus-path-scrollbar-thumb></span>
+      </div>
+    </div>
     ${truncated}
   </div>`;
 }
@@ -2091,18 +2615,24 @@ function coverageRow(
 
 function renderManualChecklist(checklist: ManualChecklist): string {
   const targetedItems = checklist.items.filter((item) => item.targets?.length).length;
-  return `<section class="panel" aria-label="Manual review checklist">
+  return `<section class="panel panel-full-width manual-review-checklist" id="manual-review-checklist" aria-label="Manual review checklist">
     <h2>Manual Review Checklist</h2>
     <p class="muted">Automated checks cover only part of accessibility. ${targetedItems > 0 ? `${targetedItems} review area${targetedItems === 1 ? " has" : "s have"} observed targets from this audit.` : "Choose representative targets for the areas below."} Record human review evidence and outcomes.</p>
     <p class="manual-checklist-progress" data-manual-checklist-progress>Manual checks remaining: ${checklist.items.length} of ${checklist.items.length}.</p>
     ${renderManualEnvironmentTemplate()}
-    ${checklist.items.map((item) => `<details class="manual-checklist-item" data-manual-checklist-item="${escapeAttribute(item.id)}">
-      <summary><input type="checkbox" aria-label="Mark ${escapeAttribute(item.title)} as reviewed" data-manual-checklist-checkbox> <span>${escapeHtml(item.title)} (${escapeHtml(item.wcag.join(", "))})${item.targets?.length ? ` — ${item.targets.length} target${item.targets.length === 1 ? "" : "s"}` : ""}</span></summary>
-      <p>${escapeHtml(item.whyManual)}</p>
-      ${renderManualTargets(item.targets)}
-      <ol>${item.steps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}</ol>
-      <p class="muted">Suggested evidence: ${escapeHtml(item.evidence.join("; "))}</p>
-    </details>`).join("")}
+    ${checklist.items.map((item) => `<article class="manual-checklist-item" data-manual-checklist-item="${escapeAttribute(item.id)}">
+      <div class="manual-checklist-header">
+        <input type="checkbox" aria-label="Mark ${escapeAttribute(item.title)} as reviewed" data-manual-checklist-checkbox>
+        <span class="manual-checklist-title">${escapeHtml(item.title)} (${escapeHtml(item.wcag.join(", "))})${item.targets?.length ? ` — ${item.targets.length} target${item.targets.length === 1 ? "" : "s"}` : ""}</span>
+      </div>
+      <details>
+        <summary>Review guidance</summary>
+        <p>${escapeHtml(item.whyManual)}</p>
+        ${renderManualTargets(item.targets)}
+        <ol>${item.steps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}</ol>
+        <p class="muted">Suggested evidence: ${escapeHtml(item.evidence.join("; "))}</p>
+      </details>
+    </article>`).join("")}
   </section>`;
 }
 
@@ -2175,7 +2705,7 @@ function renderState(state: StateViewModel): string {
         : ""}
       ${state.visualDuplicateOf ? `<span class="badge">visual reused from ${escapeHtml(state.visualDuplicateOf)}</span>` : ""}
     </div>
-    ${renderIssues(state.issues)}
+    ${renderIssues(state.issues, state.annotationNumberByIssueKey)}
     ${renderAccessibilityTreeEvidence(state)}
     ${renderReflowEvidence(state)}
     ${renderForcedColorsEvidence(state)}
@@ -2433,7 +2963,11 @@ function renderEvidenceFrame(
   index: number
 ): string {
   const previewAnnotations = annotationsForEvidence(state, evidence.path, evidence);
-  const lightboxAnnotations = annotationsForEvidence(state, evidence.path);
+  const lightboxAnnotations = annotationsForEvidence(state, evidence.path, evidence);
+  const reusedFrom = inferStateIdFromScreenshot(evidence.path);
+  const reuseNote = reusedFrom && reusedFrom !== state.id
+    ? `<span class="screenshot-reuse-note">Reused visual evidence from ${escapeHtml(reusedFrom)}</span>`
+    : "";
   const targetId = index === 0
     ? `screenshot-${state.id}`
     : `screenshot-${state.id}-${index + 1}`;
@@ -2441,11 +2975,11 @@ function renderEvidenceFrame(
   const frameClass = fullPage
     ? "screenshot-frame screenshot-frame-full"
     : "screenshot-frame";
-  const frameStyle = !fullPage && evidence.width && evidence.height
+  const frameStyle = evidence.width && evidence.height
     ? ` style="--screenshot-aspect: ${evidence.width} / ${evidence.height}"`
     : "";
   const openLabel = fullPage
-    ? "Open full-page evidence"
+    ? "Open scrollable full-page screenshot"
     : evidence.kind === "evidence-crop"
       ? `Open focused evidence ${index + 1}`
       : "Open annotated screenshot";
@@ -2462,6 +2996,7 @@ function renderEvidenceFrame(
         ${renderAnnotationLayer(previewAnnotations)}
       </div>
     </div>
+    ${reuseNote}
     <a class="screenshot-open" href="#${escapeAttribute(targetId)}">${openLabel}</a>
   </div>
   ${renderAnnotatedScreenshotView(state, evidence.path, lightboxAnnotations, targetId)}`;
@@ -2473,12 +3008,24 @@ function annotationsForEvidence(
   evidence?: NonNullable<ExplorationState["screenshotEvidence"]>[number]
 ): string {
   const matchingIssues = state.issues.filter((issue) => issue.screenshot === screenshot);
-  const issues = matchingIssues.length > 0 ? matchingIssues : state.issues;
+  const hasSpecificEvidence = Boolean(state.screenshotEvidence?.length);
+  const issues = matchingIssues.length > 0 || hasSpecificEvidence
+    ? matchingIssues
+    : state.issues;
 
   return issues
     .filter((issue) => issue.elementBounds)
+    .sort(compareIssuesForAnnotationOrder)
+    .filter((issue, index, sortedIssues) =>
+      sortedIssues.findIndex((candidate) => annotationVisualKey(candidate) === annotationVisualKey(issue)) === index
+    )
     .slice(0, 12)
-    .map((issue, index) => renderAnnotation(issue, index + 1, evidence))
+    .map((issue, index) => renderAnnotation(
+      issue,
+      state.annotationNumberByIssueKey[annotationIssueKey(issue)] || index + 1,
+      evidence,
+      state.annotationSeverityByKey[annotationSeverityKey(issue)]
+    ))
     .join("\n");
 }
 
@@ -2516,20 +3063,22 @@ function renderAnnotationLayer(annotations: string): string {
 function renderAnnotation(
   issue: DedupedIssue,
   index: number,
-  evidence?: NonNullable<ExplorationState["screenshotEvidence"]>[number]
+  evidence?: NonNullable<ExplorationState["screenshotEvidence"]>[number],
+  severityOverride?: Severity
 ): string {
   const bounds = issue.elementBounds;
   if (!bounds) return "";
+  const severity = severityOverride || issue.severity;
 
   const renderedBounds = evidence?.width && evidence.height && evidence.kind !== "full-page"
     ? transformBoundsForContainedPreview(bounds, evidence.width, evidence.height, evidence.width / evidence.height)
     : bounds;
 
   return `<span
-    class="annotation annotation-${issue.severity}"
-    title="${escapeAttribute(`${index}. ${issue.severity} ${issue.ruleId}: ${issue.message}`)}"
+    class="annotation annotation-${severity}"
+    title="${escapeAttribute(`${index}. ${severity} ${issue.ruleId}: ${issue.message}`)}"
     style="${formatBoundsStyle(renderedBounds)}"
-  ></span>`;
+  ><span class="annotation-number">${index}</span></span>`;
 }
 
 export function transformBoundsForContainedPreview(
@@ -2609,7 +3158,7 @@ function renderTopStates(states: StateViewModel[]): string {
       if (b.issues.length !== a.issues.length) return b.issues.length - a.issues.length;
       return a.id.localeCompare(b.id);
     })
-    .slice(0, 6);
+    .slice(0, 4);
 
   if (rankedStates.length === 0) {
     return `<p class="muted">No affected states were detected by automated exploration.</p>`;
@@ -2622,26 +3171,27 @@ function renderTopStates(states: StateViewModel[]): string {
         <div class="triage-title">
           <a href="#${escapeAttribute(state.id)}"><strong>${escapeHtml(state.id)}</strong></a>
         </div>
-        <div class="url">${escapeHtml(state.url)}</div>
         <div class="badges">
           ${summary.critical ? badge("critical", `${summary.critical} critical`) : ""}
           ${summary.warning ? badge("warning", `${summary.warning} warning`) : ""}
           ${summary.info ? badge("info", `${summary.info} info`) : ""}
         </div>
+        <div class="url">${escapeHtml(state.url)}</div>
       </li>`;
     }).join("\n")}
   </ol>`;
 }
 
 function renderTopRules(issues: DedupedIssue[]): string {
-  const ruleSummaries = summarizeRules(issues).slice(0, 8);
+  const ruleSummaries = summarizeRules(issues).slice(0, 6);
 
   if (ruleSummaries.length === 0) {
     return `<p class="muted">No rule findings were detected by automated exploration.</p>`;
   }
 
   return `<ol class="triage-list">
-    ${ruleSummaries.map((rule) => `<li class="triage-item">
+    ${ruleSummaries.map((rule) => {
+      return `<li class="triage-item">
       <div class="triage-title">
         <code>${escapeHtml(rule.ruleId)}</code>
       </div>
@@ -2653,11 +3203,15 @@ function renderTopRules(issues: DedupedIssue[]): string {
       </div>
       ${rule.criteria.length > 0 ? `<div class="url">${escapeHtml(rule.criteria.join(", "))}</div>` : ""}
       ${rule.states.length > 0 ? `<div class="url">States: ${rule.states.map((stateId) => `<a href="#${escapeAttribute(stateId)}">${escapeHtml(stateId)}</a>`).join(", ")}</div>` : ""}
-    </li>`).join("\n")}
+    </li>`;
+    }).join("\n")}
   </ol>`;
 }
 
-function renderIssues(issues: DedupedIssue[]): string {
+function renderIssues(
+  issues: DedupedIssue[],
+  annotationNumberByIssueKey: Record<string, number> = {}
+): string {
   if (issues.length === 0) {
     return `<p class="muted">No automated findings in this state.</p>`;
   }
@@ -2674,25 +3228,50 @@ function renderIssues(issues: DedupedIssue[]): string {
   const remainingGroups = rankedGroups.slice(8);
 
   return `<ul class="issue-list">
-    ${visibleGroups.map(([ruleId, groupIssues]) => renderStateIssueGroup(ruleId, groupIssues)).join("\n")}
+    ${visibleGroups.map(([ruleId, groupIssues]) => renderStateIssueGroup(ruleId, groupIssues, annotationNumberByIssueKey)).join("\n")}
   </ul>
   ${remainingGroups.length > 0 ? `<details>
     <summary>Show ${remainingGroups.length} more rule group${remainingGroups.length === 1 ? "" : "s"}</summary>
-    <ul class="issue-list">${remainingGroups.map(([ruleId, groupIssues]) => renderStateIssueGroup(ruleId, groupIssues)).join("\n")}</ul>
+    <ul class="issue-list">${remainingGroups.map(([ruleId, groupIssues]) => renderStateIssueGroup(ruleId, groupIssues, annotationNumberByIssueKey)).join("\n")}</ul>
   </details>` : ""}`;
 }
 
 function renderNonVisualIssues(issues: DedupedIssue[]): string {
   if (issues.length === 0) return "";
-  return `<section class="panel" aria-label="Non-visual findings">
-    <h2>Non-visual Findings</h2>
-    <p class="muted">These source or keyboard findings are not tied to a captured browser state.</p>
-    ${renderIssues(issues)}
-  </section>`;
+  const issueSummary = summarizeIssues(issues);
+  const stateSeverity = issueSummary.critical > 0
+    ? "critical"
+    : issueSummary.warning > 0
+      ? "warning"
+      : "info";
+  const issueBadges = [
+    issueSummary.critical ? badge("critical", `${issueSummary.critical} critical`) : "",
+    issueSummary.warning ? badge("warning", `${issueSummary.warning} warning`) : "",
+    issueSummary.info ? badge("info", `${issueSummary.info} info`) : ""
+  ].filter(Boolean).join("");
+
+  return `<article class="state state-${stateSeverity} non-visual-findings" aria-label="Non-visual findings">
+    <div class="non-visual-finding-summary">Source and keyboard findings</div>
+    <div class="state-body">
+      <div class="state-title">
+        <div>
+          <h3>Non-visual Findings</h3>
+          <p class="muted">These findings are not tied to a captured browser screenshot.</p>
+        </div>
+      </div>
+      <div class="badges">${issueBadges}</div>
+      ${renderIssues(issues)}
+    </div>
+  </article>`;
 }
 
-function renderStateIssueGroup(ruleId: string, issues: DedupedIssue[]): string {
+function renderStateIssueGroup(
+  ruleId: string,
+  issues: DedupedIssue[],
+  annotationNumberByIssueKey: Record<string, number> = {}
+): string {
   const sortedIssues = [...issues].sort(compareIssuesForTriage);
+  const displayGroups = groupStateIssuesForDisplay(sortedIssues);
   const summary = summarizeIssues(sortedIssues);
   const colorSchemes = [...new Set(sortedIssues.map((issue) => issue.colorScheme).filter(Boolean))];
   const criteria = uniqueWcagCriteria(sortedIssues);
@@ -2700,21 +3279,16 @@ function renderStateIssueGroup(ruleId: string, issues: DedupedIssue[]): string {
   const findingTypes = [...new Set(sortedIssues.map((issue) => issue.findingType))];
   const ownershipLabels = [...new Set(sortedIssues.map((issue) => issue.ownership?.label).filter(Boolean))];
   const occurrences = `<ul class="finding-occurrences">
-    ${sortedIssues.map((issue) => `<li class="finding-occurrence">
-      ${sortedIssues.length > 1 ? `<div>${severityBadge(issue.severity)} ${findingTypeBadge(issue.findingType)}</div>` : ""}
-      ${sortedIssues.length > 1 && issue.colorScheme ? `<div class="badges"><span class="badge">${escapeHtml(issue.colorScheme)} color scheme</span></div>` : ""}
-      <div>${escapeHtml(issue.message)}</div>
-      ${issue.selector || issue.file ? `<div class="url">${escapeHtml(issue.selector || issue.file || "")}</div>` : ""}
-      ${renderOwnership(issue)}
-      ${renderHumanVerificationContext(issue)}
-      ${sortedIssues.length > 1 ? "" : renderContrastEvidence(issue)}
-    </li>`).join("\n")}
+    ${displayGroups.map((group) => renderFindingOccurrenceGroup(group, sortedIssues.length, annotationNumberByIssueKey)).join("\n")}
   </ul>`;
 
   return `<li class="issue">
     <div class="triage-title">
-      <code>${escapeHtml(ruleId)}</code>
-      ${sortedIssues.length > 1 ? `<span class="badge">${sortedIssues.length} occurrences</span>` : ""}
+      <div class="triage-title-main">
+        <code>${escapeHtml(ruleId)}</code>
+        ${sortedIssues.length > 1 ? `<span class="badge">${sortedIssues.length} occurrences</span>` : ""}
+      </div>
+      ${renderCopyIssueAction(ruleId, sortedIssues)}
     </div>
     <div class="badges">
       ${summary.critical ? badge("critical", `${summary.critical} critical`) : ""}
@@ -2726,13 +3300,110 @@ function renderStateIssueGroup(ruleId: string, issues: DedupedIssue[]): string {
       ${ownershipLabels.map((label) => `<span class="badge">${escapeHtml(label || "")}</span>`).join("")}
     </div>
     ${renderWcagCriteria(criteria)}
+    ${sortedIssues.some((issue) => issue.findingType === "needs-review") ? renderNeedsReviewNote(sortedIssues) : ""}
     ${sortedIssues.length > 1
       ? `<details open><summary>Affected findings (${sortedIssues.length})</summary>${occurrences}</details>`
       : occurrences}
-    ${renderCopyIssueAction(ruleId, sortedIssues)}
-    ${sortedIssues.length > 1 ? renderGroupedContrastGuidance(sortedIssues) : ""}
+    ${sortedIssues.length > 1 ? renderGroupedContrastGuidance(sortedIssues, annotationNumberByIssueKey) : ""}
     ${renderRemediation(sortedIssues[0])}
   </li>`;
+}
+
+function groupStateIssuesForDisplay(issues: DedupedIssue[]): Array<{ key: string; representative: DedupedIssue; issues: DedupedIssue[] }> {
+  const groups = new Map<string, { key: string; representative: DedupedIssue; issues: DedupedIssue[] }>();
+
+  for (const issue of issues) {
+    const key = stateIssueDisplayKey(issue);
+    const existing = groups.get(key);
+    if (existing) {
+      existing.issues.push(issue);
+    } else {
+      groups.set(key, { key, representative: issue, issues: [issue] });
+    }
+  }
+
+  return [...groups.values()];
+}
+
+function stateIssueDisplayKey(issue: DedupedIssue): string {
+  return JSON.stringify({
+    severity: issue.severity,
+    findingType: issue.findingType,
+    message: normalizeIssueMessageForDisplay(issue.message),
+    colorScheme: issue.colorScheme || "",
+    wcag: (issue.wcagCriteria || []).map((criterion) => `${criterion.id}:${criterion.level}`).sort(),
+    ownership: issue.ownership
+      ? `${issue.ownership.kind}:${issue.ownership.source || ""}:${issue.ownership.label}`
+      : ""
+  });
+}
+
+function renderFindingOccurrenceGroup(
+  group: { representative: DedupedIssue; issues: DedupedIssue[] },
+  totalRuleIssues: number,
+  annotationNumberByIssueKey: Record<string, number> = {}
+): string {
+  const issue = group.representative;
+  const grouped = group.issues.length > 1;
+  return `<li class="finding-occurrence">
+      ${totalRuleIssues > 1 ? `<div>${severityBadge(issue.severity)} ${findingTypeBadge(issue.findingType)}${grouped ? ` <span class="badge">${group.issues.length} locations</span>` : ""}</div>` : ""}
+      ${totalRuleIssues > 1 && issue.colorScheme ? `<div class="badges"><span class="badge">${escapeHtml(issue.colorScheme)} color scheme</span></div>` : ""}
+      <div>${escapeHtml(normalizeIssueMessageForDisplay(issue.message))}</div>
+      ${grouped ? renderFindingTargets(group.issues, annotationNumberByIssueKey) : renderFindingTarget(group.issues[0], annotationNumberByIssueKey)}
+      ${renderOwnership(issue)}
+      ${renderHumanVerificationContext(issue)}
+      ${totalRuleIssues > 1 ? "" : renderContrastEvidence(issue, annotationNumberByIssueKey)}
+    </li>`;
+}
+
+function renderFindingTargets(
+  issues: DedupedIssue[],
+  annotationNumberByIssueKey: Record<string, number> = {}
+): string {
+  const markedCount = issues.filter((issue) => annotationNumberByIssueKey[annotationIssueKey(issue)]).length;
+  const markerNote = markedCount > 0 && markedCount < issues.length
+    ? `<li class="finding-target-note">${markedCount} of ${issues.length} shown on screenshots</li>`
+    : "";
+  return `<ol class="finding-targets">
+    ${issues.map((issue) => `<li>${renderFindingTarget(issue, annotationNumberByIssueKey)}</li>`).join("\n")}
+    ${markerNote}
+  </ol>`;
+}
+
+function renderNeedsReviewNote(issues: DedupedIssue[]): string {
+  const incomplete = issues.some((issue) => issue.tags?.includes("axe-incomplete"));
+  const text = incomplete
+    ? "Needs review means axe could not complete this check automatically. Treat it as evidence to verify, not as a confirmed WCAG failure."
+    : "Needs review means this item requires human confirmation before treating it as a confirmed accessibility defect.";
+  return `<aside class="finding-review-note">${escapeHtml(text)}</aside>`;
+}
+
+function renderFindingTarget(
+  issue: DedupedIssue,
+  annotationNumberByIssueKey: Record<string, number> = {}
+): string {
+  const target = issue.selector || issue.file;
+  const label = extractIssueLabel(issue.message);
+  const contrast = issue.contrast
+    ? ` · Contrast ${issue.contrast.actualRatio}:1, required ${issue.contrast.requiredRatio}:1`
+    : "";
+  const labelText = label ? ` · Label: "${label}"` : "";
+  const markerNumber = annotationNumberByIssueKey[annotationIssueKey(issue)];
+  const marker = markerNumber
+    ? `<span class="finding-marker finding-marker-${issue.severity}" title="Screenshot marker ${markerNumber}">${markerNumber}</span>`
+    : "";
+  const text = target
+    ? `${target}${labelText}${contrast}`
+    : `Target not available${labelText}${contrast}`;
+  return `<div class="finding-target">${marker}<div class="url">${escapeHtml(text)}</div></div>`;
+}
+
+function normalizeIssueMessageForDisplay(message: string): string {
+  return message.replace(/\s+Label:\s*"[^"]*"\.?$/u, ".").replace(/\.\.$/u, ".");
+}
+
+function extractIssueLabel(message: string): string | undefined {
+  return message.match(/\s+Label:\s*"([^"]*)"\.?$/u)?.[1];
 }
 
 function uniqueWcagCriteria(issues: DedupedIssue[]): DedupedIssue["wcagCriteria"] {
@@ -2787,9 +3458,62 @@ function renderHumanVerificationContext(issue: DedupedIssue): string {
 function renderCopyIssueAction(ruleId: string, issues: DedupedIssue[]): string {
   const markdown = buildIssueMarkdown(ruleId, issues);
   return `<div class="issue-actions">
-    <button class="copy-issue" type="button" data-copy-issue="${escapeAttribute(encodeURIComponent(markdown))}">Copy issue</button>
+    <button class="copy-issue" type="button" title="Copy a GitHub/Jira-ready Markdown summary" data-copy-issue="${escapeAttribute(encodeURIComponent(markdown))}">Copy for ticket</button>
     <span class="copy-issue-status" data-copy-issue-status aria-live="polite"></span>
   </div>`;
+}
+
+function collectTicketDraftGroups(issues: DedupedIssue[]): Array<{ key: string; ruleId: string; issues: DedupedIssue[] }> {
+  const groups = new Map<string, { key: string; ruleId: string; issues: DedupedIssue[] }>();
+
+  for (const issue of issues) {
+    const key = ticketDraftTypeKey(issue);
+    const existing = groups.get(key);
+    if (existing) {
+      existing.issues.push(issue);
+    } else {
+      groups.set(key, { key, ruleId: issue.ruleId, issues: [issue] });
+    }
+  }
+
+  return [...groups.values()].sort((left, right) => compareIssueGroupEntries(
+    [left.ruleId, left.issues],
+    [right.ruleId, right.issues]
+  ));
+}
+
+function ticketDraftTypeKey(issue: DedupedIssue): string {
+  return JSON.stringify({
+    ruleId: issue.ruleId,
+    findingType: issue.findingType,
+    message: normalizeIssueMessageForDisplay(issue.message),
+    wcag: (issue.wcagCriteria || []).map((criterion) => `${criterion.id}:${criterion.level}`).sort(),
+    ownership: issue.ownership?.kind || ""
+  });
+}
+
+function buildAllTicketDraftsMarkdown(groups: Array<{ ruleId: string; issues: DedupedIssue[] }>): string {
+  const lines = [
+    "# Accessibility Ticket Drafts",
+    "",
+    `Generated by a11y-shiftleft-cli for ${groups.length} finding group${groups.length === 1 ? "" : "s"}.`,
+    "",
+    "Paste each section into GitHub Issues, Jira, Linear, or your team tracker.",
+    ""
+  ];
+
+  for (const [index, group] of groups.entries()) {
+    lines.push(
+      "---",
+      "",
+      `<!-- Ticket draft ${index + 1} of ${groups.length} -->`,
+      "",
+      buildIssueMarkdown(group.ruleId, group.issues),
+      ""
+    );
+  }
+
+  return lines.join("\n").trim();
 }
 
 function buildIssueMarkdown(ruleId: string, issues: DedupedIssue[]): string {
@@ -2802,7 +3526,9 @@ function buildIssueMarkdown(ruleId: string, issues: DedupedIssue[]): string {
     primary.framework,
     { helpUrl: primary.helpUrl }
   );
-  const targets = [...new Set(issues.map((issue) => issue.selector || issue.file || "unknown target"))].slice(0, 5);
+  const allTargets = [...new Set(issues.map(formatIssueTargetForMarkdown))];
+  const visibleTargets = allTargets.slice(0, 10);
+  const hiddenTargetCount = Math.max(0, allTargets.length - visibleTargets.length);
   const wcag = criteria.length > 0
     ? criteria.map((criterion) => `- WCAG ${criterion.id} ${criterion.title} (${criterion.level}): ${criterion.url}`)
     : ["- No WCAG mapping available."];
@@ -2820,7 +3546,7 @@ function buildIssueMarkdown(ruleId: string, issues: DedupedIssue[]): string {
   const lines: Array<string | undefined> = [
     `## ${ruleId}`,
     "",
-    primary.message,
+    normalizeIssueMessageForDisplay(primary.message),
     "",
     "### Evidence",
     "",
@@ -2834,7 +3560,8 @@ function buildIssueMarkdown(ruleId: string, issues: DedupedIssue[]): string {
     "",
     "### Targets",
     "",
-    ...targets.map((target) => `- \`${target}\``),
+    ...visibleTargets.map((target) => `- ${target}`),
+    hiddenTargetCount ? `- ...and ${hiddenTargetCount} more target${hiddenTargetCount === 1 ? "" : "s"}` : undefined,
     "",
     "### WCAG",
     "",
@@ -2851,6 +3578,18 @@ function buildIssueMarkdown(ruleId: string, issues: DedupedIssue[]): string {
   ];
 
   return lines.filter((line): line is string => line !== undefined).join("\n");
+}
+
+function formatIssueTargetForMarkdown(issue: DedupedIssue): string {
+  const target = issue.selector || issue.file || "unknown target";
+  const context = [
+    issue.url ? `page: ${issue.url}` : undefined,
+    issue.stateId ? `state: ${issue.stateId}${issue.stateLabel ? ` (${issue.stateLabel})` : ""}` : undefined
+  ].filter((value): value is string => Boolean(value));
+  const label = extractIssueLabel(issue.message);
+  const labelText = label ? `; label: "${label}"` : "";
+  const contextText = context.length > 0 ? ` (${context.join("; ")}${labelText})` : labelText ? ` (${labelText.slice(2)})` : "";
+  return `\`${target}\`${contextText}`;
 }
 
 function renderRemediation(issue: DedupedIssue): string {
@@ -2895,11 +3634,14 @@ function safeExternalUrl(value: string): string | undefined {
   }
 }
 
-function renderContrastEvidence(issue: DedupedIssue): string {
+function renderContrastEvidence(
+  issue: DedupedIssue,
+  annotationNumberByIssueKey: Record<string, number> = {}
+): string {
   const contrast = issue.contrast;
   if (!contrast) return "";
 
-  return renderContrastGuidance(contrast);
+  return renderContrastGuidance(contrast, renderContrastGuidanceMarkers([issue], annotationNumberByIssueKey));
 }
 
 function renderContrastMeasurement(contrast: NonNullable<DedupedIssue["contrast"]>): string {
@@ -2914,8 +3656,11 @@ function renderContrastMeasurement(contrast: NonNullable<DedupedIssue["contrast"
   </div>`;
 }
 
-function renderGroupedContrastGuidance(issues: DedupedIssue[]): string {
-  const groups = new Map<string, { contrast: NonNullable<DedupedIssue["contrast"]>; count: number }>();
+function renderGroupedContrastGuidance(
+  issues: DedupedIssue[],
+  annotationNumberByIssueKey: Record<string, number> = {}
+): string {
+  const groups = new Map<string, { contrast: NonNullable<DedupedIssue["contrast"]>; issues: DedupedIssue[] }>();
 
   for (const issue of issues) {
     if (!issue.contrast) continue;
@@ -2926,20 +3671,47 @@ function renderGroupedContrastGuidance(issues: DedupedIssue[]): string {
       suggestions: issue.contrast.suggestions
     });
     const existing = groups.get(key);
-    if (existing) existing.count += 1;
-    else groups.set(key, { contrast: issue.contrast, count: 1 });
+    if (existing) existing.issues.push(issue);
+    else groups.set(key, { contrast: issue.contrast, issues: [issue] });
   }
 
   if (groups.size === 0) return "";
-  return [...groups.values()].map(({ contrast, count }) => (
+  return [...groups.values()].map(({ contrast, issues: groupedIssues }) => (
     `<div class="contrast-guidance-group">
-      ${count > 1 ? `<div class="url">Shared recommendation for ${count} findings</div>` : ""}
-      ${renderContrastGuidance(contrast)}
+      ${groupedIssues.length > 1 ? `<div class="url">Shared recommendation for ${groupedIssues.length} findings</div>` : ""}
+      ${renderContrastGuidance(contrast, renderContrastGuidanceMarkers(groupedIssues, annotationNumberByIssueKey))}
     </div>`
   )).join("\n");
 }
 
-function renderContrastGuidance(contrast: NonNullable<DedupedIssue["contrast"]>): string {
+function renderContrastGuidanceMarkers(
+  issues: DedupedIssue[],
+  annotationNumberByIssueKey: Record<string, number>
+): string {
+  const markers = issues
+    .map((issue) => ({
+      number: annotationNumberByIssueKey[annotationIssueKey(issue)],
+      severity: issue.severity
+    }))
+    .filter((marker): marker is { number: number; severity: Severity } => Boolean(marker.number))
+    .sort((left, right) => left.number - right.number);
+  const uniqueMarkers = new Map<number, Severity>();
+  for (const marker of markers) {
+    const current = uniqueMarkers.get(marker.number);
+    if (!current || severityValue(marker.severity) > severityValue(current)) {
+      uniqueMarkers.set(marker.number, marker.severity);
+    }
+  }
+  if (uniqueMarkers.size === 0) return "";
+  return `<span class="contrast-guidance-markers" aria-label="Screenshot markers">
+    ${[...uniqueMarkers.entries()].map(([number, severity]) => `<span class="finding-marker finding-marker-${severity}" title="Screenshot marker ${number}">${number}</span>`).join("")}
+  </span>`;
+}
+
+function renderContrastGuidance(
+  contrast: NonNullable<DedupedIssue["contrast"]>,
+  markers = ""
+): string {
   const suggestions = contrast.suggestions.length > 0
     ? `<div class="contrast-suggestions">
       ${contrast.suggestions.map((suggestion) => `<span class="contrast-color">
@@ -2949,8 +3721,8 @@ function renderContrastGuidance(contrast: NonNullable<DedupedIssue["contrast"]>)
     </div>`
     : `<div class="muted">No reliable single-color suggestion is available. Review this contrast manually.</div>`;
 
-  return `<details class="contrast-evidence contrast-guidance">
-    <summary>Color recommendations</summary>
+  return `<div class="contrast-evidence contrast-guidance">
+    <div class="contrast-guidance-title"><span>Color recommendations</span>${markers}</div>
     <div class="contrast-guidance-body">
       ${renderContrastMeasurement(contrast)}
       <div><strong>Suggested accessible colors</strong></div>
@@ -2958,7 +3730,7 @@ function renderContrastGuidance(contrast: NonNullable<DedupedIssue["contrast"]>)
       ${suggestions}
       <div class="url">Review design tokens and hover, focus, disabled, and visited states before applying.</div>
     </div>
-  </details>`;
+  </div>`;
 }
 
 function formatContrastSuggestionPurpose(
@@ -3033,6 +3805,218 @@ function summarizeIssues(issues: DedupedIssue[]): Record<Severity, number> {
     warning: 0,
     info: 0
   });
+}
+
+function groupIssuesByStateId(issues: DedupedIssue[]): Map<string, DedupedIssue[]> {
+  const issuesByStateId = new Map<string, DedupedIssue[]>();
+  for (const issue of issues) {
+    if (!issue.stateId) continue;
+    const current = issuesByStateId.get(issue.stateId) || [];
+    current.push(issue);
+    issuesByStateId.set(issue.stateId, current);
+  }
+  return issuesByStateId;
+}
+
+function filterRepeatedStateIssues(
+  states: ExplorationState[],
+  issuesByStateId: Map<string, DedupedIssue[]>
+): Map<string, DedupedIssue[]> {
+  const displayIssuesByStateId = new Map<string, DedupedIssue[]>();
+  const firstSeenKeys = new Set<string>();
+  const orderedStates = [...states].sort((left, right) =>
+    left.depth - right.depth || stateNumericId(left.id) - stateNumericId(right.id) || left.id.localeCompare(right.id)
+  );
+
+  for (const state of orderedStates) {
+    const stateIssues = issuesByStateId.get(state.id) || [];
+    const displayIssues: DedupedIssue[] = [];
+    for (const issue of stateIssues) {
+      if (!shouldDisplayIssueInState(state, issue)) continue;
+      const key = repeatedStateIssueKey(issue);
+      if (!key || !firstSeenKeys.has(key)) {
+        displayIssues.push(issue);
+      }
+      if (key) firstSeenKeys.add(key);
+    }
+    displayIssuesByStateId.set(state.id, displayIssues);
+  }
+
+  return displayIssuesByStateId;
+}
+
+function shouldDisplayIssueInState(state: ExplorationState, issue: DedupedIssue): boolean {
+  if (!state.modalFocus || state.depth === 0) return true;
+  return isModalSpecificIssue(issue)
+    || isIssueInsideDialogBounds(issue, state.modalFocus.dialogBounds);
+}
+
+function isModalSpecificIssue(issue: DedupedIssue): boolean {
+  const haystack = [
+    issue.source,
+    issue.ruleId,
+    issue.selector
+  ].filter(Boolean).join(" ").toLowerCase();
+
+  return /\bmodal\b|\bdialog\b|aria-modal|alertdialog|role=["']?dialog|role=["']?alertdialog/.test(haystack);
+}
+
+function isIssueInsideDialogBounds(issue: DedupedIssue, dialogBounds?: ElementBounds): boolean {
+  if (!dialogBounds || !issue.elementBounds) return false;
+  const issueBounds = normalizeBoundsToDocumentSpace(issue.elementBounds);
+  const modalBounds = normalizeBoundsToDocumentSpace(dialogBounds);
+  if (!issueBounds || !modalBounds) return false;
+  const issueCenterX = issueBounds.x + issueBounds.width / 2;
+  const issueCenterY = issueBounds.y + issueBounds.height / 2;
+
+  return issueCenterX >= modalBounds.x
+    && issueCenterX <= modalBounds.x + modalBounds.width
+    && issueCenterY >= modalBounds.y
+    && issueCenterY <= modalBounds.y + modalBounds.height;
+}
+
+function normalizeBoundsToDocumentSpace(bounds: ElementBounds): ElementBounds | undefined {
+  if (!Number.isFinite(bounds.x)
+    || !Number.isFinite(bounds.y)
+    || !Number.isFinite(bounds.width)
+    || !Number.isFinite(bounds.height)) {
+    return undefined;
+  }
+  return bounds;
+}
+
+function repeatedStateIssueKey(issue: DedupedIssue): string | undefined {
+  const target = issue.selector || issue.file;
+  if (!target || !issue.url) return undefined;
+  return [
+    issue.source,
+    issue.ruleId,
+    issue.url,
+    target,
+    issue.message,
+    issue.colorScheme || ""
+  ].join("::");
+}
+
+function stateNumericId(id: string): number {
+  const match = id.match(/\d+/);
+  return match ? Number(match[0]) : Number.MAX_SAFE_INTEGER;
+}
+
+function buildAnnotationSeverityByKey(issues: DedupedIssue[]): Record<string, Severity> {
+  return issues.reduce<Record<string, Severity>>((severityByKey, issue) => {
+    const key = annotationSeverityKey(issue);
+    const current = severityByKey[key];
+    if (!current || severityValue(issue.severity) > severityValue(current)) {
+      severityByKey[key] = issue.severity;
+    }
+    return severityByKey;
+  }, {});
+}
+
+function buildAnnotationNumberByIssueKey(
+  state: ExplorationState,
+  issues: DedupedIssue[]
+): Record<string, number> {
+  const numberByIssueKey: Record<string, number> = {};
+  let nextNumber = 1;
+  const screenshotPaths = state.screenshot
+    ? state.screenshotEvidence?.length
+      ? state.screenshotEvidence.map((evidence) => evidence.path)
+      : [state.screenshot]
+    : [];
+
+  for (const screenshot of screenshotPaths) {
+    const matchingIssues = issues.filter((issue) => issue.screenshot === screenshot);
+    const hasSpecificEvidence = Boolean(state.screenshotEvidence?.length);
+    const sortedIssues = (matchingIssues.length > 0 || hasSpecificEvidence
+      ? matchingIssues
+      : issues)
+      .filter((issue) => issue.elementBounds)
+      .sort(compareIssuesForAnnotationOrder);
+    const visibleIssues = sortedIssues
+      .filter((issue, index) =>
+        sortedIssues.findIndex((candidate) => annotationVisualKey(candidate) === annotationVisualKey(issue)) === index
+      )
+      .slice(0, 12);
+    const visibleVisualKeys = new Set(visibleIssues.map((issue) => annotationVisualKey(issue)));
+    const numberByVisualKey = new Map<string, number>();
+
+    for (const issue of sortedIssues) {
+      const key = annotationIssueKey(issue);
+      if (numberByIssueKey[key]) continue;
+      const visualKey = annotationVisualKey(issue);
+      const existingNumber = numberByVisualKey.get(visualKey);
+      if (existingNumber) {
+        numberByIssueKey[key] = existingNumber;
+        continue;
+      }
+      if (!visibleVisualKeys.has(visualKey)) continue;
+      numberByVisualKey.set(visualKey, nextNumber);
+      numberByIssueKey[key] = nextNumber;
+      nextNumber += 1;
+    }
+  }
+
+  return numberByIssueKey;
+}
+
+function compareIssuesForAnnotationOrder(a: DedupedIssue, b: DedupedIssue): number {
+  const aBounds = a.elementBounds;
+  const bBounds = b.elementBounds;
+  if (!aBounds || !bBounds) return 0;
+
+  const sameVisualRow = Math.abs(aBounds.y - bBounds.y) <= 3;
+
+  return sameVisualRow
+    ? aBounds.x - bBounds.x
+      || aBounds.y - bBounds.y
+      || severityValue(b.severity) - severityValue(a.severity)
+      || a.ruleId.localeCompare(b.ruleId)
+      || (a.selector || "").localeCompare(b.selector || "")
+      || a.fingerprint.localeCompare(b.fingerprint)
+    : aBounds.y - bBounds.y
+    || aBounds.x - bBounds.x
+    || severityValue(b.severity) - severityValue(a.severity)
+    || a.ruleId.localeCompare(b.ruleId)
+    || (a.selector || "").localeCompare(b.selector || "")
+    || a.fingerprint.localeCompare(b.fingerprint);
+}
+
+function annotationIssueKey(issue: DedupedIssue): string {
+  return issue.fingerprint || [
+    issue.ruleId,
+    issue.selector || issue.file || "unknown",
+    issue.message,
+    issue.screenshot || ""
+  ].join("::");
+}
+
+function annotationSeverityKey(issue: DedupedIssue): string {
+  return `${issue.selector || issue.file || "unknown"}`;
+}
+
+function annotationVisualKey(issue: DedupedIssue): string {
+  const bounds = issue.elementBounds;
+  if (!bounds) {
+    return `${issue.screenshot || ""}::${issue.selector || issue.file || "unknown"}`;
+  }
+  return [
+    issue.screenshot || "",
+    bounds.coordinateSpace || "viewport",
+    roundAnnotationCoordinate(bounds.x),
+    roundAnnotationCoordinate(bounds.y),
+    roundAnnotationCoordinate(bounds.width),
+    roundAnnotationCoordinate(bounds.height)
+  ].join("::");
+}
+
+function roundAnnotationCoordinate(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+function inferStateIdFromScreenshot(screenshot: string): string | undefined {
+  return screenshot.match(/(?:^|\/)(state-\d+)(?:-|\.|_)/)?.[1];
 }
 
 function severityValue(severity: Severity): number {

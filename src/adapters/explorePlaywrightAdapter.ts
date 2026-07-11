@@ -54,6 +54,8 @@ const DEFAULT_SCREENSHOT_FORMAT = "jpeg";
 const DEFAULT_SCREENSHOT_QUALITY = 70;
 const SCREENSHOT_REDACTION_COLOR = "#111827";
 const MAX_AUTO_FULL_PAGE_HEIGHT = 6000;
+const MANY_ISSUES_FULL_PAGE_THRESHOLD = 10;
+const MAX_MANY_ISSUES_FULL_PAGE_HEIGHT = 12000;
 const ERROR_CROP_PADDING_Y = 120;
 const MAX_ERROR_CROP_HEIGHT = 900;
 const ERROR_CROP_PADDING_X = 80;
@@ -1559,10 +1561,28 @@ async function inspectOpenModal(page: Page): Promise<ModalFocusEvidence | undefi
     if (!dialog) return undefined;
     const active = document.activeElement;
     const name = accessibleName(dialog);
+    const rect = dialog.getBoundingClientRect();
+    const documentWidth = Math.max(
+      document.documentElement.scrollWidth,
+      document.body?.scrollWidth || 0,
+      window.innerWidth
+    );
+    const documentHeight = Math.max(
+      document.documentElement.scrollHeight,
+      document.body?.scrollHeight || 0,
+      window.innerHeight
+    );
 
     return {
       dialogCount: dialogs.length,
       dialogSelector: selectorFor(dialog),
+      dialogBounds: documentWidth > 0 && documentHeight > 0 ? {
+        x: ((rect.left + window.scrollX) / documentWidth) * 100,
+        y: ((rect.top + window.scrollY) / documentHeight) * 100,
+        width: (rect.width / documentWidth) * 100,
+        height: (rect.height / documentHeight) * 100,
+        coordinateSpace: "document"
+      } : undefined,
       isModal: dialog.getAttribute("aria-modal") === "true" || (
         dialog.tagName.toLowerCase() === "dialog" && dialog.matches(":modal")
       ),
@@ -2401,9 +2421,12 @@ export function shouldCaptureFullPageScreenshot(
   issueCount: number,
   documentHeight = 0
 ): boolean {
-  return forceFullPage || (
-    issueCount > 0 && documentHeight <= MAX_AUTO_FULL_PAGE_HEIGHT
-  );
+  if (forceFullPage) return true;
+  if (issueCount <= 0) return false;
+  if (documentHeight <= MAX_AUTO_FULL_PAGE_HEIGHT) return true;
+
+  return issueCount >= MANY_ISSUES_FULL_PAGE_THRESHOLD
+    && documentHeight <= MAX_MANY_ISSUES_FULL_PAGE_HEIGHT;
 }
 
 async function captureStateVisualEvidence(
@@ -2419,6 +2442,7 @@ async function captureStateVisualEvidence(
   }
 ): Promise<PreparedStateVisualEvidence> {
   await stabilizePageForVisualEvidence(page);
+  await resetPageScrollForVisualEvidence(page);
   const metrics = await readPageCaptureMetrics(page);
   const issueRects = await Promise.all(issues.map(async (issue, issueIndex) => ({
     issueIndex,
@@ -2485,6 +2509,52 @@ async function captureStateVisualEvidence(
         imageHeight: clip.height
       });
       if (!captured) continue;
+
+      const overlappingCapture = captured.kind === "evidence-crop" && captured.clip
+        ? findOverlappingEvidenceCapture(captures, captured)
+        : undefined;
+      if (overlappingCapture?.clip) {
+        await removeDuplicateScreenshot(options.outputDir, captured.path);
+        for (const issueIndex of clip.issueIndexes) {
+          const rect = resolvedRects.find((item) => item.issueIndex === issueIndex)?.rect;
+          preparedIssues[issueIndex] = {
+            ...preparedIssues[issueIndex],
+            screenshot: overlappingCapture.path,
+            elementBounds: rect
+              ? toPercentBounds({
+                x: rect.x - overlappingCapture.clip.x,
+                y: rect.y - overlappingCapture.clip.y,
+                width: rect.width,
+                height: rect.height,
+                containerWidth: overlappingCapture.width,
+                containerHeight: overlappingCapture.height
+              }, "viewport")
+              : undefined
+          };
+        }
+        continue;
+      }
+
+      if (captured.kind !== "evidence-crop" && captures.some((item) => item.kind === "evidence-crop")) {
+        await removeDuplicateScreenshot(options.outputDir, captured.path);
+        continue;
+      }
+
+      const existingViewportFallback = captured.kind !== "evidence-crop"
+        ? captures.find((item) => item.kind === "viewport" && !item.clip)
+        : undefined;
+      if (existingViewportFallback) {
+        await removeDuplicateScreenshot(options.outputDir, captured.path);
+        for (const issueIndex of clip.issueIndexes) {
+          preparedIssues[issueIndex] = {
+            ...preparedIssues[issueIndex],
+            screenshot: existingViewportFallback.path,
+            elementBounds: undefined
+          };
+        }
+        continue;
+      }
+
       captures.push(captured);
 
       for (const issueIndex of clip.issueIndexes) {
@@ -2717,6 +2787,15 @@ async function stabilizePageForVisualEvidence(page: Page): Promise<void> {
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     });
   }).catch(() => undefined);
+}
+
+async function resetPageScrollForVisualEvidence(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    document.documentElement.style.scrollBehavior = "auto";
+    if (document.body) document.body.style.scrollBehavior = "auto";
+    window.scrollTo(0, 0);
+  }).catch(() => undefined);
+  await waitForPageScrollPosition(page, 0, 0).catch(() => undefined);
 }
 
 function toPercentBounds(
@@ -3224,6 +3303,13 @@ async function captureStateScreenshot(
     ? normalizeScreenshotClip(options.clip, await readPageCaptureMetrics(page))
     : undefined;
   let effectiveKind = options.clip && !effectiveClip ? "viewport" : options.kind;
+  const documentClip = effectiveClip;
+  const originalScroll = effectiveClip
+    ? await readPageScrollPosition(page).catch(() => undefined)
+    : undefined;
+  if (effectiveClip) {
+    effectiveClip = await scrollToScreenshotClip(page, effectiveClip).catch(() => effectiveClip);
+  }
 
   const createScreenshotOptions = (
     clip: EvidenceClip | undefined
@@ -3261,6 +3347,10 @@ async function captureStateScreenshot(
     const fallbackBuffer = await page.screenshot(createScreenshotOptions(undefined)).catch(() => undefined);
     if (!fallbackBuffer) return undefined;
     screenshotBuffer = fallbackBuffer;
+  } finally {
+    if (originalScroll) {
+      await restorePageScrollPosition(page, originalScroll).catch(() => undefined);
+    }
   }
   const dimensions = readScreenshotDimensions(screenshotBuffer, options.format);
 
@@ -3271,8 +3361,65 @@ async function captureStateScreenshot(
     issueIndexes: options.issueIndexes,
     width: dimensions?.width || options.imageWidth,
     height: dimensions?.height || options.imageHeight,
-    clip: effectiveClip
+    clip: effectiveKind === "evidence-crop" ? documentClip : undefined
   };
+}
+
+function findOverlappingEvidenceCapture(
+  captures: CapturedScreenshot[],
+  candidate: CapturedScreenshot
+): CapturedScreenshot | undefined {
+  const candidateClip = candidate.clip;
+  if (!candidateClip) return undefined;
+  return captures.find((capture) => {
+    if (capture.kind !== "evidence-crop" || !capture.clip) return false;
+    const overlap = intersectionArea(capture.clip, candidateClip);
+    const candidateArea = candidateClip.width * candidateClip.height;
+    return candidateArea > 0 && overlap / candidateArea >= 0.6;
+  });
+}
+
+function intersectionArea(left: EvidenceClip, right: EvidenceClip): number {
+  const x = Math.max(0, Math.min(left.x + left.width, right.x + right.width) - Math.max(left.x, right.x));
+  const y = Math.max(0, Math.min(left.y + left.height, right.y + right.height) - Math.max(left.y, right.y));
+  return x * y;
+}
+
+async function readPageScrollPosition(page: Page): Promise<{ x: number; y: number }> {
+  return page.evaluate(() => ({
+    x: window.scrollX,
+    y: window.scrollY
+  }));
+}
+
+async function restorePageScrollPosition(page: Page, scroll: { x: number; y: number }): Promise<void> {
+  await page.evaluate(({ x, y }) => {
+    window.scrollTo(x, y);
+  }, scroll);
+}
+
+async function scrollToScreenshotClip(page: Page, clip: EvidenceClip): Promise<EvidenceClip> {
+  await page.evaluate(({ x, y }) => {
+    document.documentElement.style.scrollBehavior = "auto";
+    if (document.body) document.body.style.scrollBehavior = "auto";
+    window.scrollTo(x, y);
+  }, { x: 0, y: clip.y });
+  await waitForPageScrollPosition(page, 0, clip.y).catch(() => undefined);
+
+  const scroll = await readPageScrollPosition(page);
+  return {
+    ...clip,
+    x: Math.max(0, Math.round(clip.x - scroll.x)),
+    y: Math.max(0, Math.round(clip.y - scroll.y))
+  };
+}
+
+async function waitForPageScrollPosition(page: Page, x: number, y: number): Promise<void> {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const current = await readPageScrollPosition(page);
+    if (Math.abs(current.x - x) <= 1 && Math.abs(current.y - y) <= 1) return;
+    await page.waitForTimeout(25).catch(() => undefined);
+  }
 }
 
 export function readScreenshotDimensions(

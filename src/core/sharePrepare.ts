@@ -15,8 +15,8 @@ export interface SharePrepareManifest {
   localOnly: true;
   outputs: string[];
   privacy: {
-    screenshotsIncluded: false;
-    visualReportsIncluded: false;
+    screenshotsIncluded: boolean;
+    visualReportsIncluded: boolean;
     evaluationScopeIncluded: boolean;
     rawExplorationIncluded: false;
     rawKeyboardIncluded: false;
@@ -33,6 +33,7 @@ export interface PrepareShareReportOptions {
   reportPath: string;
   outputDir: string;
   generatedAt?: string;
+  includeHtml?: boolean;
 }
 
 export async function prepareShareReport(options: PrepareShareReportOptions): Promise<SharePrepareManifest> {
@@ -52,8 +53,12 @@ export async function prepareShareReport(options: PrepareShareReportOptions): Pr
   };
   const shareReport = sanitizeReport(report, counts);
   const scope = await readOptionalEvaluationScope(reportPath, counts);
+  const selfContainedHtml = options.includeHtml
+    ? await readSelfContainedHtml(reportPath)
+    : undefined;
   const outputs = [
     "share-report.json",
+    ...(selfContainedHtml ? ["share-report.html"] : []),
     ...(scope ? ["share-evaluation-scope.json"] : []),
     "share-summary.md",
     "privacy-summary.json"
@@ -65,8 +70,8 @@ export async function prepareShareReport(options: PrepareShareReportOptions): Pr
     localOnly: true,
     outputs,
     privacy: {
-      screenshotsIncluded: false,
-      visualReportsIncluded: false,
+      screenshotsIncluded: Boolean(selfContainedHtml),
+      visualReportsIncluded: Boolean(selfContainedHtml),
       evaluationScopeIncluded: Boolean(scope),
       rawExplorationIncluded: false,
       rawKeyboardIncluded: false,
@@ -77,7 +82,9 @@ export async function prepareShareReport(options: PrepareShareReportOptions): Pr
       sensitiveTokensRedacted: counts.sensitiveTokensRedacted,
       warnings: [
         "Review every generated file before sending it outside the project team.",
-        "Screenshots, visual reports, raw exploration graphs, raw keyboard paths, and raw Lighthouse payloads are excluded.",
+        selfContainedHtml
+          ? "share-report.html includes embedded screenshots from the visual report; review it carefully before sharing."
+          : "Screenshots, visual reports, raw exploration graphs, raw keyboard paths, and raw Lighthouse payloads are excluded.",
         "URLs are reduced to origin and path; query strings and hashes are removed.",
         "Obvious local absolute paths, email addresses, bearer tokens, passwords, secrets, and API keys are redacted."
       ]
@@ -86,6 +93,9 @@ export async function prepareShareReport(options: PrepareShareReportOptions): Pr
 
   await Promise.all([
     fs.writeFile(path.join(outputDir, "share-report.json"), `${JSON.stringify(shareReport, null, 2)}\n`),
+    ...(selfContainedHtml ? [
+      fs.writeFile(path.join(outputDir, "share-report.html"), selfContainedHtml)
+    ] : []),
     ...(scope ? [
       fs.writeFile(path.join(outputDir, "share-evaluation-scope.json"), `${JSON.stringify(scope, null, 2)}\n`)
     ] : []),
@@ -105,6 +115,64 @@ async function readOptionalEvaluationScope(reportPath: string, counts: Redaction
     if (isNodeError(error) && error.code === "ENOENT") return undefined;
     throw error;
   }
+}
+
+async function readSelfContainedHtml(reportPath: string): Promise<string> {
+  const reportDir = path.dirname(reportPath);
+  const htmlPath = path.join(reportDir, "a11y-report.html");
+  const html = await fs.readFile(htmlPath, "utf8");
+  return inlineLocalImageReferences(html, reportDir);
+}
+
+async function inlineLocalImageReferences(html: string, reportDir: string): Promise<string> {
+  const pattern = /\b(src|href)="([^"]+)"/g;
+  const replacements = new Map<string, string>();
+  const matches = [...html.matchAll(pattern)];
+
+  for (const match of matches) {
+    const attribute = match[1];
+    const value = match[2];
+    if (!attribute || !value || replacements.has(match[0])) continue;
+    if (!isLocalImageReference(value)) continue;
+
+    const dataUrl = await imageReferenceToDataUrl(value, reportDir);
+    if (dataUrl) replacements.set(match[0], `${attribute}="${dataUrl}"`);
+  }
+
+  let output = html;
+  for (const [original, replacement] of replacements.entries()) {
+    output = output.replaceAll(original, replacement);
+  }
+  return output;
+}
+
+function isLocalImageReference(value: string): boolean {
+  if (value.startsWith("#") || value.startsWith("data:")) return false;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(value)) return false;
+  return /\.(png|jpe?g|webp|gif|svg)$/i.test(value.split(/[?#]/, 1)[0] || "");
+}
+
+async function imageReferenceToDataUrl(value: string, reportDir: string): Promise<string | undefined> {
+  const cleanValue = decodeURIComponent(value.split(/[?#]/, 1)[0] || "");
+  const imagePath = path.resolve(reportDir, cleanValue);
+  const relative = path.relative(reportDir, imagePath);
+  if (relative.startsWith("..") || path.isAbsolute(relative)) return undefined;
+
+  const extension = path.extname(imagePath).toLowerCase();
+  const mimeType = imageMimeType(extension);
+  if (!mimeType) return undefined;
+
+  const buffer = await fs.readFile(imagePath);
+  return `data:${mimeType};base64,${buffer.toString("base64")}`;
+}
+
+function imageMimeType(extension: string): string | undefined {
+  if (extension === ".png") return "image/png";
+  if (extension === ".jpg" || extension === ".jpeg") return "image/jpeg";
+  if (extension === ".webp") return "image/webp";
+  if (extension === ".gif") return "image/gif";
+  if (extension === ".svg") return "image/svg+xml";
+  return undefined;
 }
 
 async function resolveReportPath(inputPath: string): Promise<string> {

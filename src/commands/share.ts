@@ -5,6 +5,7 @@ import { prepareShareReport } from "../core/sharePrepare.js";
 interface SharePrepareOptions {
   report?: string;
   out?: string;
+  includeHtml?: boolean;
 }
 
 export function registerShareCommand(program: Command): void {
@@ -17,10 +18,12 @@ export function registerShareCommand(program: Command): void {
     .description("Create a sanitized static report and privacy summary from a generated a11y-report.json.")
     .option("--report <file-or-dir>", "Source a11y-report.json file or report directory", "reports/a11y-report.json")
     .option("--out <dir>", "Empty output directory", "a11y-share")
+    .option("--include-html", "Also create one self-contained visual HTML file with embedded screenshots")
     .action(async (options: SharePrepareOptions) => {
       const manifest = await prepareShareReport({
         reportPath: path.resolve(options.report || "reports/a11y-report.json"),
-        outputDir: path.resolve(options.out || "a11y-share")
+        outputDir: path.resolve(options.out || "a11y-share"),
+        includeHtml: Boolean(options.includeHtml)
       });
 
       console.log(formatSharePrepareSummary(manifest.outputs.length, path.resolve(options.out || "a11y-share")));

@@ -178,8 +178,8 @@ This is the main output of `audit`:
   <img src="docs/assets/demo-report-coverage.png" width="720" alt="Demo audit report showing the audit coverage table with automated and manual review checks">
 </a>
 
-<a href="docs/assets/demo-report-states.png">
-  <img src="docs/assets/demo-report-states.png" width="720" alt="Demo audit report showing explored UI states, screenshots, WCAG labels, and collapsed fix guidance">
+<a href="docs/assets/demo-report-states-annotated.png">
+  <img src="docs/assets/demo-report-states-annotated.png" width="720" alt="Demo audit report showing explored UI states, screenshots, WCAG labels, and collapsed fix guidance">
 </a>
 
 ## Audit Or Check?

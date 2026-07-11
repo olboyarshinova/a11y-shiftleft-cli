@@ -920,6 +920,7 @@ export interface ForcedColorsEvidence {
 export interface ModalFocusEvidence {
   dialogCount: number;
   dialogSelector: string;
+  dialogBounds?: ElementBounds;
   isModal?: boolean;
   accessibleName?: string;
   hasAccessibleName: boolean;

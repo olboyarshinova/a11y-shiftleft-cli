@@ -172,10 +172,10 @@ with concrete steps, rule documentation, and a React, Vue, or Angular example
 when one is available. Generic fallback guidance remains visible for unknown or
 custom rules so no finding ends without a next action.
 
-Use `Copy issue` on a finding group to copy a local Markdown draft in the
-browser. The draft is intended for GitHub Issues, Jira, Linear, or team notes,
-but the visual report does not send data to those trackers or create an external
-issue automatically.
+Use `Copy for ticket` on a finding group to copy a local Markdown draft in the
+browser. The draft includes severity, WCAG mapping, selectors, and fix guidance
+for GitHub Issues, Jira, Linear, or team notes. The visual report does not send
+data to those trackers or create an external issue automatically.
 
 For `color-contrast` findings, the HTML report also shows the measured ratio,
 required ratio, foreground and background swatches, font metadata, and options
@@ -192,7 +192,9 @@ default before taking screenshots and running axe.
 `explore` also auto-scrolls each state before scanning. Auto-scroll helps load
 below-the-fold content. Short affected pages can use one complete screenshot;
 long pages are automatically split into focused crops around nearby findings.
-Clean long states use compact viewport evidence.
+States with many findings switch back to a scrollable full-page screenshot when
+the page is still within a bounded height, so reviewers can understand the whole
+page context. Clean long states use compact viewport evidence.
 
 Use `--wait-ms` when screenshots are captured before the UI finishes rendering:
 
@@ -249,8 +251,10 @@ Section 508 compliance certification.
 ## Screenshot Privacy
 
 Screenshots are compressed by default as JPEG files at quality `70`. On long
-pages, the CLI stores only focused regions around resolved error elements and
-shows them as a small evidence gallery:
+pages, the CLI usually stores focused regions around resolved error elements and
+shows them as a small evidence gallery. If a state has many findings and the
+page is not extremely tall, the CLI automatically keeps a scrollable full-page
+screenshot instead:
 
 ```bash
 npx a11y-shiftleft explore --url $APP_URL --out reports

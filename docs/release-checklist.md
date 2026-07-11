@@ -239,6 +239,34 @@ dashboard.html contains "Lighthouse Score"
 dashboard.html contains "Lighthouse Comparison"
 ```
 
+## Share Package Smoke Test
+
+Use an existing local report with screenshots:
+
+```bash
+node bin/cli.js share prepare \
+  --report reports/a11y-report.json \
+  --out a11y-share
+
+node bin/cli.js share prepare \
+  --report reports/a11y-report.json \
+  --out a11y-share-html \
+  --include-html
+```
+
+Expected checks:
+
+```txt
+a11y-share/share-report.json exists
+a11y-share/privacy-summary.json exists
+a11y-share/share-report.html does not exist
+a11y-share-html/share-report.html exists
+a11y-share-html/share-report.html contains "data:image/"
+```
+
+Review `share-report.html` manually before sending it outside the project team;
+it intentionally embeds screenshots when `--include-html` is used.
+
 ## Privacy Check
 
 ```bash

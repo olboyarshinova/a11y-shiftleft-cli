@@ -56,6 +56,23 @@ WCAG-EM-inspired review scope without including screenshots or raw browser
 evidence. The Markdown `share-summary.md` also includes a compact sanitized
 scope table so reviewers can understand what was included without opening JSON.
 
+## One-File Visual HTML
+
+If screenshots are approved for sharing, add `--include-html`:
+
+```bash
+npx a11y-shiftleft-cli share prepare \
+  --report reports/a11y-report.json \
+  --out a11y-share \
+  --include-html
+```
+
+This writes `a11y-share/share-report.html` as a self-contained HTML file. Local
+report screenshots are embedded into the file, so the recipient does not need a
+separate `screenshots/` folder. Review this file carefully before sending it,
+especially for authenticated pages, payment flows, account pages, health data,
+or any report that may contain personal information.
+
 Future versions can add explicit allow flags for teams that intentionally need
 specific visual evidence or additional fields.
 

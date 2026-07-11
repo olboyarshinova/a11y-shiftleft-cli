@@ -145,6 +145,67 @@ test("prepareShareReport writes sanitized local share artifacts", async () => {
   assert.match(markdown, /Keyboard traversal \| yes/);
 });
 
+test("prepareShareReport can write a self-contained visual HTML copy", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-share-html-"));
+  const reportsDir = path.join(root, "reports");
+  const screenshotsDir = path.join(reportsDir, "screenshots");
+  const outputDir = path.join(root, "share");
+  await fs.mkdir(screenshotsDir, { recursive: true });
+  await fs.writeFile(path.join(screenshotsDir, "state-1.jpg"), Buffer.from([255, 216, 255, 217]));
+  await fs.writeFile(path.join(reportsDir, "a11y-report.html"), '<!doctype html><img src="screenshots/state-1.jpg" alt="Evidence">');
+  await fs.writeFile(path.join(reportsDir, "a11y-report.json"), JSON.stringify({
+    generatedAt: "2026-06-25T00:00:00.000Z",
+    summary: {
+      total: 0,
+      critical: 0,
+      warning: 0,
+      info: 0,
+      rawCount: 0,
+      uniqueCount: 0,
+      duplicateCount: 0,
+      duplicateRate: 0,
+      scanDurationMs: 0,
+      framework: "react",
+      urls: [],
+      complianceEvidence: {
+        automatedCoverage: "partial",
+        requiresManualReview: true,
+        totalFindings: 0,
+        wcagMappedFindings: 0,
+        unmappedFindings: 0,
+        affectedPages: 0,
+        topAffectedPages: []
+      },
+      bySource: {},
+      bySeverity: {},
+      byConfidence: {},
+      byCategory: {},
+      byPour: {},
+      byWcagLevel: {},
+      byWcagVersion: {},
+      byUnmappedRule: {},
+      byPage: []
+    },
+    issues: []
+  }));
+
+  const manifest = await prepareShareReport({
+    reportPath: reportsDir,
+    outputDir,
+    includeHtml: true,
+    generatedAt: "2026-06-25T00:00:00.000Z"
+  });
+
+  assert.deepEqual(manifest.outputs, ["share-report.json", "share-report.html", "share-summary.md", "privacy-summary.json"]);
+  assert.equal(manifest.privacy.screenshotsIncluded, true);
+  assert.equal(manifest.privacy.visualReportsIncluded, true);
+  assert.match(manifest.privacy.warnings.join("\n"), /embedded screenshots/);
+
+  const html = await fs.readFile(path.join(outputDir, "share-report.html"), "utf8");
+  assert.match(html, /src="data:image\/jpeg;base64,/);
+  assert.doesNotMatch(html, /src="screenshots\/state-1\.jpg"/);
+});
+
 test("prepareShareReport refuses to write into a non-empty output directory", async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-share-existing-"));
   const reportsDir = path.join(root, "reports");

@@ -14,6 +14,7 @@ test("share prepare command is registered with privacy-first options", () => {
   const flags = prepare.options.map((option) => option.long);
   assert.equal(flags.includes("--report"), true);
   assert.equal(flags.includes("--out"), true);
+  assert.equal(flags.includes("--include-html"), true);
 });
 
 test("formatSharePrepareSummary renders local output", () => {
