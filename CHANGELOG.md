@@ -17,6 +17,9 @@
 - Added an authenticated-pages recipe covering manual login, post-login SPA
   waits, existing Playwright `storageState` files, keyboard checks, `.gitignore`,
   and privacy guidance.
+- Ignored local generated share/export folders, temporary scan outputs, and
+  common auth-state folders so report evidence and login storage stay out of
+  Git by default.
 - Added v0.8.1 release notes and updated release checklist smoke tests for URL
   normalization, SPA readiness waits, authenticated-page docs, and package
   boundary verification.

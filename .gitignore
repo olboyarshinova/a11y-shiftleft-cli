@@ -1,9 +1,17 @@
 node_modules/
 reports*/
+a11y-share*/
 analysis/
+outputs/
+rep/
+results/
+undefined_pool*/
+20*_*/
 dist/
 dist-test/
 demo-dist/
 .npm-cache/
+.a11y-auth/
+playwright/.auth/
 .DS_Store
 npm-debug.log*
