@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+- Removed the unused legacy README visual-report screenshot asset from the npm
+  package contents. The README now uses `demo-report-states-annotated.png`.
+
+## 0.8.0 - 2026-07-12
+
+- Added the first optional Lighthouse comparison path for `check --with-lighthouse`
+  and `audit --with-lighthouse`. Lighthouse remains an optional peer dependency
+  so the core package does not become heavier for teams that only need axe,
+  keyboard, and visual reports.
+- Added Lighthouse-vs-pipeline comparison metadata to JSON, Markdown, and visual
+  HTML reports so teams can see matching rule IDs, Lighthouse-only failed audits,
+  and pipeline-only rules.
+- Added Lighthouse recommendations to Markdown and visual HTML reports, including
+  failed audit descriptions, manual Lighthouse checks, and documentation links
+  when Lighthouse exposes them.
+- Added Lighthouse score and comparison summaries to the local dashboard so
+  historical reports can show runs with Lighthouse, average score, failed audits,
+  manual audits, and tool-difference counts.
+- Added a Lighthouse score trend to the local dashboard alongside the existing
+  findings trend.
 - Added the first local `share prepare` workflow for creating sanitized
   external-review copies from `a11y-report.json`. The export writes sanitized
   JSON, Markdown, and privacy-summary files without uploading anything.
@@ -58,24 +78,6 @@
   state cards do not leave large empty areas under screenshots.
 - Kept advanced commands, report-reading details, and CI examples available in
   collapsed README sections instead of front-loading them.
-
-## Planned 0.8.0
-
-- Added the first optional Lighthouse comparison path for `check --with-lighthouse`
-  and `audit --with-lighthouse`. Lighthouse remains an optional peer dependency
-  so the core package does not become heavier for teams that only need axe,
-  keyboard, and visual reports.
-- Added Lighthouse-vs-pipeline comparison metadata to JSON, Markdown, and visual
-  HTML reports so teams can see matching rule IDs, Lighthouse-only failed audits,
-  and pipeline-only rules.
-- Added Lighthouse recommendations to Markdown and visual HTML reports, including
-  failed audit descriptions, manual Lighthouse checks, and documentation links
-  when Lighthouse exposes them.
-- Added Lighthouse score and comparison summaries to the local dashboard so
-  historical reports can show runs with Lighthouse, average score, failed audits,
-  manual audits, and tool-difference counts.
-- Added a Lighthouse score trend to the local dashboard alongside the existing
-  findings trend.
 
 ## 0.7.0 - 2026-06-23
 
