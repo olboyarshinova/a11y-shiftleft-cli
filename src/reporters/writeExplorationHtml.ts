@@ -611,9 +611,9 @@ export function renderExplorationHtml(
 
     .coverage-legend {
       display: grid;
-      gap: 8px;
+      gap: 6px;
       grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
-      margin: 14px 0;
+      margin: 10px 0 12px;
     }
 
     .coverage-legend-item {
@@ -622,10 +622,10 @@ export function renderExplorationHtml(
       border: 1px solid var(--line);
       border-radius: 8px;
       display: grid;
-      gap: 6px;
+      gap: 5px;
       grid-template-columns: auto auto minmax(0, 1fr);
-      min-height: 44px;
-      padding: 8px 10px;
+      min-height: 36px;
+      padding: 6px 8px;
     }
 
     .coverage-legend-swatch {
@@ -637,13 +637,13 @@ export function renderExplorationHtml(
 
     .coverage-legend-item strong {
       color: var(--ink);
-      font-size: 18px;
+      font-size: 16px;
       line-height: 1;
     }
 
     .coverage-legend-item span:last-child {
       color: var(--ink);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
     }
 
@@ -694,7 +694,9 @@ export function renderExplorationHtml(
     .coverage-table th,
     .coverage-table td {
       border: 1px solid #b8c0cc;
-      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 1.35;
+      padding: 7px 10px;
       text-align: left;
       vertical-align: top;
     }
@@ -711,7 +713,7 @@ export function renderExplorationHtml(
 
     .coverage-table .coverage-check-cell {
       text-align: center;
-      width: 76px;
+      width: 64px;
     }
 
     .coverage-table .coverage-findings {
@@ -729,9 +731,9 @@ export function renderExplorationHtml(
 
     .coverage-table input[type="checkbox"] {
       accent-color: var(--ok);
-      height: 20px;
+      height: 18px;
       margin: 0;
-      width: 20px;
+      width: 18px;
     }
 
     .coverage-table input[type="checkbox"]:focus-visible {
@@ -773,9 +775,10 @@ export function renderExplorationHtml(
       border: 1px solid currentColor;
       border-radius: 4px;
       display: inline-block;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
-      padding: 2px 6px;
+      line-height: 1.2;
+      padding: 1px 5px;
     }
 
     .coverage-status-automated {
@@ -806,7 +809,7 @@ export function renderExplorationHtml(
     .coverage-progress {
       color: #713b0b;
       font-weight: 700;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
     .coverage-progress-complete {
