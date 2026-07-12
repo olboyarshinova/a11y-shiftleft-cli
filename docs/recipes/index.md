@@ -9,6 +9,7 @@ These recipes give teams short copy-paste paths for adding
 - [Next.js](nextjs.md)
 - [Check, Explore, And Audit](check-explore-audit.md)
 - [Multiple URLs](multiple-urls.md)
+- [Authenticated Pages](authenticated-pages.md)
 - [GitHub Actions](github-actions.md)
 - [GitLab CI](gitlab-ci.md)
 - [Ticket export](../ticket-export.md)

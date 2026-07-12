@@ -14,6 +14,9 @@
   before screenshots and browser checks.
 - Normalized URL input consistently across `audit`, `explore`, and `check`,
   including leading/trailing whitespace and common smart quotes.
+- Added an authenticated-pages recipe covering manual login, post-login SPA
+  waits, existing Playwright `storageState` files, keyboard checks, `.gitignore`,
+  and privacy guidance.
 
 ## 0.8.0 - 2026-07-12
 

@@ -106,6 +106,10 @@ npx a11y-shiftleft-cli audit --url https://example.com/account --auth-state .a11
 The generated `.a11y-auth/` folder is added to `.gitignore` by default. Do not
 commit auth-state files because they may contain session cookies.
 
+See the [authenticated pages recipe](docs/recipes/authenticated-pages.md) for
+post-login redirects, existing Playwright `storageState` files, keyboard checks,
+and privacy settings.
+
 ## Add CI/CD
 
 After the first local audit works, generate GitHub Actions workflow files:

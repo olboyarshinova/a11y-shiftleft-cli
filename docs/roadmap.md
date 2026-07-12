@@ -25,10 +25,6 @@ Section 508 certification.
   flows: a scripted auth module that reads usernames, passwords, and tokens from
   environment variables or CI secrets, then saves a temporary Playwright
   `storageState` file without logging credentials.
-- Add documentation for teams that already use Playwright authentication setup:
-  show how to pass an existing `storageState` file into `audit`, `explore`,
-  `check`, and `keyboard`, including recommended `.gitignore` and screenshot
-  privacy settings.
 - Validate structured manual-review records in real keyboard-only, screen
   reader, zoom, reflow, reduced-motion, cognitive, and task-flow reviews.
 - Validate remediation ownership and temporary-acceptance review dates in real
