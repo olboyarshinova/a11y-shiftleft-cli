@@ -4,6 +4,8 @@
 
 - Removed the unused legacy README visual-report screenshot asset from the npm
   package contents. The README now uses `demo-report-states-annotated.png`.
+- Removed TypeScript source files from the published npm package contents while
+  keeping compiled `dist/` runtime files, declaration files, docs, and examples.
 
 ## 0.8.0 - 2026-07-12
 
