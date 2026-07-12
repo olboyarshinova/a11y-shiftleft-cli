@@ -26,20 +26,44 @@ test("extractContrastEvidence reads structured axe color-contrast data", () => {
   assert.equal(evidence?.foreground, "#aaaaaa");
   assert.equal(evidence?.background, "#ffffff");
   assert.equal(evidence?.fontSize, "12.0pt (16px)");
-  assert.equal(evidence?.suggestions.length, 3);
+  assert.equal(evidence?.suggestions.length, 6);
 });
 
-test("suggestContrastColors returns passing text colors while preserving the background", () => {
+test("suggestContrastColors returns passing text and background color alternatives", () => {
   const suggestions = suggestContrastColors("#aaaaaa", "#ffffff", 4.5);
+
+  assert.deepEqual(suggestions.map((suggestion) => `${suggestion.target}:${suggestion.purpose}`), [
+    "foreground:minimum",
+    "background:minimum",
+    "foreground:recommended",
+    "background:recommended",
+    "foreground:enhanced",
+    "background:enhanced"
+  ]);
+  assert.ok(suggestions.every((suggestion) => suggestion.contrastRatio >= 4.5));
+  assert.notEqual(suggestions[0].color.toLowerCase(), "#aaaaaa");
+});
+
+test("suggestContrastColors offers a background change when light text is close to a light background", () => {
+  const suggestions = suggestContrastColors("#cfd4cf", "#bcc2bd", 4.5);
+
+  assert.deepEqual(suggestions.slice(0, 2).map((suggestion) => `${suggestion.target}:${suggestion.purpose}`), [
+    "foreground:minimum",
+    "background:minimum"
+  ]);
+  assert.ok(suggestions.some((suggestion) => suggestion.target === "background"));
+  assert.ok(suggestions.every((suggestion) => suggestion.contrastRatio >= 4.5));
+});
+
+test("suggestContrastColors preserves existing text-only behavior when background alternatives duplicate", () => {
+  const suggestions = suggestContrastColors("#aaaaaa", "#ffffff", 4.5)
+    .filter((suggestion) => suggestion.target === "foreground");
 
   assert.deepEqual(suggestions.map((suggestion) => suggestion.purpose), [
     "minimum",
     "recommended",
     "enhanced"
   ]);
-  assert.ok(suggestions.every((suggestion) => suggestion.target === "foreground"));
-  assert.ok(suggestions.every((suggestion) => suggestion.contrastRatio >= 4.5));
-  assert.notEqual(suggestions[0].color.toLowerCase(), "#aaaaaa");
 });
 
 test("calculateContrastRatio follows WCAG relative luminance", () => {

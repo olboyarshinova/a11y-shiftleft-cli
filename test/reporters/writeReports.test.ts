@@ -826,6 +826,7 @@ test("writeReports includes structured contrast evidence in JSON and Markdown", 
     fontWeight: "normal",
     suggestions: [
       { target: "foreground" as const, purpose: "minimum" as const, color: "#767676", contrastRatio: 4.54 },
+      { target: "background" as const, purpose: "minimum" as const, color: "#202020", contrastRatio: 5.82 },
       { target: "foreground" as const, purpose: "recommended" as const, color: "#6F6F6F", contrastRatio: 5.02 },
       { target: "foreground" as const, purpose: "enhanced" as const, color: "#595959", contrastRatio: 7 }
     ]
@@ -848,8 +849,9 @@ test("writeReports includes structured contrast evidence in JSON and Markdown", 
   assert.deepEqual(report.issues[0].contrast, contrast);
   assert.match(markdown, /Contrast: 2\.32:1; required: 4\.5:1/);
   assert.match(markdown, /Colors: text #aaaaaa; background #ffffff/);
-  assert.match(markdown, /Suggested text colors on #ffffff/);
+  assert.match(markdown, /Suggested colors/);
   assert.match(markdown, /minimum text #767676 \(4\.54:1\)/);
+  assert.match(markdown, /minimum background #202020 \(5\.82:1\)/);
   assert.match(markdown, /recommended text #6F6F6F \(5\.02:1\)/);
 });
 

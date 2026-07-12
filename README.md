@@ -182,16 +182,8 @@ adapter later when you want static source findings in the same report.
 
 This is the main output of `audit`:
 
-<a href="docs/assets/demo-report-overview.png">
-  <img src="docs/assets/demo-report-overview.png" width="720" alt="Demo audit report showing summary metrics and quick review">
-</a>
-
-<a href="docs/assets/demo-report-coverage.png">
-  <img src="docs/assets/demo-report-coverage.png" width="720" alt="Demo audit report showing the audit coverage table with automated and manual review checks">
-</a>
-
-<a href="docs/assets/demo-report-states-annotated.png">
-  <img src="docs/assets/demo-report-states-annotated.png" width="720" alt="Demo audit report showing explored UI states, screenshots, WCAG labels, and collapsed fix guidance">
+<a href="docs/assets/demo-report-through-state-3.png">
+  <img src="docs/assets/demo-report-through-state-3.png" width="920" alt="Demo audit report showing summary metrics, audit coverage, triage, and annotated UI states through state 3">
 </a>
 
 ## Audit Or Check?

@@ -29,14 +29,6 @@ interface CoverageMatrixRow {
 type CoverageEvidenceState = "passed" | "failed" | "needs-review" | "not-tested" | "unavailable";
 type CoverageStateCounts = Record<CoverageEvidenceState, number>;
 
-interface QuickFindingGroup {
-  issue: DedupedIssue;
-  count: number;
-  pages: Set<string>;
-  states: Set<string>;
-  targets: Set<string>;
-}
-
 export async function writeExplorationHtml(
   outputDir: string,
   graph: ExplorationGraph,
@@ -156,19 +148,19 @@ export function renderExplorationHtml(
 
     h2 {
       font-size: 16px;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
     main {
       display: grid;
-      gap: 16px;
+      gap: 12px;
       grid-template-columns: minmax(0, 1fr);
-      padding: 16px;
+      padding: 12px;
     }
 
     .summary {
       display: grid;
-      gap: 12px;
+      gap: 10px;
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     }
 
@@ -293,13 +285,13 @@ export function renderExplorationHtml(
     }
 
     .metric {
-      padding: 14px;
+      padding: 8px 10px;
     }
 
     .metric strong {
       display: block;
-      font-size: 22px;
-      line-height: 1.1;
+      font-size: 20px;
+      line-height: 1;
     }
 
     .metric-critical strong,
@@ -309,7 +301,7 @@ export function renderExplorationHtml(
 
     .metric-warning strong,
     .metric-needs-review strong {
-      color: var(--warning);
+      color: var(--warning-marker);
     }
 
     .metric-info strong,
@@ -326,8 +318,15 @@ export function renderExplorationHtml(
       color: var(--muted);
     }
 
+    .metric span {
+      display: block;
+      font-size: 12px;
+      line-height: 1.25;
+      margin-top: 2px;
+    }
+
     .panel {
-      padding: 16px;
+      padding: 12px;
       overflow: visible;
     }
 
@@ -348,6 +347,10 @@ export function renderExplorationHtml(
     .focus-path-scroll-wrapper {
       display: grid;
       gap: 6px;
+    }
+
+    .visual-tab-order {
+      margin-top: 16px;
     }
 
     .focus-path {
@@ -632,9 +635,9 @@ export function renderExplorationHtml(
 
     .coverage-legend {
       display: grid;
-      gap: 6px;
+      gap: 5px;
       grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
-      margin: 10px 0 12px;
+      margin: 8px 0 10px;
     }
 
     .coverage-legend-item {
@@ -643,10 +646,10 @@ export function renderExplorationHtml(
       border: 1px solid var(--line);
       border-radius: 8px;
       display: grid;
-      gap: 5px;
+      gap: 4px;
       grid-template-columns: auto auto minmax(0, 1fr);
-      min-height: 36px;
-      padding: 6px 8px;
+      min-height: 32px;
+      padding: 5px 7px;
     }
 
     .coverage-legend-swatch {
@@ -716,8 +719,8 @@ export function renderExplorationHtml(
     .coverage-table td {
       border: 1px solid #b8c0cc;
       font-size: 13px;
-      line-height: 1.35;
-      padding: 7px 10px;
+      line-height: 1.3;
+      padding: 6px 9px;
       text-align: left;
       vertical-align: top;
     }
@@ -752,9 +755,9 @@ export function renderExplorationHtml(
 
     .coverage-table input[type="checkbox"] {
       accent-color: var(--ok);
-      height: 18px;
+      height: 16px;
       margin: 0;
-      width: 18px;
+      width: 16px;
     }
 
     .coverage-table input[type="checkbox"]:focus-visible {
@@ -799,7 +802,7 @@ export function renderExplorationHtml(
       font-size: 11px;
       font-weight: 700;
       line-height: 1.2;
-      padding: 1px 5px;
+      padding: 2px 5px;
     }
 
     .coverage-status-automated {
@@ -830,7 +833,7 @@ export function renderExplorationHtml(
     .coverage-progress {
       color: #713b0b;
       font-weight: 700;
-      margin-bottom: 8px;
+      margin-bottom: 7px;
     }
 
     .coverage-progress-complete {
@@ -854,92 +857,17 @@ export function renderExplorationHtml(
     }
 
     .triage h2 {
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .triage h3 {
       font-size: 14px;
-      margin-bottom: 8px;
-    }
-
-    .quick-review-grid {
-      display: grid;
-      gap: 10px;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    }
-
-    .quick-review h2 {
       margin-bottom: 6px;
-    }
-
-    .quick-review h3 {
-      font-size: 13px;
-      margin-bottom: 6px;
-    }
-
-    .quick-review > .muted {
-      font-size: 13px;
-      margin-bottom: 10px;
-    }
-
-    .quick-review-list {
-      display: grid;
-      gap: 5px;
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
-
-    .quick-review-note {
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.35;
-      margin: -2px 0 6px;
-    }
-
-    .quick-review-item {
-      border-left: 3px solid var(--line);
-      padding: 4px 7px;
-    }
-
-    .quick-review-item-critical {
-      border-left-color: var(--critical);
-    }
-
-    .quick-review-item-warning {
-      border-left-color: var(--warning-marker);
-    }
-
-    .quick-review-item a {
-      color: var(--info);
-      font-weight: 700;
-    }
-
-    .quick-review-action,
-    .quick-review-evidence {
-      display: block;
-      font-size: 12px;
-      line-height: 1.35;
-      margin-top: 3px;
-    }
-
-    .quick-review-action {
-      color: var(--text);
-    }
-
-    .quick-review-evidence {
-      color: var(--muted);
-    }
-
-    .quick-review-link {
-      display: inline-block;
-      font-size: 12px;
-      margin-top: 5px;
     }
 
     .triage-list {
       display: grid;
-      gap: 6px;
+      gap: 5px;
       list-style: none;
       margin: 0;
       padding: 0;
@@ -951,7 +879,7 @@ export function renderExplorationHtml(
       display: grid;
       gap: 4px 8px;
       grid-template-columns: minmax(0, 1fr);
-      padding: 8px 10px;
+      padding: 6px 8px;
     }
 
     .triage-title {
@@ -990,6 +918,11 @@ export function renderExplorationHtml(
       color: var(--muted);
       font-size: 12px;
       font-weight: 700;
+      margin: 10px 0 0;
+    }
+
+    .focus-path-note {
+      margin: 10px 0 0;
     }
 
     .states {
@@ -1310,8 +1243,8 @@ export function renderExplorationHtml(
       align-content: start;
       align-items: start;
       display: grid;
-      gap: 10px;
-      padding: 12px;
+      gap: 8px;
+      padding: 10px;
     }
 
     .state-body > * {
@@ -1320,8 +1253,8 @@ export function renderExplorationHtml(
     }
 
     .state-compact .state-body {
-      gap: 6px;
-      padding: 10px 12px;
+      gap: 5px;
+      padding: 8px 10px;
     }
 
     .state-compact-summary {
@@ -1374,7 +1307,7 @@ export function renderExplorationHtml(
     .badges {
       display: flex;
       flex-wrap: wrap;
-      gap: 4px 10px;
+      gap: 3px 8px;
     }
 
     .badge {
@@ -1383,7 +1316,7 @@ export function renderExplorationHtml(
       display: inline-flex;
       font-size: 12px;
       font-weight: 600;
-      line-height: 1.35;
+      line-height: 1.25;
       white-space: nowrap;
     }
 
@@ -1391,7 +1324,7 @@ export function renderExplorationHtml(
       color: var(--muted);
       content: "•";
       font-weight: 400;
-      margin-right: 10px;
+      margin-right: 8px;
     }
 
     .badge-critical {
@@ -1414,7 +1347,7 @@ export function renderExplorationHtml(
     .edge-list {
       align-items: start;
       display: grid;
-      gap: 8px;
+      gap: 6px;
       list-style: none;
       margin: 0;
       padding: 0;
@@ -1432,7 +1365,7 @@ export function renderExplorationHtml(
     .issue,
     .edge {
       border-top: 1px solid var(--line);
-      padding-top: 8px;
+      padding-top: 6px;
     }
 
     .issue {
@@ -1532,7 +1465,7 @@ export function renderExplorationHtml(
       color: #7c2d12;
       font-size: 12px;
       font-weight: 700;
-      padding: 8px 10px;
+      padding: 6px 8px;
     }
 
     .finding-context {
@@ -1542,9 +1475,9 @@ export function renderExplorationHtml(
       border-radius: 8px;
       color: var(--muted);
       display: grid;
-      gap: 4px;
-      margin-top: 8px;
-      padding: 10px;
+      gap: 3px;
+      margin-top: 6px;
+      padding: 8px;
     }
 
     .finding-context strong {
@@ -1567,8 +1500,8 @@ export function renderExplorationHtml(
       align-items: center;
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 8px;
+      gap: 6px;
+      margin-top: 6px;
     }
 
     .triage-title .issue-actions {
@@ -1590,6 +1523,18 @@ export function renderExplorationHtml(
       padding: 5px 10px;
     }
 
+    .copy-issue-ticket {
+      line-height: 1.1;
+      padding-left: 6px;
+      padding-right: 6px;
+      white-space: normal;
+      width: 72px;
+    }
+
+    .copy-issue-ticket span {
+      display: block;
+    }
+
     .copy-issue:hover,
     .copy-issue:focus-visible {
       border-color: var(--info);
@@ -1605,21 +1550,21 @@ export function renderExplorationHtml(
       background: #f6f7f9;
       border-left: 3px solid var(--info);
       display: grid;
-      gap: 7px;
-      margin-top: 8px;
-      padding: 9px 10px;
+      gap: 5px;
+      margin-top: 6px;
+      padding: 7px 8px;
     }
 
     .contrast-colors,
     .contrast-suggestions {
       display: flex;
       flex-wrap: wrap;
-      gap: 7px 14px;
+      gap: 5px 10px;
     }
 
     .contrast-measurement {
       display: grid;
-      gap: 7px;
+      gap: 4px;
     }
 
     .contrast-color {
@@ -1644,14 +1589,14 @@ export function renderExplorationHtml(
       background: #f4fbf7;
       border-left: 3px solid var(--ok);
       border-top: 0;
-      margin-top: 8px;
-      padding: 9px 10px;
+      margin-top: 6px;
+      padding: 7px 8px;
     }
 
     .remediation-body {
       display: grid;
-      gap: 7px;
-      padding-top: 7px;
+      gap: 5px;
+      padding-top: 5px;
     }
 
     .remediation ol {
@@ -1663,7 +1608,7 @@ export function renderExplorationHtml(
       background: #e8f4ed;
       margin: 0;
       overflow-x: auto;
-      padding: 8px;
+      padding: 6px;
       white-space: pre-wrap;
     }
 
@@ -1684,23 +1629,29 @@ export function renderExplorationHtml(
     .remediation-body,
     .contrast-guidance-body {
       display: grid;
-      gap: 8px;
+      gap: 6px;
     }
 
     .contrast-guidance-title {
       align-items: center;
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
+      gap: 5px;
       font-weight: 700;
     }
 
     .contrast-guidance-body {
-      gap: 6px;
+      gap: 5px;
     }
 
     .contrast-guidance .contrast-measurement {
-      gap: 5px;
+      gap: 4px;
+    }
+
+    .contrast-summary,
+    .contrast-try {
+      color: var(--muted);
+      font-size: 12px;
     }
 
     .contrast-guidance-markers {
@@ -1718,7 +1669,7 @@ export function renderExplorationHtml(
       left: 0;
       max-height: min(380px, 60vh);
       overflow: auto;
-      padding: 12px;
+      padding: 10px;
       position: absolute;
       right: 0;
       top: calc(100% + 6px);
@@ -1727,7 +1678,7 @@ export function renderExplorationHtml(
 
     details {
       border-top: 1px solid var(--line);
-      padding-top: 10px;
+      padding-top: 8px;
     }
 
     details + details {
@@ -1825,7 +1776,6 @@ export function renderExplorationHtml(
       }
 
       .summary,
-      .quick-review,
       .share-review,
       .triage,
       .keyboard-audit,
@@ -1873,8 +1823,6 @@ export function renderExplorationHtml(
       ${metric("Needs review", findingTypes["needs-review"], "needs-review")}
       ${metric("Best practices", findingTypes["best-practice"], "best-practice")}
     </section>
-
-    ${renderQuickReview(reportIssues, options)}
 
     ${renderLighthouseComparison(options.lighthouse, reportIssues)}
 
@@ -2156,37 +2104,6 @@ function renderTicketDraftsPanel(issues: DedupedIssue[]): string {
   </section>`;
 }
 
-function renderQuickReview(issues: DedupedIssue[], options: ExplorationHtmlOptions): string {
-  if (!options.keyboard && !options.manualChecklist) return "";
-
-  const highImpact = selectQuickFindings(issues, 3);
-  const tabSteps = options.keyboard?.steps.slice(0, 5) || [];
-  const manualTasks = [...(options.manualChecklist?.items || [])]
-    .sort((left, right) => (right.targets?.length || 0) - (left.targets?.length || 0))
-    .slice(0, 3);
-
-  return `<section class="panel quick-review" aria-label="Quick review">
-    <h2>Quick Review</h2>
-    <p class="muted">Compact view of priority fixes, keyboard start, and human checks.</p>
-    <div class="quick-review-grid">
-      <div>
-        <h3>Fix First</h3>
-        ${renderQuickFindings(highImpact)}
-      </div>
-      <div>
-        <h3>Keyboard Start</h3>
-        <p class="quick-review-note">Start here: press Tab from the top of the page, compare the first focus stops below, and confirm every focused element is visible.</p>
-        ${renderQuickTabStops(tabSteps, Boolean(options.keyboard))}
-      </div>
-      <div>
-        <h3>Manual Checks</h3>
-        <p class="quick-review-note">Automated scans cannot prove these; test and record evidence.</p>
-        ${renderQuickManualTasks(manualTasks)}
-      </div>
-    </div>
-  </section>`;
-}
-
 function renderLighthouseComparison(results: LighthouseAuditResult[] | undefined, issues: DedupedIssue[] = []): string {
   if (!results || results.length === 0) return "";
   const scores = results
@@ -2296,109 +2213,13 @@ function uniqueLighthouseAudits(audits: LighthouseAuditResult["failedAudits"]): 
   return unique.sort((left, right) => left.id.localeCompare(right.id));
 }
 
-function selectQuickFindings(issues: DedupedIssue[], limit: number): QuickFindingGroup[] {
-  const groups = new Map<string, QuickFindingGroup>();
-  for (const issue of issues) {
-    const key = [
-      issue.severity,
-      issue.findingType,
-      issue.ruleId,
-      issue.message,
-      issue.wcagCriteria.map((criterion) => criterion.id).sort().join(",")
-    ].join("::");
-    const existing = groups.get(key);
-    if (existing) {
-      existing.count += 1 + Math.max(0, issue.duplicateCount || 0);
-      if (compareIssuesForTriage(issue, existing.issue) < 0) {
-        existing.issue = issue;
-      }
-      if (issue.url) existing.pages.add(issue.url);
-      if (issue.stateId) existing.states.add(issue.stateId);
-      addQuickTarget(existing.targets, issue);
-      continue;
-    }
-    groups.set(key, {
-      issue,
-      count: 1 + Math.max(0, issue.duplicateCount || 0),
-      pages: new Set(issue.url ? [issue.url] : []),
-      states: new Set(issue.stateId ? [issue.stateId] : []),
-      targets: new Set(quickTarget(issue) ? [quickTarget(issue)] : [])
-    });
-  }
-
-  return [...groups.values()]
-    .sort(compareQuickFindingGroups)
-    .slice(0, limit);
-}
-
-function renderQuickFindings(groups: QuickFindingGroup[]): string {
-  if (groups.length === 0) return `<p class="muted">No automated findings to prioritize.</p>`;
-  return `<ol class="quick-review-list">${groups.map((group) => {
-    const { issue, count } = group;
-    const target = issue.stateId ? ` href="#${escapeAttribute(issue.stateId)}"` : "";
-    const label = issue.stateId ? `<a${target}>${escapeHtml(issue.ruleId)}</a>` : `<strong>${escapeHtml(issue.ruleId)}</strong>`;
-    const level = [...new Set(issue.wcagCriteria.map((criterion) => criterion.level))].join("/");
-    const countText = count > 1
-      ? `<span class="focus-path-meta">${count} findings grouped</span>`
-      : "";
-    const pageText = group.pages.size > 1
-      ? `<span class="focus-path-meta">${group.pages.size} pages affected</span>`
-      : "";
-    const ownershipText = issue.ownership?.kind === "third-party-embed"
-      ? `<span class="focus-path-meta">Third-party embed; verify ownership before assigning</span>`
-      : "";
-    return `<li class="quick-review-item quick-review-item-${issue.severity}">
-      ${label} ${severityBadge(issue.severity)}
-      ${countText}
-      ${pageText}
-      ${ownershipText}
-      <span class="focus-path-meta">${escapeHtml(issue.message)}</span>
-      ${level ? `<span class="focus-path-meta">WCAG Level ${escapeHtml(level)}</span>` : ""}
-    </li>`;
-  }).join("")}</ol>`;
-}
-
-function addQuickTarget(targets: Set<string>, issue: DedupedIssue): void {
-  const target = quickTarget(issue);
+function addIssueTarget(targets: Set<string>, issue: DedupedIssue): void {
+  const target = issueTarget(issue);
   if (target) targets.add(target);
 }
 
-function quickTarget(issue: DedupedIssue): string {
+function issueTarget(issue: DedupedIssue): string {
   return issue.file || issue.selector || "";
-}
-
-function renderQuickTabStops(steps: KeyboardAuditResult["steps"], included: boolean): string {
-  if (!included) return `<p class="muted">Keyboard evidence was not included.</p>`;
-  if (steps.length === 0) return `<p class="muted">No forward Tab stops were recorded.</p>`;
-  const items = steps.map((step, index) => {
-    const risk = !step.indicatorVisible || step.obscured || !step.visible;
-    return `<li class="quick-review-item${risk ? " quick-review-item-warning" : ""}">
-      <strong>${index + 1}. ${escapeHtml(step.accessibleName || step.selector || "Unnamed control")}</strong>
-      <span class="focus-path-meta">${escapeHtml(step.role || step.tagName)}${risk ? " · review focus visibility" : ""}</span>
-    </li>`;
-  }).join("");
-  return `<ol class="quick-review-list">${items}</ol>
-    <p class="quick-review-note">
-      <strong>Do:</strong> verify this order manually with Tab and Shift+Tab.
-      <span class="quick-review-action">Fix first if focus disappears, lands on hidden content, or jumps out of the expected visual order.</span>
-      <a class="quick-review-link" href="#keyboard-audit">Open full keyboard audit</a>
-    </p>`;
-}
-
-function renderQuickManualTasks(items: ManualChecklist["items"]): string {
-  if (items.length === 0) return `<p class="muted">No manual-review checklist was included.</p>`;
-  return `<ol class="quick-review-list">${items.map((item) => {
-    const targetCount = item.targets?.length || 0;
-    const firstStep = item.steps[0] || "Run the manual review steps for this area.";
-    const firstEvidence = item.evidence[0] || "Record notes, screenshots, or issue links.";
-    return `<li class="quick-review-item">
-      <strong>${escapeHtml(item.title)}</strong>
-      <span class="focus-path-meta">${targetCount ? `${targetCount} observed target${targetCount === 1 ? "" : "s"}` : "Choose a representative target"}</span>
-      <span class="quick-review-action"><strong>Do:</strong> ${escapeHtml(firstStep)}</span>
-      <span class="quick-review-evidence"><strong>Record:</strong> ${escapeHtml(firstEvidence)}</span>
-      <a class="quick-review-link" href="#manual-review-checklist">Open full checklist</a>
-    </li>`;
-  }).join("")}</ol>`;
 }
 
 function renderKeyboardAudit(audit: KeyboardAuditResult): string {
@@ -2462,7 +2283,7 @@ function keyboardReviewCard(title: string, detail: string, warning: boolean): st
 
 function renderKeyboardFocusPath(steps: KeyboardAuditResult["steps"]): string {
   if (steps.length === 0) {
-    return `<div aria-label="Visual Tab order"><h3>Visual Tab Order</h3><p class="muted">No forward focus steps were recorded.</p></div>`;
+    return `<div class="visual-tab-order" aria-label="Visual Tab order"><h3>Visual Tab Order</h3><p class="muted">No forward focus steps were recorded.</p></div>`;
   }
 
   const visibleSteps = steps.slice(0, 20);
@@ -2481,10 +2302,10 @@ function renderKeyboardFocusPath(steps: KeyboardAuditResult["steps"]): string {
     </li>`;
   }).join("");
   const truncated = steps.length > visibleSteps.length
-    ? `<p class="muted">Showing the first ${visibleSteps.length} of ${steps.length} forward steps. Complete selector data remains in the table below.</p>`
+    ? `<p class="muted focus-path-note">Showing the first ${visibleSteps.length} of ${steps.length} forward steps. Complete selector data remains in the table below.</p>`
     : "";
 
-  return `<div aria-label="Visual Tab order">
+  return `<div class="visual-tab-order" aria-label="Visual Tab order">
     <h3>Visual Tab Order</h3>
     <p class="muted">Follow the numbered controls from left to right. Orange steps require review.</p>
     <div class="focus-path-scroll-wrapper">
@@ -3164,8 +2985,9 @@ function renderTriageOverview(
   states: StateViewModel[],
   issues: DedupedIssue[]
 ): string {
-  const topStates = rankAffectedStates(states, 4);
-  const topRuleLimit = Math.min(5, Math.max(3, topStates.length || 3));
+  const topStates = rankAffectedStates(states, 5);
+  const ruleSummaries = summarizeRules(issues);
+  const topRuleLimit = calculateTopRuleLimit(topStates, ruleSummaries);
 
   return `<h2>Triage Overview</h2>
   <div class="triage-grid">
@@ -3175,7 +2997,7 @@ function renderTriageOverview(
     </div>
     <div>
       <h3>Top Rules</h3>
-      ${renderTopRules(issues, topRuleLimit)}
+      ${renderTopRules(ruleSummaries, topRuleLimit)}
     </div>
   </div>`;
 }
@@ -3218,8 +3040,33 @@ function renderTopStates(rankedStates: StateViewModel[]): string {
   </ol>`;
 }
 
-function renderTopRules(issues: DedupedIssue[], limit: number): string {
-  const allRuleSummaries = summarizeRules(issues);
+function calculateTopRuleLimit(
+  topStates: StateViewModel[],
+  ruleSummaries: ReturnType<typeof summarizeRules>
+): number {
+  if (ruleSummaries.length === 0) return 0;
+  const targetHeightUnits = Math.max(1, topStates.length) * 3;
+  let usedUnits = 0;
+  let limit = 0;
+
+  for (const rule of ruleSummaries.slice(0, 5)) {
+    const nextUnits = estimateTopRuleHeightUnits(rule);
+    if (limit > 0 && usedUnits + nextUnits > targetHeightUnits) break;
+    usedUnits += nextUnits;
+    limit += 1;
+  }
+
+  return Math.min(ruleSummaries.length, 5, Math.max(3, limit));
+}
+
+function estimateTopRuleHeightUnits(rule: ReturnType<typeof summarizeRules>[number]): number {
+  return 2
+    + (rule.criteria.length > 0 ? 1 : 0)
+    + (renderRuleImpactSignal(rule) ? 1 : 0)
+    + (rule.states.length > 0 ? 1 : 0);
+}
+
+function renderTopRules(allRuleSummaries: ReturnType<typeof summarizeRules>, limit: number): string {
   const ruleSummaries = allRuleSummaries.slice(0, limit);
   const hiddenRuleCount = Math.max(0, allRuleSummaries.length - ruleSummaries.length);
 
@@ -3245,7 +3092,7 @@ function renderTopRules(issues: DedupedIssue[], limit: number): string {
     </li>`;
     }).join("\n")}
   </ol>
-  ${hiddenRuleCount > 0 ? `<p class="muted triage-more">+ ${hiddenRuleCount} more rule${hiddenRuleCount === 1 ? "" : "s"} in the full JSON report.</p>` : ""}`;
+  ${hiddenRuleCount > 0 ? `<p class="muted triage-more">+ ${hiddenRuleCount} more rule${hiddenRuleCount === 1 ? "" : "s"} shown in the state findings below.</p>` : ""}`;
 }
 
 function renderRuleImpactSignal(rule: ReturnType<typeof summarizeRules>[number]): string {
@@ -3532,7 +3379,7 @@ function renderHumanVerificationContext(issue: DedupedIssue): string {
 function renderCopyIssueAction(ruleId: string, issues: DedupedIssue[]): string {
   const markdown = buildIssueMarkdown(ruleId, issues);
   return `<div class="issue-actions">
-    <button class="copy-issue" type="button" title="Copy a GitHub/Jira-ready Markdown summary" data-copy-issue="${escapeAttribute(encodeURIComponent(markdown))}">Copy for ticket</button>
+    <button class="copy-issue copy-issue-ticket" type="button" title="Copy a GitHub/Jira-ready Markdown summary" data-copy-issue="${escapeAttribute(encodeURIComponent(markdown))}"><span>Copy for</span><span>ticket</span></button>
     <span class="copy-issue-status" data-copy-issue-status aria-live="polite"></span>
   </div>`;
 }
@@ -3719,14 +3566,12 @@ function renderContrastEvidence(
 }
 
 function renderContrastMeasurement(contrast: NonNullable<DedupedIssue["contrast"]>): string {
-  const typography = [contrast.fontSize, contrast.fontWeight].filter(Boolean).join(", ");
   return `<div class="contrast-measurement">
-    <div><strong>Contrast ${contrast.actualRatio}:1</strong> · required ${contrast.requiredRatio}:1</div>
+    <div><strong>Contrast ${contrast.actualRatio}:1</strong> · needs ${contrast.requiredRatio}:1</div>
     <div class="contrast-colors">
       <span class="contrast-color">${renderColorSwatch(contrast.foreground)} Text <code>${escapeHtml(contrast.foreground)}</code></span>
       <span class="contrast-color">${renderColorSwatch(contrast.background)} Background <code>${escapeHtml(contrast.background)}</code></span>
     </div>
-    ${typography ? `<div class="url">${escapeHtml(typography)}</div>` : ""}
   </div>`;
 }
 
@@ -3786,11 +3631,12 @@ function renderContrastGuidance(
   contrast: NonNullable<DedupedIssue["contrast"]>,
   markers = ""
 ): string {
+  const compactSuggestions = selectContrastSuggestions(contrast.suggestions);
   const suggestions = contrast.suggestions.length > 0
-    ? `<div class="contrast-suggestions">
-      ${contrast.suggestions.map((suggestion) => `<span class="contrast-color">
+    ? `<div class="contrast-suggestions contrast-try">
+      ${compactSuggestions.map((suggestion) => `<span class="contrast-color">
         ${renderColorSwatch(suggestion.color)}
-        ${formatContrastSuggestionPurpose(suggestion.purpose)}: <code>${escapeHtml(suggestion.color)}</code> → ${suggestion.contrastRatio}:1
+        ${formatContrastSuggestionTarget(suggestion.target)} ${formatContrastSuggestionPurpose(suggestion.purpose)} <code>${escapeHtml(suggestion.color)}</code> (${suggestion.contrastRatio}:1)
       </span>`).join("\n")}
     </div>`
     : `<div class="muted">No reliable single-color suggestion is available. Review this contrast manually.</div>`;
@@ -3799,20 +3645,38 @@ function renderContrastGuidance(
     <div class="contrast-guidance-title"><span>Color recommendations</span>${markers}</div>
     <div class="contrast-guidance-body">
       ${renderContrastMeasurement(contrast)}
-      <div><strong>Suggested accessible colors</strong></div>
-      <div class="url">Keep background ${escapeHtml(contrast.background)} and change the text color:</div>
       ${suggestions}
-      <div class="url">Review design tokens and hover, focus, disabled, and visited states before applying.</div>
     </div>
   </div>`;
+}
+
+function selectContrastSuggestions(
+  suggestions: NonNullable<DedupedIssue["contrast"]>["suggestions"]
+): NonNullable<DedupedIssue["contrast"]>["suggestions"] {
+  const preferred = suggestions.filter((suggestion) => suggestion.purpose !== "enhanced");
+  const pool = preferred.length > 0 ? preferred : suggestions;
+  const minimumByTarget = [
+    pool.find((suggestion) => suggestion.target === "foreground" && suggestion.purpose === "minimum"),
+    pool.find((suggestion) => suggestion.target === "background" && suggestion.purpose === "minimum")
+  ].filter((suggestion): suggestion is NonNullable<typeof suggestion> => Boolean(suggestion));
+
+  if (minimumByTarget.length >= 2) return minimumByTarget;
+
+  return pool.slice(0, 2);
+}
+
+function formatContrastSuggestionTarget(
+  target: NonNullable<DedupedIssue["contrast"]>["suggestions"][number]["target"]
+): string {
+  return target === "background" ? "Background color" : "Text color";
 }
 
 function formatContrastSuggestionPurpose(
   purpose: NonNullable<DedupedIssue["contrast"]>["suggestions"][number]["purpose"]
 ): string {
-  if (purpose === "minimum") return "Minimum change";
+  if (purpose === "minimum") return "Minimum";
   if (purpose === "recommended") return "Recommended";
-  return "Enhanced contrast";
+  return "AAA";
 }
 
 function renderColorSwatch(color: string): string {
@@ -4137,16 +4001,6 @@ function compareIssuesForTriage(left: DedupedIssue, right: DedupedIssue): number
     || left.message.localeCompare(right.message);
 }
 
-function compareQuickFindingGroups(left: QuickFindingGroup, right: QuickFindingGroup): number {
-  const representativeDifference = compareIssuesForTriage(left.issue, right.issue);
-  if (representativeDifference) return representativeDifference;
-  const pageDifference = right.pages.size - left.pages.size;
-  if (pageDifference) return pageDifference;
-  const stateDifference = right.states.size - left.states.size;
-  if (stateDifference) return stateDifference;
-  return right.count - left.count || left.issue.ruleId.localeCompare(right.issue.ruleId);
-}
-
 function compareIssueGroupEntries(
   left: [string, DedupedIssue[]],
   right: [string, DedupedIssue[]]
@@ -4244,7 +4098,7 @@ function summarizeRules(issues: DedupedIssue[]): Array<{
     }
     summary.wcagLevelRank = Math.min(summary.wcagLevelRank, issuePrimaryWcagLevelRank(issue));
     if (issue.url) summary.pages.add(issue.url);
-    addQuickTarget(summary.targets, issue);
+    addIssueTarget(summary.targets, issue);
     if (issue.stateId) summary.states.add(issue.stateId);
     for (const criterion of issue.wcagCriteria || []) {
       summary.criteria.add(`WCAG ${criterion.id} ${criterion.title}, Level ${criterion.level}`);

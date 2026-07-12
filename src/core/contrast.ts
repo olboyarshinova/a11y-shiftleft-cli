@@ -74,18 +74,33 @@ export function suggestContrastColors(
   const seenColors = new Set<string>();
 
   for (const target of targets) {
-    const color = findNearestPassingColor(
+    const foregroundColor = findNearestPassingColor(
       foregroundRgb,
       (candidate) => getContrastRatio(candidate, backgroundRgb),
       target.ratio
     );
-    if (!color) continue;
+    if (foregroundColor) {
+      const suggestion = toSuggestion("foreground", target.purpose, foregroundColor, backgroundRgb);
+      const key = `${suggestion.target}:${suggestion.color}`;
+      if (!seenColors.has(key)) {
+        seenColors.add(key);
+        suggestions.push(suggestion);
+      }
+    }
 
-    const suggestion = toSuggestion(target.purpose, color, backgroundRgb);
-    if (seenColors.has(suggestion.color)) continue;
-
-    seenColors.add(suggestion.color);
-    suggestions.push(suggestion);
+    const backgroundColor = findNearestPassingColor(
+      backgroundRgb,
+      (candidate) => getContrastRatio(foregroundRgb, candidate),
+      target.ratio
+    );
+    if (backgroundColor) {
+      const suggestion = toSuggestion("background", target.purpose, backgroundColor, foregroundRgb);
+      const key = `${suggestion.target}:${suggestion.color}`;
+      if (!seenColors.has(key)) {
+        seenColors.add(key);
+        suggestions.push(suggestion);
+      }
+    }
   }
 
   return suggestions;
@@ -100,15 +115,16 @@ export function calculateContrastRatio(foreground: string, background: string): 
 }
 
 function toSuggestion(
+  target: ContrastSuggestion["target"],
   purpose: ContrastSuggestion["purpose"],
-  foreground: RgbColor,
-  background: RgbColor
+  color: RgbColor,
+  otherColor: RgbColor
 ): ContrastSuggestion {
   return {
-    target: "foreground",
+    target,
     purpose,
-    color: toHexColor(foreground),
-    contrastRatio: roundRatio(getContrastRatio(foreground, background))
+    color: toHexColor(color),
+    contrastRatio: roundRatio(getContrastRatio(color, otherColor))
   };
 }
 

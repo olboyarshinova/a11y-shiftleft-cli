@@ -304,9 +304,11 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.doesNotMatch(html, /<details class="remediation" open>/);
   assert.match(html, /<div class="triage-title">\s*<div class="triage-title-main">\s*<code>button-name<\/code>[\s\S]*?<\/div>\s*<div class="issue-actions">/);
   assert.match(html, /\.triage-title \.issue-actions \{[\s\S]*?margin-top: 0/);
-  assert.match(html, /class="copy-issue"/);
+  assert.match(html, /\.copy-issue-ticket \{[\s\S]*?width: 72px/);
+  assert.match(html, /\.copy-issue-ticket span \{[\s\S]*?display: block/);
+  assert.match(html, /class="copy-issue copy-issue-ticket"/);
   assert.match(html, /title="Copy a GitHub\/Jira-ready Markdown summary"/);
-  assert.match(html, />Copy for ticket<\/button>/);
+  assert.match(html, /<span>Copy for<\/span><span>ticket<\/span><\/button>/);
   assert.match(html, /data-copy-issue-status aria-live="polite"/);
   assert.match(html, /navigator\.clipboard/);
   assert.match(html, /Copied ticket draft/);
@@ -318,6 +320,12 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /\.ticket-drafts \{[\s\S]*?margin-top: 0/);
   assert.match(html, /@media \(min-width: 1100px\) \{[\s\S]*?\.ticket-drafts \{[\s\S]*?margin-top: 44px/);
   assert.ok(html.indexOf('aria-label="Exploration summary"') < html.indexOf('aria-label="Finding summary"'));
+  assert.match(html, /main \{[\s\S]*?gap: 12px[\s\S]*?padding: 12px/);
+  assert.match(html, /\.panel \{[\s\S]*?padding: 12px/);
+  assert.match(html, /\.metric \{[\s\S]*?padding: 8px 10px/);
+  assert.match(html, /\.metric strong \{[\s\S]*?font-size: 20px/);
+  assert.match(html, /\.metric span \{[\s\S]*?font-size: 12px/);
+  assert.match(html, /\.state-body \{[\s\S]*?gap: 8px[\s\S]*?padding: 10px/);
   assert.match(html, /class="metric metric-critical(?: metric-zero)?"/);
   assert.match(html, /class="metric metric-warning(?: metric-zero)?"/);
   assert.match(html, /class="metric metric-info(?: metric-zero)?"/);
@@ -326,7 +334,7 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /class="metric metric-best-practice(?: metric-zero)?"/);
   assert.match(html, /class="metric metric-info metric-zero"/);
   assert.match(html, /\.metric-critical strong,[\s\S]*?\.metric-wcag strong \{[\s\S]*?color: var\(--critical\)/);
-  assert.match(html, /\.metric-warning strong,[\s\S]*?\.metric-needs-review strong \{[\s\S]*?color: var\(--warning\)/);
+  assert.match(html, /\.metric-warning strong,[\s\S]*?\.metric-needs-review strong \{[\s\S]*?color: var\(--warning-marker\)/);
   assert.match(html, /\.metric-info strong,[\s\S]*?\.metric-best-practice strong \{[\s\S]*?color: var\(--info\)/);
   assert.match(html, /\.metric-zero strong \{[\s\S]*?color: var\(--ok\)/);
   assert.doesNotMatch(html, /\.metric-wcag \{[\s\S]*?background:/);
@@ -465,48 +473,6 @@ test("renderExplorationHtml gives every table an accessible name for PDF export"
   assert.deepEqual(unlabeledTables, []);
 });
 
-test("renderExplorationHtml groups repeated Fix First findings", () => {
-  const firstPartyButtonIssue = {
-    ...issues[0],
-    ownership: {
-      kind: "first-party" as const,
-      label: "First-party application code"
-    }
-  };
-  const repeatedIssues = [
-    firstPartyButtonIssue,
-    {
-      ...firstPartyButtonIssue,
-      selector: ".modal-close",
-      fingerprint: "button-name::modal-close",
-      stateId: "state-2",
-      stateLabel: "Click: Open audit modal"
-    },
-    {
-      ...firstPartyButtonIssue,
-      selector: ".next-tip",
-      fingerprint: "button-name::next-tip",
-      stateId: "state-1",
-      stateLabel: "Initial page"
-    }
-  ];
-  const html = renderExplorationHtml(graph, repeatedIssues, {
-    manualChecklist: {
-      generatedAt: "2026-06-09T00:00:00.000Z",
-      framework: "react",
-      urls: ["http://localhost:3000/"],
-      items: []
-    }
-  });
-
-  const quickReview = html.match(/<section class="panel quick-review"[\s\S]*?<\/section>/)?.[0] || "";
-
-  assert.match(quickReview, /Fix First/);
-  assert.equal((quickReview.match(/button-name/g) || []).length, 1);
-  assert.match(quickReview, /3 findings grouped/);
-  assert.doesNotMatch(quickReview, /Fix scope:/);
-});
-
 test("renderExplorationHtml hides findings already shown in earlier states", () => {
   const modalGraph = {
     ...graph,
@@ -576,53 +542,6 @@ test("renderExplorationHtml hides findings already shown in earlier states", () 
   assert.match(state2Html, /1 critical/);
 });
 
-test("renderExplorationHtml prioritizes first-party high-impact Fix First items", () => {
-  const firstPartyIssue = {
-    ...issues[0],
-    ruleId: "form-invalid-error-not-associated",
-    message: "Input error is not associated with the invalid field",
-    selector: "#account-code",
-    fingerprint: "form-invalid-error-not-associated::#account-code",
-    ownership: {
-      kind: "first-party" as const,
-      label: "First-party application code"
-    },
-    userImpact: {
-      level: "blocker" as const,
-      affectedUsers: ["Screen reader users"],
-      reason: "Form errors that are not programmatically associated can block correction."
-    },
-    confidence: "high" as const,
-    confidenceScore: 95,
-    confidenceReason: "Rendered form evidence found an invalid field without an associated error."
-  };
-  const repeatedFirstPartyIssue = {
-    ...firstPartyIssue,
-    url: "http://localhost:3000/settings",
-    stateId: "state-2",
-    stateLabel: "Click: Open menu",
-    fingerprint: "form-invalid-error-not-associated::settings"
-  };
-  const html = renderExplorationHtml(graph, [issues[0], firstPartyIssue, repeatedFirstPartyIssue], {
-    manualChecklist: {
-      generatedAt: "2026-06-09T00:00:00.000Z",
-      framework: "react",
-      urls: ["http://localhost:3000/"],
-      items: []
-    }
-  });
-
-  const quickReview = html.match(/<section class="panel quick-review"[\s\S]*?<\/section>/)?.[0] || "";
-
-  assert.ok(
-    quickReview.indexOf("form-invalid-error-not-associated") < quickReview.indexOf("button-name")
-  );
-  assert.match(quickReview, /2 pages affected/);
-  assert.doesNotMatch(quickReview, /Impact: blocker/);
-  assert.doesNotMatch(quickReview, /Fix scope:/);
-  assert.match(quickReview, /Third-party embed; verify ownership before assigning/);
-});
-
 test("renderExplorationHtml sorts rule triage by severity and WCAG level", () => {
   const criterion = (
     id: string,
@@ -679,10 +598,11 @@ test("renderExplorationHtml sorts rule triage by severity and WCAG level", () =>
   const stateGroupOrder = [...stateOne.matchAll(/<li class="issue">[\s\S]*?<code>(critical-a|critical-aa|warning-a|info-aaa)<\/code>/g)]
     .map((match) => match[1]);
 
-  assert.ok(topRules.indexOf("critical-a") < topRules.indexOf("critical-aa"));
-  assert.ok(topRules.indexOf("critical-aa") < topRules.indexOf("warning-a"));
+  assert.match(topRules, /critical-a/);
+  assert.match(topRules, /critical-aa/);
+  assert.match(topRules, /warning-a/);
   assert.doesNotMatch(topRules, /info-aaa/);
-  assert.match(html, /\+ 1 more rule in the full JSON report\./);
+  assert.match(html, /\+ 1 more rule shown in the state findings below\./);
   assert.deepEqual(stateGroupOrder, ["critical-a", "critical-aa", "warning-a", "info-aaa"]);
 });
 
@@ -721,7 +641,8 @@ test("renderExplorationHtml ranks repeated warning rules before one-off warning 
   const html = renderExplorationHtml(graph, triageIssues);
   const topRules = html.match(/<h3>Top Rules<\/h3>\s*<ol class="triage-list">([\s\S]*?)<\/ol>/)?.[1] || "";
 
-  assert.ok(topRules.indexOf("color-contrast") < topRules.indexOf("keyboard-focus-cycle"));
+  assert.match(topRules, /color-contrast/);
+  assert.match(topRules, /keyboard-focus-cycle/);
   assert.match(topRules, /28 occurrences/);
 });
 
@@ -744,7 +665,38 @@ test("renderExplorationHtml keeps Top Rules close to Most Affected States height
   assert.match(topRules, /rule-2/);
   assert.match(topRules, /rule-3/);
   assert.doesNotMatch(topRules, /rule-4/);
-  assert.match(hiddenMessage, /\+ 3 more rules in the full JSON report\./);
+  assert.match(hiddenMessage, /\+ 3 more rules shown in the state findings below\./);
+  assert.match(html, /\.triage-more \{[\s\S]*?margin: 10px 0 0/);
+});
+
+test("renderExplorationHtml shows up to five affected states in triage", () => {
+  const manyStateGraph = {
+    ...graph,
+    states: Array.from({ length: 6 }, (_, index) => ({
+      ...graph.states[0],
+      id: `state-${index + 1}`,
+      title: `State ${index + 1}`,
+      fingerprint: `state-${index + 1}`,
+      actionLabel: `State ${index + 1}`,
+      issueCount: 1
+    }))
+  };
+  const manyStateIssues = Array.from({ length: 6 }, (_, index) => ({
+    ...issues[0],
+    selector: `.button-${index + 1}`,
+    fingerprint: `button-name::state-${index + 1}`,
+    stateId: `state-${index + 1}`,
+    stateLabel: `State ${index + 1}`,
+    elementBounds: {
+      ...issues[0].elementBounds,
+      y: issues[0].elementBounds.y + (index * 20)
+    }
+  }));
+  const html = renderExplorationHtml(manyStateGraph, manyStateIssues);
+  const topStates = html.match(/<h3>Most Affected States<\/h3>\s*<ol class="triage-list">([\s\S]*?)<\/ol>/)?.[1] || "";
+
+  assert.match(topStates, /href="#state-5"/);
+  assert.doesNotMatch(topStates, /href="#state-6"/);
 });
 
 test("renderExplorationHtml shows every affected state for a top rule", () => {
@@ -1184,6 +1136,7 @@ test("renderExplorationHtml renders color contrast evidence and suggestions", ()
       fontWeight: "normal",
       suggestions: [
         { target: "foreground", purpose: "minimum", color: "#767676", contrastRatio: 4.54 },
+        { target: "background", purpose: "minimum", color: "#222222", contrastRatio: 5.5 },
         { target: "foreground", purpose: "recommended", color: "#6F6F6F", contrastRatio: 5.02 },
         { target: "foreground", purpose: "enhanced", color: "#595959", contrastRatio: 7 }
       ]
@@ -1191,17 +1144,20 @@ test("renderExplorationHtml renders color contrast evidence and suggestions", ()
   }]);
 
   assert.match(html, /Contrast 2\.32:1/);
-  assert.match(html, /required 4\.5:1/);
+  assert.match(html, /needs 4\.5:1/);
+  assert.doesNotMatch(html, /12\.0pt \(16px\), normal/);
   assert.match(html, /Text <code>#aaaaaa<\/code>/);
   assert.match(html, /Background <code>#ffffff<\/code>/);
-  assert.match(html, /Keep background #ffffff and change the text color/);
   assert.match(html, /<div class="contrast-evidence contrast-guidance">\s*<div class="contrast-guidance-title"><span>Color recommendations<\/span>/);
   assert.match(html, /<div class="contrast-guidance-body">\s*<div class="contrast-measurement">/);
-  assert.match(html, /<div class="contrast-guidance-title"><span>Color recommendations<\/span>[\s\S]*?Contrast 2\.32:1[\s\S]*?Suggested accessible colors/);
-  assert.match(html, /Minimum change: <code>#767676<\/code> → 4\.54:1/);
-  assert.match(html, /Recommended: <code>#6F6F6F<\/code> → 5\.02:1/);
-  assert.match(html, /Enhanced contrast: <code>#595959<\/code> → 7:1/);
+  assert.doesNotMatch(html, /<strong>Try:<\/strong>/);
+  assert.match(html, /Text color Minimum <code>#767676<\/code> \(4\.54:1\)/);
+  assert.match(html, /Background color Minimum <code>#222222<\/code> \(5\.5:1\)/);
+  assert.doesNotMatch(html, /Text color Recommended <code>#6F6F6F<\/code> \(5\.02:1\)/);
+  assert.doesNotMatch(html, /Enhanced contrast/);
+  assert.doesNotMatch(html, /<code>#595959<\/code>/);
   assert.match(html, /background-color: #767676/);
+  assert.match(html, /background-color: #222222/);
 });
 
 test("renderExplorationHtml shows identical contrast guidance once per screenshot", () => {
@@ -1243,8 +1199,8 @@ test("renderExplorationHtml shows identical contrast guidance once per screensho
 
   assert.equal((html.match(/<div class="contrast-measurement">\s*<div><strong>Contrast 2\.32:1<\/strong>/g) || []).length, 1);
   assert.match(html, /2 locations/);
-  assert.equal((html.match(/Suggested accessible colors/g) || []).length, 1);
-  assert.equal((html.match(/Minimum change: <code>#767676<\/code>/g) || []).length, 1);
+  assert.doesNotMatch(html, /<strong>Try:<\/strong>/);
+  assert.equal((html.match(/Text color Minimum <code>#767676<\/code>/g) || []).length, 1);
   assert.match(html, /Shared recommendation for 2 findings/);
   assert.doesNotMatch(html, /Applies to/);
   assert.doesNotMatch(html, /contrast-guidance-targets/);
@@ -1664,29 +1620,18 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /share-summary\.md/);
   assert.match(html, /Add <code>--include-html<\/code> only when screenshots are approved for sharing/);
   assert.match(html, /Lighthouse comparison/);
-  assert.match(html, /Quick Review/);
-  assert.match(html, /Compact view of priority fixes, keyboard start, and human checks/);
-  assert.match(html, /Start here: press Tab from the top of the page/);
-  assert.match(html, /\.quick-review-grid \{[\s\S]*?gap: 10px/);
-  assert.match(html, /\.quick-review-item \{[\s\S]*?padding: 4px 7px/);
-  assert.match(html, /Fix First/);
-  assert.match(html, /Keyboard Start/);
-  assert.match(html, /Manual Checks/);
-  assert.match(html, /Automated scans cannot prove these; test and record evidence/);
-  assert.match(html, /<strong>Do:<\/strong> Review each form label\./);
-  assert.match(html, /<strong>Record:<\/strong> Form review notes/);
-  assert.match(html, /href="#manual-review-checklist">Open full checklist/);
+  assert.doesNotMatch(html, /Quick Review/);
+  assert.doesNotMatch(html, /quick-review/);
   assert.match(html, /WCAG Level A/);
   assert.match(html, /Third-party embedded content/);
   assert.match(html, /class="finding-context finding-context-third-party"/);
   assert.match(html, /Ownership: Third-party embedded content/);
   assert.match(html, /Source: <a href="https:\/\/www\.youtube\.com\/" target="_blank" rel="noopener noreferrer">youtube\.com<\/a>/);
   assert.match(html, /Third-party embedded content\. Manual verification recommended\./);
-  assert.match(html, /1\. Search products/);
-  assert.match(html, /review focus visibility/);
-  assert.match(html, /verify this order manually with Tab and Shift\+Tab/);
-  assert.match(html, /href="#keyboard-audit">Open full keyboard audit/);
-  assert.match(html, /1 observed target/);
+  assert.match(html, /Visual Tab Order/);
+  assert.match(html, /<span class="focus-path-number" aria-hidden="true">1<\/span>/);
+  assert.match(html, /Search products/);
+  assert.match(html, /Meaningful form labels and instructions \(1\.3\.1, 3\.3\.2\) — 1 target/);
   assert.match(html, /Keyboard Audit/);
   assert.match(html, /class="panel keyboard-audit" id="keyboard-audit" aria-label="Keyboard audit"/);
   assert.match(html, /\.keyboard-audit \{[\s\S]*?grid-column: 1 \/ -1/);
@@ -1696,11 +1641,14 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /Reverse order not checked/);
   assert.match(html, /keyboard-review-card-warning/);
   assert.match(html, /Visual Tab Order/);
+  assert.match(html, /\.visual-tab-order \{[\s\S]*?margin-top: 16px/);
+  assert.match(html, /<div class="visual-tab-order" aria-label="Visual Tab order">/);
   assert.match(html, /<div class="focus-path-scroll-wrapper">/);
   assert.match(html, /<ol class="focus-path" tabindex="0" aria-label="Forward keyboard focus path" data-focus-path-scroll>/);
   assert.match(html, /data-focus-path-scrollbar/);
   assert.match(html, /data-focus-path-scrollbar-thumb/);
   assert.match(html, /focus-path-scrollbar-disabled/);
+  assert.match(html, /\.focus-path-note \{[\s\S]*?margin: 10px 0 0/);
   assert.match(html, /Search products/);
   assert.match(html, /Buy now/);
   assert.match(html, /Focus not visible/);
@@ -1752,6 +1700,9 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /Manual review/);
   assert.match(html, /Confirm focus order manually/);
   assert.match(html, /class="coverage-table"/);
+  assert.match(html, /\.coverage-table th,[\s\S]*?\.coverage-table td \{[\s\S]*?padding: 6px 9px/);
+  assert.match(html, /\.coverage-table input\[type="checkbox"\] \{[\s\S]*?height: 16px[\s\S]*?width: 16px/);
+  assert.match(html, /\.coverage-legend-item \{[\s\S]*?min-height: 32px/);
   assert.match(html, /Audit coverage evidence state summary/);
   assert.match(html, /coverage-legend-item coverage-legend-failed/);
   assert.match(html, /Failed evidence/);

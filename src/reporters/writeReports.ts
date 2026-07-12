@@ -1175,13 +1175,13 @@ function formatContrastEvidence(issue: DedupedIssue): string {
 
   const contrast = issue.contrast;
   const suggestions = contrast.suggestions
-    .map((suggestion) => `${suggestion.purpose} text ${suggestion.color} (${suggestion.contrastRatio}:1)`)
+    .map((suggestion) => `${suggestion.purpose} ${suggestion.target === "background" ? "background" : "text"} ${suggestion.color} (${suggestion.contrastRatio}:1)`)
     .join(", ");
 
   return [
     `\n  - Contrast: ${contrast.actualRatio}:1; required: ${contrast.requiredRatio}:1`,
     `\n  - Colors: text ${contrast.foreground}; background ${contrast.background}`,
-    suggestions ? `\n  - Suggested text colors on ${contrast.background}: ${suggestions}` : ""
+    suggestions ? `\n  - Suggested colors: ${suggestions}` : ""
   ].join("");
 }
 
