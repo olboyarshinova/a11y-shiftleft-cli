@@ -77,6 +77,8 @@ interface ExploreOptions {
   waitForSelector?: string;
   waitUntilUrl?: string;
   waitUntilPath?: string;
+  pauseOnHumanVerification?: boolean;
+  humanVerificationTimeoutMs?: string;
   scroll?: boolean;
   scrollStep?: string;
   scrollMaxSteps?: string;
@@ -144,6 +146,8 @@ export function registerExploreCommand(program: Command): void {
     .option("--wait-for-selector <selector>", "Wait for a selector before screenshots and scans")
     .option("--wait-until-url <pattern>", "Wait until the current URL contains a pattern before screenshots and scans")
     .option("--wait-until-path <path>", "Wait until the current URL reaches a path before screenshots and scans")
+    .option("--pause-on-human-verification", "Open a visible browser and wait for manual CAPTCHA or human-verification completion")
+    .option("--human-verification-timeout-ms <ms>", "Maximum time to wait for manual human-verification completion", "120000")
     .option("--no-scroll", "Do not auto-scroll each explored state before screenshots and scans")
     .option("--scroll-step <px>", "Pixels per auto-scroll step before scanning a state")
     .option("--scroll-max-steps <count>", "Maximum auto-scroll steps per explored state")
@@ -299,6 +303,8 @@ export function registerExploreCommand(program: Command): void {
         waitForSelector: effectiveConfig.explore.waitForSelector,
         waitUntilUrl: effectiveConfig.explore.waitUntilUrl,
         waitUntilPath: effectiveConfig.explore.waitUntilPath,
+        pauseOnHumanVerification: Boolean(options.pauseOnHumanVerification),
+        humanVerificationTimeoutMs: parseNonNegativeInteger(options.humanVerificationTimeoutMs, "Human verification timeout must be a non-negative integer."),
         scopeSelector: effectiveConfig.explore.scopeSelector,
         hideElements: effectiveConfig.explore.hideElements,
         browser: effectiveConfig.explore.browser,
@@ -325,6 +331,15 @@ export function registerExploreCommand(program: Command): void {
               stateId: event.stateId,
               actionCount: event.actionCount,
               skippedActionCount: event.skippedActionCount
+            }));
+          }
+
+          if (event.type === "human-verification") {
+            console.log(formatExploreProgressMessage({
+              type: "human-verification",
+              url: event.url,
+              message: event.message,
+              timeoutMs: event.timeoutMs
             }));
           }
         }
@@ -595,6 +610,12 @@ export function formatExploreProgressMessage(event:
     actionCount: number;
     skippedActionCount: number;
   }
+  | {
+    type: "human-verification";
+    url: string;
+    message: string;
+    timeoutMs: number;
+  }
 ): string {
   if (event.type === "state") {
     const screenshot = event.state.screenshot ? ` screenshot=${event.state.screenshot}` : "";
@@ -602,6 +623,10 @@ export function formatExploreProgressMessage(event:
       ? ` color-scheme=${event.state.colorScheme}`
       : "";
     return `[explore] rendered ${event.visitedStates}/${event.maxStates} ${event.state.id} depth=${event.state.depth} issues=${event.state.issueCount}${colorScheme}${screenshot}`;
+  }
+
+  if (event.type === "human-verification") {
+    return `[explore] Human verification detected (${event.message}) at ${event.url}. Complete it in the opened browser; waiting up to ${event.timeoutMs}ms.`;
   }
 
   return `[explore] ${event.stateId} queued=${event.actionCount} skipped=${event.skippedActionCount}`;

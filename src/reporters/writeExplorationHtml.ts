@@ -197,9 +197,11 @@ export function renderExplorationHtml(
     }
 
     .ticket-drafts {
+      align-self: start;
       background: #f8fcfa;
       border-left: 4px solid var(--ok);
       justify-self: end;
+      margin-top: 0;
       max-width: 380px;
       padding: 12px;
       width: 100%;
@@ -294,10 +296,46 @@ export function renderExplorationHtml(
       padding: 14px;
     }
 
+    .metric-critical,
+    .metric-wcag {
+      background: #fff5f6;
+      border-color: #ffb3bf;
+      border-left: 4px solid var(--critical);
+    }
+
+    .metric-warning,
+    .metric-needs-review {
+      background: #fff7ed;
+      border-color: #fdba74;
+      border-left: 4px solid var(--warning-marker);
+    }
+
+    .metric-info,
+    .metric-best-practice {
+      background: #eff6ff;
+      border-color: #93c5fd;
+      border-left: 4px solid var(--info);
+    }
+
     .metric strong {
       display: block;
       font-size: 22px;
       line-height: 1.1;
+    }
+
+    .metric-critical strong,
+    .metric-wcag strong {
+      color: var(--critical);
+    }
+
+    .metric-warning strong,
+    .metric-needs-review strong {
+      color: var(--warning);
+    }
+
+    .metric-info strong,
+    .metric-best-practice strong {
+      color: var(--info);
     }
 
     .metric span,
@@ -1795,6 +1833,10 @@ export function renderExplorationHtml(
         grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
       }
 
+      .ticket-drafts {
+        margin-top: 44px;
+      }
+
       main {
         grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
       }
@@ -1841,9 +1883,9 @@ export function renderExplorationHtml(
       ${metric("Critical", totals.critical, "critical")}
       ${metric("Warning", totals.warning, "warning")}
       ${metric("Info", totals.info, "info")}
-      ${metric("WCAG findings", findingTypes.wcag)}
-      ${metric("Needs review", findingTypes["needs-review"])}
-      ${metric("Best practices", findingTypes["best-practice"])}
+      ${metric("WCAG findings", findingTypes.wcag, "wcag")}
+      ${metric("Needs review", findingTypes["needs-review"], "needs-review")}
+      ${metric("Best practices", findingTypes["best-practice"], "best-practice")}
     </section>
 
     ${renderQuickReview(reportIssues, options)}
@@ -3784,8 +3826,10 @@ function renderColorSwatch(color: string): string {
   return `<span class="color-swatch" style="background-color: ${escapeAttribute(color)}" aria-hidden="true"></span>`;
 }
 
-function metric(label: string, value: number | string, severity?: Severity): string {
-  const className = severity ? `metric metric-${severity}` : "metric";
+type MetricTone = Severity | "wcag" | "needs-review" | "best-practice";
+
+function metric(label: string, value: number | string, tone?: MetricTone): string {
+  const className = tone ? `metric metric-${tone}` : "metric";
 
   return `<div class="${className}">
     <strong>${escapeHtml(String(value))}</strong>
@@ -4219,9 +4263,10 @@ function summarizeRules(issues: DedupedIssue[]): Array<{
     .sort((a, b) => {
       const severityDifference = severityValue(b.highestSeverity) - severityValue(a.highestSeverity);
       if (severityDifference) return severityDifference;
+      if (b.occurrenceCount !== a.occurrenceCount) return b.occurrenceCount - a.occurrenceCount;
+      if (b.severityScore !== a.severityScore) return b.severityScore - a.severityScore;
       const levelDifference = a.wcagLevelRank - b.wcagLevelRank;
       if (levelDifference) return levelDifference;
-      if (b.severityScore !== a.severityScore) return b.severityScore - a.severityScore;
       const totalA = a.critical + a.warning + a.info;
       const totalB = b.critical + b.warning + b.info;
       if (totalB !== totalA) return totalB - totalA;

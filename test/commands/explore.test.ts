@@ -21,6 +21,8 @@ test("explore supports opening the visual report", () => {
   assert.equal(flags.includes("--auth-state"), true);
   assert.equal(flags.includes("--wait-until-url"), true);
   assert.equal(flags.includes("--wait-until-path"), true);
+  assert.equal(flags.includes("--pause-on-human-verification"), true);
+  assert.equal(flags.includes("--human-verification-timeout-ms"), true);
 });
 
 test("formatVerboseExploreSummary renders exploration context", () => {
@@ -120,6 +122,13 @@ test("formatExploreProgressMessage renders compact progress lines", () => {
     actionCount: 4,
     skippedActionCount: 1
   }), "[explore] state-2 queued=4 skipped=1");
+
+  assert.match(formatExploreProgressMessage({
+    type: "human-verification",
+    url: "https://example.com",
+    message: "Cloudflare human verification",
+    timeoutMs: 120000
+  }), /Complete it in the opened browser/);
 });
 
 test("formatExploreConsoleSummary renders a readable visual scan summary", () => {

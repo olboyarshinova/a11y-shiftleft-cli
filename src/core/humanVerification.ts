@@ -10,6 +10,11 @@ interface DetectablePage {
   evaluate: <T>(pageFunction: () => T) => Promise<T>;
 }
 
+export interface HumanVerificationWaitOptions {
+  timeoutMs?: number;
+  pollMs?: number;
+}
+
 const SIGNALS: Array<{ provider: HumanVerificationSignal["provider"]; pattern: RegExp; label: string }> = [
   { provider: "cloudflare", pattern: /verify you are human|checking your browser|cf-challenge|cf-turnstile/i, label: "Cloudflare human verification" },
   { provider: "turnstile", pattern: /turnstile|cf-turnstile/i, label: "Turnstile human verification" },
@@ -29,6 +34,23 @@ export async function detectHumanVerification(page: DetectablePage): Promise<Hum
   } catch {
     return undefined;
   }
+}
+
+export async function waitForHumanVerificationToClear(
+  page: DetectablePage,
+  options: HumanVerificationWaitOptions = {}
+): Promise<HumanVerificationSignal | undefined> {
+  const timeoutMs = Math.max(0, options.timeoutMs ?? 120_000);
+  const pollMs = Math.max(250, options.pollMs ?? 1_000);
+  const deadline = Date.now() + timeoutMs;
+  let latest = await detectHumanVerification(page);
+
+  while (latest && Date.now() < deadline) {
+    await delay(Math.min(pollMs, Math.max(0, deadline - Date.now())));
+    latest = await detectHumanVerification(page);
+  }
+
+  return latest;
 }
 
 export function detectHumanVerificationText(value: string): HumanVerificationSignal | undefined {
@@ -68,4 +90,8 @@ export function createHumanVerificationIssue(options: {
     stateLabel: options.stateLabel,
     message: `${options.signal.message} blocked automated scanning for ${options.url}. Use a staging or preview URL that allows trusted automation, allowlist the CI/browser environment, or complete this page through a manual accessibility review.`
   };
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

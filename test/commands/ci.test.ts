@@ -49,6 +49,9 @@ test("workflowTemplate supports bounded fast PR crawls", () => {
 
   assert.match(workflow, /name: Accessibility PR/);
   assert.match(workflow, /pull_request:/);
+  assert.match(workflow, /actions\/checkout@v6/);
+  assert.match(workflow, /actions\/setup-node@v6/);
+  assert.match(workflow, /node-version: 22/);
   assert.match(workflow, /--crawl --crawl-depth 1 --crawl-limit 5/);
   assert.match(workflow, /Comment on PR/);
 });
@@ -85,6 +88,9 @@ test("fullWorkflowTemplate creates scheduled full-site crawl workflow", () => {
 
   assert.match(workflow, /name: Accessibility Full Site/);
   assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /actions\/checkout@v6/);
+  assert.match(workflow, /actions\/setup-node@v6/);
+  assert.match(workflow, /node-version: 22/);
   assert.match(workflow, /cron: "0 7 \* \* 1"/);
   assert.match(workflow, /--crawl --crawl-depth 3 --crawl-limit 100 --semi-auto/);
   assert.match(workflow, /--fail-on none/);

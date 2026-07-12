@@ -80,7 +80,26 @@ npx a11y-shiftleft-cli audit \
   --out reports
 ```
 
-## 4. Keep Secrets Out Of Git
+## 4. Manual Human Verification
+
+Some public websites show CAPTCHA or "verify you are human" screens to
+automation. The CLI does not bypass these challenges. For local visual audits,
+you can ask it to open a visible browser and wait while you complete the
+challenge manually:
+
+```bash
+npx a11y-shiftleft-cli audit \
+  --url https://example.com \
+  --pause-on-human-verification \
+  --human-verification-timeout-ms 120000 \
+  --out reports \
+  --open
+```
+
+Use this for local review only. In CI, prefer an allowlisted preview or staging
+URL where bot protection does not replace the page.
+
+## 5. Keep Secrets Out Of Git
 
 `auth login` adds the common auth folder to `.gitignore` by default. If your
 team uses a custom path, add it manually:

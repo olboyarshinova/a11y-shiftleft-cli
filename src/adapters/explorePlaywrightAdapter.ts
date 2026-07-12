@@ -8,7 +8,7 @@ import { type Browser, type BrowserContext, type BrowserContextOptions, type Pag
 import { launchBrowserRuntime } from "../core/browserRuntime.js";
 import { hidePageElements, normalizeHideElementSelectors } from "../core/hideElements.js";
 import { applyColorScheme, detectPageColorSchemes, getPageAppearanceSignature, normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig } from "../core/pageScroll.js";
-import { createHumanVerificationIssue, detectHumanVerification } from "../core/humanVerification.js";
+import { createHumanVerificationIssue, detectHumanVerification, waitForHumanVerificationToClear } from "../core/humanVerification.js";
 import { analyzePageTitles } from "../core/pageTitles.js";
 import type {
   A11yConfig,
@@ -179,6 +179,8 @@ interface ExplorePlaywrightOptions {
   waitForSelector?: string;
   waitUntilUrl?: string;
   waitUntilPath?: string;
+  pauseOnHumanVerification?: boolean;
+  humanVerificationTimeoutMs?: number;
   scopeSelector?: string;
   hideElements?: string[];
   scroll?: Partial<PageScrollConfig>;
@@ -192,7 +194,8 @@ interface ExploreResult {
 
 type ExploreProgressEvent =
   | { type: "state"; state: ExplorationState }
-  | { type: "actions"; stateId: string; actionCount: number; skippedActionCount: number };
+  | { type: "actions"; stateId: string; actionCount: number; skippedActionCount: number }
+  | { type: "human-verification"; url: string; message: string; timeoutMs: number };
 
 interface QueuedState {
   path: ExploreAction[];
@@ -281,6 +284,7 @@ export async function runExplorePlaywrightAdapter(
     browser: options.browser || config.explore.browser,
     device: options.device || config.explore.device,
     storageState: authState,
+    headless: options.pauseOnHumanVerification ? false : undefined,
     source: "exploration"
   });
   const { browser } = runtime;
@@ -354,7 +358,7 @@ export async function runExplorePlaywrightAdapter(
         continue;
       }
 
-      const verification = await detectHumanVerification(page);
+      const verification = await resolveHumanVerification(page, options);
       const scope = await resolveScopeAvailability(page, scopeSelector);
       const initialPageState = await fingerprintPage(page);
       const openModal = await inspectOpenModal(page);
@@ -626,6 +630,24 @@ export async function runExplorePlaywrightAdapter(
       }
     }
   };
+}
+
+async function resolveHumanVerification(
+  page: Page,
+  options: Pick<ExplorePlaywrightOptions, "pauseOnHumanVerification" | "humanVerificationTimeoutMs" | "onProgress">
+) {
+  const signal = await detectHumanVerification(page);
+  if (!signal || !options.pauseOnHumanVerification) return signal;
+
+  const timeoutMs = Math.max(0, options.humanVerificationTimeoutMs ?? 120_000);
+  options.onProgress?.({
+    type: "human-verification",
+    url: page.url(),
+    message: signal.message,
+    timeoutMs
+  });
+
+  return waitForHumanVerificationToClear(page, { timeoutMs });
 }
 
 async function clearContextCookies(context: BrowserContext): Promise<void> {

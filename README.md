@@ -110,6 +110,14 @@ See the [authenticated pages recipe](docs/recipes/authenticated-pages.md) for
 post-login redirects, existing Playwright `storageState` files, keyboard checks,
 and privacy settings.
 
+If a public site shows a CAPTCHA or "verify you are human" page, run a visual
+audit in manual verification mode. The CLI opens a visible browser, waits while
+you complete the challenge yourself, and then continues the scan:
+
+```bash
+npx a11y-shiftleft-cli audit --url $APP_URL --out reports --pause-on-human-verification --open
+```
+
 ## Add CI/CD
 
 After the first local audit works, generate GitHub Actions workflow files:

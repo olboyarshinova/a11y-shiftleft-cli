@@ -60,6 +60,8 @@ interface AuditOptions {
   waitForSelector?: string;
   waitUntilUrl?: string;
   waitUntilPath?: string;
+  pauseOnHumanVerification?: boolean;
+  humanVerificationTimeoutMs?: string;
   scroll?: boolean;
   scrollStep?: string;
   scrollMaxSteps?: string;
@@ -112,6 +114,8 @@ export function registerAuditCommand(program: Command): void {
     .option("--wait-for-selector <selector>", "Wait for a selector before screenshots and scans")
     .option("--wait-until-url <pattern>", "Wait until the current URL contains a pattern before screenshots and scans")
     .option("--wait-until-path <path>", "Wait until the current URL reaches a path before screenshots and scans")
+    .option("--pause-on-human-verification", "Open a visible browser and wait for manual CAPTCHA or human-verification completion")
+    .option("--human-verification-timeout-ms <ms>", "Maximum time to wait for manual human-verification completion", "120000")
     .option("--no-scroll", "Do not auto-scroll each explored state before scanning")
     .option("--scroll-step <px>", "Pixels per auto-scroll step before scanning a state")
     .option("--scroll-max-steps <count>", "Maximum auto-scroll steps per explored state")
@@ -227,6 +231,8 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
       waitForSelector: effectiveConfig.explore.waitForSelector,
       waitUntilUrl: effectiveConfig.explore.waitUntilUrl,
       waitUntilPath: effectiveConfig.explore.waitUntilPath,
+      pauseOnHumanVerification: Boolean(options.pauseOnHumanVerification),
+      humanVerificationTimeoutMs: optionalNonNegativeInteger(options.humanVerificationTimeoutMs, "Human verification timeout"),
       scopeSelector: effectiveConfig.explore.scopeSelector,
       hideElements: effectiveConfig.explore.hideElements,
       browser: effectiveConfig.explore.browser,
@@ -245,6 +251,10 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
 
         if (event.type === "actions") {
           console.log(`[audit] ${event.stateId} actions queued=${event.actionCount} skipped=${event.skippedActionCount}`);
+        }
+
+        if (event.type === "human-verification") {
+          console.log(`[audit] Human verification detected (${event.message}). Complete it in the opened browser; waiting up to ${event.timeoutMs}ms.`);
         }
       }
     }),

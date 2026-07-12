@@ -19,8 +19,12 @@ less fragile to scan, and keeping the published npm package smaller.
   - manual login with `auth login`
   - post-login redirects
   - existing Playwright `storageState` files
+  - manual CAPTCHA or human-verification completion for local visual audits
   - authenticated `audit`, `explore`, `check`, and `keyboard`
   - `.gitignore` and screenshot privacy guidance
+- Manual human-verification mode for local visual audits:
+  - `--pause-on-human-verification`
+  - `--human-verification-timeout-ms <ms>`
 
 ## Changed
 
@@ -29,6 +33,8 @@ less fragile to scan, and keeping the published npm package smaller.
   `check`, including leading/trailing whitespace and common smart quotes.
 - Published npm package contents exclude TypeScript source files while keeping
   compiled runtime files, declaration files, docs, and examples.
+- Generated GitHub Actions workflows now use current checkout/setup-node
+  actions and Node.js 22.
 - Removed an unused legacy README screenshot asset from package contents.
 
 ## Why It Matters
@@ -41,6 +47,7 @@ This release makes the day-to-day developer workflow smoother:
   sleeps.
 - Authenticated pages have a clear local-first recipe that avoids sending
   credentials, screenshots, or reports to an external service.
+- Generated CI workflows start from a more current GitHub Actions template.
 - The npm package is lighter for new installations.
 
 ## Try It

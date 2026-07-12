@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   createHumanVerificationIssue,
-  detectHumanVerificationText
+  detectHumanVerificationText,
+  waitForHumanVerificationToClear
 } from "../../dist/core/humanVerification.js";
 
 test("detectHumanVerificationText detects common challenge pages", () => {
@@ -34,4 +35,22 @@ test("createHumanVerificationIssue returns a clear adapter finding", () => {
   assert.equal(issue.confidence, "high");
   assert.match(issue.message || "", /blocked automated scanning/);
   assert.match(issue.message || "", /manual accessibility review/);
+});
+
+test("waitForHumanVerificationToClear waits until the challenge disappears", async () => {
+  let calls = 0;
+  const page = {
+    async evaluate() {
+      calls += 1;
+      return calls < 3 ? "Verify you are human" : "Welcome";
+    }
+  };
+
+  const remaining = await waitForHumanVerificationToClear(page, {
+    timeoutMs: 700,
+    pollMs: 250
+  });
+
+  assert.equal(remaining, undefined);
+  assert.equal(calls >= 3, true);
 });

@@ -314,6 +314,18 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.ok(html.indexOf("Ticket Drafts") < html.indexOf("Exploration summary"));
   assert.match(html, /class="report-header-grid"/);
   assert.match(html, /\.report-header-grid \{/);
+  assert.match(html, /\.ticket-drafts \{[\s\S]*?align-self: start/);
+  assert.match(html, /\.ticket-drafts \{[\s\S]*?margin-top: 0/);
+  assert.match(html, /@media \(min-width: 1100px\) \{[\s\S]*?\.ticket-drafts \{[\s\S]*?margin-top: 44px/);
+  assert.match(html, /class="metric metric-critical"/);
+  assert.match(html, /class="metric metric-warning"/);
+  assert.match(html, /class="metric metric-info"/);
+  assert.match(html, /class="metric metric-wcag"/);
+  assert.match(html, /class="metric metric-needs-review"/);
+  assert.match(html, /class="metric metric-best-practice"/);
+  assert.match(html, /\.metric-critical strong,[\s\S]*?\.metric-wcag strong \{[\s\S]*?color: var\(--critical\)/);
+  assert.match(html, /\.metric-warning strong,[\s\S]*?\.metric-needs-review strong \{[\s\S]*?color: var\(--warning\)/);
+  assert.match(html, /\.metric-info strong,[\s\S]*?\.metric-best-practice strong \{[\s\S]*?color: var\(--info\)/);
   assert.match(html, /Copy all ticket drafts \(1\)/);
   assert.match(html, /Copy local Markdown drafts grouped by issue type/);
   assert.match(html, /title="Copy Markdown drafts grouped by issue type"/);
@@ -667,6 +679,45 @@ test("renderExplorationHtml sorts rule triage by severity and WCAG level", () =>
   assert.ok(topRules.indexOf("critical-aa") < topRules.indexOf("warning-a"));
   assert.ok(topRules.indexOf("warning-a") < topRules.indexOf("info-aaa"));
   assert.deepEqual(stateGroupOrder, ["critical-a", "critical-aa", "warning-a", "info-aaa"]);
+});
+
+test("renderExplorationHtml ranks repeated warning rules before one-off warning rules", () => {
+  const criterion = (
+    id: string,
+    title: string,
+    level: "A" | "AA"
+  ) => ({
+    id,
+    title,
+    level,
+    principle: "operable",
+    introducedIn: "2.0",
+    url: `https://example.com/wcag-${id}`
+  });
+  const triageIssues = [
+    {
+      ...issues[0],
+      ruleId: "keyboard-focus-cycle",
+      severity: "warning",
+      wcagCriteria: [criterion("2.1.1", "Keyboard", "A")],
+      message: "One keyboard warning",
+      fingerprint: "keyboard-focus-cycle"
+    },
+    {
+      ...issues[0],
+      ruleId: "color-contrast",
+      severity: "warning",
+      duplicateCount: 27,
+      wcagCriteria: [criterion("1.4.3", "Contrast (Minimum)", "AA")],
+      message: "Repeated contrast warning",
+      fingerprint: "color-contrast"
+    }
+  ];
+  const html = renderExplorationHtml(graph, triageIssues);
+  const topRules = html.match(/<h3>Top Rules<\/h3>\s*<ol class="triage-list">([\s\S]*?)<\/ol>/)?.[1] || "";
+
+  assert.ok(topRules.indexOf("color-contrast") < topRules.indexOf("keyboard-focus-cycle"));
+  assert.match(topRules, /28 occurrences/);
 });
 
 test("renderExplorationHtml shows every affected state for a top rule", () => {

@@ -27,6 +27,8 @@ test("audit is the unified visual report command with optional extra formats", (
   assert.equal(flags.includes("--wait-for-selector"), true);
   assert.equal(flags.includes("--wait-until-url"), true);
   assert.equal(flags.includes("--wait-until-path"), true);
+  assert.equal(flags.includes("--pause-on-human-verification"), true);
+  assert.equal(flags.includes("--human-verification-timeout-ms"), true);
   assert.equal(flags.includes("--no-scroll"), true);
   assert.equal(flags.includes("--screenshot-full-page"), true);
   assert.equal(flags.includes("--wcag-only"), true);

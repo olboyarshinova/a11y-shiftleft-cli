@@ -20,6 +20,15 @@
 - Ignored local generated share/export folders, temporary scan outputs, and
   common auth-state folders so report evidence and login storage stay out of
   Git by default.
+- Updated generated GitHub Actions workflows to use current `actions/checkout`
+  and `actions/setup-node` versions with Node.js 22.
+- Added `--pause-on-human-verification` for local `audit` and `explore` runs so
+  users can complete CAPTCHA or "verify you are human" challenges manually in a
+  visible browser before the scan continues.
+- Polished visual report summary cards with severity-colored counts and moved
+  the ticket-draft panel closer to the report title on wide screens.
+- Updated Top Rules ordering so repeated findings within the same severity are
+  ranked ahead of one-off findings.
 - Added v0.8.1 release notes and updated release checklist smoke tests for URL
   normalization, SPA readiness waits, authenticated-page docs, and package
   boundary verification.
