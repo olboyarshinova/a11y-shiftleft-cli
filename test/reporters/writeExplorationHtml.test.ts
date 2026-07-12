@@ -317,15 +317,19 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /\.ticket-drafts \{[\s\S]*?align-self: start/);
   assert.match(html, /\.ticket-drafts \{[\s\S]*?margin-top: 0/);
   assert.match(html, /@media \(min-width: 1100px\) \{[\s\S]*?\.ticket-drafts \{[\s\S]*?margin-top: 44px/);
-  assert.match(html, /class="metric metric-critical"/);
-  assert.match(html, /class="metric metric-warning"/);
-  assert.match(html, /class="metric metric-info"/);
-  assert.match(html, /class="metric metric-wcag"/);
-  assert.match(html, /class="metric metric-needs-review"/);
-  assert.match(html, /class="metric metric-best-practice"/);
+  assert.ok(html.indexOf('aria-label="Exploration summary"') < html.indexOf('aria-label="Finding summary"'));
+  assert.match(html, /class="metric metric-critical(?: metric-zero)?"/);
+  assert.match(html, /class="metric metric-warning(?: metric-zero)?"/);
+  assert.match(html, /class="metric metric-info(?: metric-zero)?"/);
+  assert.match(html, /class="metric metric-wcag(?: metric-zero)?"/);
+  assert.match(html, /class="metric metric-needs-review(?: metric-zero)?"/);
+  assert.match(html, /class="metric metric-best-practice(?: metric-zero)?"/);
+  assert.match(html, /class="metric metric-info metric-zero"/);
   assert.match(html, /\.metric-critical strong,[\s\S]*?\.metric-wcag strong \{[\s\S]*?color: var\(--critical\)/);
   assert.match(html, /\.metric-warning strong,[\s\S]*?\.metric-needs-review strong \{[\s\S]*?color: var\(--warning\)/);
   assert.match(html, /\.metric-info strong,[\s\S]*?\.metric-best-practice strong \{[\s\S]*?color: var\(--info\)/);
+  assert.match(html, /\.metric-zero strong \{[\s\S]*?color: var\(--ok\)/);
+  assert.doesNotMatch(html, /\.metric-wcag \{[\s\S]*?background:/);
   assert.match(html, /Copy all ticket drafts \(1\)/);
   assert.match(html, /Copy local Markdown drafts grouped by issue type/);
   assert.match(html, /title="Copy Markdown drafts grouped by issue type"/);
@@ -677,7 +681,8 @@ test("renderExplorationHtml sorts rule triage by severity and WCAG level", () =>
 
   assert.ok(topRules.indexOf("critical-a") < topRules.indexOf("critical-aa"));
   assert.ok(topRules.indexOf("critical-aa") < topRules.indexOf("warning-a"));
-  assert.ok(topRules.indexOf("warning-a") < topRules.indexOf("info-aaa"));
+  assert.doesNotMatch(topRules, /info-aaa/);
+  assert.match(html, /\+ 1 more rule in the full JSON report\./);
   assert.deepEqual(stateGroupOrder, ["critical-a", "critical-aa", "warning-a", "info-aaa"]);
 });
 
@@ -718,6 +723,28 @@ test("renderExplorationHtml ranks repeated warning rules before one-off warning 
 
   assert.ok(topRules.indexOf("color-contrast") < topRules.indexOf("keyboard-focus-cycle"));
   assert.match(topRules, /28 occurrences/);
+});
+
+test("renderExplorationHtml keeps Top Rules close to Most Affected States height", () => {
+  const manyRuleIssues = Array.from({ length: 6 }, (_, index) => ({
+    ...issues[0],
+    ruleId: `rule-${index + 1}`,
+    severity: "warning" as const,
+    message: `Warning rule ${index + 1}`,
+    fingerprint: `rule-${index + 1}`,
+    stateId: "state-1"
+  }));
+  const html = renderExplorationHtml(graph, manyRuleIssues);
+  const topRulesBlock = html.match(/<h3>Top Rules<\/h3>\s*<ol class="triage-list">([\s\S]*?)<\/ol>\s*<p class="muted triage-more">([\s\S]*?)<\/p>/);
+  assert.ok(topRulesBlock);
+  const topRules = topRulesBlock[1];
+  const hiddenMessage = topRulesBlock[2];
+
+  assert.match(topRules, /rule-1/);
+  assert.match(topRules, /rule-2/);
+  assert.match(topRules, /rule-3/);
+  assert.doesNotMatch(topRules, /rule-4/);
+  assert.match(hiddenMessage, /\+ 3 more rules in the full JSON report\./);
 });
 
 test("renderExplorationHtml shows every affected state for a top rule", () => {

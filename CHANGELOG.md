@@ -29,6 +29,11 @@
   the ticket-draft panel closer to the report title on wide screens.
 - Updated Top Rules ordering so repeated findings within the same severity are
   ranked ahead of one-off findings.
+- Refined the visual report summary so scan metrics and finding counts are
+  separated, cards stay white, and only count values carry severity colors.
+- Limited Top Rules in the triage overview to a compact 3-5 item list that
+  stays visually balanced with Most Affected States and links readers to the
+  full JSON report for the remaining rules.
 - Added v0.8.1 release notes and updated release checklist smoke tests for URL
   normalization, SPA readiness waits, authenticated-page docs, and package
   boundary verification.

@@ -296,27 +296,6 @@ export function renderExplorationHtml(
       padding: 14px;
     }
 
-    .metric-critical,
-    .metric-wcag {
-      background: #fff5f6;
-      border-color: #ffb3bf;
-      border-left: 4px solid var(--critical);
-    }
-
-    .metric-warning,
-    .metric-needs-review {
-      background: #fff7ed;
-      border-color: #fdba74;
-      border-left: 4px solid var(--warning-marker);
-    }
-
-    .metric-info,
-    .metric-best-practice {
-      background: #eff6ff;
-      border-color: #93c5fd;
-      border-left: 4px solid var(--info);
-    }
-
     .metric strong {
       display: block;
       font-size: 22px;
@@ -336,6 +315,10 @@ export function renderExplorationHtml(
     .metric-info strong,
     .metric-best-practice strong {
       color: var(--info);
+    }
+
+    .metric-zero strong {
+      color: var(--ok);
     }
 
     .metric span,
@@ -1880,6 +1863,9 @@ export function renderExplorationHtml(
       ${graph.summary.duplicateScreenshots
         ? metric("Duplicate screenshots skipped", graph.summary.duplicateScreenshots)
         : ""}
+    </section>
+
+    <section class="summary summary-findings" aria-label="Finding summary">
       ${metric("Critical", totals.critical, "critical")}
       ${metric("Warning", totals.warning, "warning")}
       ${metric("Info", totals.info, "info")}
@@ -3178,21 +3164,24 @@ function renderTriageOverview(
   states: StateViewModel[],
   issues: DedupedIssue[]
 ): string {
+  const topStates = rankAffectedStates(states, 4);
+  const topRuleLimit = Math.min(5, Math.max(3, topStates.length || 3));
+
   return `<h2>Triage Overview</h2>
   <div class="triage-grid">
     <div>
       <h3>Most Affected States</h3>
-      ${renderTopStates(states)}
+      ${renderTopStates(topStates)}
     </div>
     <div>
       <h3>Top Rules</h3>
-      ${renderTopRules(issues)}
+      ${renderTopRules(issues, topRuleLimit)}
     </div>
   </div>`;
 }
 
-function renderTopStates(states: StateViewModel[]): string {
-  const rankedStates = states
+function rankAffectedStates(states: StateViewModel[], limit: number): StateViewModel[] {
+  return states
     .map((state) => ({
       ...state,
       severityScore: sumSeverityScore(state.issues)
@@ -3203,8 +3192,10 @@ function renderTopStates(states: StateViewModel[]): string {
       if (b.issues.length !== a.issues.length) return b.issues.length - a.issues.length;
       return a.id.localeCompare(b.id);
     })
-    .slice(0, 4);
+    .slice(0, limit);
+}
 
+function renderTopStates(rankedStates: StateViewModel[]): string {
   if (rankedStates.length === 0) {
     return `<p class="muted">No affected states were detected by automated exploration.</p>`;
   }
@@ -3227,8 +3218,10 @@ function renderTopStates(states: StateViewModel[]): string {
   </ol>`;
 }
 
-function renderTopRules(issues: DedupedIssue[]): string {
-  const ruleSummaries = summarizeRules(issues).slice(0, 6);
+function renderTopRules(issues: DedupedIssue[], limit: number): string {
+  const allRuleSummaries = summarizeRules(issues);
+  const ruleSummaries = allRuleSummaries.slice(0, limit);
+  const hiddenRuleCount = Math.max(0, allRuleSummaries.length - ruleSummaries.length);
 
   if (ruleSummaries.length === 0) {
     return `<p class="muted">No rule findings were detected by automated exploration.</p>`;
@@ -3251,7 +3244,8 @@ function renderTopRules(issues: DedupedIssue[]): string {
       ${rule.states.length > 0 ? `<div class="url">States: ${rule.states.map((stateId) => `<a href="#${escapeAttribute(stateId)}">${escapeHtml(stateId)}</a>`).join(", ")}</div>` : ""}
     </li>`;
     }).join("\n")}
-  </ol>`;
+  </ol>
+  ${hiddenRuleCount > 0 ? `<p class="muted triage-more">+ ${hiddenRuleCount} more rule${hiddenRuleCount === 1 ? "" : "s"} in the full JSON report.</p>` : ""}`;
 }
 
 function renderRuleImpactSignal(rule: ReturnType<typeof summarizeRules>[number]): string {
@@ -3829,7 +3823,13 @@ function renderColorSwatch(color: string): string {
 type MetricTone = Severity | "wcag" | "needs-review" | "best-practice";
 
 function metric(label: string, value: number | string, tone?: MetricTone): string {
-  const className = tone ? `metric metric-${tone}` : "metric";
+  const numericValue = typeof value === "number" ? value : Number(value);
+  const isZero = tone && Number.isFinite(numericValue) && numericValue === 0;
+  const className = [
+    "metric",
+    tone ? `metric-${tone}` : "",
+    isZero ? "metric-zero" : ""
+  ].filter(Boolean).join(" ");
 
   return `<div class="${className}">
     <strong>${escapeHtml(String(value))}</strong>
