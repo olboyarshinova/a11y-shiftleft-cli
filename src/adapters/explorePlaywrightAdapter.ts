@@ -177,6 +177,8 @@ interface ExplorePlaywrightOptions {
   authState?: string;
   waitMs?: number;
   waitForSelector?: string;
+  waitUntilUrl?: string;
+  waitUntilPath?: string;
   scopeSelector?: string;
   hideElements?: string[];
   scroll?: Partial<PageScrollConfig>;
@@ -305,6 +307,8 @@ export async function runExplorePlaywrightAdapter(
   const safeMode = normalizeSafeMode(options.safeMode || config.explore.safeMode);
   const waitMs = nonNegativeOrDefault(options.waitMs, DEFAULT_WAIT_MS);
   const waitForSelector = options.waitForSelector;
+  const waitUntilUrl = normalizeWaitCondition(options.waitUntilUrl);
+  const waitUntilPath = normalizeWaitCondition(options.waitUntilPath);
   const scopeSelector = normalizeScopeSelector(options.scopeSelector);
   const hideElements = normalizeHideElementSelectors(options.hideElements || config.explore.hideElements);
   const scroll = normalizePageScrollConfig(options.scroll || config.explore.scroll);
@@ -339,7 +343,9 @@ export async function runExplorePlaywrightAdapter(
         }
         dynamicAnnouncements = await replayPath(page, options.url, current.path, {
           waitMs,
-          waitForSelector
+          waitForSelector,
+          waitUntilUrl,
+          waitUntilPath
         });
         await hidePageElements(page, hideElements);
         await scrollPageForLazyContent(page, scroll);
@@ -355,7 +361,9 @@ export async function runExplorePlaywrightAdapter(
       const modalFocus = openModal
         ? await auditModalFocusInIsolation(browser, options.url, current.path, {
           waitMs,
-          waitForSelector
+          waitForSelector,
+          waitUntilUrl,
+          waitUntilPath
         }, openModal, runtime.contextOptions)
         : undefined;
       const discovery = current.depth >= maxDepth
@@ -919,6 +927,8 @@ async function finishDynamicAnnouncementMonitor(
 interface ExploreWaitOptions {
   waitMs: number;
   waitForSelector?: string;
+  waitUntilUrl?: string;
+  waitUntilPath?: string;
 }
 
 async function gotoAndSettle(page: Page, url: string, wait: ExploreWaitOptions): Promise<void> {
@@ -931,6 +941,7 @@ async function gotoAndSettle(page: Page, url: string, wait: ExploreWaitOptions):
 
 async function settle(page: Page, wait: ExploreWaitOptions): Promise<void> {
   await page.waitForLoadState("networkidle", { timeout: 3000 }).catch(() => undefined);
+  await waitForUrlConditions(page, wait);
   if (wait.waitForSelector) {
     await page.waitForSelector(wait.waitForSelector, {
       state: "visible",
@@ -940,6 +951,62 @@ async function settle(page: Page, wait: ExploreWaitOptions): Promise<void> {
   if (wait.waitMs > 0) {
     await page.waitForTimeout(wait.waitMs);
   }
+}
+
+async function waitForUrlConditions(page: Page, wait: ExploreWaitOptions): Promise<void> {
+  const timeout = Math.max(wait.waitMs, 1000);
+
+  if (wait.waitUntilUrl) {
+    await page.waitForURL((url) => matchesWaitUntilUrl(url.toString(), wait.waitUntilUrl || ""), {
+      timeout
+    }).catch(() => undefined);
+  }
+
+  if (wait.waitUntilPath) {
+    await page.waitForURL((url) => matchesWaitUntilPath(url, wait.waitUntilPath || ""), {
+      timeout
+    }).catch(() => undefined);
+  }
+}
+
+export function matchesWaitUntilUrl(url: string, pattern: string): boolean {
+  const trimmed = normalizeWaitCondition(pattern);
+  if (!trimmed) return false;
+
+  if (trimmed.startsWith("/") && trimmed.endsWith("/") && trimmed.length > 2) {
+    try {
+      return new RegExp(trimmed.slice(1, -1)).test(url);
+    } catch {
+      return url.includes(trimmed);
+    }
+  }
+
+  if (trimmed.includes("*")) {
+    const escaped = trimmed
+      .split("*")
+      .map((part) => part.replace(/[|\\{}()[\]^$+?.]/g, "\\$&"))
+      .join(".*");
+    return new RegExp(escaped).test(url);
+  }
+
+  return url.includes(trimmed);
+}
+
+export function matchesWaitUntilPath(url: URL, expectedPath: string): boolean {
+  const normalized = normalizeExpectedPath(expectedPath);
+  if (!normalized) return false;
+  return url.pathname === normalized || url.pathname.startsWith(`${normalized}/`);
+}
+
+function normalizeExpectedPath(value: string | undefined): string | undefined {
+  const trimmed = normalizeWaitCondition(value);
+  if (!trimmed) return undefined;
+  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+}
+
+function normalizeWaitCondition(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed || undefined;
 }
 
 function normalizeScopeSelector(selector: string | undefined): string | undefined {

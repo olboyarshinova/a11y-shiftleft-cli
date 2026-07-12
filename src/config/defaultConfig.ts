@@ -41,6 +41,8 @@ export const defaultConfig = {
     scopeSelector: undefined,
     hideElements: [],
     waitMs: 250,
+    waitUntilUrl: undefined,
+    waitUntilPath: undefined,
     scroll: {
       enabled: true,
       stepPx: 800,

@@ -57,6 +57,8 @@ interface AuditOptions {
   screenshotFullPage?: boolean;
   waitMs?: string;
   waitForSelector?: string;
+  waitUntilUrl?: string;
+  waitUntilPath?: string;
   scroll?: boolean;
   scrollStep?: string;
   scrollMaxSteps?: string;
@@ -107,6 +109,8 @@ export function registerAuditCommand(program: Command): void {
     .option("--screenshot-full-page", "Force full-page screenshots instead of automatic error-region crops")
     .option("--wait-ms <ms>", "Extra settle time before screenshots and scans")
     .option("--wait-for-selector <selector>", "Wait for a selector before screenshots and scans")
+    .option("--wait-until-url <pattern>", "Wait until the current URL contains a pattern before screenshots and scans")
+    .option("--wait-until-path <path>", "Wait until the current URL reaches a path before screenshots and scans")
     .option("--no-scroll", "Do not auto-scroll each explored state before scanning")
     .option("--scroll-step <px>", "Pixels per auto-scroll step before scanning a state")
     .option("--scroll-max-steps <count>", "Maximum auto-scroll steps per explored state")
@@ -145,6 +149,8 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
       authState,
       waitMs: optionalNonNegativeInteger(options.waitMs, "Wait time"),
       waitForSelector: options.waitForSelector,
+      waitUntilUrl: options.waitUntilUrl,
+      waitUntilPath: options.waitUntilPath,
       scopeSelector: options.scope,
       hideElements: options.hideElements ? normalizeHideElementSelectors(options.hideElements) : undefined,
       scroll: {
@@ -218,6 +224,8 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
       screenshotFullPage: Boolean(options.screenshotFullPage),
       waitMs: effectiveConfig.explore.waitMs,
       waitForSelector: effectiveConfig.explore.waitForSelector,
+      waitUntilUrl: effectiveConfig.explore.waitUntilUrl,
+      waitUntilPath: effectiveConfig.explore.waitUntilPath,
       scopeSelector: effectiveConfig.explore.scopeSelector,
       hideElements: effectiveConfig.explore.hideElements,
       browser: effectiveConfig.explore.browser,

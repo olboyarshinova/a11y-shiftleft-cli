@@ -15,6 +15,8 @@ import {
   getExploreActionSafety,
   isAdvertisingActionContext,
   isCookieConsentContext,
+  matchesWaitUntilPath,
+  matchesWaitUntilUrl,
   isSafeExploreAction,
   isSafeExploreActionWithConfig,
   normalizeScreenshotClip,
@@ -147,6 +149,16 @@ test("normalizeExploreUrl keeps same-origin HTTP URLs and removes hash", () => {
     normalizeExploreUrl("mailto:team@example.com", "http://localhost:3000/"),
     null
   );
+});
+
+test("readiness URL conditions support substrings, wildcards, regexes, and paths", () => {
+  assert.equal(matchesWaitUntilUrl("https://example.com/dashboard/settings", "dashboard"), true);
+  assert.equal(matchesWaitUntilUrl("https://example.com/dashboard/settings", "*/settings"), true);
+  assert.equal(matchesWaitUntilUrl("https://example.com/dashboard/settings", "/dashboard\\/settings$/"), true);
+  assert.equal(matchesWaitUntilUrl("https://example.com/dashboard/settings", "checkout"), false);
+  assert.equal(matchesWaitUntilPath(new URL("https://example.com/dashboard/settings"), "/dashboard"), true);
+  assert.equal(matchesWaitUntilPath(new URL("https://example.com/dashboard/settings"), "dashboard/settings"), true);
+  assert.equal(matchesWaitUntilPath(new URL("https://example.com/dashboard/settings"), "/account"), false);
 });
 
 test("isSafeExploreAction allows low-risk UI expansion actions", () => {

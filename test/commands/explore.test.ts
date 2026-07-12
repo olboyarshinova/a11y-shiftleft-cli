@@ -19,6 +19,8 @@ test("explore supports opening the visual report", () => {
   assert.equal(flags.includes("--mobile"), true);
   assert.equal(flags.includes("--tablet"), true);
   assert.equal(flags.includes("--auth-state"), true);
+  assert.equal(flags.includes("--wait-until-url"), true);
+  assert.equal(flags.includes("--wait-until-path"), true);
 });
 
 test("formatVerboseExploreSummary renders exploration context", () => {
@@ -39,6 +41,8 @@ test("formatVerboseExploreSummary renders exploration context", () => {
     screenshotRedaction: true,
     waitMs: 1000,
     waitForSelector: "[data-loaded]",
+    waitUntilUrl: "dashboard",
+    waitUntilPath: "/dashboard",
     hideElements: [".cookie-banner", ".chat-widget"],
     scrollEnabled: true,
     scrollStepPx: 800,
@@ -63,7 +67,7 @@ test("formatVerboseExploreSummary renders exploration context", () => {
   assert.match(output, /screenshots: jpeg quality=70/);
   assert.match(output, /screenshotCapture: automatic error regions/);
   assert.match(output, /screenshotRedaction: on/);
-  assert.match(output, /wait: 1000ms selector=\[data-loaded\]/);
+  assert.match(output, /wait: 1000ms selector=\[data-loaded\] url=dashboard path=\/dashboard/);
   assert.match(output, /hideElements: \.cookie-banner, \.chat-widget/);
   assert.match(output, /scroll: on step=800px maxSteps=25 wait=100ms/);
   assert.match(output, /safeMode: on/);

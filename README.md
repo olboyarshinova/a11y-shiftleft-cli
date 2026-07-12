@@ -228,11 +228,14 @@ Use `--scope <selector>` when you want browser checks and safe UI-state
 exploration to stay inside one component, dialog, checkout step, or page
 section.
 
-Use `--wait-ms <ms>` or `--wait-for-selector <selector>` when a SPA loads data,
-cards, tables, or authenticated content after the first render:
+Use `--wait-ms <ms>`, `--wait-for-selector <selector>`,
+`--wait-until-url <pattern>`, or `--wait-until-path <path>` when a SPA loads
+data, redirects after login, or renders authenticated content after the first
+paint:
 
 ```bash
 npx a11y-shiftleft-cli audit --url $APP_URL --wait-for-selector "[data-page-ready]" --out reports
+npx a11y-shiftleft-cli audit --url $APP_URL --wait-until-path /dashboard --out reports
 ```
 
 Use `--hide-elements <selectors>` when cookie banners, sticky ads, chat widgets,

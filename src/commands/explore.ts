@@ -74,6 +74,8 @@ interface ExploreOptions {
   isolateCookies?: boolean;
   waitMs?: string;
   waitForSelector?: string;
+  waitUntilUrl?: string;
+  waitUntilPath?: string;
   scroll?: boolean;
   scrollStep?: string;
   scrollMaxSteps?: string;
@@ -139,6 +141,8 @@ export function registerExploreCommand(program: Command): void {
     .option("--no-isolate-cookies", "Allow cookies to persist between explored states")
     .option("--wait-ms <ms>", "Extra settle time before screenshots and scans")
     .option("--wait-for-selector <selector>", "Wait for a selector before screenshots and scans")
+    .option("--wait-until-url <pattern>", "Wait until the current URL contains a pattern before screenshots and scans")
+    .option("--wait-until-path <path>", "Wait until the current URL reaches a path before screenshots and scans")
     .option("--no-scroll", "Do not auto-scroll each explored state before screenshots and scans")
     .option("--scroll-step <px>", "Pixels per auto-scroll step before scanning a state")
     .option("--scroll-max-steps <count>", "Maximum auto-scroll steps per explored state")
@@ -183,6 +187,8 @@ export function registerExploreCommand(program: Command): void {
           authState,
           waitMs: toNonNegativeInteger(options.waitMs),
           waitForSelector: options.waitForSelector,
+          waitUntilUrl: options.waitUntilUrl,
+          waitUntilPath: options.waitUntilPath,
           scopeSelector: options.scope,
           hideElements: options.hideElements ? normalizeHideElementSelectors(options.hideElements) : undefined,
           scroll: {
@@ -254,6 +260,8 @@ export function registerExploreCommand(program: Command): void {
           screenshotRedaction: options.screenshotRedaction !== false,
           waitMs,
           waitForSelector: effectiveConfig.explore.waitForSelector,
+          waitUntilUrl: effectiveConfig.explore.waitUntilUrl,
+          waitUntilPath: effectiveConfig.explore.waitUntilPath,
           scopeSelector: effectiveConfig.explore.scopeSelector,
           hideElements: effectiveConfig.explore.hideElements,
           browser: effectiveConfig.explore.browser,
@@ -287,6 +295,8 @@ export function registerExploreCommand(program: Command): void {
         screenshotRedaction: options.screenshotRedaction,
         waitMs,
         waitForSelector: effectiveConfig.explore.waitForSelector,
+        waitUntilUrl: effectiveConfig.explore.waitUntilUrl,
+        waitUntilPath: effectiveConfig.explore.waitUntilPath,
         scopeSelector: effectiveConfig.explore.scopeSelector,
         hideElements: effectiveConfig.explore.hideElements,
         browser: effectiveConfig.explore.browser,
@@ -497,6 +507,8 @@ export function formatVerboseExploreSummary(options: {
   screenshotRedaction: boolean;
   waitMs: number;
   waitForSelector?: string;
+  waitUntilUrl?: string;
+  waitUntilPath?: string;
   scopeSelector?: string;
   hideElements: string[];
   browser: string;
@@ -531,7 +543,7 @@ export function formatVerboseExploreSummary(options: {
     `screenshots: ${options.screenshots ? `${options.screenshotFormat} quality=${options.screenshotQuality}` : "off"}`,
     `screenshotCapture: ${options.screenshotFullPage ? "forced full-page" : "automatic error regions"}`,
     `screenshotRedaction: ${options.screenshotRedaction ? "on" : "off"}`,
-    `wait: ${options.waitMs}ms${options.waitForSelector ? ` selector=${options.waitForSelector}` : ""}`,
+    `wait: ${formatReadinessSummary(options)}`,
     `browser: ${options.browser}${options.device ? ` device=${options.device}` : ""}`,
     `scope: ${options.scopeSelector || "whole page"}`,
     `hideElements: ${formatPatternList(options.hideElements)}`,
@@ -545,6 +557,20 @@ export function formatVerboseExploreSummary(options: {
     `safeModeBlockedSelectors: ${formatPatternList(options.safeModeBlockedSelectors)}`,
     `retention: ${retention}`
   ].join("\n");
+}
+
+function formatReadinessSummary(options: {
+  waitMs: number;
+  waitForSelector?: string;
+  waitUntilUrl?: string;
+  waitUntilPath?: string;
+}): string {
+  return [
+    `${options.waitMs}ms`,
+    options.waitForSelector ? `selector=${options.waitForSelector}` : "",
+    options.waitUntilUrl ? `url=${options.waitUntilUrl}` : "",
+    options.waitUntilPath ? `path=${options.waitUntilPath}` : ""
+  ].filter(Boolean).join(" ");
 }
 
 export function resolveFullPageScreenshots(options: {

@@ -9,6 +9,9 @@
 - Added cross-page impact signals to visual report top-rule triage so repeated
   findings call out affected pages, affected states, target patterns, and likely
   shared-component or cross-page fix scope.
+- Added bounded `--wait-until-url` and `--wait-until-path` readiness controls to
+  `audit` and `explore` so SPA redirects and authenticated states can settle
+  before screenshots and browser checks.
 
 ## 0.8.0 - 2026-07-12
 

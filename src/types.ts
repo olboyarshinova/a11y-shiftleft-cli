@@ -244,6 +244,8 @@ export interface ExploreConfig {
   hideElements: string[];
   waitMs: number;
   waitForSelector?: string;
+  waitUntilUrl?: string;
+  waitUntilPath?: string;
   scroll: PageScrollConfig;
 }
 

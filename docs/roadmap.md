@@ -29,8 +29,6 @@ Section 508 certification.
   show how to pass an existing `storageState` file into `audit`, `explore`,
   `check`, and `keyboard`, including recommended `.gitignore` and screenshot
   privacy settings.
-- Extend readiness controls beyond a fixed delay with bounded declarative
-  conditions such as selector visible/hidden and URL or path reached.
 - Validate structured manual-review records in real keyboard-only, screen
   reader, zoom, reflow, reduced-motion, cognitive, and task-flow reviews.
 - Validate remediation ownership and temporary-acceptance review dates in real
