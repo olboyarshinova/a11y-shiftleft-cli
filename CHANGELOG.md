@@ -6,6 +6,9 @@
   package contents. The README now uses `demo-report-states-annotated.png`.
 - Removed TypeScript source files from the published npm package contents while
   keeping compiled `dist/` runtime files, declaration files, docs, and examples.
+- Added cross-page impact signals to visual report top-rule triage so repeated
+  findings call out affected pages, affected states, target patterns, and likely
+  shared-component or cross-page fix scope.
 
 ## 0.8.0 - 2026-07-12
 

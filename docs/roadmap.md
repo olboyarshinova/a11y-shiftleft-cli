@@ -16,9 +16,6 @@ Section 508 certification.
 - Add cross-page consistency analysis for repeated navigation, help mechanisms,
   page titles, and same-purpose control names. Surface differences for review
   rather than asserting that every difference is a WCAG failure.
-- Add repeated-component counts and affected-page counts to user-impact
-  summaries so teams can distinguish one shared component fix from many local
-  page fixes.
 - Add report grouping controls for rule, page/state, affected element, WCAG
   criterion, and POUR principle while preserving root-cause grouping.
 - Make the PR/CI workflow extremely simple: one generated workflow, one

@@ -687,6 +687,34 @@ test("renderExplorationHtml shows every affected state for a top rule", () => {
   assert.doesNotMatch(topRules, /\+\d+ more/);
 });
 
+test("renderExplorationHtml summarizes cross-page rule impact in triage", () => {
+  const repeatedPageIssues = [
+    {
+      ...issues[0],
+      ownership: { kind: "first-party" as const, label: "First-party application code" },
+      fingerprint: "button-name::home",
+      url: "http://localhost:3000/",
+      selector: ".icon-button",
+      stateId: "state-1"
+    },
+    {
+      ...issues[0],
+      ownership: { kind: "first-party" as const, label: "First-party application code" },
+      fingerprint: "button-name::settings",
+      url: "http://localhost:3000/settings",
+      selector: ".icon-button",
+      stateId: "state-2"
+    }
+  ];
+  const html = renderExplorationHtml(graph, repeatedPageIssues);
+  const topRules = html.match(/<h3>Top Rules<\/h3>\s*<ol class="triage-list">([\s\S]*?)<\/ol>/)?.[1] || "";
+
+  assert.match(topRules, /2 occurrences/);
+  assert.match(topRules, /2 pages affected/);
+  assert.match(topRules, /2 states affected/);
+  assert.match(topRules, /likely shared component or template/);
+});
+
 test("renderExplorationHtml groups repeated remediation by rule", () => {
   const html = renderExplorationHtml(graph, [
     issues[0],

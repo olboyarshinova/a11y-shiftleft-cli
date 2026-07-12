@@ -3205,10 +3205,45 @@ function renderTopRules(issues: DedupedIssue[]): string {
         ${rule.info ? badge("info", `${rule.info} info`) : ""}
       </div>
       ${rule.criteria.length > 0 ? `<div class="url">${escapeHtml(rule.criteria.join(", "))}</div>` : ""}
+      ${renderRuleImpactSignal(rule)}
       ${rule.states.length > 0 ? `<div class="url">States: ${rule.states.map((stateId) => `<a href="#${escapeAttribute(stateId)}">${escapeHtml(stateId)}</a>`).join(", ")}</div>` : ""}
     </li>`;
     }).join("\n")}
   </ol>`;
+}
+
+function renderRuleImpactSignal(rule: ReturnType<typeof summarizeRules>[number]): string {
+  const signals = [
+    rule.occurrenceCount > 1 ? `${rule.occurrenceCount} occurrences` : "",
+    rule.pages.length > 1 ? `${rule.pages.length} pages affected` : "",
+    rule.states.length > 1 ? `${rule.states.length} states affected` : "",
+    rule.targets.length > 1 ? `${rule.targets.length} target patterns` : ""
+  ].filter(Boolean);
+  const fixScope = formatRuleFixScope(rule);
+
+  if (signals.length === 0 && !fixScope) return "";
+
+  return `<div class="url rule-impact">${escapeHtml([...signals, fixScope].filter(Boolean).join(" · "))}</div>`;
+}
+
+function formatRuleFixScope(rule: ReturnType<typeof summarizeRules>[number]): string {
+  if (rule.pages.length > 1 && rule.targets.length <= 1) {
+    return "likely shared component or template";
+  }
+
+  if (rule.pages.length > 1) {
+    return "cross-page pattern";
+  }
+
+  if (rule.occurrenceCount > 1 && rule.targets.length <= 3) {
+    return "repeated local pattern";
+  }
+
+  if (rule.targets.length > 3) {
+    return "multiple target patterns";
+  }
+
+  return "";
 }
 
 function renderIssues(
@@ -4117,7 +4152,10 @@ function summarizeRules(issues: DedupedIssue[]): Array<{
   critical: number;
   warning: number;
   info: number;
+  occurrenceCount: number;
   severityScore: number;
+  pages: string[];
+  targets: string[];
   states: string[];
   criteria: string[];
 }> {
@@ -4129,7 +4167,10 @@ function summarizeRules(issues: DedupedIssue[]): Array<{
     critical: number;
     warning: number;
     info: number;
+    occurrenceCount: number;
     severityScore: number;
+    pages: Set<string>;
+    targets: Set<string>;
     states: Set<string>;
     criteria: Set<string>;
   }>();
@@ -4143,17 +4184,23 @@ function summarizeRules(issues: DedupedIssue[]): Array<{
       critical: 0,
       warning: 0,
       info: 0,
+      occurrenceCount: 0,
       severityScore: 0,
+      pages: new Set<string>(),
+      targets: new Set<string>(),
       states: new Set<string>(),
       criteria: new Set<string>()
     };
 
     summary[issue.severity] += 1;
+    summary.occurrenceCount += 1 + Math.max(0, issue.duplicateCount || 0);
     summary.severityScore += severityScore(issue.severity);
     if (severityValue(issue.severity) > severityValue(summary.highestSeverity)) {
       summary.highestSeverity = issue.severity;
     }
     summary.wcagLevelRank = Math.min(summary.wcagLevelRank, issuePrimaryWcagLevelRank(issue));
+    if (issue.url) summary.pages.add(issue.url);
+    addQuickTarget(summary.targets, issue);
     if (issue.stateId) summary.states.add(issue.stateId);
     for (const criterion of issue.wcagCriteria || []) {
       summary.criteria.add(`WCAG ${criterion.id} ${criterion.title}, Level ${criterion.level}`);
@@ -4164,6 +4211,8 @@ function summarizeRules(issues: DedupedIssue[]): Array<{
   return [...summaries.values()]
     .map((summary) => ({
       ...summary,
+      pages: [...summary.pages].sort(),
+      targets: [...summary.targets].sort(),
       states: [...summary.states].sort(),
       criteria: [...summary.criteria].sort()
     }))
