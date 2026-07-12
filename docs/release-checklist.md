@@ -239,6 +239,54 @@ dashboard.html contains "Lighthouse Score"
 dashboard.html contains "Lighthouse Comparison"
 ```
 
+## v0.8.1 Polish Smoke Tests
+
+Verify URL input cleanup and readiness flags:
+
+```bash
+node --test \
+  dist-test/core/urlInput.test.js \
+  dist-test/commands/audit.test.js \
+  dist-test/commands/explore.test.js \
+  dist-test/commands/check.test.js \
+  dist-test/adapters/explorePlaywrightAdapter.test.js
+```
+
+Use a running demo app:
+
+```bash
+npm run demo -- --port 5173
+```
+
+In another terminal, verify that smart-quoted URLs and SPA path waits work:
+
+```bash
+node bin/cli.js audit \
+  --url "“http://localhost:5173”" \
+  --wait-until-path / \
+  --depth 1 \
+  --limit 3 \
+  --actions-per-state 2 \
+  --fail-on none \
+  --out reports-081-smoke
+```
+
+Expected checks:
+
+```txt
+reports-081-smoke/a11y-report.html exists
+Top Rules includes cross-page impact signals when repeated findings exist
+Audit Coverage table is compact enough to scan without excessive row height
+```
+
+Verify authenticated-page documentation is included:
+
+```bash
+test -f docs/recipes/authenticated-pages.md
+grep -q "auth login" docs/recipes/authenticated-pages.md
+grep -q "storageState" docs/recipes/authenticated-pages.md
+```
+
 ## Share Package Smoke Test
 
 Use an existing local report with screenshots:
@@ -282,7 +330,6 @@ The npm package should include only runtime files:
 ```txt
 bin/
 dist/
-src/
 scripts/post-a11y-comment.js
 scripts/verify-fixtures.js
 scripts/analyze-metrics.js
@@ -307,6 +354,7 @@ demo-dist/
 reports/
 node_modules/
 .npm-cache/
+src/
 ```
 
 ## Public Repository Files
@@ -326,6 +374,7 @@ docs/release-notes-v0.1.0.md
 docs/release-notes-v0.4.0.md
 docs/release-notes-v0.5.0.md
 docs/release-notes-v0.6.0.md
+docs/release-notes-v0.8.1.md
 docs/release-checklist.md
 docs/ide-integration.md
 docs/ticket-export.md
