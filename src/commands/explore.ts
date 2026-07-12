@@ -14,6 +14,7 @@ import { normalizeHideElementSelectors } from "../core/hideElements.js";
 import { openReportFile } from "../core/openReport.js";
 import { resolveAuthStatePath } from "../core/authState.js";
 import { readScopePlanIfExists } from "../core/scopePlan.js";
+import { normalizeHttpUrlInput } from "../core/urlInput.js";
 import { cleanExploreArtifacts } from "../reporters/cleanExploreArtifacts.js";
 import { writeExplorationHtml } from "../reporters/writeExplorationHtml.js";
 import { writeExplorationPdf } from "../reporters/writeExplorationPdf.js";
@@ -165,6 +166,7 @@ export function registerExploreCommand(program: Command): void {
         throw new Error("--open requires exploration.html. Remove --no-html or omit --open.");
       }
 
+      const targetUrl = normalizeHttpUrlInput(options.url, "--url");
       const device = resolveDevicePreset(options);
       const authState = resolveAuthStatePath(options.authState, options.cwd);
       const config = await loadConfig({
@@ -178,7 +180,7 @@ export function registerExploreCommand(program: Command): void {
         failOn: options.failOn,
         dynamic: {
           enabled: true,
-          urls: [options.url],
+          urls: [targetUrl],
           authState
         },
         explore: {
@@ -244,7 +246,7 @@ export function registerExploreCommand(program: Command): void {
 
       if (!options.quiet && options.verbose) {
         console.log(formatVerboseExploreSummary({
-          url: options.url,
+          url: targetUrl,
           framework,
           outputDir: effectiveConfig.outputDir,
           maxDepth: maxDepth || 2,
@@ -283,7 +285,7 @@ export function registerExploreCommand(program: Command): void {
       }
 
       const exploration = await runExplorePlaywrightAdapter(effectiveConfig, {
-        url: options.url,
+        url: targetUrl,
         outputDir: effectiveConfig.outputDir,
         maxDepth,
         maxStates,

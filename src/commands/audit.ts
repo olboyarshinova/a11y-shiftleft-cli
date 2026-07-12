@@ -8,6 +8,7 @@ import { createManualChecklist } from "../core/manualChecklist.js";
 import { normalizeBrowserEngine, supportedBrowserEnginesText } from "../core/browserRuntime.js";
 import { filterReportFindings } from "../core/findingFilter.js";
 import { normalizeHideElementSelectors } from "../core/hideElements.js";
+import { normalizeCliValue, normalizeHttpUrlInput } from "../core/urlInput.js";
 import { dedupeIssues } from "../core/dedupe.js";
 import { readScopePlanIfExists } from "../core/scopePlan.js";
 import { detectFramework } from "../core/detectFramework.js";
@@ -477,34 +478,11 @@ function toBrowserEngine(browser: string | undefined) {
 }
 
 export function normalizeAuditUrl(value: string): string {
-  const normalized = normalizeRequiredCliValue(value);
-  let parsed: URL;
-  try {
-    parsed = new URL(normalized);
-  } catch {
-    throw new Error(`Invalid --url value: ${value}. Use a full URL such as https://example.com or http://localhost:5173.`);
-  }
-
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-    throw new Error(`Invalid --url protocol: ${parsed.protocol}. Use http:// or https://.`);
-  }
-
-  return parsed.toString();
-}
-
-function normalizeRequiredCliValue(value: string): string {
-  const normalized = normalizeOptionalCliValue(value);
-  if (!normalized) throw new Error("Expected a non-empty value.");
-  return normalized;
+  return normalizeHttpUrlInput(value, "--url");
 }
 
 function normalizeOptionalCliValue(value: string | undefined): string | undefined {
-  if (value === undefined) return undefined;
-  return value
-    .trim()
-    .replace(/^[“”"«»']+/, "")
-    .replace(/[“”"«»']+$/, "")
-    .trim();
+  return value === undefined ? undefined : normalizeCliValue(value);
 }
 
 function shouldPrintAuditProgress(options: Pick<AuditOptions, "quiet">): boolean {

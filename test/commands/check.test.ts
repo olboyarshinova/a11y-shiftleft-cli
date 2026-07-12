@@ -151,14 +151,16 @@ test("parseUrls supports repeated and comma separated URLs", () => {
     parseUrls([
       "http://localhost:4200",
       "http://localhost:4200/favorites,http://localhost:4200/settings",
-      "http://localhost:4200"
+      "“http://localhost:4200”"
     ]),
     [
-      "http://localhost:4200",
+      "http://localhost:4200/",
       "http://localhost:4200/favorites",
       "http://localhost:4200/settings"
     ]
   );
+  assert.deepEqual(parseUrls(["http://localhost:4200,"]), ["http://localhost:4200/"]);
+  assert.throws(() => parseUrls(["file:///tmp/report.html"]), /Use http:\/\/ or https:\/\//);
 });
 
 test("resolveCheckModes treats static and dynamic flags as explicit modes", () => {

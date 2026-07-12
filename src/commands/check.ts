@@ -22,6 +22,7 @@ import { normalizeHideElementSelectors } from "../core/hideElements.js";
 import { readScopePlanIfExists } from "../core/scopePlan.js";
 import { browserEvidenceName, normalizeBrowserEngine, supportedBrowserEnginesText } from "../core/browserRuntime.js";
 import { resolveAuthStatePath } from "../core/authState.js";
+import { normalizeHttpUrlInput } from "../core/urlInput.js";
 import type { A11yReport, ComplianceStandard, Framework, Issue, LighthouseAuditResult, ReportFormat, ReportSummary, Severity, TriagedIssue, WcagLevel, WcagVersion } from "../types.js";
 
 export interface CheckOptions {
@@ -820,7 +821,8 @@ export function parseUrls(urls?: string[]): string[] {
   return [...new Set(urls
     .flatMap((url) => url.split(","))
     .map((url) => url.trim())
-    .filter(Boolean))];
+    .filter(Boolean)
+    .map((url) => normalizeHttpUrlInput(url, "--url")))];
 }
 
 export function shouldFail(

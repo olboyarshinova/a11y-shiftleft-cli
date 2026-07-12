@@ -12,6 +12,8 @@
 - Added bounded `--wait-until-url` and `--wait-until-path` readiness controls to
   `audit` and `explore` so SPA redirects and authenticated states can settle
   before screenshots and browser checks.
+- Normalized URL input consistently across `audit`, `explore`, and `check`,
+  including leading/trailing whitespace and common smart quotes.
 
 ## 0.8.0 - 2026-07-12
 
