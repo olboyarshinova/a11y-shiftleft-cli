@@ -139,12 +139,18 @@ For CircleCI, add `--ci circleci`:
 npx a11y-shiftleft-cli setup --ci circleci --url $APP_URL --start-command "npm run dev"
 ```
 
+For Jenkins or another shell-based runner, generate a portable script:
+
+```bash
+npx a11y-shiftleft-cli setup --ci shell --url $APP_URL --start-command "npm run dev"
+```
+
 This creates `.a11y-shiftleft.json`, adds `a11y:audit` and `a11y:check` npm
 scripts when `package.json` exists, updates `.gitignore`, and adds a CI workflow
 that installs the project, starts your app, runs accessibility checks, and keeps
-reports as CI artifacts. GitHub workflows also post a pull request comment. The
-default quality gate is `report-only`, so teams can adopt it before failing
-builds on legacy issues.
+reports as CI artifacts. Shell setup creates `scripts/a11y-ci.sh`. GitHub
+workflows also post a pull request comment. The default quality gate is
+`report-only`, so teams can adopt it before failing builds on legacy issues.
 
 After setup, local checks become:
 

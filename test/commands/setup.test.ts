@@ -118,3 +118,33 @@ test("runSetup can create a CircleCI workflow", async () => {
   assert.ok(result.created.includes(".circleci/config.yml"));
   assert.equal(result.created.some((item) => item.includes(os.homedir())), false);
 });
+
+test("runSetup can create a portable shell CI script", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-setup-shell-"));
+  await fs.writeFile(path.join(cwd, "package.json"), JSON.stringify({
+    scripts: {
+      dev: "vite"
+    }
+  }, null, 2));
+
+  const result = await runSetup({
+    cwd,
+    url: ["http://localhost:5173"],
+    startCommand: "npm run dev -- --host 0.0.0.0 --port 5173",
+    ci: "shell",
+    profile: "pr",
+    gate: "report-only",
+    failOn: "critical",
+    standard: "wcag22-aa"
+  });
+
+  const scriptPath = path.join(cwd, "scripts/a11y-ci.sh");
+  const script = await fs.readFile(scriptPath, "utf8");
+  const stat = await fs.stat(scriptPath);
+
+  assert.match(script, /^#!\/usr\/bin\/env bash/);
+  assert.match(script, /npx a11y-shiftleft check --dynamic --url http:\/\/localhost:5173/);
+  assert.equal((stat.mode & 0o111) !== 0, true);
+  assert.ok(result.created.includes("scripts/a11y-ci.sh"));
+  assert.equal(result.created.some((item) => item.includes(os.homedir())), false);
+});

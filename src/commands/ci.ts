@@ -21,11 +21,12 @@ interface CiOptions {
 }
 
 type CiProfile = "pr" | "full" | "split";
-type CiProvider = "github" | "gitlab" | "circleci";
+type CiProvider = "github" | "gitlab" | "circleci" | "shell";
 
 type WorkflowFile = {
   fileName: string;
   contents: string;
+  executable?: boolean;
 };
 
 export function registerCiCommand(program: Command): void {
@@ -34,7 +35,7 @@ export function registerCiCommand(program: Command): void {
     .alias("ci")
     .description("Generate CI workflow files for accessibility checks.")
     .option("--cwd <dir>", "Target project directory")
-    .option("--provider <provider>", "CI provider: github, gitlab, or circleci", "github")
+    .option("--provider <provider>", "CI provider: github, gitlab, circleci, or shell", "github")
     .option("--url <urls...>", "URL(s) to scan in CI", ["http://localhost:3000"])
     .option("--start-command <command>", "Command that starts the app in CI", "npm run dev -- --host localhost --port 3000")
     .option("--fail-on <severity>", "critical, warning, info, or none", "critical")
@@ -80,6 +81,7 @@ export function registerCiCommand(program: Command): void {
         const target = ciTargetPath(cwd, provider, workflow.fileName);
         await fs.mkdir(path.dirname(target), { recursive: true });
         await fs.writeFile(target, workflow.contents);
+        if (workflow.executable) await fs.chmod(target, 0o755);
         console.log(`Created ${target}`);
       }
     });
@@ -332,6 +334,46 @@ workflows:
 `;
 }
 
+export function shellWorkflowTemplate(options: WorkflowTemplateOptions): string {
+  const { urls, startCommand, failOn, standard } = options;
+  const scanUrls = urls.length > 0 ? urls : ["http://localhost:3000"];
+  const firstUrl = scanUrls[0];
+  const urlArgs = scanUrls.join(" ");
+  const crawlDepth = toPositiveInteger(options.crawlDepth, 1);
+  const crawlLimit = toPositiveInteger(options.crawlLimit, 10);
+  const gateArg = checkGateArgument(options.gate, failOn);
+
+  return `#!/usr/bin/env bash
+set -euo pipefail
+
+APP_URL="\${APP_URL:-${firstUrl}}"
+REPORT_DIR="\${A11Y_REPORT_DIR:-reports}"
+
+npm ci
+npm run build --if-present
+
+${startCommand} &
+APP_PID=$!
+
+cleanup() {
+  kill "$APP_PID" >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
+
+for _ in {1..30}; do
+  if curl -fsS "$APP_URL" >/dev/null; then
+    break
+  fi
+  sleep 2
+done
+
+curl -fsS "$APP_URL" >/dev/null
+npx a11y-shiftleft check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out "$REPORT_DIR" ${gateArg} --standard ${standard}
+
+echo "Accessibility report written to $REPORT_DIR"
+`;
+}
+
 interface WorkflowFilesOptions {
   profile: CiProfile;
   urls: string[];
@@ -416,10 +458,31 @@ export function circleCiWorkflowFiles(options: WorkflowFilesOptions): WorkflowFi
   }];
 }
 
+export function shellWorkflowFiles(options: WorkflowFilesOptions): WorkflowFile[] {
+  if (options.profile !== "pr") {
+    throw new Error("Shell CI setup currently supports the pr CI profile. Customize the generated script for scheduled full audits.");
+  }
+
+  return [{
+    fileName: "a11y-ci.sh",
+    executable: true,
+    contents: shellWorkflowTemplate({
+      urls: options.urls,
+      startCommand: options.startCommand,
+      failOn: options.failOn,
+      gate: options.gate,
+      standard: options.standard,
+      crawlDepth: options.crawlDepth,
+      crawlLimit: options.crawlLimit
+    })
+  }];
+}
+
 export function ciWorkflowFiles(provider: CiProvider, options: WorkflowFilesOptions): WorkflowFile[] {
   if (provider === "github") return workflowFiles(options);
   if (provider === "gitlab") return gitLabWorkflowFiles(options);
-  return circleCiWorkflowFiles(options);
+  if (provider === "circleci") return circleCiWorkflowFiles(options);
+  return shellWorkflowFiles(options);
 }
 
 export function checkGateArgument(gate: string | undefined, failOn: string): string {
@@ -450,14 +513,16 @@ export function toCiProfile(profile: string): CiProfile {
 
 export function toCiProvider(provider: string): CiProvider {
   const normalized = provider.trim().toLowerCase();
-  if (normalized === "github" || normalized === "gitlab" || normalized === "circleci") return normalized;
+  if (normalized === "github" || normalized === "gitlab" || normalized === "circleci" || normalized === "shell") return normalized;
   if (normalized === "circle") return "circleci";
+  if (normalized === "generic" || normalized === "jenkins") return "shell";
   throw new Error(`Unsupported CI provider: ${provider}`);
 }
 
 export function ciTargetPath(cwd: string, provider: CiProvider, fileName: string): string {
   if (provider === "github") return path.join(cwd, ".github/workflows", fileName);
   if (provider === "circleci") return path.join(cwd, ".circleci", fileName);
+  if (provider === "shell") return path.join(cwd, "scripts", fileName);
   return path.join(cwd, fileName);
 }
 

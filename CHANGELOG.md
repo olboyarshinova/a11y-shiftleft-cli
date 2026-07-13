@@ -12,6 +12,8 @@
   `generate-ci --provider gitlab`.
 - Added CircleCI generation through `setup --ci circleci` and
   `generate-ci --provider circleci`.
+- Added portable shell CI script generation through `setup --ci shell` and
+  `generate-ci --provider shell` for Jenkins and other generic runners.
 
 ## 0.8.1 - 2026-07-12
 
