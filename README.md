@@ -34,11 +34,19 @@ loads, not just the initial HTML source.
 
 ## Built On Known Tools
 
-The CLI orchestrates established tools instead of replacing their rule engines:
-axe-core through [`@axe-core/playwright`](https://www.npmjs.com/package/@axe-core/playwright),
-[Playwright](https://playwright.dev/), optional [ESLint](https://eslint.org/)
-adapters, and optional
-[Lighthouse](https://developer.chrome.com/docs/lighthouse/overview/) comparison.
+The CLI orchestrates established engines instead of replacing their rule
+systems:
+
+| Engine | Used for |
+|---|---|
+| [`@axe-core/playwright`](https://www.npmjs.com/package/@axe-core/playwright) | Automated accessibility rules against the rendered page |
+| [Playwright](https://playwright.dev/) | Browser automation, safe UI-state exploration, screenshots, and keyboard evidence |
+| [ESLint](https://eslint.org/) adapters | Optional source checks for React, Vue, and Angular projects |
+| [Lighthouse](https://developer.chrome.com/docs/lighthouse/overview/) | Optional accessibility score comparison when installed |
+
+The report combines these signals with deduplication, WCAG labels, visual
+evidence, and manual-review gaps. It is an evidence workflow, not a replacement
+for the underlying tools or a conformance certification.
 
 ## 2-Minute Quick Start
 

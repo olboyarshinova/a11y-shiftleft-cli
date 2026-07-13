@@ -21,6 +21,8 @@
 - Added a privacy and local-artifacts recipe covering screenshot redaction,
   `--no-screenshots`, generated reports, auth state, baselines, and sanitized
   sharing.
+- Expanded the README "Built On Known Tools" section with a concise engine-role
+  table for axe-core, Playwright, ESLint adapters, and Lighthouse.
 
 ## 0.8.1 - 2026-07-12
 

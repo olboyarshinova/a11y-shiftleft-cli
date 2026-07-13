@@ -285,10 +285,8 @@ Section 508 certification.
 - Add a short privacy promise near report examples: reports and screenshots
   stay local by default, sensitive screenshots can be disabled or redacted, and
   sharing is always explicit.
-- Add a small "built with trusted engines" section to the website and README
-  that names axe-core through Playwright, Lighthouse where enabled, ESLint
-  adapters, and local browser automation without presenting the project as a
-  replacement for those tools.
+- Port the README "built on known tools" section into the future documentation
+  website when the site is created.
 - Port the privacy and local-artifacts recipe into the future documentation
   website when the site is created.
 - Expand recipe docs with screenshots, generated report excerpts, public-site
