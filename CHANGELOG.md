@@ -4,6 +4,8 @@
 
 - Added a guided `setup` command that creates the starter config, report/auth
   `.gitignore` entries, and report-only GitHub Actions workflow in one pass.
+- Extended `setup` to add `a11y:audit` and `a11y:check` npm scripts when a
+  project `package.json` is present.
 
 ## 0.8.1 - 2026-07-12
 

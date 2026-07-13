@@ -120,18 +120,25 @@ npx a11y-shiftleft-cli audit --url $APP_URL --out reports --pause-on-human-verif
 
 ## Add CI/CD
 
-After the first local audit works, create the starter config, report `.gitignore`
-entries, and a report-only GitHub Actions workflow:
+After the first local audit works, create npm scripts, the starter config,
+report `.gitignore` entries, and a report-only GitHub Actions workflow:
 
 ```bash
 npx a11y-shiftleft-cli setup --url $APP_URL --start-command "npm run dev"
 ```
 
-This creates `.a11y-shiftleft.json`, updates `.gitignore`, and adds a
-pull-request workflow that installs the project, starts your app, runs
-accessibility checks, comments on the PR, and keeps reports as CI artifacts.
-The default quality gate is `report-only`, so teams can adopt it before failing
-builds on legacy issues.
+This creates `.a11y-shiftleft.json`, adds `a11y:audit` and `a11y:check` npm
+scripts when `package.json` exists, updates `.gitignore`, and adds a pull-request
+workflow that installs the project, starts your app, runs accessibility checks,
+comments on the PR, and keeps reports as CI artifacts. The default quality gate
+is `report-only`, so teams can adopt it before failing builds on legacy issues.
+
+After setup, local checks become:
+
+```bash
+npm run a11y:audit
+npm run a11y:check
+```
 
 Copy-paste CI examples are available for
 [GitHub Actions](docs/recipes/github-actions.md) and
@@ -215,7 +222,7 @@ The commands below assume `APP_URL` is set to your local, staging, or preview UR
 | `audit` | Check one component or page area | `npx a11y-shiftleft-cli audit --url $APP_URL --scope '#main' --out reports` |
 | `check` | Fast CI or PR check | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports` |
 | `explore` | Debug visual state discovery | `npx a11y-shiftleft-cli explore --url $APP_URL --out reports` |
-| `setup` | Create config, `.gitignore`, and GitHub Actions workflow | `npx a11y-shiftleft-cli setup --url $APP_URL --start-command "npm run dev"` |
+| `setup` | Create npm scripts, config, `.gitignore`, and GitHub Actions workflow | `npx a11y-shiftleft-cli setup --url $APP_URL --start-command "npm run dev"` |
 | `generate-ci` | Regenerate only CI workflow files | `npx a11y-shiftleft-cli generate-ci --url $APP_URL --start-command "npm run dev"` |
 | `doctor` | Diagnose setup problems | `npx a11y-shiftleft-cli doctor --url $APP_URL` |
 

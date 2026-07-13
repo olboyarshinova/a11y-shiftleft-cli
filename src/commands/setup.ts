@@ -18,6 +18,7 @@ interface SetupOptions {
   skipConfig?: boolean;
   skipGitignore?: boolean;
   skipCi?: boolean;
+  skipScripts?: boolean;
 }
 
 interface SetupResult {
@@ -44,6 +45,7 @@ export function registerSetupCommand(program: Command): void {
     .option("--skip-config", "Do not create .a11y-shiftleft.json")
     .option("--skip-gitignore", "Do not update .gitignore")
     .option("--skip-ci", "Do not generate CI workflow files")
+    .option("--skip-scripts", "Do not add a11y npm scripts to package.json")
     .action(async (options: SetupOptions) => {
       const result = await runSetup(options);
 
@@ -83,6 +85,17 @@ export async function runSetup(options: SetupOptions): Promise<SetupResult> {
       updated.push(`${gitignore.path} (${gitignore.added.join(", ")})`);
     } else {
       skipped.push(`${gitignore.path} already ignores generated a11y artifacts`);
+    }
+  }
+
+  if (!options.skipScripts) {
+    const scripts = await addPackageScripts(cwd, scanUrls[0], options.force);
+    if (scripts.status === "updated") {
+      updated.push(`${scripts.path} (${scripts.added.join(", ")})`);
+    } else if (scripts.status === "missing") {
+      skipped.push(`${scripts.path} not found`);
+    } else {
+      skipped.push(`${scripts.path} already has a11y npm scripts`);
     }
   }
 
@@ -126,10 +139,57 @@ export async function runSetup(options: SetupOptions): Promise<SetupResult> {
     updated,
     nextSteps: [
       `Start your app locally: ${options.startCommand}`,
-      `Run a visual audit: npx a11y-shiftleft-cli audit --url ${scanUrls[0]} --out reports --open`,
+      options.skipScripts
+        ? `Run a visual audit: npx a11y-shiftleft-cli audit --url ${scanUrls[0]} --out reports --open`
+        : "Run a visual audit: npm run a11y:audit",
       "Commit the generated config and workflow files after reviewing them."
     ]
   };
+}
+
+type PackageScriptsResult =
+  | { status: "updated"; path: string; added: string[] }
+  | { status: "unchanged"; path: string; added: string[] }
+  | { status: "missing"; path: string; added: string[] };
+
+export async function addPackageScripts(
+  cwd: string,
+  url: string,
+  force = false
+): Promise<PackageScriptsResult> {
+  const packagePath = path.join(cwd, "package.json");
+  const existing = await readTextIfExists(packagePath);
+  if (!existing) return { status: "missing", path: packagePath, added: [] };
+
+  const manifest = JSON.parse(existing) as {
+    scripts?: Record<string, string>;
+    [key: string]: unknown;
+  };
+  const scripts = manifest.scripts && typeof manifest.scripts === "object"
+    ? { ...manifest.scripts }
+    : {};
+  const desired = {
+    "a11y:audit": `a11y-shiftleft audit --url ${url} --out reports --open`,
+    "a11y:check": `a11y-shiftleft check --dynamic --url ${url} --out reports --gate report-only`
+  };
+  const added: string[] = [];
+
+  for (const [name, command] of Object.entries(desired)) {
+    if (!force && scripts[name]) continue;
+    if (scripts[name] !== command) {
+      scripts[name] = command;
+      added.push(name);
+    }
+  }
+
+  if (added.length === 0) {
+    return { status: "unchanged", path: packagePath, added };
+  }
+
+  manifest.scripts = scripts;
+  await fs.writeFile(packagePath, `${JSON.stringify(manifest, null, 2)}\n`);
+
+  return { status: "updated", path: packagePath, added };
 }
 
 function parseUrls(urls?: string[]): string[] {
@@ -148,4 +208,17 @@ async function exists(filePath: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+async function readTextIfExists(filePath: string): Promise<string> {
+  try {
+    return await fs.readFile(filePath, "utf8");
+  } catch (error) {
+    if (isNodeError(error) && error.code === "ENOENT") return "";
+    throw error;
+  }
+}
+
+function isNodeError(error: unknown): error is NodeJS.ErrnoException {
+  return error instanceof Error && "code" in error;
 }
