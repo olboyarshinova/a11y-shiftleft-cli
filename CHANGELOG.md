@@ -2,8 +2,10 @@
 
 ## Unreleased
 
-- Removed the unused legacy README visual-report screenshot asset from the npm
-  package contents. The README now uses `demo-report-states-annotated.png`.
+## 0.8.1 - 2026-07-12
+
+- Replaced the multiple README visual-report screenshots with one continuous
+  report screenshot that shows summary, coverage, triage, and annotated states.
 - Removed TypeScript source files from the published npm package contents while
   keeping compiled `dist/` runtime files, declaration files, docs, and examples.
 - Added cross-page impact signals to visual report top-rule triage so repeated
@@ -34,6 +36,9 @@
 - Limited Top Rules in the triage overview to a compact 3-5 item list that
   stays visually balanced with Most Affected States and links readers to the
   full JSON report for the remaining rules.
+- Added text-color and background-color alternatives to color-contrast
+  recommendations so light text on light backgrounds can be fixed in either
+  direction without confusing report wording.
 - Added v0.8.1 release notes and updated release checklist smoke tests for URL
   normalization, SPA readiness waits, authenticated-page docs, and package
   boundary verification.

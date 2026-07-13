@@ -29,13 +29,19 @@ less fragile to scan, and keeping the published npm package smaller.
 ## Changed
 
 - Audit Coverage table rows are more compact in the visual HTML report.
+- Color-contrast recommendations now show both text-color and background-color
+  alternatives when both are viable, so designers can preserve light-on-dark or
+  dark-on-light intent more clearly.
 - CLI URL input is normalized consistently across `audit`, `explore`, and
   `check`, including leading/trailing whitespace and common smart quotes.
+- README visual-report documentation now uses one continuous report screenshot
+  instead of several separate cropped images.
 - Published npm package contents exclude TypeScript source files while keeping
   compiled runtime files, declaration files, docs, and examples.
 - Generated GitHub Actions workflows now use current checkout/setup-node
   actions and Node.js 22.
-- Removed an unused legacy README screenshot asset from package contents.
+- README now presents one continuous visual-report screenshot instead of
+  multiple separate cropped report images.
 
 ## Why It Matters
 
