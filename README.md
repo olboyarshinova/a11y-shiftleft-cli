@@ -320,6 +320,7 @@ Reports and screenshots usually should not be committed. Run `init --gitignore`
 once to add common report paths. For private pages, add `--no-screenshots`.
 
 More recipes for [privacy and local artifacts](docs/recipes/privacy-and-local-artifacts.md),
+[user impact review](docs/recipes/user-impact-review.md),
 [quality gates in existing projects](docs/recipes/quality-gates.md), browser
 profiles, hidden overlays, and advanced configuration are in
 [Configuration](docs/configuration.md) and [Recipes](docs/recipes/index.md).

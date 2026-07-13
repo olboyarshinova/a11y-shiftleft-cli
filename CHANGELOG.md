@@ -23,6 +23,8 @@
   sharing.
 - Expanded the README "Built On Known Tools" section with a concise engine-role
   table for axe-core, Playwright, ESLint adapters, and Lighthouse.
+- Added a user-impact review recipe that connects common technical findings to
+  product tasks, affected users, before/after examples, and ticket language.
 
 ## 0.8.1 - 2026-07-12
 

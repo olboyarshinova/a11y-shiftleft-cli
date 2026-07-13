@@ -291,9 +291,8 @@ Section 508 certification.
   website when the site is created.
 - Expand recipe docs with screenshots, generated report excerpts, public-site
   examples, and rollout guidance for early teams.
-- Add inclusive-design documentation that connects common technical findings to
-  real user scenarios, before/after fixes, and "solve for one, extend to many"
-  examples without copying any proprietary toolkit language.
+- Port the user-impact review recipe into the future documentation website and
+  expand it with product-specific examples from real reports.
 - Strengthen privacy-first positioning in docs: reports, screenshots, URLs, DOM
   evidence, and metrics stay local unless the user explicitly shares them.
 - Keep the adoption plan in [adoption-strategy.md](adoption-strategy.md)
