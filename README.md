@@ -160,8 +160,9 @@ npm run a11y:check
 ```
 
 Copy-paste CI examples are available for
-[GitHub Actions](docs/recipes/github-actions.md) and
-[GitLab CI](docs/recipes/gitlab-ci.md).
+[GitHub Actions](docs/recipes/github-actions.md),
+[GitLab CI](docs/recipes/gitlab-ci.md), and
+[CI/CD without SaaS](docs/recipes/ci-without-saas.md).
 
 For an existing pipeline, the smallest integration is one npm script:
 

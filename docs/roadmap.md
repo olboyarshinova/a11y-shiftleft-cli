@@ -289,9 +289,6 @@ Section 508 certification.
   that names axe-core through Playwright, Lighthouse where enabled, ESLint
   adapters, and local browser automation without presenting the project as a
   replacement for those tools.
-- Add a "CI/CD without SaaS" guide that explains how the CLI differs from
-  enterprise platforms: local-first execution, open-source reports, CI artifacts,
-  explicit manual-review gaps, and no hosted account requirement.
 - Add a privacy section to the documentation website covering screenshot
   redaction, `--no-screenshots`, generated report directories, `.gitignore`
   setup, baseline files, and safe handling of local artifacts.

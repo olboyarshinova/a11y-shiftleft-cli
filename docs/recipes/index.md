@@ -11,6 +11,7 @@ These recipes give teams short copy-paste paths for adding
 - [Multiple URLs](multiple-urls.md)
 - [Authenticated Pages](authenticated-pages.md)
 - [Quality Gates For Existing Projects](quality-gates.md)
+- [CI/CD Without SaaS](ci-without-saas.md)
 - [GitHub Actions](github-actions.md)
 - [GitLab CI](gitlab-ci.md)
 - [Ticket export](../ticket-export.md)
