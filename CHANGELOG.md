@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added a guided `setup` command that creates the starter config, report/auth
+  `.gitignore` entries, and report-only GitHub Actions workflow in one pass.
+
 ## 0.8.1 - 2026-07-12
 
 - Replaced the multiple README visual-report screenshots with one continuous

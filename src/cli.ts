@@ -15,6 +15,7 @@ import { registerRemediationCommand } from "./commands/remediation.js";
 import { registerScreenReaderCommand } from "./commands/screenReader.js";
 import { registerShareCommand } from "./commands/share.js";
 import { registerScopeCommand } from "./commands/scope.js";
+import { registerSetupCommand } from "./commands/setup.js";
 import { registerTicketCommand } from "./commands/ticket.js";
 import { registerWatchCommand } from "./commands/watch.js";
 
@@ -43,6 +44,7 @@ export function createProgram(): Command {
   registerScreenReaderCommand(program);
   registerShareCommand(program);
   registerScopeCommand(program);
+  registerSetupCommand(program);
   registerDashboardCommand(program);
   registerWatchCommand(program);
   registerTicketCommand(program);
