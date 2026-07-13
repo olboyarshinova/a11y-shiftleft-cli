@@ -30,6 +30,8 @@
 - Improved `doctor` framework messaging so users can see that browser audits
   work for any rendered website URL while React, Vue, and Angular adapters are
   optional source-code checks.
+- Clarified the FAQ troubleshooting guidance for `doctor`, optional adapters,
+  and rendered-URL audit scope.
 
 ## 0.8.1 - 2026-07-12
 

@@ -27,7 +27,10 @@ npm install --save-dev a11y-shiftleft-cli
 npx playwright install chromium
 ```
 
-Run `npx a11y-shiftleft doctor --url <your-url>` if Chromium is missing — it will tell you exactly what to install.
+Run `npx a11y-shiftleft doctor --url <your-url>` if setup feels unclear. It
+checks Node, Playwright, Chromium, config discovery, URL reachability, and
+whether an optional source adapter would add value for your detected framework.
+If no React, Vue, or Angular adapter is installed, browser audits still work.
 
 ---
 
@@ -62,7 +65,9 @@ Run the built-in doctor command to diagnose Node, Playwright, Chromium, config, 
 npx a11y-shiftleft doctor --url http://localhost:5173
 ```
 
-It prints a checklist of what passed, what failed, and suggested fixes.
+It prints a checklist of what passed, what failed, and suggested fixes. The
+`Audit scope` row confirms that browser audits work with any rendered website
+URL; adapter warnings only affect optional static source checks.
 
 ### Can I scan more than one page at a time?
 
