@@ -27,6 +27,9 @@
   product tasks, affected users, before/after examples, and ticket language.
 - Added a visual-report excerpt to the check/explore/audit recipe so new users
   can see which report sections to review first.
+- Improved `doctor` framework messaging so users can see that browser audits
+  work for any rendered website URL while React, Vue, and Angular adapters are
+  optional source-code checks.
 
 ## 0.8.1 - 2026-07-12
 

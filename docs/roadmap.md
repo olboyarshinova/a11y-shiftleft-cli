@@ -205,9 +205,6 @@ Section 508 certification.
   should differentiate through CLI-driven dynamic exploration, safe automated
   state discovery, CI reproducibility, visual evidence, and local privacy rather
   than competing as another current-tab scanner.
-- Improve framework autodetection messaging so users clearly understand the
-  difference between browser-based audits for any rendered website and optional
-  source adapters for React, Vue, and Angular.
 - Evaluate Svelte and Astro static adapters only after the browser audit,
   visual report, keyboard evidence, and React/Vue/Angular adapter path are
   stable. Next.js should remain covered by the React adapter for JSX/TSX source

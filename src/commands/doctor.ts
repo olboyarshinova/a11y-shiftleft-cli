@@ -89,6 +89,7 @@ export async function runDoctorChecks(
   checks.push(await checkProjectDirectory(cwd));
   checks.push(checkConfigFile(discoveredConfig));
   checks.push(checkFrameworkResolution(frameworkResolution));
+  checks.push(checkAuditScope());
   checks.push(checkPackageResolution(cwd, "playwright"));
   checks.push(...checkFrameworkAdapterPackages(cwd, frameworkResolution.framework));
   checks.push(await runtime.checkChromium());
@@ -114,7 +115,7 @@ export function checkFrameworkAdapterPackages(cwd: string, framework: Framework)
     return [{
       name: "Framework adapter",
       status: "warn",
-      message: "Framework is auto/unknown. Dynamic checks still work. Configure --framework or add an a11y config file for static adapter guidance."
+      message: "Framework is auto/unknown. Browser audits still work for rendered URLs. Configure --framework or add an a11y config file only when you want static adapter guidance."
     }];
   }
 
@@ -144,7 +145,7 @@ export function checkFrameworkAdapterPackages(cwd: string, framework: Framework)
   return [{
     name: "Framework adapter",
     status: "warn",
-    message: `${framework} detected. Install the optimized static adapter: ${install}. Dynamic checks still work without it.`
+    message: `${framework} detected. Install the optional static adapter: ${install}. Browser audits still work without it.`
   }];
 }
 
@@ -231,7 +232,15 @@ function checkFrameworkResolution(resolution: FrameworkResolution): DoctorCheck 
   return {
     name: "Framework",
     status: "warn",
-    message: "Could not detect React, Vue, or Angular from package.json. Dynamic checks still work; use --framework for static adapter guidance."
+    message: "Could not detect React, Vue, or Angular from package.json. Browser audits still work for rendered URLs; use --framework only for static adapter guidance."
+  };
+}
+
+function checkAuditScope(): DoctorCheck {
+  return {
+    name: "Audit scope",
+    status: "pass",
+    message: "Browser audits work with any rendered website URL. Source adapters are optional and currently add React, Vue, and Angular static checks."
   };
 }
 

@@ -26,6 +26,8 @@ test("runDoctorChecks reports local setup and reachable target URL", async () =>
   assert.equal(checks.find((check) => check.name === "Node.js")?.status, "pass");
   assert.equal(checks.find((check) => check.name === "Config file")?.status, "pass");
   assert.equal(checks.find((check) => check.name === "Framework")?.status, "warn");
+  assert.equal(checks.find((check) => check.name === "Audit scope")?.status, "pass");
+  assert.match(checks.find((check) => check.name === "Audit scope")?.message || "", /any rendered website URL/);
   assert.equal(checks.find((check) => check.name === "Target URL")?.status, "pass");
 });
 
@@ -58,6 +60,7 @@ test("checkFrameworkAdapterPackages warns when framework is auto", () => {
   assert.equal(checks.length, 1);
   assert.equal(checks[0].status, "warn");
   assert.match(checks[0].message, /Framework is auto\/unknown/);
+  assert.match(checks[0].message, /Browser audits still work/);
 });
 
 test("checkFrameworkAdapterPackages recommends user-facing adapter bundles", async () => {
@@ -69,6 +72,7 @@ test("checkFrameworkAdapterPackages recommends user-facing adapter bundles", asy
   assert.equal(checks[0].status, "warn");
   assert.match(checks[0].message, /@a11y-shiftleft\/react/);
   assert.match(checks[0].message, /npm install --save-dev/);
+  assert.match(checks[0].message, /optional static adapter/);
 });
 
 test("runDoctorChecks autodetects React from package.json", async () => {
