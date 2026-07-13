@@ -8,6 +8,8 @@
   project `package.json` is present.
 - Kept `setup` console output privacy-friendly by showing generated project
   paths relative to the target directory instead of absolute local paths.
+- Added GitLab CI generation through `setup --ci gitlab` and
+  `generate-ci --provider gitlab`.
 
 ## 0.8.1 - 2026-07-12
 

@@ -175,9 +175,9 @@ Section 508 certification.
   deterministic at first: run the audit, compare with the previous report,
   summarize fixed/new/remaining findings, recommend the next CLI command, and
   refresh the visual report.
-- Add CI presets for GitHub Actions first, then GitLab CI, CircleCI, Jenkins,
-  and generic shell runners. Keep each preset focused on installing the package,
-  starting the app, running `audit` or `check`, and preserving local artifacts.
+- Add CI presets for CircleCI, Jenkins, and generic shell runners. Keep each
+  preset focused on installing the package, starting the app, running `audit` or
+  `check`, and preserving local artifacts.
 - Extend quality-gate profiles beyond `new-critical-only`, `critical`,
   `warning`, and `report-only` only when real CI users need additional rollout
   modes.

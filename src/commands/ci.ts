@@ -4,6 +4,7 @@ import path from "node:path";
 
 interface CiOptions {
   cwd?: string;
+  provider: string;
   url: string[];
   startCommand: string;
   failOn: string;
@@ -20,6 +21,7 @@ interface CiOptions {
 }
 
 type CiProfile = "pr" | "full" | "split";
+type CiProvider = "github" | "gitlab";
 
 type WorkflowFile = {
   fileName: string;
@@ -30,8 +32,9 @@ export function registerCiCommand(program: Command): void {
   program
     .command("generate-ci")
     .alias("ci")
-    .description("Generate GitHub Actions workflow for accessibility checks.")
+    .description("Generate CI workflow files for accessibility checks.")
     .option("--cwd <dir>", "Target project directory")
+    .option("--provider <provider>", "CI provider: github or gitlab", "github")
     .option("--url <urls...>", "URL(s) to scan in CI", ["http://localhost:3000"])
     .option("--start-command <command>", "Command that starts the app in CI", "npm run dev -- --host localhost --port 3000")
     .option("--fail-on <severity>", "critical, warning, info, or none", "critical")
@@ -47,8 +50,8 @@ export function registerCiCommand(program: Command): void {
     .option("--force", "Overwrite existing workflow")
     .action(async (options: CiOptions) => {
       const cwd = path.resolve(options.cwd || process.cwd());
-      const workflowDir = path.join(cwd, ".github/workflows");
-      const workflows = workflowFiles({
+      const provider = toCiProvider(options.provider);
+      const workflowOptions = {
         profile: toCiProfile(options.profile),
         urls: parseUrls(options.url),
         startCommand: options.startCommand,
@@ -61,10 +64,13 @@ export function registerCiCommand(program: Command): void {
         fullCrawlDepth: toPositiveInteger(options.fullCrawlDepth, 3),
         fullCrawlLimit: toPositiveInteger(options.fullCrawlLimit, 100),
         fullSchedule: options.fullSchedule
-      });
+      };
+      const workflows = provider === "github"
+        ? workflowFiles(workflowOptions)
+        : gitLabWorkflowFiles(workflowOptions);
 
       for (const workflow of workflows) {
-        const target = path.join(workflowDir, workflow.fileName);
+        const target = ciTargetPath(cwd, provider, workflow.fileName);
 
         if (!options.force && await exists(target)) {
           console.log(`${target} already exists. Use --force to overwrite.`);
@@ -72,10 +78,9 @@ export function registerCiCommand(program: Command): void {
         }
       }
 
-      await fs.mkdir(workflowDir, { recursive: true });
-
       for (const workflow of workflows) {
-        const target = path.join(workflowDir, workflow.fileName);
+        const target = ciTargetPath(cwd, provider, workflow.fileName);
+        await fs.mkdir(path.dirname(target), { recursive: true });
         await fs.writeFile(target, workflow.contents);
         console.log(`Created ${target}`);
       }
@@ -243,6 +248,41 @@ jobs:
 `;
 }
 
+export function gitLabWorkflowTemplate(options: WorkflowTemplateOptions): string {
+  const { urls, startCommand, failOn, standard } = options;
+  const scanUrls = urls.length > 0 ? urls : ["http://localhost:3000"];
+  const firstUrl = scanUrls[0];
+  const urlArgs = scanUrls.join(" ");
+  const crawlDepth = toPositiveInteger(options.crawlDepth, 1);
+  const crawlLimit = toPositiveInteger(options.crawlLimit, 10);
+  const gateArg = checkGateArgument(options.gate, failOn);
+
+  return `stages:
+  - test
+
+a11y:
+  stage: test
+  image: mcr.microsoft.com/playwright:v1.49.1-jammy
+  variables:
+    APP_URL: "${firstUrl}"
+  script:
+    - npm ci
+    - npm run build --if-present
+    - ${startCommand} &
+    - |
+      for i in {1..30}; do
+        curl -fsS "$APP_URL" && exit 0
+        sleep 2
+      done
+      exit 1
+    - npx a11y-shiftleft check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard}
+  artifacts:
+    when: always
+    paths:
+      - reports/
+`;
+}
+
 interface WorkflowFilesOptions {
   profile: CiProfile;
   urls: string[];
@@ -289,6 +329,25 @@ export function workflowFiles(options: WorkflowFilesOptions): WorkflowFile[] {
   return [prWorkflow, fullWorkflow];
 }
 
+export function gitLabWorkflowFiles(options: WorkflowFilesOptions): WorkflowFile[] {
+  if (options.profile !== "pr") {
+    throw new Error("GitLab setup currently supports the pr CI profile. Use the GitLab recipe for scheduled full audits.");
+  }
+
+  return [{
+    fileName: ".gitlab-ci.yml",
+    contents: gitLabWorkflowTemplate({
+      urls: options.urls,
+      startCommand: options.startCommand,
+      failOn: options.failOn,
+      gate: options.gate,
+      standard: options.standard,
+      crawlDepth: options.crawlDepth,
+      crawlLimit: options.crawlLimit
+    })
+  }];
+}
+
 export function checkGateArgument(gate: string | undefined, failOn: string): string {
   if (!gate) return `--fail-on ${failOn}`;
   const normalized = gate.trim().toLowerCase();
@@ -313,6 +372,17 @@ export function toCiProfile(profile: string): CiProfile {
   }
 
   throw new Error(`Unsupported CI profile: ${profile}`);
+}
+
+export function toCiProvider(provider: string): CiProvider {
+  const normalized = provider.trim().toLowerCase();
+  if (normalized === "github" || normalized === "gitlab") return normalized;
+  throw new Error(`Unsupported CI provider: ${provider}`);
+}
+
+export function ciTargetPath(cwd: string, provider: CiProvider, fileName: string): string {
+  if (provider === "github") return path.join(cwd, ".github/workflows", fileName);
+  return path.join(cwd, fileName);
 }
 
 function parseUrls(urls?: string[]): string[] {

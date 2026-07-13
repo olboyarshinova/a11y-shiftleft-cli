@@ -62,3 +62,31 @@ test("runSetup creates config, report ignores, and GitHub Actions workflow", asy
   assert.equal(result.updated.some((item) => item.includes(os.homedir())), false);
   assert.match(result.nextSteps.join("\n"), /npm run a11y:audit/);
 });
+
+test("runSetup can create a GitLab CI workflow", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-setup-gitlab-"));
+  await fs.writeFile(path.join(cwd, "package.json"), JSON.stringify({
+    scripts: {
+      dev: "vite"
+    }
+  }, null, 2));
+
+  const result = await runSetup({
+    cwd,
+    url: ["http://localhost:5173"],
+    startCommand: "npm run dev -- --host 0.0.0.0 --port 5173",
+    ci: "gitlab",
+    profile: "pr",
+    gate: "report-only",
+    failOn: "critical",
+    standard: "wcag22-aa"
+  });
+
+  const workflow = await fs.readFile(path.join(cwd, ".gitlab-ci.yml"), "utf8");
+
+  assert.match(workflow, /image: mcr\.microsoft\.com\/playwright:v1\.49\.1-jammy/);
+  assert.match(workflow, /npx a11y-shiftleft check --dynamic --url http:\/\/localhost:5173/);
+  assert.match(workflow, /--gate report-only/);
+  assert.ok(result.created.includes(".gitlab-ci.yml"));
+  assert.equal(result.created.some((item) => item.includes(os.homedir())), false);
+});

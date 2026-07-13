@@ -3,7 +3,10 @@ import assert from "node:assert/strict";
 import { createProgram } from "../../dist/cli.js";
 import {
   checkGateArgument,
+  gitLabWorkflowFiles,
+  gitLabWorkflowTemplate,
   fullWorkflowTemplate,
+  toCiProvider,
   toCiProfile,
   workflowFiles,
   workflowTemplate
@@ -14,8 +17,9 @@ test("generate-ci is the documented command and ci remains a short alias", () =>
 
   assert.ok(command);
   assert.deepEqual(command.aliases(), ["ci"]);
-  assert.match(command.description(), /Generate GitHub Actions workflow/);
+  assert.match(command.description(), /Generate CI workflow files/);
   const flags = command.options.map((option) => option.long);
+  assert.equal(flags.includes("--provider"), true);
   assert.equal(flags.includes("--start-command"), true);
 });
 
@@ -118,8 +122,51 @@ test("workflowFiles splits PR and full-site workflows", () => {
   ]);
 });
 
+test("gitLabWorkflowTemplate creates a report-only merge request job", () => {
+  const workflow = gitLabWorkflowTemplate({
+    urls: ["http://localhost:5173"],
+    startCommand: "npm run dev -- --host 0.0.0.0 --port 5173",
+    failOn: "critical",
+    gate: "report-only",
+    standard: "wcag22-aa",
+    crawlDepth: 1,
+    crawlLimit: 10
+  });
+
+  assert.match(workflow, /image: mcr\.microsoft\.com\/playwright:v1\.49\.1-jammy/);
+  assert.match(workflow, /APP_URL: "http:\/\/localhost:5173"/);
+  assert.match(workflow, /npm run build --if-present/);
+  assert.match(workflow, /npx a11y-shiftleft check --dynamic --url http:\/\/localhost:5173 --crawl --crawl-depth 1 --crawl-limit 10 --out reports --gate report-only --standard wcag22-aa/);
+  assert.match(workflow, /paths:\n      - reports\//);
+});
+
+test("gitLabWorkflowFiles supports the fast PR profile", () => {
+  const workflows = gitLabWorkflowFiles({
+    profile: "pr",
+    urls: ["http://localhost:5173"],
+    startCommand: "npm run dev -- --host 0.0.0.0 --port 5173",
+    failOn: "critical",
+    gate: "report-only",
+    fullFailOn: "none",
+    standard: "wcag22-aa",
+    crawlDepth: 1,
+    crawlLimit: 10,
+    fullCrawlDepth: 3,
+    fullCrawlLimit: 100,
+    fullSchedule: "0 7 * * 1"
+  });
+
+  assert.deepEqual(workflows.map((workflow) => workflow.fileName), [".gitlab-ci.yml"]);
+});
+
 test("toCiProfile supports quick alias and rejects unknown profiles", () => {
   assert.equal(toCiProfile("quick"), "pr");
   assert.equal(toCiProfile("split"), "split");
   assert.throws(() => toCiProfile("slow"), /Unsupported CI profile/);
+});
+
+test("toCiProvider supports GitHub and GitLab", () => {
+  assert.equal(toCiProvider("github"), "github");
+  assert.equal(toCiProvider("GitLab"), "gitlab");
+  assert.throws(() => toCiProvider("circle"), /Unsupported CI provider/);
 });

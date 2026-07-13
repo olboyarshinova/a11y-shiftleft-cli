@@ -2,7 +2,7 @@ import type { Command } from "commander";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { addReportEntriesToGitignore, createInitialConfig, toFramework } from "./init.js";
-import { toCiProfile, workflowFiles } from "./ci.js";
+import { ciTargetPath, gitLabWorkflowFiles, toCiProfile, toCiProvider, workflowFiles } from "./ci.js";
 
 interface SetupOptions {
   cwd?: string;
@@ -36,7 +36,7 @@ export function registerSetupCommand(program: Command): void {
     .option("--url <urls...>", "URL(s) to scan", ["http://localhost:3000"])
     .option("--start-command <command>", "Command that starts the app in CI", "npm run dev -- --host localhost --port 3000")
     .option("--framework <name>", "Target framework: auto, react, vue, angular, or unknown")
-    .option("--ci <provider>", "CI provider: github or none", "github")
+    .option("--ci <provider>", "CI provider: github, gitlab, or none", "github")
     .option("--profile <profile>", "CI profile: pr, full, or split", "pr")
     .option("--gate <profile>", "CI quality gate: report-only, critical, warning, or new-critical-only", "report-only")
     .option("--fail-on <severity>", "Fallback severity gate when --gate is not set", "critical")
@@ -102,12 +102,8 @@ export async function runSetup(options: SetupOptions): Promise<SetupResult> {
   }
 
   if (!options.skipCi && options.ci !== "none") {
-    if (options.ci !== "github") {
-      throw new Error(`Unsupported setup CI provider: ${options.ci}`);
-    }
-
-    const workflowDir = path.join(cwd, ".github/workflows");
-    const workflows = workflowFiles({
+    const provider = toCiProvider(options.ci);
+    const workflowOptions = {
       profile: toCiProfile(options.profile),
       urls: scanUrls,
       startCommand: options.startCommand,
@@ -120,16 +116,18 @@ export async function runSetup(options: SetupOptions): Promise<SetupResult> {
       fullCrawlDepth: 3,
       fullCrawlLimit: 100,
       fullSchedule: "0 7 * * 1"
-    });
-
-    await fs.mkdir(workflowDir, { recursive: true });
+    };
+    const workflows = provider === "github"
+      ? workflowFiles(workflowOptions)
+      : gitLabWorkflowFiles(workflowOptions);
 
     for (const workflow of workflows) {
-      const target = path.join(workflowDir, workflow.fileName);
+      const target = ciTargetPath(cwd, provider, workflow.fileName);
       if (!options.force && await exists(target)) {
         skipped.push(`${displayPath(cwd, target)} already exists`);
         continue;
       }
+      await fs.mkdir(path.dirname(target), { recursive: true });
       await fs.writeFile(target, workflow.contents);
       created.push(displayPath(cwd, target));
     }
