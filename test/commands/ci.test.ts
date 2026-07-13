@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { createProgram } from "../../dist/cli.js";
 import {
   checkGateArgument,
+  circleCiWorkflowFiles,
+  circleCiWorkflowTemplate,
   gitLabWorkflowFiles,
   gitLabWorkflowTemplate,
   fullWorkflowTemplate,
@@ -159,14 +161,54 @@ test("gitLabWorkflowFiles supports the fast PR profile", () => {
   assert.deepEqual(workflows.map((workflow) => workflow.fileName), [".gitlab-ci.yml"]);
 });
 
+test("circleCiWorkflowTemplate creates a report-only job with artifacts", () => {
+  const workflow = circleCiWorkflowTemplate({
+    urls: ["http://localhost:5173"],
+    startCommand: "npm run dev -- --host 0.0.0.0 --port 5173",
+    failOn: "critical",
+    gate: "report-only",
+    standard: "wcag22-aa",
+    crawlDepth: 1,
+    crawlLimit: 10
+  });
+
+  assert.match(workflow, /version: 2\.1/);
+  assert.match(workflow, /image: mcr\.microsoft\.com\/playwright:v1\.49\.1-jammy/);
+  assert.match(workflow, /APP_URL: "http:\/\/localhost:5173"/);
+  assert.match(workflow, /background: true/);
+  assert.match(workflow, /npx a11y-shiftleft check --dynamic --url http:\/\/localhost:5173 --crawl --crawl-depth 1 --crawl-limit 10 --out reports --gate report-only --standard wcag22-aa/);
+  assert.match(workflow, /store_artifacts:/);
+});
+
+test("circleCiWorkflowFiles supports the fast PR profile", () => {
+  const workflows = circleCiWorkflowFiles({
+    profile: "pr",
+    urls: ["http://localhost:5173"],
+    startCommand: "npm run dev -- --host 0.0.0.0 --port 5173",
+    failOn: "critical",
+    gate: "report-only",
+    fullFailOn: "none",
+    standard: "wcag22-aa",
+    crawlDepth: 1,
+    crawlLimit: 10,
+    fullCrawlDepth: 3,
+    fullCrawlLimit: 100,
+    fullSchedule: "0 7 * * 1"
+  });
+
+  assert.deepEqual(workflows.map((workflow) => workflow.fileName), ["config.yml"]);
+});
+
 test("toCiProfile supports quick alias and rejects unknown profiles", () => {
   assert.equal(toCiProfile("quick"), "pr");
   assert.equal(toCiProfile("split"), "split");
   assert.throws(() => toCiProfile("slow"), /Unsupported CI profile/);
 });
 
-test("toCiProvider supports GitHub and GitLab", () => {
+test("toCiProvider supports GitHub, GitLab, and CircleCI", () => {
   assert.equal(toCiProvider("github"), "github");
   assert.equal(toCiProvider("GitLab"), "gitlab");
-  assert.throws(() => toCiProvider("circle"), /Unsupported CI provider/);
+  assert.equal(toCiProvider("circle"), "circleci");
+  assert.equal(toCiProvider("CircleCI"), "circleci");
+  assert.throws(() => toCiProvider("jenkins"), /Unsupported CI provider/);
 });

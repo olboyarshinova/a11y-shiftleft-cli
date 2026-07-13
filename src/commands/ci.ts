@@ -21,7 +21,7 @@ interface CiOptions {
 }
 
 type CiProfile = "pr" | "full" | "split";
-type CiProvider = "github" | "gitlab";
+type CiProvider = "github" | "gitlab" | "circleci";
 
 type WorkflowFile = {
   fileName: string;
@@ -34,7 +34,7 @@ export function registerCiCommand(program: Command): void {
     .alias("ci")
     .description("Generate CI workflow files for accessibility checks.")
     .option("--cwd <dir>", "Target project directory")
-    .option("--provider <provider>", "CI provider: github or gitlab", "github")
+    .option("--provider <provider>", "CI provider: github, gitlab, or circleci", "github")
     .option("--url <urls...>", "URL(s) to scan in CI", ["http://localhost:3000"])
     .option("--start-command <command>", "Command that starts the app in CI", "npm run dev -- --host localhost --port 3000")
     .option("--fail-on <severity>", "critical, warning, info, or none", "critical")
@@ -65,9 +65,7 @@ export function registerCiCommand(program: Command): void {
         fullCrawlLimit: toPositiveInteger(options.fullCrawlLimit, 100),
         fullSchedule: options.fullSchedule
       };
-      const workflows = provider === "github"
-        ? workflowFiles(workflowOptions)
-        : gitLabWorkflowFiles(workflowOptions);
+      const workflows = ciWorkflowFiles(provider, workflowOptions);
 
       for (const workflow of workflows) {
         const target = ciTargetPath(cwd, provider, workflow.fileName);
@@ -283,6 +281,57 @@ a11y:
 `;
 }
 
+export function circleCiWorkflowTemplate(options: WorkflowTemplateOptions): string {
+  const { urls, startCommand, failOn, standard } = options;
+  const scanUrls = urls.length > 0 ? urls : ["http://localhost:3000"];
+  const firstUrl = scanUrls[0];
+  const urlArgs = scanUrls.join(" ");
+  const crawlDepth = toPositiveInteger(options.crawlDepth, 1);
+  const crawlLimit = toPositiveInteger(options.crawlLimit, 10);
+  const gateArg = checkGateArgument(options.gate, failOn);
+
+  return `version: 2.1
+
+jobs:
+  a11y:
+    docker:
+      - image: mcr.microsoft.com/playwright:v1.49.1-jammy
+    environment:
+      APP_URL: "${firstUrl}"
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: npm ci
+      - run:
+          name: Build app if needed
+          command: npm run build --if-present
+      - run:
+          name: Start application
+          command: ${startCommand}
+          background: true
+      - run:
+          name: Wait for application
+          command: |
+            for i in {1..30}; do
+              curl -fsS "$APP_URL" && exit 0
+              sleep 2
+            done
+            exit 1
+      - run:
+          name: Run accessibility checks
+          command: npx a11y-shiftleft check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard}
+      - store_artifacts:
+          path: reports
+          destination: a11y-report
+
+workflows:
+  accessibility:
+    jobs:
+      - a11y
+`;
+}
+
 interface WorkflowFilesOptions {
   profile: CiProfile;
   urls: string[];
@@ -348,6 +397,31 @@ export function gitLabWorkflowFiles(options: WorkflowFilesOptions): WorkflowFile
   }];
 }
 
+export function circleCiWorkflowFiles(options: WorkflowFilesOptions): WorkflowFile[] {
+  if (options.profile !== "pr") {
+    throw new Error("CircleCI setup currently supports the pr CI profile. Use a custom workflow for scheduled full audits.");
+  }
+
+  return [{
+    fileName: "config.yml",
+    contents: circleCiWorkflowTemplate({
+      urls: options.urls,
+      startCommand: options.startCommand,
+      failOn: options.failOn,
+      gate: options.gate,
+      standard: options.standard,
+      crawlDepth: options.crawlDepth,
+      crawlLimit: options.crawlLimit
+    })
+  }];
+}
+
+export function ciWorkflowFiles(provider: CiProvider, options: WorkflowFilesOptions): WorkflowFile[] {
+  if (provider === "github") return workflowFiles(options);
+  if (provider === "gitlab") return gitLabWorkflowFiles(options);
+  return circleCiWorkflowFiles(options);
+}
+
 export function checkGateArgument(gate: string | undefined, failOn: string): string {
   if (!gate) return `--fail-on ${failOn}`;
   const normalized = gate.trim().toLowerCase();
@@ -376,12 +450,14 @@ export function toCiProfile(profile: string): CiProfile {
 
 export function toCiProvider(provider: string): CiProvider {
   const normalized = provider.trim().toLowerCase();
-  if (normalized === "github" || normalized === "gitlab") return normalized;
+  if (normalized === "github" || normalized === "gitlab" || normalized === "circleci") return normalized;
+  if (normalized === "circle") return "circleci";
   throw new Error(`Unsupported CI provider: ${provider}`);
 }
 
 export function ciTargetPath(cwd: string, provider: CiProvider, fileName: string): string {
   if (provider === "github") return path.join(cwd, ".github/workflows", fileName);
+  if (provider === "circleci") return path.join(cwd, ".circleci", fileName);
   return path.join(cwd, fileName);
 }
 

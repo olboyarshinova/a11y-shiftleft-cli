@@ -2,7 +2,7 @@ import type { Command } from "commander";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { addReportEntriesToGitignore, createInitialConfig, toFramework } from "./init.js";
-import { ciTargetPath, gitLabWorkflowFiles, toCiProfile, toCiProvider, workflowFiles } from "./ci.js";
+import { ciTargetPath, ciWorkflowFiles, toCiProfile, toCiProvider } from "./ci.js";
 
 interface SetupOptions {
   cwd?: string;
@@ -36,7 +36,7 @@ export function registerSetupCommand(program: Command): void {
     .option("--url <urls...>", "URL(s) to scan", ["http://localhost:3000"])
     .option("--start-command <command>", "Command that starts the app in CI", "npm run dev -- --host localhost --port 3000")
     .option("--framework <name>", "Target framework: auto, react, vue, angular, or unknown")
-    .option("--ci <provider>", "CI provider: github, gitlab, or none", "github")
+    .option("--ci <provider>", "CI provider: github, gitlab, circleci, or none", "github")
     .option("--profile <profile>", "CI profile: pr, full, or split", "pr")
     .option("--gate <profile>", "CI quality gate: report-only, critical, warning, or new-critical-only", "report-only")
     .option("--fail-on <severity>", "Fallback severity gate when --gate is not set", "critical")
@@ -117,9 +117,7 @@ export async function runSetup(options: SetupOptions): Promise<SetupResult> {
       fullCrawlLimit: 100,
       fullSchedule: "0 7 * * 1"
     };
-    const workflows = provider === "github"
-      ? workflowFiles(workflowOptions)
-      : gitLabWorkflowFiles(workflowOptions);
+    const workflows = ciWorkflowFiles(provider, workflowOptions);
 
     for (const workflow of workflows) {
       const target = ciTargetPath(cwd, provider, workflow.fileName);

@@ -90,3 +90,31 @@ test("runSetup can create a GitLab CI workflow", async () => {
   assert.ok(result.created.includes(".gitlab-ci.yml"));
   assert.equal(result.created.some((item) => item.includes(os.homedir())), false);
 });
+
+test("runSetup can create a CircleCI workflow", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-setup-circleci-"));
+  await fs.writeFile(path.join(cwd, "package.json"), JSON.stringify({
+    scripts: {
+      dev: "vite"
+    }
+  }, null, 2));
+
+  const result = await runSetup({
+    cwd,
+    url: ["http://localhost:5173"],
+    startCommand: "npm run dev -- --host 0.0.0.0 --port 5173",
+    ci: "circleci",
+    profile: "pr",
+    gate: "report-only",
+    failOn: "critical",
+    standard: "wcag22-aa"
+  });
+
+  const workflow = await fs.readFile(path.join(cwd, ".circleci/config.yml"), "utf8");
+
+  assert.match(workflow, /version: 2\.1/);
+  assert.match(workflow, /store_artifacts:/);
+  assert.match(workflow, /npx a11y-shiftleft check --dynamic --url http:\/\/localhost:5173/);
+  assert.ok(result.created.includes(".circleci/config.yml"));
+  assert.equal(result.created.some((item) => item.includes(os.homedir())), false);
+});

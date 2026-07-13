@@ -10,6 +10,8 @@
   paths relative to the target directory instead of absolute local paths.
 - Added GitLab CI generation through `setup --ci gitlab` and
   `generate-ci --provider gitlab`.
+- Added CircleCI generation through `setup --ci circleci` and
+  `generate-ci --provider circleci`.
 
 ## 0.8.1 - 2026-07-12
 

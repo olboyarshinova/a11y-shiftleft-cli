@@ -133,6 +133,12 @@ GitHub Actions is the default. For GitLab CI, add `--ci gitlab`:
 npx a11y-shiftleft-cli setup --ci gitlab --url $APP_URL --start-command "npm run dev"
 ```
 
+For CircleCI, add `--ci circleci`:
+
+```bash
+npx a11y-shiftleft-cli setup --ci circleci --url $APP_URL --start-command "npm run dev"
+```
+
 This creates `.a11y-shiftleft.json`, adds `a11y:audit` and `a11y:check` npm
 scripts when `package.json` exists, updates `.gitignore`, and adds a CI workflow
 that installs the project, starts your app, runs accessibility checks, and keeps
