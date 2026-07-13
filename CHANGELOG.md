@@ -18,6 +18,9 @@
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,
   generated CI artifacts, privacy boundaries, and staged rollout commands.
+- Added a privacy and local-artifacts recipe covering screenshot redaction,
+  `--no-screenshots`, generated reports, auth state, baselines, and sanitized
+  sharing.
 
 ## 0.8.1 - 2026-07-12
 

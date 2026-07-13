@@ -289,9 +289,8 @@ Section 508 certification.
   that names axe-core through Playwright, Lighthouse where enabled, ESLint
   adapters, and local browser automation without presenting the project as a
   replacement for those tools.
-- Add a privacy section to the documentation website covering screenshot
-  redaction, `--no-screenshots`, generated report directories, `.gitignore`
-  setup, baseline files, and safe handling of local artifacts.
+- Port the privacy and local-artifacts recipe into the future documentation
+  website when the site is created.
 - Expand recipe docs with screenshots, generated report excerpts, public-site
   examples, and rollout guidance for early teams.
 - Add inclusive-design documentation that connects common technical findings to

@@ -10,6 +10,7 @@ These recipes give teams short copy-paste paths for adding
 - [Check, Explore, And Audit](check-explore-audit.md)
 - [Multiple URLs](multiple-urls.md)
 - [Authenticated Pages](authenticated-pages.md)
+- [Privacy And Local Artifacts](privacy-and-local-artifacts.md)
 - [Quality Gates For Existing Projects](quality-gates.md)
 - [CI/CD Without SaaS](ci-without-saas.md)
 - [GitHub Actions](github-actions.md)
