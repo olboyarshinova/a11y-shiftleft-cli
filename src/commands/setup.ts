@@ -71,31 +71,33 @@ export async function runSetup(options: SetupOptions): Promise<SetupResult> {
   if (!options.skipConfig) {
     const configPath = path.join(cwd, ".a11y-shiftleft.json");
     if (!options.force && await exists(configPath)) {
-      skipped.push(`${configPath} already exists`);
+      skipped.push(`${displayPath(cwd, configPath)} already exists`);
     } else {
       await fs.mkdir(cwd, { recursive: true });
       await fs.writeFile(configPath, JSON.stringify(createInitialConfig(toFramework(options.framework)), null, 2));
-      created.push(configPath);
+      created.push(displayPath(cwd, configPath));
     }
   }
 
   if (!options.skipGitignore) {
     const gitignore = await addReportEntriesToGitignore(cwd);
+    const gitignorePath = displayPath(cwd, gitignore.path);
     if (gitignore.added.length > 0) {
-      updated.push(`${gitignore.path} (${gitignore.added.join(", ")})`);
+      updated.push(`${gitignorePath} (${gitignore.added.join(", ")})`);
     } else {
-      skipped.push(`${gitignore.path} already ignores generated a11y artifacts`);
+      skipped.push(`${gitignorePath} already ignores generated a11y artifacts`);
     }
   }
 
   if (!options.skipScripts) {
     const scripts = await addPackageScripts(cwd, scanUrls[0], options.force);
+    const scriptsPath = displayPath(cwd, scripts.path);
     if (scripts.status === "updated") {
-      updated.push(`${scripts.path} (${scripts.added.join(", ")})`);
+      updated.push(`${scriptsPath} (${scripts.added.join(", ")})`);
     } else if (scripts.status === "missing") {
-      skipped.push(`${scripts.path} not found`);
+      skipped.push(`${scriptsPath} not found`);
     } else {
-      skipped.push(`${scripts.path} already has a11y npm scripts`);
+      skipped.push(`${scriptsPath} already has a11y npm scripts`);
     }
   }
 
@@ -125,11 +127,11 @@ export async function runSetup(options: SetupOptions): Promise<SetupResult> {
     for (const workflow of workflows) {
       const target = path.join(workflowDir, workflow.fileName);
       if (!options.force && await exists(target)) {
-        skipped.push(`${target} already exists`);
+        skipped.push(`${displayPath(cwd, target)} already exists`);
         continue;
       }
       await fs.writeFile(target, workflow.contents);
-      created.push(target);
+      created.push(displayPath(cwd, target));
     }
   }
 
@@ -199,6 +201,12 @@ function parseUrls(urls?: string[]): string[] {
     .flatMap((url) => url.split(","))
     .map((url) => url.trim())
     .filter(Boolean))];
+}
+
+function displayPath(cwd: string, filePath: string): string {
+  const relative = path.relative(cwd, filePath);
+  if (!relative || relative.startsWith("..") || path.isAbsolute(relative)) return filePath;
+  return relative;
 }
 
 async function exists(filePath: string): Promise<boolean> {

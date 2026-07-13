@@ -175,12 +175,6 @@ Section 508 certification.
   deterministic at first: run the audit, compare with the previous report,
   summarize fixed/new/remaining findings, recommend the next CLI command, and
   refresh the visual report.
-- Add a single guided setup command that creates the config, generated report
-  `.gitignore` entries, npm scripts, and CI workflow in one pass, while keeping
-  every generated file visible for review before commit. The target experience
-  should be a one-command path such as
-  `a11y-shiftleft-cli setup --ci github --url <app-url>` for teams that want
-  the fastest possible first CI integration.
 - Add CI presets for GitHub Actions first, then GitLab CI, CircleCI, Jenkins,
   and generic shell runners. Keep each preset focused on installing the package,
   starting the app, running `audit` or `check`, and preserving local artifacts.

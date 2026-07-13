@@ -6,6 +6,8 @@
   `.gitignore` entries, and report-only GitHub Actions workflow in one pass.
 - Extended `setup` to add `a11y:audit` and `a11y:check` npm scripts when a
   project `package.json` is present.
+- Kept `setup` console output privacy-friendly by showing generated project
+  paths relative to the target directory instead of absolute local paths.
 
 ## 0.8.1 - 2026-07-12
 

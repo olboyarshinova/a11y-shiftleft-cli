@@ -54,8 +54,11 @@ test("runSetup creates config, report ignores, and GitHub Actions workflow", asy
   assert.match(workflow, /npx a11y-shiftleft check --dynamic --url http:\/\/localhost:5173/);
   assert.match(workflow, /--gate report-only/);
   assert.match(workflow, /npm run dev -- --host localhost --port 5173/);
-  assert.ok(result.created.some((item) => item.endsWith(".a11y-shiftleft.json")));
-  assert.ok(result.updated.some((item) => item.includes(".gitignore")));
-  assert.ok(result.updated.some((item) => item.includes("package.json")));
+  assert.ok(result.created.includes(".a11y-shiftleft.json"));
+  assert.ok(result.created.includes(".github/workflows/a11y.yml"));
+  assert.ok(result.updated.some((item) => item.startsWith(".gitignore")));
+  assert.ok(result.updated.some((item) => item.startsWith("package.json")));
+  assert.equal(result.created.some((item) => item.includes(os.homedir())), false);
+  assert.equal(result.updated.some((item) => item.includes(os.homedir())), false);
   assert.match(result.nextSteps.join("\n"), /npm run a11y:audit/);
 });
