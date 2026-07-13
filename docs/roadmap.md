@@ -292,9 +292,6 @@ Section 508 certification.
 - Add a "CI/CD without SaaS" guide that explains how the CLI differs from
   enterprise platforms: local-first execution, open-source reports, CI artifacts,
   explicit manual-review gaps, and no hosted account requirement.
-- Add a "quality gates for existing projects" guide covering baseline mode,
-  `--fail-on`, `--wcag-only`, report-only CI, and staged rollout from warnings
-  to critical blockers.
 - Add a privacy section to the documentation website covering screenshot
   redaction, `--no-screenshots`, generated report directories, `.gitignore`
   setup, baseline files, and safe handling of local artifacts.

@@ -14,6 +14,8 @@
   `generate-ci --provider circleci`.
 - Added portable shell CI script generation through `setup --ci shell` and
   `generate-ci --provider shell` for Jenkins and other generic runners.
+- Added a quality-gates recipe for existing projects that need report-only
+  rollout, baseline mode, and staged CI tightening.
 
 ## 0.8.1 - 2026-07-12
 

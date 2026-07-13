@@ -310,9 +310,9 @@ After the report opens:
 Reports and screenshots usually should not be committed. Run `init --gitignore`
 once to add common report paths. For private pages, add `--no-screenshots`.
 
-More recipes for baseline mode, legacy-project gates, browser profiles, hidden
-overlays, and advanced configuration are in [Configuration](docs/configuration.md)
-and [Recipes](docs/recipes/index.md).
+More recipes for [quality gates in existing projects](docs/recipes/quality-gates.md),
+browser profiles, hidden overlays, and advanced configuration are in
+[Configuration](docs/configuration.md) and [Recipes](docs/recipes/index.md).
 
 ## Standards
 
