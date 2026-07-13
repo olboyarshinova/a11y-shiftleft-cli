@@ -48,6 +48,36 @@ visual exploration with keyboard and manual-review evidence in one report.
 npx a11y-shiftleft-cli audit --url $APP_URL --profile risk --out reports --open
 ```
 
+## What The Report Looks Like
+
+After `audit`, open:
+
+```bash
+open reports/a11y-report.html
+```
+
+The visual report is meant for triage. Start with these sections:
+
+| Section | What it helps answer |
+|---|---|
+| Summary cards | How many critical, warning, info, WCAG, best-practice, and needs-review findings were found? |
+| Fix First | Which issues are most likely to block a real user task? |
+| Top Rules | Which rule patterns repeat across states or pages? |
+| Screenshots | Where is the affected element, and what state was the page in? |
+| Audit Coverage | What was automated, what needs manual review, and what was not tested? |
+| Ticket Drafts | What can be copied into an issue tracker after review? |
+
+Example terminal summary:
+
+```txt
+Findings: total 9 | CRITICAL 3 | WARNING 5 | INFO 1
+Sources: axe, keyboard, visual heuristics
+Report: reports/a11y-report.html
+```
+
+Use `check` when CI only needs a pass/fail signal. Use `audit` when a person
+needs screenshots, keyboard evidence, and grouped fix guidance.
+
 ## Running Through Npm Scripts
 
 When a project uses npm scripts, put command options after `--` so npm forwards

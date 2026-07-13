@@ -289,8 +289,8 @@ Section 508 certification.
   website when the site is created.
 - Port the privacy and local-artifacts recipe into the future documentation
   website when the site is created.
-- Expand recipe docs with screenshots, generated report excerpts, public-site
-  examples, and rollout guidance for early teams.
+- Expand recipe docs with more screenshots, public-site examples, and rollout
+  guidance for early teams.
 - Port the user-impact review recipe into the future documentation website and
   expand it with product-specific examples from real reports.
 - Strengthen privacy-first positioning in docs: reports, screenshots, URLs, DOM

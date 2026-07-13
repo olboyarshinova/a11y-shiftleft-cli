@@ -25,6 +25,8 @@
   table for axe-core, Playwright, ESLint adapters, and Lighthouse.
 - Added a user-impact review recipe that connects common technical findings to
   product tasks, affected users, before/after examples, and ticket language.
+- Added a visual-report excerpt to the check/explore/audit recipe so new users
+  can see which report sections to review first.
 
 ## 0.8.1 - 2026-07-12
 
