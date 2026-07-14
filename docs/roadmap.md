@@ -220,9 +220,6 @@ Section 508 certification.
 
 ## Integrations And Sharing
 
-- Add first-class report status summaries that highlight high-confidence,
-  high-impact findings first, separate third-party embedded content, and show
-  which findings are best handled as manual review.
 - Expand manual-review records from a checklist into structured local evidence:
   status, reviewer, notes, evidence links, pass/fail/needs-follow-up state, and
   timestamp. Keep it local-first and avoid collecting unnecessary personal data.

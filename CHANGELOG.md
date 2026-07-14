@@ -34,6 +34,9 @@
   and rendered-URL audit scope.
 - Added direct GitHub Actions artifact links to generated PR comments when
   `actions/upload-artifact` provides an artifact URL.
+- Added a compact Markdown `Review Focus` section that highlights first-party
+  fix groups, third-party embedded findings, needs-review groups, and the first
+  few high-priority fixes for pull request triage.
 
 ## 0.8.1 - 2026-07-12
 

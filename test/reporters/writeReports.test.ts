@@ -630,8 +630,16 @@ test("writeReports prioritizes first-party high-impact groups before third-party
   });
 
   const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+  const reviewFocus = markdown.slice(markdown.indexOf("## Review Focus"), markdown.indexOf("## What Was Checked"));
   const topFindings = markdown.slice(markdown.indexOf("## Top Findings And Recommendations"));
 
+  assert.match(reviewFocus, /First-party fix groups \| 1/);
+  assert.match(reviewFocus, /Third-party embedded groups \| 1/);
+  assert.match(reviewFocus, /High-confidence groups \| 2/);
+  assert.ok(
+    reviewFocus.indexOf("form-invalid-error-not-associated") > -1
+  );
+  assert.doesNotMatch(reviewFocus, /button-name/);
   assert.ok(
     topFindings.indexOf("form-invalid-error-not-associated") < topFindings.indexOf("button-name")
   );

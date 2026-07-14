@@ -545,6 +545,8 @@ ${formatRetentionRows(report.summary.retention)}| Retention evidence | ${formatR
 | Human verification blockers | ${report.summary.blockedByHumanVerification || 0} |
 | Rules without WCAG mapping | ${formatCountMap(report.summary.byUnmappedRule)} |
 
+${formatReviewFocus(topIssueGroups)}
+
 ${formatEvaluationScope(report)}
 
 ${formatAuditTrail(report)}
@@ -680,6 +682,39 @@ function formatSeverityHeading(severity: Severity): string {
   if (severity === "critical") return "Critical";
   if (severity === "warning") return "Warning";
   return "Info";
+}
+
+function formatReviewFocus(groups: TopFindingGroup[]): string {
+  if (groups.length === 0) {
+    return `## Review Focus
+
+No automated findings were detected. Complete any manual review rows in the visual report before treating the audit as finished.`;
+  }
+
+  const firstPartyFixes = groups.filter((group) => group.sample.ownership?.kind !== "third-party-embed").length;
+  const thirdPartyEmbeds = groups.filter((group) => group.sample.ownership?.kind === "third-party-embed").length;
+  const manualReviewGroups = groups.filter((group) => group.findingType === "needs-review").length;
+  const highConfidenceGroups = groups.filter((group) => group.sample.confidence === "high").length;
+  const fixFirst = groups
+    .filter((group) => group.sample.ownership?.kind !== "third-party-embed")
+    .slice(0, 3);
+  const fixRows = fixFirst.map((group, index) => {
+    const pages = group.pages.length > 0 ? `${group.pages.length} page${group.pages.length === 1 ? "" : "s"}` : "page not recorded";
+    const impact = group.sample.userImpact?.level || "impact not classified";
+    const confidence = group.sample.confidence ? `${group.sample.confidence} confidence` : "confidence not classified";
+    return `${index + 1}. \`${group.ruleId}\` - ${group.severity}, ${impact}, ${confidence}, ${pages}`;
+  }).join("\n");
+
+  return `## Review Focus
+
+| Signal | Count | What to do |
+|---|---:|---|
+| First-party fix groups | ${firstPartyFixes} | Start here; these are most likely owned by the application team. |
+| Third-party embedded groups | ${thirdPartyEmbeds} | Verify ownership before assigning remediation. |
+| Needs-review groups | ${manualReviewGroups} | Confirm manually before treating as pass or fail. |
+| High-confidence groups | ${highConfidenceGroups} | Good candidates for immediate tickets or fixes. |
+
+${fixRows ? `Fix first:\n\n${fixRows}` : "No first-party fix groups were detected. Start with manual review and third-party ownership checks."}`;
 }
 
 function pushUnique(values: string[], value: string): void {
