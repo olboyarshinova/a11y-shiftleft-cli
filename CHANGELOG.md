@@ -66,6 +66,8 @@
   entry templates for reviewed temporary exceptions.
 - Added `ignore audit` for read-only stale ignore reviews, with text and JSON
   output for expired, invalid, and soon-to-expire scoped exceptions.
+- Added `ignore cleanup-plan` for read-only proposed cleanup actions without
+  automatically editing or deleting scoped ignore entries.
 
 ## 0.8.1 - 2026-07-12
 

@@ -241,8 +241,9 @@ Section 508 certification.
 - Continue hardening scoped `a11y-ignore.json` support. Current reports count
   active, expired, invalid, expiring-soon, and owner-grouped ignore rules, and
   visual reports include cleanup guidance plus copyable ignore-entry templates.
-  The `ignore audit` command provides a read-only stale-ignore review. Next,
-  consider a safe cleanup-proposal mode, not automatic deletion.
+  The `ignore audit` command provides a read-only stale-ignore review, and
+  `ignore cleanup-plan` proposes safe review/remove/renew/fix actions without
+  automatic deletion. Next, evaluate whether teams need a guarded apply mode.
 - Evaluate an optional public-link publisher only after sanitized export is
   stable. Require explicit confirmation, unguessable URLs, expiration,
   revocation, and deletion.

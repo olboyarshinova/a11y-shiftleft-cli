@@ -304,6 +304,16 @@ Use JSON output when another script needs the cleanup summary:
 npx a11y-shiftleft-cli ignore audit --format json
 ```
 
+Generate a read-only cleanup plan for stale entries:
+
+```bash
+npx a11y-shiftleft-cli ignore cleanup-plan
+```
+
+The cleanup plan does not edit `a11y-ignore.json`. It proposes whether each
+stale entry should be reviewed before expiry, removed or renewed, or fixed
+because required metadata is missing.
+
 ## Retention
 
 Use retention when you write timestamped output directories such as
