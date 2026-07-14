@@ -56,9 +56,10 @@ temporarily changes the package name during the Actions run and publishes to
 `https://npm.pkg.github.com` with `GITHUB_TOKEN`. It does not commit the scoped
 package name back to the repository.
 
-PR comments are posted by `scripts/post-a11y-comment.js`. The script skips
-commenting when GitHub PR environment variables are missing, and it can build
-the comment from either `a11y-comment.md` or `a11y-report.json`.
+PR comments are posted by `a11y-shiftleft pr-comment`. The command skips
+commenting when GitHub PR environment variables are missing, can build the
+comment from either `a11y-comment.md` or `a11y-report.json`, and can include
+read-only suggested PR labels through `--include-labels`.
 
 ## Demo Verification
 

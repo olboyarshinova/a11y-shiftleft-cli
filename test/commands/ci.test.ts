@@ -64,6 +64,8 @@ test("workflowTemplate supports bounded fast PR crawls", () => {
   assert.match(workflow, /id: upload-a11y-report/);
   assert.match(workflow, /REPORT_ARTIFACT_URL: \$\{\{ steps\.upload-a11y-report\.outputs\.artifact-url \}\}/);
   assert.match(workflow, /Comment on PR/);
+  assert.match(workflow, /npx a11y-shiftleft pr-comment --report reports --include-labels/);
+  assert.doesNotMatch(workflow, /scripts\/post-a11y-comment\.js/);
 });
 
 test("workflowTemplate supports quality gate profiles for PR workflows", () => {

@@ -167,7 +167,7 @@ jobs:
 
       - name: Comment on PR
         if: always()
-        run: node node_modules/a11y-shiftleft-cli/scripts/post-a11y-comment.js
+        run: npx a11y-shiftleft pr-comment --report reports --include-labels
         env:
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: \${{ github.repository }}

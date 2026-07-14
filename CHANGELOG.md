@@ -73,6 +73,9 @@
 - Added `pr-comment --include-labels` for read-only PR label suggestions such
   as `a11y-critical`, `a11y-warning`, `a11y-clean`, and `a11y-needs-review`
   without changing GitHub labels automatically.
+- Updated generated GitHub Actions PR workflows to post comments through the
+  public `a11y-shiftleft pr-comment --include-labels` command instead of
+  calling the internal comment script directly.
 
 ## 0.8.1 - 2026-07-12
 
