@@ -337,7 +337,8 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
     title: "Accessibility Audit Report",
     keyboard,
     manualChecklist,
-    lighthouse
+    lighthouse,
+    ignore: report.summary.ignore
   });
   if (options.pdf) await writeExplorationPdf(effectiveConfig.outputDir, "a11y-report");
 

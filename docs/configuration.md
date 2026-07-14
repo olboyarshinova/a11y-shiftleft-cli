@@ -287,6 +287,11 @@ expire within the next 14 days and summarize ignored findings by owner, so teams
 can clean up temporary exceptions before they become permanent accessibility
 debt.
 
+Visual audit reports include an **Ignore Cleanup** section when scoped ignores
+are active. Each finding group also has a **Copy ignore entry** button that
+copies a reviewed `a11y-ignore.json` template with the rule, fingerprint, target
+metadata, owner placeholder, reason placeholder, and expiry placeholder.
+
 ## Retention
 
 Use retention when you write timestamped output directories such as

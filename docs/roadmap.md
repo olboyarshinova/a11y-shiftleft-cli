@@ -239,8 +239,9 @@ Section 508 certification.
   Next, evaluate whether explicit create mode is worth adding at all; do not
   create tracker issues automatically by default.
 - Continue hardening scoped `a11y-ignore.json` support. Current reports count
-  active, expired, invalid, expiring-soon, and owner-grouped ignore rules; next
-  add UI-friendly stale-ignore cleanup guidance and copyable ignore entries.
+  active, expired, invalid, expiring-soon, and owner-grouped ignore rules, and
+  visual reports include cleanup guidance plus copyable ignore-entry templates.
+  Next, consider a dedicated stale-ignore cleanup command.
 - Evaluate an optional public-link publisher only after sanitized export is
   stable. Require explicit confirmation, unguessable URLs, expiration,
   revocation, and deletion.

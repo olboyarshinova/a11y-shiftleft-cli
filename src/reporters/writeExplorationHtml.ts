@@ -4,7 +4,7 @@ import { enrichIssueEvidence } from "../core/classification.js";
 import { compareLighthouseWithFindings } from "../core/lighthouseComparison.js";
 import { formatReportDateUtc } from "../core/reportDate.js";
 import { getRemediationHint } from "../core/remediation.js";
-import type { DedupedIssue, ElementBounds, ExplorationGraph, ExplorationState, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, Severity } from "../types.js";
+import type { DedupedIssue, ElementBounds, ExplorationGraph, ExplorationState, IgnoreSummary, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, Severity } from "../types.js";
 
 interface StateViewModel extends ExplorationState {
   issues: DedupedIssue[];
@@ -18,6 +18,7 @@ interface ExplorationHtmlOptions {
   keyboard?: KeyboardAuditResult;
   manualChecklist?: ManualChecklist;
   lighthouse?: LighthouseAuditResult[];
+  ignore?: IgnoreSummary;
 }
 
 interface CoverageMatrixRow {
@@ -240,6 +241,52 @@ export function renderExplorationHtml(
     .share-review-card strong {
       display: block;
       margin-bottom: 4px;
+    }
+
+    .ignore-cleanup {
+      border-left: 4px solid var(--warning-marker);
+      grid-column: 1 / -1;
+    }
+
+    .ignore-cleanup h2 {
+      margin-bottom: 6px;
+    }
+
+    .ignore-cleanup-grid {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      margin-top: 10px;
+    }
+
+    .ignore-cleanup-card {
+      background: #fffaf0;
+      border: 1px solid #fed7aa;
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+
+    .ignore-cleanup-card strong,
+    .ignore-cleanup-card span {
+      display: block;
+    }
+
+    .ignore-cleanup-card strong {
+      color: var(--warning);
+      font-size: 18px;
+      line-height: 1.1;
+    }
+
+    .ignore-cleanup-card span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.3;
+      margin-top: 2px;
+    }
+
+    .ignore-owner-list {
+      margin: 10px 0 0;
+      padding-left: 18px;
     }
 
     .share-command {
@@ -1531,6 +1578,10 @@ export function renderExplorationHtml(
       width: 72px;
     }
 
+    .copy-ignore-entry {
+      width: auto;
+    }
+
     .copy-issue-ticket span {
       display: block;
     }
@@ -1828,6 +1879,8 @@ export function renderExplorationHtml(
 
     ${renderCoverageMatrix(graph, options, reportIssues)}
 
+    ${renderIgnoreCleanup(options.ignore)}
+
     <section class="panel triage" aria-label="Triage overview">
       ${renderTriageOverview(states, reportIssues)}
     </section>
@@ -2033,7 +2086,7 @@ export function renderExplorationHtml(
           const status = button.parentElement?.querySelector('[data-copy-issue-status]');
           try {
             await copyText(decodeURIComponent(button.dataset.copyIssue || ''));
-            if (status) status.textContent = 'Copied ticket draft';
+            if (status) status.textContent = button.dataset.copySuccess || 'Copied';
           } catch {
             if (status) status.textContent = 'Copy failed';
           }
@@ -2082,6 +2135,45 @@ function renderShareReview(): string {
     <code class="share-command">npx a11y-shiftleft-cli share prepare --report reports --out a11y-share</code>
     <code class="share-command">npx a11y-shiftleft-cli share prepare --report reports --out a11y-share --include-html</code>
   </section>`;
+}
+
+function renderIgnoreCleanup(ignore: IgnoreSummary | undefined): string {
+  if (!ignore?.enabled) return "";
+
+  const needsCleanup = ignore.expiredRules > 0 || ignore.invalidRules > 0 || ignore.expiringSoonRules > 0;
+  const ownerRows = ignore.ownerSummaries
+    .filter((owner) => owner.ignoredIssues > 0 || owner.expiredRules > 0 || owner.invalidRules > 0 || owner.expiringSoonRules > 0)
+    .slice(0, 5);
+  const ownerList = ownerRows.length > 0
+    ? `<ul class="ignore-owner-list">${ownerRows.map((owner) => `<li><strong>${escapeHtml(owner.owner)}</strong>: ${escapeHtml(formatIgnoreOwnerCleanup(owner))}</li>`).join("")}</ul>`
+    : "";
+
+  return `<section class="panel ignore-cleanup" aria-label="Ignore cleanup">
+    <h2>Ignore Cleanup</h2>
+    <p class="muted">${needsCleanup
+      ? "Review stale or expiring temporary exceptions before they become permanent accessibility debt."
+      : "Scoped ignores are active; keep them temporary, owned, and reviewed."}</p>
+    <div class="ignore-cleanup-grid">
+      ${ignoreCleanupCard("Ignored findings", ignore.ignoredIssues, "currently hidden by active scoped rules")}
+      ${ignoreCleanupCard("Expiring soon", ignore.expiringSoonRules, "review before the expiry date")}
+      ${ignoreCleanupCard("Expired", ignore.expiredRules, "remove or renew with a new review")}
+      ${ignoreCleanupCard("Invalid", ignore.invalidRules, "fix required owner, reason, expiry, or match field")}
+    </div>
+    ${ownerList}
+  </section>`;
+}
+
+function ignoreCleanupCard(label: string, value: number, detail: string): string {
+  return `<div class="ignore-cleanup-card"><strong>${value}</strong><span>${escapeHtml(label)}</span><span>${escapeHtml(detail)}</span></div>`;
+}
+
+function formatIgnoreOwnerCleanup(owner: IgnoreSummary["ownerSummaries"][number]): string {
+  return [
+    owner.ignoredIssues ? `${owner.ignoredIssues} ignored` : "",
+    owner.expiringSoonRules ? `${owner.expiringSoonRules} expiring soon` : "",
+    owner.expiredRules ? `${owner.expiredRules} expired` : "",
+    owner.invalidRules ? `${owner.invalidRules} invalid` : ""
+  ].filter(Boolean).join(", ") || "no active cleanup needed";
 }
 
 function renderTicketDraftsPanel(issues: DedupedIssue[]): string {
@@ -3378,10 +3470,33 @@ function renderHumanVerificationContext(issue: DedupedIssue): string {
 
 function renderCopyIssueAction(ruleId: string, issues: DedupedIssue[]): string {
   const markdown = buildIssueMarkdown(ruleId, issues);
+  const ignoreEntry = buildIgnoreEntryJson(issues[0]);
   return `<div class="issue-actions">
-    <button class="copy-issue copy-issue-ticket" type="button" title="Copy a GitHub/Jira-ready Markdown summary" data-copy-issue="${escapeAttribute(encodeURIComponent(markdown))}"><span>Copy for</span><span>ticket</span></button>
+    <button class="copy-issue copy-issue-ticket" type="button" title="Copy a GitHub/Jira-ready Markdown summary" data-copy-issue="${escapeAttribute(encodeURIComponent(markdown))}" data-copy-success="Copied ticket draft"><span>Copy for</span><span>ticket</span></button>
+    <button class="copy-issue copy-ignore-entry" type="button" title="Copy a reviewed a11y-ignore.json entry template" data-copy-issue="${escapeAttribute(encodeURIComponent(ignoreEntry))}" data-copy-success="Copied ignore entry">Copy ignore entry</button>
     <span class="copy-issue-status" data-copy-issue-status aria-live="polite"></span>
   </div>`;
+}
+
+function buildIgnoreEntryJson(issue: DedupedIssue): string {
+  const entry: Record<string, string | string[]> = {
+    fingerprint: issue.fingerprint,
+    ruleId: issue.ruleId,
+    reason: "TODO: explain why this temporary exception is accepted.",
+    owner: "@team",
+    expires: "YYYY-MM-DD"
+  };
+
+  if (issue.selector) entry.selector = issue.selector;
+  if (issue.url) entry.url = issue.url;
+  if (issue.file) entry.file = issue.file;
+  if (issue.wcagCriteria.length > 0) {
+    entry.wcag = issue.wcagCriteria.map((criterion) => criterion.id);
+  } else if (issue.wcag.length > 0) {
+    entry.wcag = issue.wcag;
+  }
+
+  return JSON.stringify(entry, null, 2);
 }
 
 function collectTicketDraftGroups(issues: DedupedIssue[]): Array<{ key: string; ruleId: string; issues: DedupedIssue[] }> {
