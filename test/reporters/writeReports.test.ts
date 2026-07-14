@@ -1128,7 +1128,19 @@ test("writeReports includes ignore metadata", async () => {
         activeRules: 1,
         expiredRules: 1,
         invalidRules: 1,
-        ignoredIssues: 1
+        expiringSoonRules: 1,
+        ignoredIssues: 1,
+        ownerSummaries: [
+          {
+            owner: "@frontend",
+            totalRules: 2,
+            activeRules: 1,
+            expiredRules: 0,
+            invalidRules: 0,
+            expiringSoonRules: 1,
+            ignoredIssues: 1
+          }
+        ]
       }
     },
     {
@@ -1142,9 +1154,12 @@ test("writeReports includes ignore metadata", async () => {
   assert.equal(report.summary.ignore?.ignoredIssues, 1);
   assert.match(csv, /ignore\.ignoredIssues,1/);
   assert.match(csv, /ignore\.expiredRules,1/);
+  assert.match(csv, /ignore\.expiringSoonRules,1/);
   assert.match(markdown, /Ignore file \| a11y-ignore\.json/);
   assert.match(markdown, /Ignored findings \| 1/);
   assert.match(markdown, /Invalid ignore rules \| 1/);
+  assert.match(markdown, /Expiring soon ignore rules \| 1/);
+  assert.match(markdown, /@frontend: ignored 1, active 1, expiring 1, expired 0, invalid 0/);
 });
 
 test("writeReports includes retention metadata", async () => {

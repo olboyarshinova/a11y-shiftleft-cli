@@ -393,6 +393,16 @@ export interface IgnoreFile {
   ignores: IgnoreEntry[];
 }
 
+export interface IgnoreOwnerSummary {
+  owner: string;
+  totalRules: number;
+  activeRules: number;
+  expiredRules: number;
+  invalidRules: number;
+  expiringSoonRules: number;
+  ignoredIssues: number;
+}
+
 export interface IgnoreSummary {
   enabled: boolean;
   file: string;
@@ -400,7 +410,9 @@ export interface IgnoreSummary {
   activeRules: number;
   expiredRules: number;
   invalidRules: number;
+  expiringSoonRules: number;
   ignoredIssues: number;
+  ownerSummaries: IgnoreOwnerSummary[];
 }
 
 export interface BaselineEntry {

@@ -282,7 +282,10 @@ Use `a11y-ignore.json` for temporary, reviewed exceptions:
 Every ignore must include `reason`, `owner`, `expires`, and at least one match
 field such as `fingerprint`, `ruleId`, `source`, `severity`, `selector`,
 `file`, `url`, `target`, or `wcag`. Expired or invalid entries do not hide
-findings and are counted in the report summary.
+findings and are counted in the report summary. Reports also count rules that
+expire within the next 14 days and summarize ignored findings by owner, so teams
+can clean up temporary exceptions before they become permanent accessibility
+debt.
 
 ## Retention
 

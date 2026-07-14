@@ -48,7 +48,19 @@ test("applyIgnores filters active scoped ignore entries", async () => {
   assert.deepEqual(result.issues.map((item) => item.ruleId), ["button-name"]);
   assert.equal(result.summary?.ignoredIssues, 1);
   assert.equal(result.summary?.activeRules, 1);
+  assert.equal(result.summary?.expiringSoonRules, 0);
   assert.equal(result.summary?.file, DEFAULT_IGNORE_FILE);
+  assert.deepEqual(result.summary?.ownerSummaries, [
+    {
+      owner: "@frontend",
+      totalRules: 1,
+      activeRules: 1,
+      expiredRules: 0,
+      invalidRules: 0,
+      expiringSoonRules: 0,
+      ignoredIssues: 1
+    }
+  ]);
 });
 
 test("applyIgnores keeps expired and invalid entries visible", async () => {
@@ -85,6 +97,47 @@ test("applyIgnores keeps expired and invalid entries visible", async () => {
   assert.equal(result.summary?.ignoredIssues, 0);
   assert.equal(result.summary?.expiredRules, 1);
   assert.equal(result.summary?.invalidRules, 1);
+  assert.equal(result.summary?.ownerSummaries.find((owner) => owner.owner === "@frontend")?.expiredRules, 1);
+  assert.equal(result.summary?.ownerSummaries.find((owner) => owner.owner === "unknown")?.invalidRules, 1);
+});
+
+test("applyIgnores reports rules that expire soon", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-ignore-expiring-"));
+  await fs.writeFile(path.join(cwd, DEFAULT_IGNORE_FILE), JSON.stringify({
+    version: 1,
+    ignores: [
+      {
+        ruleId: "color-contrast",
+        selector: ".muted",
+        reason: "Temporary brand exception under review.",
+        owner: "@design-system",
+        expires: "2026-06-10"
+      }
+    ]
+  }));
+
+  const result = await applyIgnores([
+    issue({
+      ruleId: "color-contrast",
+      selector: ".muted",
+      severity: "warning"
+    })
+  ], {
+    cwd,
+    now: new Date("2026-06-01T00:00:00.000Z")
+  });
+
+  assert.equal(result.summary?.expiringSoonRules, 1);
+  assert.equal(result.summary?.ownerSummaries[0]?.owner, "@design-system");
+  assert.equal(result.summary?.ownerSummaries[0]?.expiringSoonRules, 1);
+
+  const shorterReminder = await applyIgnores([], {
+    cwd,
+    now: new Date("2026-06-01T00:00:00.000Z"),
+    expiryReminderDays: 5
+  });
+
+  assert.equal(shorterReminder.summary?.expiringSoonRules, 0);
 });
 
 test("applyIgnores is a no-op when the ignore file is missing or disabled", async () => {

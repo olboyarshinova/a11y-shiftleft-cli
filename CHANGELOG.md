@@ -60,6 +60,8 @@
 - Added an explicit `ticket export --create` safety guardrail that explains
   real tracker issue creation is not supported yet and exits before any tracker
   workflow can run.
+- Added expiry reminders and owner summaries for scoped `a11y-ignore.json`
+  rules so reports show expiring-soon exceptions and who owns ignored findings.
 
 ## 0.8.1 - 2026-07-12
 

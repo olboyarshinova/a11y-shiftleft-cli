@@ -1332,8 +1332,16 @@ function formatIgnoreRows(ignore: ReportSummary["ignore"]): string {
     `| Ignored findings | ${ignore.ignoredIssues} |`,
     `| Active ignore rules | ${ignore.activeRules} |`,
     `| Expired ignore rules | ${ignore.expiredRules} |`,
-    `| Invalid ignore rules | ${ignore.invalidRules} |`
+    `| Invalid ignore rules | ${ignore.invalidRules} |`,
+    `| Expiring soon ignore rules | ${ignore.expiringSoonRules} |`,
+    ignore.ownerSummaries.length > 0
+      ? `| Ignore owners | ${ignore.ownerSummaries.map(formatIgnoreOwnerSummary).join("; ")} |`
+      : ""
   ].join("\n")}\n`;
+}
+
+function formatIgnoreOwnerSummary(owner: NonNullable<ReportSummary["ignore"]>["ownerSummaries"][number]): string {
+  return `${owner.owner}: ignored ${owner.ignoredIssues}, active ${owner.activeRules}, expiring ${owner.expiringSoonRules}, expired ${owner.expiredRules}, invalid ${owner.invalidRules}`;
 }
 
 function formatRetentionRows(retention: ReportSummary["retention"]): string {

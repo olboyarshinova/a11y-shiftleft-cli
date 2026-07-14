@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { DedupedIssue, IgnoreEntry, IgnoreFile, IgnoreSummary, Severity } from "../types.js";
+import type { DedupedIssue, IgnoreEntry, IgnoreFile, IgnoreOwnerSummary, IgnoreSummary, Severity } from "../types.js";
 
 export const DEFAULT_IGNORE_FILE = "a11y-ignore.json";
 
@@ -9,6 +9,7 @@ interface ApplyIgnoreOptions {
   ignoreFile?: string;
   enabled?: boolean;
   now?: Date;
+  expiryReminderDays?: number;
 }
 
 interface ApplyIgnoreResult {
@@ -17,6 +18,11 @@ interface ApplyIgnoreResult {
 }
 
 type IgnoreMatcher = (issue: DedupedIssue) => boolean;
+
+interface ActiveIgnoreEntry {
+  entry: IgnoreEntry;
+  matcher: IgnoreMatcher;
+}
 
 const MATCH_FIELDS = [
   "fingerprint",
@@ -46,25 +52,54 @@ export async function applyIgnores(
   }
 
   const now = options.now || new Date();
+  const expiryReminderDays = options.expiryReminderDays ?? 14;
   const activeEntries: IgnoreEntry[] = [];
+  const ownerSummaries = new Map<string, IgnoreOwnerSummary>();
   let expiredRules = 0;
   let invalidRules = 0;
+  let expiringSoonRules = 0;
 
   for (const entry of ignoreFile.ignores) {
     const validity = validateIgnoreEntry(entry, now);
+    const ownerSummary = ensureOwnerSummary(ownerSummaries, ignoreOwner(entry));
+    ownerSummary.totalRules += 1;
 
     if (validity === "active") {
       activeEntries.push(entry);
+      ownerSummary.activeRules += 1;
+      if (isExpiringSoon(entry, now, expiryReminderDays)) {
+        expiringSoonRules += 1;
+        ownerSummary.expiringSoonRules += 1;
+      }
     } else if (validity === "expired") {
       expiredRules += 1;
+      ownerSummary.expiredRules += 1;
     } else {
       invalidRules += 1;
+      ownerSummary.invalidRules += 1;
     }
   }
 
-  const matchers = activeEntries.map(createMatcher);
-  const actionableIssues = issues.filter((issue) => !matchers.some((matcher) => matcher(issue)));
-  const ignoredIssues = issues.length - actionableIssues.length;
+  const activeMatchers: ActiveIgnoreEntry[] = activeEntries.map((entry) => ({
+    entry,
+    matcher: createMatcher(entry)
+  }));
+  const actionableIssues: DedupedIssue[] = [];
+  let ignoredIssues = 0;
+
+  for (const issue of issues) {
+    const matchingEntries = activeMatchers.filter(({ matcher }) => matcher(issue));
+
+    if (matchingEntries.length === 0) {
+      actionableIssues.push(issue);
+      continue;
+    }
+
+    ignoredIssues += 1;
+    for (const owner of new Set(matchingEntries.map(({ entry }) => ignoreOwner(entry)))) {
+      ensureOwnerSummary(ownerSummaries, owner).ignoredIssues += 1;
+    }
+  }
 
   return {
     issues: actionableIssues,
@@ -75,7 +110,9 @@ export async function applyIgnores(
       activeRules: activeEntries.length,
       expiredRules,
       invalidRules,
-      ignoredIssues
+      expiringSoonRules,
+      ignoredIssues,
+      ownerSummaries: [...ownerSummaries.values()].sort(compareIgnoreOwnerSummaries)
     }
   };
 }
@@ -158,6 +195,46 @@ function parseExpiry(value: string): Date | null {
     : value;
   const date = new Date(normalized);
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function isExpiringSoon(entry: IgnoreEntry, now: Date, reminderDays: number): boolean {
+  const expiresAt = parseExpiry(entry.expires);
+  if (!expiresAt) return false;
+
+  const reminderMs = reminderDays * 24 * 60 * 60 * 1000;
+  const timeUntilExpiry = expiresAt.getTime() - now.getTime();
+  return timeUntilExpiry >= 0 && timeUntilExpiry <= reminderMs;
+}
+
+function ignoreOwner(entry: IgnoreEntry): string {
+  return entry.owner?.trim() || "unknown";
+}
+
+function ensureOwnerSummary(
+  summaries: Map<string, IgnoreOwnerSummary>,
+  owner: string
+): IgnoreOwnerSummary {
+  const existing = summaries.get(owner);
+  if (existing) return existing;
+
+  const summary: IgnoreOwnerSummary = {
+    owner,
+    totalRules: 0,
+    activeRules: 0,
+    expiredRules: 0,
+    invalidRules: 0,
+    expiringSoonRules: 0,
+    ignoredIssues: 0
+  };
+  summaries.set(owner, summary);
+  return summary;
+}
+
+function compareIgnoreOwnerSummaries(left: IgnoreOwnerSummary, right: IgnoreOwnerSummary): number {
+  if (right.ignoredIssues !== left.ignoredIssues) return right.ignoredIssues - left.ignoredIssues;
+  if (right.expiredRules !== left.expiredRules) return right.expiredRules - left.expiredRules;
+  if (right.expiringSoonRules !== left.expiringSoonRules) return right.expiringSoonRules - left.expiringSoonRules;
+  return left.owner.localeCompare(right.owner);
 }
 
 async function readIgnoreFileIfExists(filePath: string): Promise<IgnoreFile | null> {

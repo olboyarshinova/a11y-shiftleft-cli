@@ -238,8 +238,9 @@ Section 508 certification.
   lookup for triage. `--create` is currently blocked with a safety message.
   Next, evaluate whether explicit create mode is worth adding at all; do not
   create tracker issues automatically by default.
-- Continue hardening scoped `a11y-ignore.json` support with clearer expiry
-  reminders, stale-ignore cleanup guidance, and optional owner summaries.
+- Continue hardening scoped `a11y-ignore.json` support. Current reports count
+  active, expired, invalid, expiring-soon, and owner-grouped ignore rules; next
+  add UI-friendly stale-ignore cleanup guidance and copyable ignore entries.
 - Evaluate an optional public-link publisher only after sanitized export is
   stable. Require explicit confirmation, unguessable URLs, expiration,
   revocation, and deletion.
