@@ -124,7 +124,8 @@ test("createTicketPayloadPreviews creates dry-run tracker payloads", () => {
   assert.deepEqual(githubPayloads[0].payload, {
     title: githubDrafts[0].title,
     body: githubDrafts[0].body,
-    labels: githubDrafts[0].labels
+    labels: githubDrafts[0].labels,
+    ownerHint: githubDrafts[0].ownerHint
   });
   assert.equal(githubDrafts[0].labels[0], "a11y");
 });
@@ -144,8 +145,45 @@ test("createTicketPayloadPreviews maps Jira and Linear payload shapes", () => {
 
   assert.equal(jiraPayload.endpointHint, "POST /rest/api/3/issue");
   assert.deepEqual((jiraPayload.payload.fields as { issuetype: { name: string } }).issuetype, { name: "Bug" });
+  assert.equal((jiraPayload.payload as { ownerHint: string }).ownerHint, "Design system or visual design");
   assert.equal(linearPayload.endpointHint, "IssueCreate mutation");
+  assert.equal((linearPayload.payload as { ownerHint: string }).ownerHint, "Design system or visual design");
   assert.equal((linearPayload.payload as { priority: number }).priority, 1);
+});
+
+test("createTicketDrafts adds owner hints and owner labels", () => {
+  const report = reportWithIssues([
+    issue({
+      category: "contrast",
+      ruleId: "color-contrast",
+      selector: ".cta"
+    }),
+    issue({
+      category: "media",
+      ruleId: "frame-title",
+      selector: "iframe",
+      ownership: {
+        kind: "third-party-embed",
+        label: "YouTube",
+        source: "youtube.com",
+        note: "Manual verification recommended."
+      }
+    })
+  ]);
+
+  const drafts = createTicketDrafts(report, {
+    tracker: "github",
+    minSeverity: "warning"
+  });
+
+  const contrastDraft = drafts.find((draft) => draft.ruleId === "color-contrast");
+  const embedDraft = drafts.find((draft) => draft.ruleId === "frame-title");
+
+  assert.equal(contrastDraft?.ownerHint, "Design system or visual design");
+  assert.ok(contrastDraft?.labels.includes("owner:design-system-or-visual-design"));
+  assert.match(contrastDraft?.body || "", /Owner hint: Design system or visual design/);
+  assert.equal(embedDraft?.ownerHint, "Third-party embed owner");
+  assert.ok(embedDraft?.labels.includes("owner:third-party-embed-owner"));
 });
 
 function reportWithIssues(issues: DedupedIssue[]): A11yReport {

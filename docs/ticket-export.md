@@ -129,11 +129,21 @@ Each draft includes:
 - severity
 - rule ID
 - source
+- owner hint for triage
 - page or file
 - target selector
 - WCAG metadata when available
 - confidence level
 - remediation hints when available
+
+## Owner Hints
+
+Ticket drafts include a deterministic `ownerHint` such as `Frontend
+interaction`, `Design system or visual design`, `Content structure`, or
+`Third-party embed owner`.
+
+These hints help teams route drafts during triage. They do not assign a real
+person, create tracker ownership, or replace human review.
 
 ## Privacy
 

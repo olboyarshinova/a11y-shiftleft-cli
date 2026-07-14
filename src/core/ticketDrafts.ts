@@ -24,6 +24,7 @@ export interface TicketDraft {
   count: number;
   wcag: string[];
   confidence: string;
+  ownerHint: string;
   labels: string[];
   redactedFields: string[];
   body: string;
@@ -122,8 +123,9 @@ function toTicketDraft(issues: DedupedIssue[], tracker: TicketTracker): TicketDr
   const target = targetRedaction.value;
   const wcag = unique(issues.flatMap((issue) => issue.wcag));
   const confidence = highestConfidence(issues);
+  const ownerHint = inferOwnerHint(issues);
   const title = formatTitle(primary, count);
-  const labels = trackerLabels(tracker, primary);
+  const labels = trackerLabels(tracker, primary, ownerHint);
   const fingerprint = ticketFingerprint(issues, rawPage, rawTarget);
   const redactedFields = unique([
     ...pageRedaction.fields,
@@ -144,6 +146,7 @@ function toTicketDraft(issues: DedupedIssue[], tracker: TicketTracker): TicketDr
     count,
     wcag,
     confidence,
+    ownerHint,
     labels,
     redactedFields,
     body: formatTicketBody({
@@ -154,6 +157,7 @@ function toTicketDraft(issues: DedupedIssue[], tracker: TicketTracker): TicketDr
       target,
       wcag,
       confidence,
+      ownerHint,
       labels,
       fingerprint,
       redactedFields
@@ -174,11 +178,12 @@ function formatTicketBody(options: {
   target: string;
   wcag: string[];
   confidence: string;
+  ownerHint: string;
   labels: string[];
   fingerprint: string;
   redactedFields: string[];
 }): string {
-  const { issue, message, count, page, target, wcag, confidence, labels, fingerprint, redactedFields } = options;
+  const { issue, message, count, page, target, wcag, confidence, ownerHint, labels, fingerprint, redactedFields } = options;
   const criteria = issue.wcagCriteria.map((criterion) => (
     `- WCAG ${criterion.id} ${criterion.title} (${criterion.level}): ${criterion.url}`
   ));
@@ -205,6 +210,7 @@ function formatTicketBody(options: {
     `- Source: ${issue.source}`,
     `- Category: ${issue.category}`,
     `- Confidence: ${confidence}`,
+    `- Owner hint: ${ownerHint}`,
     `- Page: ${page}`,
     `- Target: ${target}`,
     `- Findings in group: ${count}`,
@@ -221,8 +227,13 @@ function formatTicketBody(options: {
   ].join("\n");
 }
 
-function trackerLabels(tracker: TicketTracker, issue: DedupedIssue): string[] {
-  const base = ["accessibility", `severity:${issue.severity}`, `rule:${issue.ruleId}`];
+function trackerLabels(tracker: TicketTracker, issue: DedupedIssue, ownerHint: string): string[] {
+  const base = [
+    "accessibility",
+    `severity:${issue.severity}`,
+    `rule:${issue.ruleId}`,
+    `owner:${ownerSlug(ownerHint)}`
+  ];
 
   if (tracker === "jira") return ["a11y", ...base];
   if (tracker === "linear") return ["A11y", ...base];
@@ -240,6 +251,7 @@ function trackerEndpointHint(tracker: TicketTracker): string {
 function trackerPayload(draft: TicketDraft): Record<string, unknown> {
   if (draft.tracker === "jira") {
     return {
+      ownerHint: draft.ownerHint,
       fields: {
         summary: draft.title,
         description: draft.body,
@@ -254,6 +266,7 @@ function trackerPayload(draft: TicketDraft): Record<string, unknown> {
       title: draft.title,
       description: draft.body,
       labelNames: draft.labels,
+      ownerHint: draft.ownerHint,
       priority: linearPriority(draft.severity)
     };
   }
@@ -262,14 +275,16 @@ function trackerPayload(draft: TicketDraft): Record<string, unknown> {
     return {
       title: draft.title,
       body: draft.body,
-      labels: draft.labels
+      labels: draft.labels,
+      ownerHint: draft.ownerHint
     };
   }
 
   return {
     title: draft.title,
     body: draft.body,
-    labels: draft.labels
+    labels: draft.labels,
+    ownerHint: draft.ownerHint
   };
 }
 
@@ -277,6 +292,48 @@ function linearPriority(severity: Severity): number {
   if (severity === "critical") return 1;
   if (severity === "warning") return 2;
   return 4;
+}
+
+function inferOwnerHint(issues: DedupedIssue[]): string {
+  if (issues.some((issue) => issue.ownership?.kind === "third-party-embed")) {
+    return "Third-party embed owner";
+  }
+
+  const categories = new Set(issues.map((issue) => issue.category));
+  const ruleIds = new Set(issues.map((issue) => issue.ruleId));
+
+  if (categories.has("contrast") || ruleIds.has("color-contrast")) {
+    return "Design system or visual design";
+  }
+
+  if (categories.has("forms")) {
+    return "Forms or product UI";
+  }
+
+  if (categories.has("keyboard") || categories.has("focus") || categories.has("widgets")) {
+    return "Frontend interaction";
+  }
+
+  if (categories.has("images") || categories.has("media")) {
+    return "Content or media";
+  }
+
+  if (categories.has("headings") || categories.has("landmarks") || categories.has("structure")) {
+    return "Content structure";
+  }
+
+  if (issues.some((issue) => issue.source === "eslint")) {
+    return "Source code owner";
+  }
+
+  return "Frontend UI owner";
+}
+
+function ownerSlug(ownerHint: string): string {
+  return ownerHint
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 function issuePage(issue: DedupedIssue): string {

@@ -51,6 +51,9 @@
   before Jira, Linear, or GitHub Issues workflows are connected.
 - Added `ticket export --format payloads` for dry-run Jira, Linear, and GitHub
   Issues payload previews without making tracker API calls.
+- Added deterministic owner hints to ticket drafts and tracker payload previews
+  so teams can route accessibility fixes during triage without assigning real
+  users automatically.
 
 ## 0.8.1 - 2026-07-12
 
