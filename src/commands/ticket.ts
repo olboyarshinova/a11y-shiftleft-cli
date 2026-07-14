@@ -20,6 +20,7 @@ interface TicketExportOptions {
   maxTickets?: string;
   knownTickets?: string;
   skipKnown?: boolean;
+  create?: boolean;
 }
 
 export function registerTicketCommand(program: Command): void {
@@ -38,7 +39,14 @@ export function registerTicketCommand(program: Command): void {
     .option("--max-tickets <count>", "Maximum number of ticket drafts to export")
     .option("--known-tickets <file>", "Compare drafts with a previous ticket JSON or payload export")
     .option("--skip-known", "Do not export drafts whose fingerprint appears in --known-tickets")
+    .option("--create", "Reserved for a future explicit tracker create mode; currently blocked for safety")
     .action(async (options: TicketExportOptions) => {
+      if (options.create) {
+        throw new Error(
+          "Ticket create mode is not available yet. Run ticket export with --format markdown, json, or payloads, review the drafts, and create tracker issues manually."
+        );
+      }
+
       const reportPath = path.resolve(options.report || "reports/a11y-report.json");
       const format = toTicketFormat(options.format);
       const tracker = toTicketTracker(options.tracker);

@@ -119,6 +119,15 @@ npx a11y-shiftleft ticket export \
 This lookup is local-only. It does not query Jira, Linear, GitHub Issues, or any
 external tracker.
 
+## Create Mode
+
+`ticket export --create` is intentionally blocked in the current release. The
+CLI can prepare reviewable Markdown, JSON, and payload previews, but it does not
+create real Jira, Linear, or GitHub Issues tickets yet.
+
+This guardrail keeps the workflow review-first while the report schema and
+duplicate-detection behavior continue to stabilize.
+
 ## Triage Options
 
 Export only critical findings:
@@ -190,6 +199,8 @@ other generated reports, or upload them as CI artifacts when needed.
 
 - No Jira, Linear, or GitHub Issues API calls are made.
 - No tracker authentication is required.
+- `--create` is reserved for a future explicit create mode and currently exits
+  before any tracker work is attempted.
 - Duplicate lookup is local to one report file or a previous ticket export
   supplied with `--known-tickets`.
 - Fingerprints are stable draft identifiers, not proof that a tracker issue

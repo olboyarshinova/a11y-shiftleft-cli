@@ -57,6 +57,9 @@
 - Added local duplicate lookup for `ticket export` through `--known-tickets`
   and `--skip-known`, using stable ticket fingerprints without querying
   external trackers.
+- Added an explicit `ticket export --create` safety guardrail that explains
+  real tracker issue creation is not supported yet and exits before any tracker
+  workflow can run.
 
 ## 0.8.1 - 2026-07-12
 

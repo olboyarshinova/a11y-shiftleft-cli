@@ -235,9 +235,9 @@ Section 508 certification.
   supports safe Markdown and JSON ticket drafts with stable fingerprints and
   basic redaction, plus tracker-specific dry-run payload previews for Jira,
   Linear, and GitHub Issues, with deterministic owner hints and local duplicate
-  lookup for triage. Next, evaluate explicit create-mode guardrails. Do not
-  create tracker issues automatically by default; require an explicit
-  `--create` flag after users have reviewed the generated draft.
+  lookup for triage. `--create` is currently blocked with a safety message.
+  Next, evaluate whether explicit create mode is worth adding at all; do not
+  create tracker issues automatically by default.
 - Continue hardening scoped `a11y-ignore.json` support with clearer expiry
   reminders, stale-ignore cleanup guidance, and optional owner summaries.
 - Evaluate an optional public-link publisher only after sanitized export is
