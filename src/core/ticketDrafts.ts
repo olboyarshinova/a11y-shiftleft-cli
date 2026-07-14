@@ -9,6 +9,8 @@ export interface TicketDraftOptions {
   tracker?: TicketTracker;
   minSeverity?: Severity;
   maxTickets?: number;
+  knownTickets?: KnownTicket[];
+  skipKnown?: boolean;
 }
 
 export interface TicketDraft {
@@ -27,7 +29,21 @@ export interface TicketDraft {
   ownerHint: string;
   labels: string[];
   redactedFields: string[];
+  existingTicket?: KnownTicketMatch;
   body: string;
+}
+
+export interface KnownTicket {
+  fingerprint: string;
+  id?: string;
+  title?: string;
+  url?: string;
+  tracker?: string;
+  status?: string;
+}
+
+export interface KnownTicketMatch extends KnownTicket {
+  matched: true;
 }
 
 export interface TicketPayloadPreview {
@@ -35,6 +51,7 @@ export interface TicketPayloadPreview {
   dryRun: true;
   draftId: string;
   fingerprint: string;
+  existingTicket?: KnownTicketMatch;
   endpointHint: string;
   payload: Record<string, unknown>;
 }
@@ -65,8 +82,11 @@ export function createTicketDrafts(
     groups.set(key, [...(groups.get(key) || []), issue]);
   }
 
+  const knownByFingerprint = knownTicketsByFingerprint(options.knownTickets || []);
   const drafts = [...groups.values()]
     .map((issues) => toTicketDraft(issues, tracker))
+    .map((draft) => attachKnownTicketMatch(draft, knownByFingerprint))
+    .filter((draft) => !(options.skipKnown && draft.existingTicket))
     .sort(compareTicketDrafts);
 
   return typeof options.maxTickets === "number" && options.maxTickets > 0
@@ -76,19 +96,21 @@ export function createTicketDrafts(
 
 export function ticketDraftsToMarkdown(drafts: TicketDraft[], report: A11yReport): string {
   const rows = drafts.map((draft) => (
-    `| ${escapeTable(draft.severity.toUpperCase())} | ${escapeTable(draft.ruleId)} | ${escapeTable(draft.page)} | ${draft.count} |`
+    `| ${escapeTable(draft.severity.toUpperCase())} | ${escapeTable(draft.ruleId)} | ${escapeTable(draft.page)} | ${draft.count} | ${escapeTable(existingTicketSummary(draft))} |`
   ));
+  const knownCount = drafts.filter((draft) => draft.existingTicket).length;
 
   return [
     "# Accessibility Ticket Drafts",
     "",
     `Generated from report: ${report.generatedAt}`,
     `Total drafts: ${drafts.length}`,
+    `Known duplicates: ${knownCount}`,
     "",
     "These are dry-run ticket drafts. Review them before creating Jira, Linear, or other tracker issues.",
     "",
-    "| Severity | Rule | Page | Findings |",
-    "|---|---|---|---:|",
+    "| Severity | Rule | Page | Findings | Existing ticket |",
+    "|---|---|---|---:|---|",
     ...rows,
     "",
     ...drafts.flatMap((draft) => [
@@ -106,6 +128,7 @@ export function createTicketPayloadPreviews(drafts: TicketDraft[]): TicketPayloa
     dryRun: true,
     draftId: draft.id,
     fingerprint: draft.fingerprint,
+    existingTicket: draft.existingTicket,
     endpointHint: trackerEndpointHint(draft.tracker),
     payload: trackerPayload(draft)
   }));
@@ -239,6 +262,48 @@ function trackerLabels(tracker: TicketTracker, issue: DedupedIssue, ownerHint: s
   if (tracker === "linear") return ["A11y", ...base];
   if (tracker === "github") return ["a11y", ...base];
   return base;
+}
+
+function knownTicketsByFingerprint(knownTickets: KnownTicket[]): Map<string, KnownTicketMatch> {
+  return new Map(knownTickets
+    .filter((ticket) => ticket.fingerprint)
+    .map((ticket) => [ticket.fingerprint, { ...ticket, matched: true }]));
+}
+
+function attachKnownTicketMatch(
+  draft: TicketDraft,
+  knownByFingerprint: Map<string, KnownTicketMatch>
+): TicketDraft {
+  const existingTicket = knownByFingerprint.get(draft.fingerprint);
+  if (!existingTicket) return draft;
+
+  const labels = draft.labels.includes("known-duplicate")
+    ? draft.labels
+    : [...draft.labels, "known-duplicate"];
+
+  return {
+    ...draft,
+    existingTicket,
+    labels,
+    body: [
+      draft.body,
+      "",
+      "### Existing Ticket Match",
+      "",
+      `- Match: ${existingTicketSummary({ ...draft, existingTicket })}`,
+      `- Fingerprint: ${existingTicket.fingerprint}`,
+      existingTicket.url ? `- URL: ${existingTicket.url}` : undefined,
+      existingTicket.status ? `- Status: ${existingTicket.status}` : undefined
+    ].filter(Boolean).join("\n")
+  };
+}
+
+function existingTicketSummary(draft: Pick<TicketDraft, "existingTicket">): string {
+  const ticket = draft.existingTicket;
+  if (!ticket) return "new";
+
+  const label = ticket.id || ticket.title || ticket.url || "known ticket";
+  return ticket.status ? `${label} (${ticket.status})` : label;
 }
 
 function trackerEndpointHint(tracker: TicketTracker): string {

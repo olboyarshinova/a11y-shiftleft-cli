@@ -90,6 +90,43 @@ test("createTicketDrafts adds stable fingerprints for duplicate detection", () =
   assert.match(firstRun[0].body, new RegExp(firstRun[0].fingerprint));
 });
 
+test("createTicketDrafts marks known duplicate tickets by fingerprint", () => {
+  const report = reportWithIssues([
+    issue({ ruleId: "button-name", selector: "#menu" })
+  ]);
+  const initialDraft = createTicketDrafts(report)[0];
+  const drafts = createTicketDrafts(report, {
+    knownTickets: [{
+      fingerprint: initialDraft.fingerprint,
+      id: "A11Y-123",
+      status: "open",
+      tracker: "jira"
+    }]
+  });
+  const markdown = ticketDraftsToMarkdown(drafts, report);
+
+  assert.equal(drafts[0].existingTicket?.id, "A11Y-123");
+  assert.ok(drafts[0].labels.includes("known-duplicate"));
+  assert.match(drafts[0].body, /Existing Ticket Match/);
+  assert.match(markdown, /Known duplicates: 1/);
+  assert.match(markdown, /A11Y-123 \(open\)/);
+});
+
+test("createTicketDrafts can skip known duplicate tickets", () => {
+  const report = reportWithIssues([
+    issue({ ruleId: "button-name", selector: "#menu" }),
+    issue({ ruleId: "color-contrast", selector: ".cta", severity: "critical" })
+  ]);
+  const knownDraft = createTicketDrafts(report).find((draft) => draft.ruleId === "button-name");
+  const drafts = createTicketDrafts(report, {
+    knownTickets: knownDraft ? [{ fingerprint: knownDraft.fingerprint, id: "A11Y-123" }] : [],
+    skipKnown: true
+  });
+
+  assert.equal(drafts.length, 1);
+  assert.equal(drafts[0].ruleId, "color-contrast");
+});
+
 test("createTicketDrafts redacts sensitive values before export", () => {
   const report = reportWithIssues([
     issue({

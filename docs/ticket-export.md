@@ -91,6 +91,34 @@ The output includes `dryRun: true`, the draft fingerprint, an endpoint hint,
 and the tracker-specific payload. It still does not make network requests or
 create real issues.
 
+## Duplicate Lookup
+
+Compare a new export with a previous JSON or payload export before creating
+issues:
+
+```bash
+npx a11y-shiftleft ticket export \
+  --report reports/a11y-report.json \
+  --known-tickets reports/previous-a11y-tickets.json \
+  --out reports/a11y-tickets.md
+```
+
+Known matches are detected by stable ticket fingerprint and marked in the
+Markdown table, ticket body, JSON drafts, and payload previews.
+
+Skip known drafts when you only want new work:
+
+```bash
+npx a11y-shiftleft ticket export \
+  --report reports/a11y-report.json \
+  --known-tickets reports/previous-a11y-tickets.json \
+  --skip-known \
+  --out reports/a11y-new-tickets.md
+```
+
+This lookup is local-only. It does not query Jira, Linear, GitHub Issues, or any
+external tracker.
+
 ## Triage Options
 
 Export only critical findings:
@@ -162,7 +190,8 @@ other generated reports, or upload them as CI artifacts when needed.
 
 - No Jira, Linear, or GitHub Issues API calls are made.
 - No tracker authentication is required.
-- Duplicate detection is local to one report file.
+- Duplicate lookup is local to one report file or a previous ticket export
+  supplied with `--known-tickets`.
 - Fingerprints are stable draft identifiers, not proof that a tracker issue
   already exists.
 - The output is a draft and should be reviewed before creating real tickets.

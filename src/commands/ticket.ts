@@ -5,6 +5,7 @@ import {
   createTicketDrafts,
   createTicketPayloadPreviews,
   ticketDraftsToMarkdown,
+  type KnownTicket,
   type TicketFormat,
   type TicketTracker
 } from "../core/ticketDrafts.js";
@@ -17,6 +18,8 @@ interface TicketExportOptions {
   tracker?: string;
   minSeverity?: string;
   maxTickets?: string;
+  knownTickets?: string;
+  skipKnown?: boolean;
 }
 
 export function registerTicketCommand(program: Command): void {
@@ -33,6 +36,8 @@ export function registerTicketCommand(program: Command): void {
     .option("--tracker <tracker>", "Ticket tracker style: generic, jira, linear, or github", "generic")
     .option("--min-severity <severity>", "Minimum severity: critical, warning, or info", "warning")
     .option("--max-tickets <count>", "Maximum number of ticket drafts to export")
+    .option("--known-tickets <file>", "Compare drafts with a previous ticket JSON or payload export")
+    .option("--skip-known", "Do not export drafts whose fingerprint appears in --known-tickets")
     .action(async (options: TicketExportOptions) => {
       const reportPath = path.resolve(options.report || "reports/a11y-report.json");
       const format = toTicketFormat(options.format);
@@ -40,10 +45,15 @@ export function registerTicketCommand(program: Command): void {
       const minSeverity = toSeverity(options.minSeverity);
       const maxTickets = toPositiveInteger(options.maxTickets);
       const report = await readReport(reportPath);
+      const knownTickets = options.knownTickets
+        ? await readKnownTickets(path.resolve(options.knownTickets))
+        : [];
       const drafts = createTicketDrafts(report, {
         tracker,
         minSeverity,
-        maxTickets
+        maxTickets,
+        knownTickets,
+        skipKnown: options.skipKnown
       });
       const generatedAt = new Date().toISOString();
       const output = ticketExportOutput({
@@ -58,12 +68,58 @@ export function registerTicketCommand(program: Command): void {
         const outputPath = path.resolve(options.out);
         await fs.mkdir(path.dirname(outputPath), { recursive: true });
         await fs.writeFile(outputPath, output);
-        console.log(`Wrote ${drafts.length} ticket draft${drafts.length === 1 ? "" : "s"} to ${outputPath}`);
+        const knownCount = drafts.filter((draft) => draft.existingTicket).length;
+        const knownSuffix = knownTickets.length > 0 ? ` (${knownCount} known duplicate${knownCount === 1 ? "" : "s"})` : "";
+        console.log(`Wrote ${drafts.length} ticket draft${drafts.length === 1 ? "" : "s"}${knownSuffix} to ${outputPath}`);
         return;
       }
 
       console.log(output);
     });
+}
+
+async function readKnownTickets(filePath: string): Promise<KnownTicket[]> {
+  const parsed = JSON.parse(await fs.readFile(filePath, "utf8")) as unknown;
+  const candidates = knownTicketCandidates(parsed);
+
+  return candidates
+    .map(toKnownTicket)
+    .filter((ticket): ticket is KnownTicket => Boolean(ticket));
+}
+
+function knownTicketCandidates(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value;
+  if (!value || typeof value !== "object") return [];
+
+  const objectValue = value as Record<string, unknown>;
+  if (Array.isArray(objectValue.drafts)) return objectValue.drafts;
+  if (Array.isArray(objectValue.payloads)) return objectValue.payloads;
+  if (Array.isArray(objectValue.tickets)) return objectValue.tickets;
+  return [];
+}
+
+function toKnownTicket(value: unknown): KnownTicket | null {
+  if (!value || typeof value !== "object") return null;
+  const objectValue = value as Record<string, unknown>;
+  const fingerprint = stringValue(objectValue.fingerprint);
+  if (!fingerprint) return null;
+
+  const payload = objectValue.payload && typeof objectValue.payload === "object"
+    ? objectValue.payload as Record<string, unknown>
+    : {};
+
+  return {
+    fingerprint,
+    id: stringValue(objectValue.id) || stringValue(objectValue.draftId),
+    title: stringValue(objectValue.title) || stringValue(payload.title),
+    url: stringValue(objectValue.url) || stringValue(objectValue.webUrl),
+    tracker: stringValue(objectValue.tracker),
+    status: stringValue(objectValue.status)
+  };
+}
+
+function stringValue(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value : undefined;
 }
 
 async function readReport(reportPath: string): Promise<A11yReport> {

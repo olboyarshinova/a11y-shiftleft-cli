@@ -54,6 +54,9 @@
 - Added deterministic owner hints to ticket drafts and tracker payload previews
   so teams can route accessibility fixes during triage without assigning real
   users automatically.
+- Added local duplicate lookup for `ticket export` through `--known-tickets`
+  and `--skip-known`, using stable ticket fingerprints without querying
+  external trackers.
 
 ## 0.8.1 - 2026-07-12
 
