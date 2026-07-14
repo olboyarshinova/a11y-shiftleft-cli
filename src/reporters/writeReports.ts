@@ -3,7 +3,7 @@ import path from "node:path";
 import { stringify } from "csv-stringify/sync";
 import { createReportAuditTrail } from "../core/auditTrail.js";
 import { enrichIssueEvidence } from "../core/classification.js";
-import { createManualChecklist, toManualChecklistMarkdown } from "../core/manualChecklist.js";
+import { createManualChecklist, summarizeManualReviewRecords, toManualChecklistMarkdown } from "../core/manualChecklist.js";
 import { writeEvaluationScopeManifest } from "../core/evaluationScope.js";
 import { annotateIssuesWithJourneys, summarizeJourneyImpact } from "../core/journeyImpact.js";
 import { compareLighthouseWithFindings } from "../core/lighthouseComparison.js";
@@ -1041,6 +1041,7 @@ function formatCoverageMatrix(report: A11yReport): string {
 function formatManualReviewSummary(report: A11yReport): string {
   const checklist = report.manualChecklist;
   if (!checklist) return "";
+  const summary = summarizeManualReviewRecords(checklist);
   const items = checklist.items.map((item) =>
     `- [ ] **${markdownInline(item.title)}** (WCAG ${markdownInline(item.wcag.join(", "))})`
   ).join("\n");
@@ -1048,6 +1049,15 @@ function formatManualReviewSummary(report: A11yReport): string {
   return `## Manual Review Checklist
 
 Automation cannot complete these checks. Record the full status, evidence, and notes in the visual or JSON report.
+
+| Status | Count |
+|---|---:|
+| Not reviewed | ${summary.notReviewed} |
+| Pass | ${summary.pass} |
+| Fail | ${summary.fail} |
+| Not applicable | ${summary.notApplicable} |
+
+Structured fields available per item: tester, tested date, environment, notes, evidence links, and remediation owner.
 
 ${items}`;
 }

@@ -112,6 +112,9 @@ review. Record the operating system, browser, assistive technology and version,
 input method, viewport or zoom level, and color mode used for each review.
 The same fields are present in the generated JSON checklist for teams that
 aggregate manual evidence later.
+Generated Markdown reports summarize manual review status counts (`not-reviewed`,
+`pass`, `fail`, and `not-applicable`) so teams can track follow-up work without
+sending review evidence to an external service.
 
 Each explored state also receives a bounded 400% reflow proxy at 320 CSS pixels. It
 records document width, horizontal overflow, and text containers that appear to

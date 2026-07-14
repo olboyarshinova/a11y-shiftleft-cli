@@ -220,9 +220,6 @@ Section 508 certification.
 
 ## Integrations And Sharing
 
-- Expand manual-review records from a checklist into structured local evidence:
-  status, reviewer, notes, evidence links, pass/fail/needs-follow-up state, and
-  timestamp. Keep it local-first and avoid collecting unnecessary personal data.
 - Publish a repeatable external-validation protocol that compares the same
   pages and states with Accessibility Insights, ARC Toolkit,
   [WAVE](https://wave.webaim.org/),

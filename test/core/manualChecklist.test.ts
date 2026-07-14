@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   createManualChecklist,
+  summarizeManualReviewRecords,
   toManualChecklistMarkdown
 } from "../../dist/core/manualChecklist.js";
 
@@ -140,10 +141,32 @@ test("toManualChecklistMarkdown renders actionable Markdown checkboxes", () => {
   assert.match(markdown, /Activate the skip link/);
   assert.match(markdown, /Automated accessibility tools do not prove full WCAG conformance/);
   assert.match(markdown, /Status: `not-reviewed`/);
+  assert.match(markdown, /## Review Status/);
+  assert.match(markdown, /Not reviewed \| 13/);
   assert.match(markdown, /Environment summary:/);
   assert.match(markdown, /Operating system:/);
   assert.match(markdown, /Assistive technology and version:/);
   assert.match(markdown, /Viewport or zoom level:/);
   assert.match(markdown, /Color mode:/);
   assert.match(markdown, /Remediation owner:/);
+});
+
+test("summarizeManualReviewRecords counts review outcomes", () => {
+  const checklist = createManualChecklist({
+    framework: "react",
+    generatedAt: "2026-06-04T00:00:00.000Z",
+    issues: []
+  });
+
+  checklist.items[0].review.status = "pass";
+  checklist.items[1].review.status = "fail";
+  checklist.items[2].review.status = "not-applicable";
+
+  assert.deepEqual(summarizeManualReviewRecords(checklist), {
+    total: checklist.items.length,
+    notReviewed: checklist.items.length - 3,
+    pass: 1,
+    fail: 1,
+    notApplicable: 1
+  });
 });

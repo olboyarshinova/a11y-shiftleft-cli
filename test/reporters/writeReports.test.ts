@@ -807,6 +807,8 @@ test("writeReports supports a compact audit profile without legacy or duplicate 
   assert.equal(json.manualChecklist.framework, "react");
   assert.match(markdown, /## Keyboard Evidence/);
   assert.match(markdown, /## Manual Review Checklist/);
+  assert.match(markdown, /Not reviewed \| 1/);
+  assert.match(markdown, /Structured fields available per item: tester, tested date, environment, notes, evidence links, and remediation owner\./);
   assert.match(markdown, /## Audit Coverage/);
   assert.match(markdown, /Screen reader \| Human review required/);
   assert.match(markdown, /Dynamic announcements/);

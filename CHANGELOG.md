@@ -37,6 +37,9 @@
 - Added a compact Markdown `Review Focus` section that highlights first-party
   fix groups, third-party embedded findings, needs-review groups, and the first
   few high-priority fixes for pull request triage.
+- Added manual-review status summaries to generated Markdown reports and
+  manual checklists so local evidence can track pass, fail, not-applicable, and
+  not-reviewed review records.
 
 ## 0.8.1 - 2026-07-12
 

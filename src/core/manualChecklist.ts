@@ -239,6 +239,7 @@ export function createManualChecklist(options: {
 
 export function toManualChecklistMarkdown(checklist: ManualChecklist): string {
   const target = checklist.urls.length > 0 ? checklist.urls.join(", ") : "static review target";
+  const summary = summarizeManualReviewRecords(checklist);
   const items = checklist.items.map((item) => `### ${item.title}
 
 - Principle: ${item.principle}
@@ -274,7 +275,39 @@ Automated accessibility tools do not prove full WCAG conformance. Use this
 checklist to review issues that require human judgment, keyboard walkthroughs,
 and assistive technology checks.
 
+## Review Status
+
+| Status | Count |
+|---|---:|
+| Not reviewed | ${summary.notReviewed} |
+| Pass | ${summary.pass} |
+| Fail | ${summary.fail} |
+| Not applicable | ${summary.notApplicable} |
+
 ${items}`;
+}
+
+export function summarizeManualReviewRecords(checklist: ManualChecklist): {
+  total: number;
+  notReviewed: number;
+  pass: number;
+  fail: number;
+  notApplicable: number;
+} {
+  return checklist.items.reduce((summary, item) => {
+    summary.total += 1;
+    if (item.review.status === "pass") summary.pass += 1;
+    else if (item.review.status === "fail") summary.fail += 1;
+    else if (item.review.status === "not-applicable") summary.notApplicable += 1;
+    else summary.notReviewed += 1;
+    return summary;
+  }, {
+    total: 0,
+    notReviewed: 0,
+    pass: 0,
+    fail: 0,
+    notApplicable: 0
+  });
 }
 
 function toChecklistEntry(item: ManualCheckItem, targets: ManualReviewTarget[]): ManualChecklistEntry {
