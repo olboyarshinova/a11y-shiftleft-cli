@@ -70,6 +70,9 @@
   automatically editing or deleting scoped ignore entries.
 - Added `evidence export` for local JSON/JSONL finding-evidence datasets that
   are easier to analyze in scripts, spreadsheets, and validation studies.
+- Added `pr-comment --include-labels` for read-only PR label suggestions such
+  as `a11y-critical`, `a11y-warning`, `a11y-clean`, and `a11y-needs-review`
+  without changing GitHub labels automatically.
 
 ## 0.8.1 - 2026-07-12
 

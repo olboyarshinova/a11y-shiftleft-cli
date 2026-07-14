@@ -227,8 +227,9 @@ Section 508 certification.
   a simple `uses:` workflow that installs the CLI, runs `audit`, uploads visual
   report artifacts, and optionally posts a pull request summary.
 - Extend the `pr-comment` command with optional preview-URL scanning and
-  severity labels. The first version posts or updates an existing GitHub PR
-  comment from a local report.
+  severity labels. The current command posts or updates an existing GitHub PR
+  comment from a local report and can include read-only suggested PR labels.
+  Keep actual GitHub label mutation behind a future explicit opt-in, if added.
 - Extend the post-1.0 GitHub Action wrapper with direct artifact links, preview
   URL inputs, existing-comment updates, and optional severity labels.
 - Continue the Jira and Linear ticket workflow carefully. The current CLI

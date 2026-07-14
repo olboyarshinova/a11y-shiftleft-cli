@@ -111,12 +111,15 @@ npx a11y-shiftleft-cli pr-comment \
   --repo owner/repo \
   --pr 123 \
   --report reports \
+  --include-labels \
   --dry-run
 ```
 
 The command updates the existing `a11y-shiftleft` PR comment when one is
-present, or creates a new comment. Reports stay local unless you explicitly post
-the Markdown summary or upload the report as a CI artifact.
+present, or creates a new comment. `--include-labels` adds read-only suggested
+labels such as `a11y-critical` or `a11y-clean`; it does not change GitHub labels.
+Reports stay local unless you explicitly post the Markdown summary or upload the
+report as a CI artifact.
 
 ## Notes
 

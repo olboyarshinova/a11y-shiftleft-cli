@@ -7,6 +7,7 @@ import {
   buildCommentBody,
   getPullRequestContext,
   postA11yComment,
+  suggestPrLabels,
   withArtifactRunLink
 } from "../../dist/scripts/post-a11y-comment.js";
 
@@ -35,6 +36,39 @@ test("buildCommentBody prefers markdown report", async () => {
   await fs.writeFile(path.join(reportDir, "a11y-comment.md"), "hello markdown");
 
   assert.equal(await buildCommentBody(reportDir), "hello markdown");
+});
+
+test("buildCommentBody can append suggested PR labels from JSON summary", async () => {
+  const reportDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-comment-labels-"));
+  await fs.writeFile(path.join(reportDir, "a11y-comment.md"), "hello markdown");
+  await fs.writeFile(
+    path.join(reportDir, "a11y-report.json"),
+    JSON.stringify({
+      summary: {
+        total: 3,
+        critical: 2,
+        warning: 1,
+        info: 0,
+        rawCount: 3,
+        uniqueCount: 3,
+        duplicateCount: 0,
+        duplicateRate: 0,
+        scanDurationMs: 42,
+        framework: "react",
+        byFindingType: {
+          "needs-review": 1
+        }
+      },
+      issues: []
+    })
+  );
+
+  const body = await buildCommentBody(reportDir, { includeLabels: true });
+
+  assert.match(body, /hello markdown/);
+  assert.match(body, /Suggested PR Labels/);
+  assert.match(body, /`a11y-critical` - 2 critical findings/);
+  assert.match(body, /`a11y-needs-review` - manual verification recommended/);
 });
 
 test("buildCommentBody falls back to JSON report", async () => {
@@ -74,6 +108,25 @@ test("buildCommentBody returns null when no report exists", async () => {
   const reportDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-comment-empty-"));
 
   assert.equal(await buildCommentBody(reportDir), null);
+});
+
+test("suggestPrLabels returns a clean label when no findings are present", () => {
+  assert.deepEqual(
+    suggestPrLabels({
+      summary: {
+        total: 0,
+        critical: 0,
+        warning: 0,
+        info: 0
+      }
+    } as never),
+    [
+      {
+        label: "a11y-clean",
+        reason: "no automated findings"
+      }
+    ]
+  );
 });
 
 test("withArtifactRunLink adds the current GitHub Actions run", () => {

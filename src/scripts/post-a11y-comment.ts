@@ -45,6 +45,7 @@ export type PostCommentOptions = {
   env?: GitHubEnv;
   reportDir?: string;
   octokit?: CommentClient;
+  includeLabels?: boolean;
 };
 
 export type PostCommentResult = {
@@ -52,6 +53,11 @@ export type PostCommentResult = {
 };
 
 const COMMENT_MARKER = "<!-- a11y-shiftleft-report -->";
+
+export type PrLabelSuggestion = {
+  label: string;
+  reason: string;
+};
 
 export function getPullRequestContext(
   env: GitHubEnv = process.env
@@ -76,19 +82,27 @@ export function getPullRequestContext(
   };
 }
 
-export async function buildCommentBody(reportDir = "reports"): Promise<string | null> {
+export async function buildCommentBody(
+  reportDir = "reports",
+  options: { includeLabels?: boolean } = {}
+): Promise<string | null> {
   const markdownPath = path.join(reportDir, "a11y-comment.md");
   const jsonPath = path.join(reportDir, "a11y-report.json");
+  let jsonReport: A11yReport | null = null;
 
   try {
-    return await fs.readFile(markdownPath, "utf8");
+    const markdown = await fs.readFile(markdownPath, "utf8");
+    if (!options.includeLabels) return markdown;
+
+    jsonReport = await readJsonReport(jsonPath);
+    return withSuggestedLabels(markdown, jsonReport);
   } catch (error) {
     if (!isMissingFileError(error)) throw error;
   }
 
   try {
-    const report = JSON.parse(await fs.readFile(jsonPath, "utf8")) as A11yReport;
-    return toMarkdown(report);
+    jsonReport = JSON.parse(await fs.readFile(jsonPath, "utf8")) as A11yReport;
+    return withSuggestedLabels(toMarkdown(jsonReport), options.includeLabels ? jsonReport : null);
   } catch (error) {
     if (isMissingFileError(error)) return null;
     throw error;
@@ -98,7 +112,8 @@ export async function buildCommentBody(reportDir = "reports"): Promise<string | 
 export async function postA11yComment({
   env = process.env,
   reportDir = "reports",
-  octokit
+  octokit,
+  includeLabels = false
 }: PostCommentOptions = {}): Promise<PostCommentResult> {
   const context = getPullRequestContext(env);
 
@@ -107,7 +122,7 @@ export async function postA11yComment({
     return { skipped: true };
   }
 
-  const body = await buildCommentBody(reportDir);
+  const body = await buildCommentBody(reportDir, { includeLabels });
 
   if (!body) {
     console.log("No accessibility report found. Skipping comment.");
@@ -147,6 +162,63 @@ export async function postA11yComment({
 
     throw error;
   }
+}
+
+export async function readJsonReport(jsonPath: string): Promise<A11yReport | null> {
+  try {
+    return JSON.parse(await fs.readFile(jsonPath, "utf8")) as A11yReport;
+  } catch (error) {
+    if (isMissingFileError(error)) return null;
+    throw error;
+  }
+}
+
+export function suggestPrLabels(report: A11yReport | null): PrLabelSuggestion[] {
+  if (!report) return [];
+
+  const summary = report.summary;
+  const labels: PrLabelSuggestion[] = [];
+
+  if (summary.critical > 0) {
+    labels.push({
+      label: "a11y-critical",
+      reason: `${summary.critical} critical finding${summary.critical === 1 ? "" : "s"}`
+    });
+  } else if (summary.warning > 0) {
+    labels.push({
+      label: "a11y-warning",
+      reason: `${summary.warning} warning finding${summary.warning === 1 ? "" : "s"}`
+    });
+  } else if (summary.info > 0) {
+    labels.push({
+      label: "a11y-info",
+      reason: `${summary.info} informational finding${summary.info === 1 ? "" : "s"}`
+    });
+  } else {
+    labels.push({
+      label: "a11y-clean",
+      reason: "no automated findings"
+    });
+  }
+
+  if ((summary.byFindingType?.["needs-review"] || 0) > 0 || (summary.blockedByHumanVerification || 0) > 0) {
+    labels.push({
+      label: "a11y-needs-review",
+      reason: "manual verification recommended"
+    });
+  }
+
+  return labels;
+}
+
+export function withSuggestedLabels(body: string, report: A11yReport | null): string {
+  if (body.includes("## Suggested PR Labels")) return body;
+
+  const labels = suggestPrLabels(report);
+  if (labels.length === 0) return body;
+
+  const lines = labels.map((item) => `- \`${item.label}\` - ${item.reason}`);
+  return `${body.trimEnd()}\n\n## Suggested PR Labels\n\n${lines.join("\n")}\n`;
 }
 
 export async function main(): Promise<void> {

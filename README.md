@@ -252,7 +252,7 @@ The commands below assume `APP_URL` is set to your local, staging, or preview UR
 | `explore` | Debug visual state discovery | `npx a11y-shiftleft-cli explore --url $APP_URL --out reports` |
 | `setup` | Create npm scripts, config, `.gitignore`, and CI workflow | `npx a11y-shiftleft-cli setup --url $APP_URL --start-command "npm run dev"` |
 | `generate-ci` | Regenerate only CI workflow files | `npx a11y-shiftleft-cli generate-ci --provider github --url $APP_URL --start-command "npm run dev"` |
-| `pr-comment` | Post an existing local report to a GitHub PR | `npx a11y-shiftleft-cli pr-comment --repo owner/repo --pr 123 --report reports` |
+| `pr-comment` | Post an existing local report to a GitHub PR | `npx a11y-shiftleft-cli pr-comment --repo owner/repo --pr 123 --report reports --include-labels` |
 | `ticket export` | Create reviewable Jira/Linear/GitHub issue drafts from a report | `npx a11y-shiftleft-cli ticket export --report reports/a11y-report.json --out reports/a11y-tickets.md` |
 | `evidence export` | Export JSON/JSONL finding evidence for scripts or validation studies | `npx a11y-shiftleft-cli evidence export --report reports/a11y-report.json --out reports/a11y-evidence.jsonl --format jsonl` |
 | `ignore audit` | Review expired or invalid temporary exceptions | `npx a11y-shiftleft-cli ignore audit` |

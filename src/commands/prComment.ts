@@ -15,6 +15,7 @@ interface PrCommentOptions {
   artifactUrl?: string;
   serverUrl?: string;
   dryRun?: boolean;
+  includeLabels?: boolean;
 }
 
 type PrCommentEnv = Record<string, string | undefined>;
@@ -30,12 +31,15 @@ export function registerPrCommentCommand(program: Command): void {
     .option("--artifact-name <name>", "Uploaded report artifact name")
     .option("--artifact-url <url>", "Direct URL to the uploaded report artifact")
     .option("--server-url <url>", "GitHub server URL", "https://github.com")
+    .option("--include-labels", "Include suggested PR labels in the comment without changing GitHub labels")
     .option("--dry-run", "Print the comment body without posting to GitHub")
     .action(async (options: PrCommentOptions) => {
       const env = resolvePrCommentEnv(options, process.env);
 
       if (options.dryRun) {
-        const body = await buildCommentBody(options.report || "reports");
+        const body = await buildCommentBody(options.report || "reports", {
+          includeLabels: options.includeLabels
+        });
 
         if (!body) {
           throw new Error(`No accessibility report found in ${options.report || "reports"}. Run audit or check first.`);
@@ -51,7 +55,8 @@ export function registerPrCommentCommand(program: Command): void {
 
       const result = await postA11yComment({
         env,
-        reportDir: options.report || "reports"
+        reportDir: options.report || "reports",
+        includeLabels: options.includeLabels
       });
 
       if (result.skipped) {

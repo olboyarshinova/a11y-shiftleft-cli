@@ -15,6 +15,7 @@ test("pr-comment command is registered with manual posting options", () => {
   assert.equal(flags.includes("--pr"), true);
   assert.equal(flags.includes("--token"), true);
   assert.equal(flags.includes("--dry-run"), true);
+  assert.equal(flags.includes("--include-labels"), true);
 });
 
 test("resolvePrCommentEnv uses explicit options and GH_TOKEN fallback", () => {
