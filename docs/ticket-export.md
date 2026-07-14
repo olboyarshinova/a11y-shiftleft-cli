@@ -1,7 +1,8 @@
 # Ticket Export
 
 Use `ticket export` when an accessibility report should become remediation
-work for a team, but you are not ready to connect Jira or Linear APIs.
+work for a team, but you are not ready to connect Jira, Linear, or GitHub
+Issues APIs.
 
 The command reads `a11y-report.json`, groups related findings, and writes
 dry-run ticket drafts in Markdown or JSON.
@@ -27,7 +28,7 @@ npx a11y-shiftleft ticket export \
 
 The output is a reviewable document. It does not create real tracker issues.
 
-## Jira Or Linear Style
+## Jira, Linear, Or GitHub Style
 
 Use `--tracker` to adjust labels and wording for a target tracker:
 
@@ -45,11 +46,19 @@ npx a11y-shiftleft ticket export \
   --out reports/a11y-linear-drafts.md
 ```
 
+```bash
+npx a11y-shiftleft ticket export \
+  --report reports/a11y-report.json \
+  --tracker github \
+  --out reports/a11y-github-drafts.md
+```
+
 Supported tracker styles:
 
 - `generic`
 - `jira`
 - `linear`
+- `github`
 
 ## JSON Export
 
@@ -64,6 +73,23 @@ npx a11y-shiftleft ticket export \
   --format json \
   --out reports/a11y-tickets.json
 ```
+
+## Dry-run Payload Preview
+
+Use `--format payloads` when you want to inspect the issue payload shape before
+connecting any tracker API:
+
+```bash
+npx a11y-shiftleft ticket export \
+  --report reports/a11y-report.json \
+  --tracker github \
+  --format payloads \
+  --out reports/a11y-github-payloads.json
+```
+
+The output includes `dryRun: true`, the draft fingerprint, an endpoint hint,
+and the tracker-specific payload. It still does not make network requests or
+create real issues.
 
 ## Triage Options
 
@@ -124,7 +150,7 @@ other generated reports, or upload them as CI artifacts when needed.
 
 ## Current Limits
 
-- No Jira or Linear API calls are made.
+- No Jira, Linear, or GitHub Issues API calls are made.
 - No tracker authentication is required.
 - Duplicate detection is local to one report file.
 - Fingerprints are stable draft identifiers, not proof that a tracker issue

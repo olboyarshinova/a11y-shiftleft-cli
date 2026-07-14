@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   createTicketDrafts,
+  createTicketPayloadPreviews,
   ticketDraftsToMarkdown
 } from "../../dist/core/ticketDrafts.js";
 import type { A11yReport, DedupedIssue } from "../../dist/types.js";
@@ -106,6 +107,45 @@ test("createTicketDrafts redacts sensitive values before export", () => {
   assert.doesNotMatch(drafts[0].body, /person@example\.com/);
   assert.doesNotMatch(drafts[0].body, /secret-token/);
   assert.match(drafts[0].body, /Redacted fields: message, page, target/);
+});
+
+test("createTicketPayloadPreviews creates dry-run tracker payloads", () => {
+  const report = reportWithIssues([
+    issue({ ruleId: "color-contrast", selector: ".cta", severity: "critical" })
+  ]);
+  const githubDrafts = createTicketDrafts(report, {
+    tracker: "github",
+    minSeverity: "critical"
+  });
+  const githubPayloads = createTicketPayloadPreviews(githubDrafts);
+
+  assert.equal(githubPayloads[0].dryRun, true);
+  assert.equal(githubPayloads[0].endpointHint, "POST /repos/{owner}/{repo}/issues");
+  assert.deepEqual(githubPayloads[0].payload, {
+    title: githubDrafts[0].title,
+    body: githubDrafts[0].body,
+    labels: githubDrafts[0].labels
+  });
+  assert.equal(githubDrafts[0].labels[0], "a11y");
+});
+
+test("createTicketPayloadPreviews maps Jira and Linear payload shapes", () => {
+  const report = reportWithIssues([
+    issue({ ruleId: "color-contrast", selector: ".cta", severity: "critical" })
+  ]);
+  const jiraPayload = createTicketPayloadPreviews(createTicketDrafts(report, {
+    tracker: "jira",
+    minSeverity: "critical"
+  }))[0];
+  const linearPayload = createTicketPayloadPreviews(createTicketDrafts(report, {
+    tracker: "linear",
+    minSeverity: "critical"
+  }))[0];
+
+  assert.equal(jiraPayload.endpointHint, "POST /rest/api/3/issue");
+  assert.deepEqual((jiraPayload.payload.fields as { issuetype: { name: string } }).issuetype, { name: "Bug" });
+  assert.equal(linearPayload.endpointHint, "IssueCreate mutation");
+  assert.equal((linearPayload.payload as { priority: number }).priority, 1);
 });
 
 function reportWithIssues(issues: DedupedIssue[]): A11yReport {

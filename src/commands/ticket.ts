@@ -3,6 +3,7 @@ import path from "node:path";
 import type { Command } from "commander";
 import {
   createTicketDrafts,
+  createTicketPayloadPreviews,
   ticketDraftsToMarkdown,
   type TicketFormat,
   type TicketTracker
@@ -28,8 +29,8 @@ export function registerTicketCommand(program: Command): void {
     .description("Export grouped accessibility findings as dry-run ticket drafts.")
     .option("--report <file>", "Path to a11y-report.json", "reports/a11y-report.json")
     .option("--out <file>", "Write ticket drafts to a file instead of stdout")
-    .option("--format <format>", "Output format: markdown or json", "markdown")
-    .option("--tracker <tracker>", "Ticket tracker style: generic, jira, or linear", "generic")
+    .option("--format <format>", "Output format: markdown, json, or payloads", "markdown")
+    .option("--tracker <tracker>", "Ticket tracker style: generic, jira, linear, or github", "generic")
     .option("--min-severity <severity>", "Minimum severity: critical, warning, or info", "warning")
     .option("--max-tickets <count>", "Maximum number of ticket drafts to export")
     .action(async (options: TicketExportOptions) => {
@@ -44,9 +45,14 @@ export function registerTicketCommand(program: Command): void {
         minSeverity,
         maxTickets
       });
-      const output = format === "json"
-        ? `${JSON.stringify({ generatedAt: new Date().toISOString(), tracker, drafts }, null, 2)}\n`
-        : ticketDraftsToMarkdown(drafts, report);
+      const generatedAt = new Date().toISOString();
+      const output = ticketExportOutput({
+        format,
+        generatedAt,
+        tracker,
+        drafts,
+        report
+      });
 
       if (options.out) {
         const outputPath = path.resolve(options.out);
@@ -70,14 +76,42 @@ async function readReport(reportPath: string): Promise<A11yReport> {
   return parsed as A11yReport;
 }
 
+function ticketExportOutput(options: {
+  format: TicketFormat;
+  generatedAt: string;
+  tracker: TicketTracker;
+  drafts: ReturnType<typeof createTicketDrafts>;
+  report: A11yReport;
+}): string {
+  if (options.format === "json") {
+    return `${JSON.stringify({
+      generatedAt: options.generatedAt,
+      tracker: options.tracker,
+      dryRun: true,
+      drafts: options.drafts
+    }, null, 2)}\n`;
+  }
+
+  if (options.format === "payloads") {
+    return `${JSON.stringify({
+      generatedAt: options.generatedAt,
+      tracker: options.tracker,
+      dryRun: true,
+      payloads: createTicketPayloadPreviews(options.drafts)
+    }, null, 2)}\n`;
+  }
+
+  return ticketDraftsToMarkdown(options.drafts, options.report);
+}
+
 function toTicketFormat(value: string | undefined): TicketFormat {
-  if (value === "markdown" || value === "json") return value;
-  throw new Error("Unsupported ticket export format. Use markdown or json.");
+  if (value === "markdown" || value === "json" || value === "payloads") return value;
+  throw new Error("Unsupported ticket export format. Use markdown, json, or payloads.");
 }
 
 function toTicketTracker(value: string | undefined): TicketTracker {
-  if (value === "generic" || value === "jira" || value === "linear") return value;
-  throw new Error("Unsupported ticket tracker. Use generic, jira, or linear.");
+  if (value === "generic" || value === "jira" || value === "linear" || value === "github") return value;
+  throw new Error("Unsupported ticket tracker. Use generic, jira, linear, or github.");
 }
 
 function toSeverity(value: string | undefined): Severity {

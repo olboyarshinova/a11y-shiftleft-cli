@@ -233,10 +233,11 @@ Section 508 certification.
   URL inputs, existing-comment updates, and optional severity labels.
 - Continue the Jira and Linear ticket workflow carefully. The current CLI
   supports safe Markdown and JSON ticket drafts with stable fingerprints and
-  basic redaction. Next, add tracker-specific dry-run payload previews, owner
-  hints, and duplicate lookup before any create mode. Do not create tracker
-  issues automatically by default; require an explicit `--create` flag after
-  users have reviewed the generated draft.
+  basic redaction, plus tracker-specific dry-run payload previews for Jira,
+  Linear, and GitHub Issues. Next, add owner hints and duplicate lookup before
+  any create mode. Do not create tracker issues automatically by default;
+  require an explicit `--create` flag after users have reviewed the generated
+  draft.
 - Continue hardening scoped `a11y-ignore.json` support with clearer expiry
   reminders, stale-ignore cleanup guidance, and optional owner summaries.
 - Evaluate an optional public-link publisher only after sanitized export is

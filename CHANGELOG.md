@@ -49,6 +49,8 @@
 - Added stable ticket fingerprints and basic sensitive-value redaction to
   `ticket export` so remediation drafts are safer to review and deduplicate
   before Jira, Linear, or GitHub Issues workflows are connected.
+- Added `ticket export --format payloads` for dry-run Jira, Linear, and GitHub
+  Issues payload previews without making tracker API calls.
 
 ## 0.8.1 - 2026-07-12
 

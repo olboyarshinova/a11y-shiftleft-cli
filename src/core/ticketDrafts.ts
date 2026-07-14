@@ -1,9 +1,9 @@
 import { createHash } from "node:crypto";
 import type { A11yReport, DedupedIssue, Severity } from "../types.js";
 
-export type TicketTracker = "generic" | "jira" | "linear";
+export type TicketTracker = "generic" | "jira" | "linear" | "github";
 
-export type TicketFormat = "markdown" | "json";
+export type TicketFormat = "markdown" | "json" | "payloads";
 
 export interface TicketDraftOptions {
   tracker?: TicketTracker;
@@ -27,6 +27,15 @@ export interface TicketDraft {
   labels: string[];
   redactedFields: string[];
   body: string;
+}
+
+export interface TicketPayloadPreview {
+  tracker: TicketTracker;
+  dryRun: true;
+  draftId: string;
+  fingerprint: string;
+  endpointHint: string;
+  payload: Record<string, unknown>;
 }
 
 const SEVERITY_RANK: Record<Severity, number> = {
@@ -88,6 +97,17 @@ export function ticketDraftsToMarkdown(drafts: TicketDraft[], report: A11yReport
       ""
     ])
   ].join("\n");
+}
+
+export function createTicketPayloadPreviews(drafts: TicketDraft[]): TicketPayloadPreview[] {
+  return drafts.map((draft) => ({
+    tracker: draft.tracker,
+    dryRun: true,
+    draftId: draft.id,
+    fingerprint: draft.fingerprint,
+    endpointHint: trackerEndpointHint(draft.tracker),
+    payload: trackerPayload(draft)
+  }));
 }
 
 function toTicketDraft(issues: DedupedIssue[], tracker: TicketTracker): TicketDraft {
@@ -206,7 +226,57 @@ function trackerLabels(tracker: TicketTracker, issue: DedupedIssue): string[] {
 
   if (tracker === "jira") return ["a11y", ...base];
   if (tracker === "linear") return ["A11y", ...base];
+  if (tracker === "github") return ["a11y", ...base];
   return base;
+}
+
+function trackerEndpointHint(tracker: TicketTracker): string {
+  if (tracker === "jira") return "POST /rest/api/3/issue";
+  if (tracker === "linear") return "IssueCreate mutation";
+  if (tracker === "github") return "POST /repos/{owner}/{repo}/issues";
+  return "Copy into your issue tracker";
+}
+
+function trackerPayload(draft: TicketDraft): Record<string, unknown> {
+  if (draft.tracker === "jira") {
+    return {
+      fields: {
+        summary: draft.title,
+        description: draft.body,
+        labels: draft.labels,
+        issuetype: { name: "Bug" }
+      }
+    };
+  }
+
+  if (draft.tracker === "linear") {
+    return {
+      title: draft.title,
+      description: draft.body,
+      labelNames: draft.labels,
+      priority: linearPriority(draft.severity)
+    };
+  }
+
+  if (draft.tracker === "github") {
+    return {
+      title: draft.title,
+      body: draft.body,
+      labels: draft.labels
+    };
+  }
+
+  return {
+    title: draft.title,
+    body: draft.body,
+    labels: draft.labels
+  };
+}
+
+function linearPriority(severity: Severity): number {
+  if (severity === "critical") return 1;
+  if (severity === "warning") return 2;
+  return 4;
 }
 
 function issuePage(issue: DedupedIssue): string {
