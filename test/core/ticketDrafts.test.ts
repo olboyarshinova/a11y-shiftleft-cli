@@ -74,6 +74,40 @@ test("ticketDraftsToMarkdown renders dry-run ticket content", () => {
   assert.match(markdown, /### Suggested Fix/);
 });
 
+test("createTicketDrafts adds stable fingerprints for duplicate detection", () => {
+  const report = reportWithIssues([
+    issue({ ruleId: "button-name", selector: "#menu" })
+  ]);
+
+  const firstRun = createTicketDrafts(report);
+  const secondRun = createTicketDrafts(report);
+
+  assert.match(firstRun[0].id, /^a11y-[a-f0-9]{10}$/);
+  assert.match(firstRun[0].fingerprint, /^[a-f0-9]{64}$/);
+  assert.equal(firstRun[0].id, secondRun[0].id);
+  assert.equal(firstRun[0].fingerprint, secondRun[0].fingerprint);
+  assert.match(firstRun[0].body, new RegExp(firstRun[0].fingerprint));
+});
+
+test("createTicketDrafts redacts sensitive values before export", () => {
+  const report = reportWithIssues([
+    issue({
+      url: "https://example.com/account?email=person@example.com&token=secret-token&view=settings",
+      selector: "[value=\"person@example.com\"]",
+      message: "The account email person@example.com is missing an accessible name."
+    })
+  ]);
+
+  const drafts = createTicketDrafts(report);
+
+  assert.equal(drafts[0].page, "https://example.com/account?email=%5Bredacted%5D&token=%5Bredacted%5D&view=settings");
+  assert.equal(drafts[0].target, "[value=\"[redacted]\"]");
+  assert.deepEqual(drafts[0].redactedFields, ["message", "page", "target"]);
+  assert.doesNotMatch(drafts[0].body, /person@example\.com/);
+  assert.doesNotMatch(drafts[0].body, /secret-token/);
+  assert.match(drafts[0].body, /Redacted fields: message, page, target/);
+});
+
 function reportWithIssues(issues: DedupedIssue[]): A11yReport {
   return {
     generatedAt: "2026-06-13T00:00:00.000Z",

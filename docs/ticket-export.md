@@ -6,6 +6,9 @@ work for a team, but you are not ready to connect Jira or Linear APIs.
 The command reads `a11y-report.json`, groups related findings, and writes
 dry-run ticket drafts in Markdown or JSON.
 
+It also adds a stable ticket fingerprint to each draft and redacts
+sensitive-looking values from URLs, selectors, and messages before export.
+
 ## Quick Start
 
 Run an accessibility scan first:
@@ -50,7 +53,9 @@ Supported tracker styles:
 
 ## JSON Export
 
-Use JSON when another script should read the draft tickets:
+Use JSON when another script should read the draft tickets. Each draft includes
+the same stable `fingerprint` value shown in Markdown, so later tracker
+integrations can detect duplicates without relying on title text alone:
 
 ```bash
 npx a11y-shiftleft ticket export \
@@ -94,6 +99,7 @@ Findings are grouped by:
 Each draft includes:
 
 - title
+- stable ticket fingerprint
 - severity
 - rule ID
 - source
@@ -106,7 +112,12 @@ Each draft includes:
 ## Privacy
 
 Ticket drafts may include URLs, selectors, file paths, rule messages, and
-remediation text. Review the output before sharing it outside the team.
+remediation text. Before export, the CLI redacts common sensitive values such
+as email addresses, auth/session/token/password query parameters, and selector
+values like `[value="..."]`.
+
+Review the output before sharing it outside the team. Redaction is a safety
+net, not a substitute for human review.
 
 Generated ticket files usually should not be committed to git. Keep them with
 other generated reports, or upload them as CI artifacts when needed.
@@ -116,4 +127,6 @@ other generated reports, or upload them as CI artifacts when needed.
 - No Jira or Linear API calls are made.
 - No tracker authentication is required.
 - Duplicate detection is local to one report file.
+- Fingerprints are stable draft identifiers, not proof that a tracker issue
+  already exists.
 - The output is a draft and should be reviewed before creating real tickets.

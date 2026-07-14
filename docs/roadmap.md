@@ -231,16 +231,12 @@ Section 508 certification.
   comment from a local report.
 - Extend the post-1.0 GitHub Action wrapper with direct artifact links, preview
   URL inputs, existing-comment updates, and optional severity labels.
-- Add optional Jira and Linear ticket workflows after the report schema is
-  stable enough for external ticket sync. Start with safe ticket drafts only:
-  `ticket --from reports/a11y-report.json --out reports/tickets.md` and JSON
-  exports that teams can review before filing bugs. Keep tracker integrations
-  dry-run first, with explicit credentials, duplicate detection, fingerprinted
-  tickets, and redaction of sensitive report fields. Support grouped ticket
-  drafts by root cause, affected pages/states, owner, severity, WCAG criterion,
-  and practical user impact. Do not create tracker issues automatically by
-  default; require an explicit `--create` flag after users have reviewed the
-  generated draft.
+- Continue the Jira and Linear ticket workflow carefully. The current CLI
+  supports safe Markdown and JSON ticket drafts with stable fingerprints and
+  basic redaction. Next, add tracker-specific dry-run payload previews, owner
+  hints, and duplicate lookup before any create mode. Do not create tracker
+  issues automatically by default; require an explicit `--create` flag after
+  users have reviewed the generated draft.
 - Continue hardening scoped `a11y-ignore.json` support with clearer expiry
   reminders, stale-ignore cleanup guidance, and optional owner summaries.
 - Evaluate an optional public-link publisher only after sanitized export is

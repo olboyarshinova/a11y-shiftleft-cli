@@ -46,6 +46,9 @@
 - Added a `pr-comment` CLI command that posts or updates a GitHub pull request
   comment from an existing local accessibility report, with `--dry-run` support
   for previewing the comment body before posting.
+- Added stable ticket fingerprints and basic sensitive-value redaction to
+  `ticket export` so remediation drafts are safer to review and deduplicate
+  before Jira, Linear, or GitHub Issues workflows are connected.
 
 ## 0.8.1 - 2026-07-12
 

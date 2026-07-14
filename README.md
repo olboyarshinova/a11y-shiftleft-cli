@@ -253,6 +253,7 @@ The commands below assume `APP_URL` is set to your local, staging, or preview UR
 | `setup` | Create npm scripts, config, `.gitignore`, and CI workflow | `npx a11y-shiftleft-cli setup --url $APP_URL --start-command "npm run dev"` |
 | `generate-ci` | Regenerate only CI workflow files | `npx a11y-shiftleft-cli generate-ci --provider github --url $APP_URL --start-command "npm run dev"` |
 | `pr-comment` | Post an existing local report to a GitHub PR | `npx a11y-shiftleft-cli pr-comment --repo owner/repo --pr 123 --report reports` |
+| `ticket export` | Create reviewable Jira/Linear/GitHub issue drafts from a report | `npx a11y-shiftleft-cli ticket export --report reports/a11y-report.json --out reports/a11y-tickets.md` |
 | `doctor` | Diagnose setup problems | `npx a11y-shiftleft-cli doctor --url $APP_URL` |
 
 By default, `audit` explores up to 2 interaction levels from the start page.

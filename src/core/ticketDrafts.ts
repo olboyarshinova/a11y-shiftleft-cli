@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { A11yReport, DedupedIssue, Severity } from "../types.js";
 
 export type TicketTracker = "generic" | "jira" | "linear";
@@ -12,6 +13,7 @@ export interface TicketDraftOptions {
 
 export interface TicketDraft {
   id: string;
+  fingerprint: string;
   title: string;
   tracker: TicketTracker;
   severity: Severity;
@@ -23,6 +25,7 @@ export interface TicketDraft {
   wcag: string[];
   confidence: string;
   labels: string[];
+  redactedFields: string[];
   body: string;
 }
 
@@ -53,7 +56,7 @@ export function createTicketDrafts(
   }
 
   const drafts = [...groups.values()]
-    .map((issues, index) => toTicketDraft(issues, tracker, index + 1))
+    .map((issues) => toTicketDraft(issues, tracker))
     .sort(compareTicketDrafts);
 
   return typeof options.maxTickets === "number" && options.maxTickets > 0
@@ -87,18 +90,30 @@ export function ticketDraftsToMarkdown(drafts: TicketDraft[], report: A11yReport
   ].join("\n");
 }
 
-function toTicketDraft(issues: DedupedIssue[], tracker: TicketTracker, index: number): TicketDraft {
+function toTicketDraft(issues: DedupedIssue[], tracker: TicketTracker): TicketDraft {
   const primary = issues[0];
   const count = issues.reduce((sum, issue) => sum + 1 + issue.duplicateCount, 0);
-  const page = issuePage(primary);
-  const target = issueTarget(primary);
+  const rawPage = issuePage(primary);
+  const rawTarget = issueTarget(primary);
+  const pageRedaction = redactSensitiveText(rawPage, "page");
+  const targetRedaction = redactSensitiveText(rawTarget, "target");
+  const messageRedaction = redactSensitiveText(primary.message, "message");
+  const page = pageRedaction.value;
+  const target = targetRedaction.value;
   const wcag = unique(issues.flatMap((issue) => issue.wcag));
   const confidence = highestConfidence(issues);
   const title = formatTitle(primary, count);
   const labels = trackerLabels(tracker, primary);
+  const fingerprint = ticketFingerprint(issues, rawPage, rawTarget);
+  const redactedFields = unique([
+    ...pageRedaction.fields,
+    ...targetRedaction.fields,
+    ...messageRedaction.fields
+  ]);
 
   return {
-    id: `a11y-${String(index).padStart(3, "0")}`,
+    id: `a11y-${fingerprint.slice(0, 10)}`,
+    fingerprint,
     title,
     tracker,
     severity: primary.severity,
@@ -110,14 +125,18 @@ function toTicketDraft(issues: DedupedIssue[], tracker: TicketTracker, index: nu
     wcag,
     confidence,
     labels,
+    redactedFields,
     body: formatTicketBody({
       issue: primary,
+      message: messageRedaction.value,
       count,
       page,
       target,
       wcag,
       confidence,
-      labels
+      labels,
+      fingerprint,
+      redactedFields
     })
   };
 }
@@ -129,14 +148,17 @@ function formatTitle(issue: DedupedIssue, count: number): string {
 
 function formatTicketBody(options: {
   issue: DedupedIssue;
+  message: string;
   count: number;
   page: string;
   target: string;
   wcag: string[];
   confidence: string;
   labels: string[];
+  fingerprint: string;
+  redactedFields: string[];
 }): string {
-  const { issue, count, page, target, wcag, confidence, labels } = options;
+  const { issue, message, count, page, target, wcag, confidence, labels, fingerprint, redactedFields } = options;
   const criteria = issue.wcagCriteria.map((criterion) => (
     `- WCAG ${criterion.id} ${criterion.title} (${criterion.level}): ${criterion.url}`
   ));
@@ -153,10 +175,11 @@ function formatTicketBody(options: {
   return [
     "### Summary",
     "",
-    issue.message,
+    message,
     "",
     "### Evidence",
     "",
+    `- Ticket fingerprint: ${fingerprint}`,
     `- Severity: ${issue.severity}`,
     `- Rule: ${issue.ruleId}`,
     `- Source: ${issue.source}`,
@@ -166,6 +189,7 @@ function formatTicketBody(options: {
     `- Target: ${target}`,
     `- Findings in group: ${count}`,
     `- Labels: ${labels.join(", ")}`,
+    redactedFields.length > 0 ? `- Redacted fields: ${redactedFields.join(", ")}` : "- Redacted fields: none detected",
     "",
     "### WCAG",
     "",
@@ -210,10 +234,61 @@ function compareTicketDrafts(a: TicketDraft, b: TicketDraft): number {
   return a.ruleId.localeCompare(b.ruleId);
 }
 
+function ticketFingerprint(issues: DedupedIssue[], page: string, target: string): string {
+  const source = [
+    issues[0].severity,
+    issues[0].ruleId,
+    page,
+    target,
+    ...unique(issues.map((issue) => issue.fingerprint).filter(Boolean))
+  ].join("|");
+
+  return createHash("sha256").update(source).digest("hex");
+}
+
 function unique(values: string[]): string[] {
   return [...new Set(values)].sort();
 }
 
 function escapeTable(value: string): string {
   return value.replaceAll("|", "\\|");
+}
+
+function redactSensitiveText(value: string, field: string): { value: string; fields: string[] } {
+  let redacted = redactSensitiveUrl(value);
+  redacted = redacted
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[redacted-email]")
+    .replace(/\[(value|data-(?:token|secret|email|phone))=["'][^"']+["']\]/gi, "[$1=\"[redacted]\"]");
+  if (!isAbsoluteUrl(value)) {
+    redacted = redacted.replace(/\b(password|passwd|pwd|token|secret|api[_-]?key|session|auth|otp)=([^&\s"')\]]+)/gi, "$1=[redacted]");
+  }
+
+  return {
+    value: redacted,
+    fields: redacted === value ? [] : [field]
+  };
+}
+
+function isAbsoluteUrl(value: string): boolean {
+  return /^https?:\/\//i.test(value);
+}
+
+function redactSensitiveUrl(value: string): string {
+  try {
+    const url = new URL(value);
+    let changed = false;
+    for (const [key, parameterValue] of url.searchParams.entries()) {
+      if (isSensitiveParameter(key) || /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(parameterValue)) {
+        url.searchParams.set(key, "[redacted]");
+        changed = true;
+      }
+    }
+    return changed ? url.toString() : value;
+  } catch {
+    return value;
+  }
+}
+
+function isSensitiveParameter(key: string): boolean {
+  return /(?:password|passwd|pwd|token|secret|api[_-]?key|session|auth|otp|email|phone|card|payment)/i.test(key);
 }
