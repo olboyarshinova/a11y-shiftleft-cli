@@ -292,6 +292,18 @@ are active. Each finding group also has a **Copy ignore entry** button that
 copies a reviewed `a11y-ignore.json` template with the rule, fingerprint, target
 metadata, owner placeholder, reason placeholder, and expiry placeholder.
 
+Audit the ignore file without scanning a website:
+
+```bash
+npx a11y-shiftleft-cli ignore audit
+```
+
+Use JSON output when another script needs the cleanup summary:
+
+```bash
+npx a11y-shiftleft-cli ignore audit --format json
+```
+
 ## Retention
 
 Use retention when you write timestamped output directories such as

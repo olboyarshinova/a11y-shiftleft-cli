@@ -6,6 +6,7 @@ import path from "node:path";
 import {
   DEFAULT_IGNORE_FILE,
   applyIgnores,
+  auditIgnoreFile,
   createMatcher,
   issueTarget,
   validateIgnoreEntry
@@ -138,6 +139,59 @@ test("applyIgnores reports rules that expire soon", async () => {
   });
 
   assert.equal(shorterReminder.summary?.expiringSoonRules, 0);
+});
+
+test("auditIgnoreFile reports stale cleanup metadata without filtering issues", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-ignore-audit-"));
+  await fs.writeFile(path.join(cwd, DEFAULT_IGNORE_FILE), JSON.stringify({
+    version: 1,
+    ignores: [
+      {
+        ruleId: "color-contrast",
+        selector: ".muted",
+        reason: "Temporary brand exception under review.",
+        owner: "@design-system",
+        expires: "2026-06-10"
+      },
+      {
+        ruleId: "button-name",
+        reason: "Expired exception.",
+        owner: "@frontend",
+        expires: "2026-01-01"
+      },
+      {
+        ruleId: "image-alt",
+        reason: "Missing owner and expiry."
+      }
+    ]
+  }));
+
+  const result = await auditIgnoreFile({
+    cwd,
+    now: new Date("2026-06-01T00:00:00.000Z")
+  });
+
+  assert.equal(result.exists, true);
+  assert.equal(result.summary?.totalRules, 3);
+  assert.equal(result.summary?.activeRules, 1);
+  assert.equal(result.summary?.expiringSoonRules, 1);
+  assert.equal(result.summary?.expiredRules, 1);
+  assert.equal(result.summary?.invalidRules, 1);
+  assert.deepEqual(result.entries.map((entry) => entry.status), ["active", "expired", "invalid"]);
+  assert.equal(result.entries[0]?.expiringSoon, true);
+  assert.match(result.entries[0]?.cleanup || "", /Review before expiry/);
+  assert.match(result.entries[1]?.cleanup || "", /Remove this entry/);
+  assert.match(result.entries[2]?.cleanup || "", /Fix required/);
+});
+
+test("auditIgnoreFile reports a missing ignore file", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-ignore-audit-missing-"));
+  const result = await auditIgnoreFile({ cwd });
+
+  assert.equal(result.exists, false);
+  assert.equal(result.summary, undefined);
+  assert.deepEqual(result.entries, []);
+  assert.equal(result.file, DEFAULT_IGNORE_FILE);
 });
 
 test("applyIgnores is a no-op when the ignore file is missing or disabled", async () => {

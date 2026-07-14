@@ -9,6 +9,7 @@ import { registerDashboardCommand } from "./commands/dashboard.js";
 import { registerDoctorCommand } from "./commands/doctor.js";
 import { registerEvidenceCommand } from "./commands/evidence.js";
 import { registerExploreCommand } from "./commands/explore.js";
+import { registerIgnoreCommand } from "./commands/ignore.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerKeyboardCommand } from "./commands/keyboard.js";
 import { registerPrCommentCommand } from "./commands/prComment.js";
@@ -40,6 +41,7 @@ export function createProgram(): Command {
   registerEvidenceCommand(program);
   registerAdapterCommand(program);
   registerExploreCommand(program);
+  registerIgnoreCommand(program);
   registerKeyboardCommand(program);
   registerPrCommentCommand(program);
   registerRemediationCommand(program);

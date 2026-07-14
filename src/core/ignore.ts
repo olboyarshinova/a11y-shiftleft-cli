@@ -18,6 +18,25 @@ interface ApplyIgnoreResult {
 }
 
 type IgnoreMatcher = (issue: DedupedIssue) => boolean;
+export type IgnoreAuditStatus = "active" | "expired" | "invalid";
+
+export interface IgnoreAuditEntry {
+  index: number;
+  status: IgnoreAuditStatus;
+  owner: string;
+  reason: string;
+  expires: string;
+  matchFields: string[];
+  expiringSoon: boolean;
+  cleanup: string;
+}
+
+export interface IgnoreAuditResult {
+  file: string;
+  exists: boolean;
+  summary?: IgnoreSummary;
+  entries: IgnoreAuditEntry[];
+}
 
 interface ActiveIgnoreEntry {
   entry: IgnoreEntry;
@@ -123,6 +142,71 @@ export function resolveIgnorePath(cwd: string, ignoreFile = DEFAULT_IGNORE_FILE)
     : path.resolve(cwd, ignoreFile);
 }
 
+export async function auditIgnoreFile(options: {
+  cwd: string;
+  ignoreFile?: string;
+  now?: Date;
+  expiryReminderDays?: number;
+}): Promise<IgnoreAuditResult> {
+  const ignorePath = resolveIgnorePath(options.cwd, options.ignoreFile);
+  const ignoreFile = await readIgnoreFileIfExists(ignorePath);
+
+  if (!ignoreFile) {
+    return {
+      file: formatIgnorePath(options.cwd, ignorePath),
+      exists: false,
+      entries: []
+    };
+  }
+
+  const now = options.now || new Date();
+  const expiryReminderDays = options.expiryReminderDays ?? 14;
+  const ownerSummaries = new Map<string, IgnoreOwnerSummary>();
+  const entries = ignoreFile.ignores.map((entry, index) => {
+    const status = validateIgnoreEntry(entry, now);
+    const owner = ignoreOwner(entry);
+    const ownerSummary = ensureOwnerSummary(ownerSummaries, owner);
+    const expiringSoon = status === "active" && isExpiringSoon(entry, now, expiryReminderDays);
+    ownerSummary.totalRules += 1;
+
+    if (status === "active") ownerSummary.activeRules += 1;
+    if (status === "expired") ownerSummary.expiredRules += 1;
+    if (status === "invalid") ownerSummary.invalidRules += 1;
+    if (expiringSoon) ownerSummary.expiringSoonRules += 1;
+
+    return {
+      index: index + 1,
+      status,
+      owner,
+      reason: entry.reason?.trim() || "missing",
+      expires: entry.expires?.trim() || "missing",
+      matchFields: ignoreMatchFields(entry),
+      expiringSoon,
+      cleanup: ignoreCleanupHint(status, expiringSoon)
+    };
+  });
+  const expiredRules = entries.filter((entry) => entry.status === "expired").length;
+  const invalidRules = entries.filter((entry) => entry.status === "invalid").length;
+  const expiringSoonRules = entries.filter((entry) => entry.expiringSoon).length;
+
+  return {
+    file: formatIgnorePath(options.cwd, ignorePath),
+    exists: true,
+    entries,
+    summary: {
+      enabled: true,
+      file: formatIgnorePath(options.cwd, ignorePath),
+      totalRules: ignoreFile.ignores.length,
+      activeRules: entries.filter((entry) => entry.status === "active").length,
+      expiredRules,
+      invalidRules,
+      expiringSoonRules,
+      ignoredIssues: 0,
+      ownerSummaries: [...ownerSummaries.values()].sort(compareIgnoreOwnerSummaries)
+    }
+  };
+}
+
 export function createMatcher(entry: IgnoreEntry): IgnoreMatcher {
   return (issue) => MATCH_FIELDS.every((field) => {
     const expected = entry[field];
@@ -189,6 +273,10 @@ function hasMatchField(entry: IgnoreEntry): boolean {
   return MATCH_FIELDS.some((field) => entry[field] !== undefined);
 }
 
+function ignoreMatchFields(entry: IgnoreEntry): string[] {
+  return MATCH_FIELDS.filter((field) => entry[field] !== undefined);
+}
+
 function parseExpiry(value: string): Date | null {
   const normalized = /^\d{4}-\d{2}-\d{2}$/.test(value)
     ? `${value}T23:59:59.999Z`
@@ -235,6 +323,19 @@ function compareIgnoreOwnerSummaries(left: IgnoreOwnerSummary, right: IgnoreOwne
   if (right.expiredRules !== left.expiredRules) return right.expiredRules - left.expiredRules;
   if (right.expiringSoonRules !== left.expiringSoonRules) return right.expiringSoonRules - left.expiringSoonRules;
   return left.owner.localeCompare(right.owner);
+}
+
+function ignoreCleanupHint(status: IgnoreAuditStatus, expiringSoon: boolean): string {
+  if (status === "invalid") {
+    return "Fix required reason, owner, expires, and at least one match field.";
+  }
+  if (status === "expired") {
+    return "Remove this entry if the issue is fixed, or renew it with a new reviewed expiry date.";
+  }
+  if (expiringSoon) {
+    return "Review before expiry; remove it if fixed, or renew it with a current reason.";
+  }
+  return "No cleanup needed yet.";
 }
 
 async function readIgnoreFileIfExists(filePath: string): Promise<IgnoreFile | null> {
