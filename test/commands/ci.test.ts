@@ -61,6 +61,8 @@ test("workflowTemplate supports bounded fast PR crawls", () => {
   assert.match(workflow, /actions\/setup-node@v6/);
   assert.match(workflow, /node-version: 22/);
   assert.match(workflow, /--crawl --crawl-depth 1 --crawl-limit 5/);
+  assert.match(workflow, /id: upload-a11y-report/);
+  assert.match(workflow, /REPORT_ARTIFACT_URL: \$\{\{ steps\.upload-a11y-report\.outputs\.artifact-url \}\}/);
   assert.match(workflow, /Comment on PR/);
 });
 

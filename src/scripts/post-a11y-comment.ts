@@ -167,11 +167,16 @@ function withCommentMarker(body: string): string {
 
 export function withArtifactRunLink(body: string, env: GitHubEnv): string {
   const { GITHUB_REPOSITORY, GITHUB_RUN_ID } = env;
+  const artifactName = normalizeArtifactName(env.REPORT_ARTIFACT_NAME);
+  const artifactUrl = normalizeArtifactUrl(env.REPORT_ARTIFACT_URL);
+
+  if (artifactUrl) {
+    return `${body.trimEnd()}\n\n## Visual Report\n\n[Download the \`${artifactName}\` artifact](${artifactUrl}) to open the visual HTML report and screenshots. Access and retention follow the repository's GitHub Actions settings.\n`;
+  }
 
   if (!GITHUB_REPOSITORY || !GITHUB_RUN_ID) return body;
 
   const serverUrl = (env.GITHUB_SERVER_URL || "https://github.com").replace(/\/$/, "");
-  const artifactName = normalizeArtifactName(env.REPORT_ARTIFACT_NAME);
   const runUrl = `${serverUrl}/${GITHUB_REPOSITORY}/actions/runs/${encodeURIComponent(GITHUB_RUN_ID)}`;
 
   return `${body.trimEnd()}\n\n## Visual Report\n\n[Open the GitHub Actions run to download \`${artifactName}\`](${runUrl}). Access and retention follow the repository's GitHub Actions settings.\n`;
@@ -180,6 +185,17 @@ export function withArtifactRunLink(body: string, env: GitHubEnv): string {
 function normalizeArtifactName(value: string | undefined): string {
   if (!value || !/^[a-zA-Z0-9._-]+$/.test(value)) return "a11y-report";
   return value;
+}
+
+function normalizeArtifactUrl(value: string | undefined): string | null {
+  if (!value) return null;
+
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
 }
 
 function isGitHubCommentPermissionError(error: unknown): boolean {

@@ -158,6 +158,7 @@ jobs:
         run: npx a11y-shiftleft check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard}
 
       - name: Upload accessibility report
+        id: upload-a11y-report
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -172,6 +173,7 @@ jobs:
           GITHUB_REPOSITORY: \${{ github.repository }}
           PR_NUMBER: \${{ github.event.pull_request.number }}
           REPORT_ARTIFACT_NAME: a11y-report
+          REPORT_ARTIFACT_URL: \${{ steps.upload-a11y-report.outputs.artifact-url }}
 `;
 }
 

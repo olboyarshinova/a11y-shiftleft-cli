@@ -88,6 +88,18 @@ test("withArtifactRunLink adds the current GitHub Actions run", () => {
   );
 });
 
+test("withArtifactRunLink prefers the direct artifact URL when available", () => {
+  assert.equal(
+    withArtifactRunLink("report body", {
+      GITHUB_REPOSITORY: "owner/repo",
+      GITHUB_RUN_ID: "123",
+      REPORT_ARTIFACT_NAME: "a11y-preview",
+      REPORT_ARTIFACT_URL: "https://github.example.com/owner/repo/actions/runs/123/artifacts/456"
+    }),
+    "report body\n\n## Visual Report\n\n[Download the `a11y-preview` artifact](https://github.example.com/owner/repo/actions/runs/123/artifacts/456) to open the visual HTML report and screenshots. Access and retention follow the repository's GitHub Actions settings.\n"
+  );
+});
+
 test("withArtifactRunLink leaves local report comments unchanged", () => {
   assert.equal(withArtifactRunLink("report body", {}), "report body");
 });

@@ -220,9 +220,6 @@ Section 508 certification.
 
 ## Integrations And Sharing
 
-- Add CI artifact-link support for visual HTML reports so pull request comments
-  can stay short while linking to the full local-generated evidence uploaded by
-  the CI provider.
 - Add first-class report status summaries that highlight high-confidence,
   high-impact findings first, separate third-party embedded content, and show
   which findings are best handled as manual review.

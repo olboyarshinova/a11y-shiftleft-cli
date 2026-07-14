@@ -32,6 +32,8 @@
   optional source-code checks.
 - Clarified the FAQ troubleshooting guidance for `doctor`, optional adapters,
   and rendered-URL audit scope.
+- Added direct GitHub Actions artifact links to generated PR comments when
+  `actions/upload-artifact` provides an artifact URL.
 
 ## 0.8.1 - 2026-07-12
 
