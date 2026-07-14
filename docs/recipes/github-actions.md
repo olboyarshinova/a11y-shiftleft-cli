@@ -91,6 +91,33 @@ git commit -m "Add accessibility CI"
 | Duplicates removed | 3 |
 ```
 
+## Manual PR Comment
+
+If you already generated a local report and want to post the same summary to a
+pull request without regenerating the workflow, use `pr-comment`:
+
+```bash
+export GITHUB_TOKEN=ghp_your_token
+npx a11y-shiftleft-cli pr-comment \
+  --repo owner/repo \
+  --pr 123 \
+  --report reports
+```
+
+Preview the comment body first:
+
+```bash
+npx a11y-shiftleft-cli pr-comment \
+  --repo owner/repo \
+  --pr 123 \
+  --report reports \
+  --dry-run
+```
+
+The command updates the existing `a11y-shiftleft` PR comment when one is
+present, or creates a new comment. Reports stay local unless you explicitly post
+the Markdown summary or upload the report as a CI artifact.
+
 ## Notes
 
 Use `--gate report-only` when the team wants visibility before blocking builds.

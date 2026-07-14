@@ -11,6 +11,7 @@ import { registerEvidenceCommand } from "./commands/evidence.js";
 import { registerExploreCommand } from "./commands/explore.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerKeyboardCommand } from "./commands/keyboard.js";
+import { registerPrCommentCommand } from "./commands/prComment.js";
 import { registerRemediationCommand } from "./commands/remediation.js";
 import { registerScreenReaderCommand } from "./commands/screenReader.js";
 import { registerShareCommand } from "./commands/share.js";
@@ -40,6 +41,7 @@ export function createProgram(): Command {
   registerAdapterCommand(program);
   registerExploreCommand(program);
   registerKeyboardCommand(program);
+  registerPrCommentCommand(program);
   registerRemediationCommand(program);
   registerScreenReaderCommand(program);
   registerShareCommand(program);

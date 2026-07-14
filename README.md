@@ -252,6 +252,7 @@ The commands below assume `APP_URL` is set to your local, staging, or preview UR
 | `explore` | Debug visual state discovery | `npx a11y-shiftleft-cli explore --url $APP_URL --out reports` |
 | `setup` | Create npm scripts, config, `.gitignore`, and CI workflow | `npx a11y-shiftleft-cli setup --url $APP_URL --start-command "npm run dev"` |
 | `generate-ci` | Regenerate only CI workflow files | `npx a11y-shiftleft-cli generate-ci --provider github --url $APP_URL --start-command "npm run dev"` |
+| `pr-comment` | Post an existing local report to a GitHub PR | `npx a11y-shiftleft-cli pr-comment --repo owner/repo --pr 123 --report reports` |
 | `doctor` | Diagnose setup problems | `npx a11y-shiftleft-cli doctor --url $APP_URL` |
 
 By default, `audit` explores up to 2 interaction levels from the start page.

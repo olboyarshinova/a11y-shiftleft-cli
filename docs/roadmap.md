@@ -226,9 +226,9 @@ Section 508 certification.
   separate repository for GitHub Marketplace. Keep the first version focused on
   a simple `uses:` workflow that installs the CLI, runs `audit`, uploads visual
   report artifacts, and optionally posts a pull request summary.
-- Add a `pr-comment` command for manual pull request feedback that can scan a
-  provided preview URL, update an existing accessibility comment, and apply
-  severity labels when GitHub credentials are available.
+- Extend the `pr-comment` command with optional preview-URL scanning and
+  severity labels. The first version posts or updates an existing GitHub PR
+  comment from a local report.
 - Extend the post-1.0 GitHub Action wrapper with direct artifact links, preview
   URL inputs, existing-comment updates, and optional severity labels.
 - Add optional Jira and Linear ticket workflows after the report schema is

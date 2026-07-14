@@ -43,6 +43,9 @@
 - Added an external-validation protocol recipe for comparing the same pages and
   states with Lighthouse, Pa11y, WAVE, Accessibility Insights, ARC Toolkit, and
   similar tools without overclaiming conformance.
+- Added a `pr-comment` CLI command that posts or updates a GitHub pull request
+  comment from an existing local accessibility report, with `--dry-run` support
+  for previewing the comment body before posting.
 
 ## 0.8.1 - 2026-07-12
 

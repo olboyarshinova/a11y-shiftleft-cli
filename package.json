@@ -74,6 +74,7 @@
     "keyboard": "node bin/cli.js keyboard",
     "watch": "node bin/cli.js watch",
     "ticket": "node bin/cli.js ticket",
+    "pr-comment": "node bin/cli.js pr-comment",
     "post-a11y-comment": "node scripts/post-a11y-comment.js"
   },
   "dependencies": {
