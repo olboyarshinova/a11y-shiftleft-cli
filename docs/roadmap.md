@@ -220,14 +220,6 @@ Section 508 certification.
 
 ## Integrations And Sharing
 
-- Publish a repeatable external-validation protocol that compares the same
-  pages and states with Accessibility Insights, ARC Toolkit,
-  [WAVE](https://wave.webaim.org/),
-  [Siteimprove](https://www.siteimprove.com/why-siteimprove/integrations/browser-extensions/),
-  [Lighthouse](https://developer.chrome.com/docs/lighthouse/accessibility/scoring/),
-  and [Pa11y](https://github.com/pa11y/pa11y). Record tool/version/date,
-  unique findings, overlaps, findings requiring review, and confirmed false
-  positives.
 - Add an optional import format for manually confirmed external findings only
   after the validation protocol is stable.
 - After the 1.0 CLI release, package a dedicated GitHub Action wrapper in a

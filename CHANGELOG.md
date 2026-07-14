@@ -40,6 +40,9 @@
 - Added manual-review status summaries to generated Markdown reports and
   manual checklists so local evidence can track pass, fail, not-applicable, and
   not-reviewed review records.
+- Added an external-validation protocol recipe for comparing the same pages and
+  states with Lighthouse, Pa11y, WAVE, Accessibility Insights, ARC Toolkit, and
+  similar tools without overclaiming conformance.
 
 ## 0.8.1 - 2026-07-12
 

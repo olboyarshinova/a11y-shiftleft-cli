@@ -12,6 +12,7 @@ These recipes give teams short copy-paste paths for adding
 - [Authenticated Pages](authenticated-pages.md)
 - [Privacy And Local Artifacts](privacy-and-local-artifacts.md)
 - [User Impact Review](user-impact-review.md)
+- [External Validation Protocol](external-validation.md)
 - [Quality Gates For Existing Projects](quality-gates.md)
 - [CI/CD Without SaaS](ci-without-saas.md)
 - [GitHub Actions](github-actions.md)
