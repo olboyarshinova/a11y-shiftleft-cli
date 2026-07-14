@@ -7,6 +7,23 @@ The project does not claim complete accessibility conformance. Automated scans
 are evidence for risk detection and remediation tracking, not a replacement for
 manual review.
 
+## Machine-Readable Evidence Export
+
+Use `evidence export` when a script, spreadsheet, or validation study needs a
+stable dataset instead of parsing HTML or Markdown:
+
+```bash
+npx a11y-shiftleft-cli evidence export \
+  --report reports/a11y-report.json \
+  --out reports/a11y-evidence.jsonl \
+  --format jsonl
+```
+
+The export stays local and contains structured finding evidence: fingerprint,
+rule, severity, WCAG metadata, URL, selector or source location, ownership,
+confidence, and remediation guidance. It does not include screenshots or
+rendered HTML.
+
 ## Finding Types
 
 Reports separate three kinds of evidence:

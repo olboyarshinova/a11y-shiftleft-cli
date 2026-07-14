@@ -247,9 +247,11 @@ Section 508 certification.
 - Evaluate an optional public-link publisher only after sanitized export is
   stable. Require explicit confirmation, unguessable URLs, expiration,
   revocation, and deletion.
-- Evaluate EARL or JSON-LD export for machine-readable evaluation evidence
-  after the internal report schema is stable and mapped clearly to WCAG metadata
-  and manual-review statuses.
+- Continue machine-readable evaluation evidence work. The current
+  `evidence export` command writes local JSON/JSONL finding evidence with WCAG,
+  ownership, confidence, and remediation fields. Next, evaluate whether an
+  EARL-inspired or JSON-LD profile is worth adding after manual-review statuses
+  are stable enough.
 
 ## Adoption And Documentation
 

@@ -68,6 +68,8 @@
   output for expired, invalid, and soon-to-expire scoped exceptions.
 - Added `ignore cleanup-plan` for read-only proposed cleanup actions without
   automatically editing or deleting scoped ignore entries.
+- Added `evidence export` for local JSON/JSONL finding-evidence datasets that
+  are easier to analyze in scripts, spreadsheets, and validation studies.
 
 ## 0.8.1 - 2026-07-12
 
