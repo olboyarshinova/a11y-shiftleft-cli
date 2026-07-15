@@ -4,7 +4,7 @@ import { enrichIssueEvidence } from "../core/classification.js";
 import { compareLighthouseWithFindings } from "../core/lighthouseComparison.js";
 import { formatReportDateUtc } from "../core/reportDate.js";
 import { getRemediationHint } from "../core/remediation.js";
-import type { DedupedIssue, ElementBounds, ExplorationGraph, ExplorationState, IgnoreSummary, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, Severity } from "../types.js";
+import type { DedupedIssue, ElementBounds, ExplorationGraph, ExplorationState, ExploreSkippedAction, IgnoreSummary, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, Severity } from "../types.js";
 
 interface StateViewModel extends ExplorationState {
   issues: DedupedIssue[];
@@ -187,6 +187,33 @@ export function renderExplorationHtml(
     .share-review {
       border-left: 4px solid var(--info);
       grid-column: 1 / -1;
+    }
+
+    .safe-guardrails {
+      border-left: 4px solid var(--warning-marker);
+    }
+
+    .safe-guardrails-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    .safe-guardrail-item {
+      background: #fffaf0;
+      border: 1px solid #fed7aa;
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .safe-guardrail-item strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .safe-guardrail-item ul {
+      margin: 8px 0 0;
+      padding-left: 18px;
     }
 
     .ticket-drafts {
@@ -1875,6 +1902,8 @@ export function renderExplorationHtml(
       ${metric("Best practices", findingTypes["best-practice"], "best-practice")}
     </section>
 
+    ${renderSafeExplorationGuardrails(graph)}
+
     ${renderLighthouseComparison(options.lighthouse, reportIssues)}
 
     ${renderCoverageMatrix(graph, options, reportIssues)}
@@ -3092,6 +3121,73 @@ function renderTriageOverview(
       ${renderTopRules(ruleSummaries, topRuleLimit)}
     </div>
   </div>`;
+}
+
+function renderSafeExplorationGuardrails(graph: ExplorationGraph): string {
+  const summaries = summarizeSkippedActions(graph.skippedActions || []);
+  if (summaries.length === 0) return "";
+
+  const total = graph.skippedActions?.length || 0;
+  const visibleSummaries = summaries.slice(0, 4);
+  const hiddenCount = Math.max(0, summaries.length - visibleSummaries.length);
+
+  return `<section class="panel safe-guardrails" aria-label="Safe exploration guardrails">
+    <h2>Safe Exploration Guardrails</h2>
+    <p class="muted">${total} action${total === 1 ? "" : "s"} ${total === 1 ? "was" : "were"} skipped to avoid risky side effects such as submitting forms, changing account state, accepting cookies, opening external tabs, or using blocked safe-mode patterns.</p>
+    <div class="safe-guardrails-grid">
+      ${visibleSummaries.map(renderSkippedActionSummary).join("\n")}
+    </div>
+    ${hiddenCount > 0 ? `<p class="muted triage-more">+ ${hiddenCount} more skipped-action reason${hiddenCount === 1 ? "" : "s"} recorded in the full local report data.</p>` : ""}
+  </section>`;
+}
+
+function renderSkippedActionSummary(summary: SkippedActionReasonSummary): string {
+  const typeText = [...summary.types].sort().join(", ");
+  const examples = summary.examples.slice(0, 3).map((action) => {
+    const label = action.label || action.text || action.selector || action.url || "Unnamed action";
+    const state = action.stateId
+      ? `<a href="#${escapeAttribute(action.stateId)}">${escapeHtml(action.stateId)}</a>`
+      : "unknown state";
+    const target = action.selector || action.url || action.role || action.type;
+    return `<li>${state}: ${escapeHtml(label)}${target ? ` <code>${escapeHtml(target)}</code>` : ""}</li>`;
+  }).join("");
+
+  return `<article class="safe-guardrail-item">
+    <strong>${summary.count} skipped · ${escapeHtml(typeText || "unknown action")}</strong>
+    <div class="muted">${escapeHtml(summary.reason)}</div>
+    ${examples ? `<ul>${examples}</ul>` : ""}
+  </article>`;
+}
+
+interface SkippedActionReasonSummary {
+  reason: string;
+  count: number;
+  types: Set<string>;
+  examples: ExploreSkippedAction[];
+}
+
+function summarizeSkippedActions(actions: ExploreSkippedAction[]): SkippedActionReasonSummary[] {
+  const summaries = new Map<string, SkippedActionReasonSummary>();
+
+  for (const action of actions) {
+    const reason = action.reason || "Action skipped by safe exploration policy.";
+    const current = summaries.get(reason) || {
+      reason,
+      count: 0,
+      types: new Set<string>(),
+      examples: []
+    };
+
+    current.count += 1;
+    current.types.add(action.type || "unknown");
+    if (current.examples.length < 3) current.examples.push(action);
+    summaries.set(reason, current);
+  }
+
+  return [...summaries.values()].sort((a, b) => {
+    if (b.count !== a.count) return b.count - a.count;
+    return a.reason.localeCompare(b.reason);
+  });
 }
 
 function rankAffectedStates(states: StateViewModel[], limit: number): StateViewModel[] {

@@ -76,6 +76,8 @@
 - Updated generated GitHub Actions PR workflows to post comments through the
   public `a11y-shiftleft pr-comment --include-labels` command instead of
   calling the internal comment script directly.
+- Added a compact Safe Exploration Guardrails section to visual reports that
+  groups skipped actions by reason and shows examples with state links.
 
 ## 0.8.1 - 2026-07-12
 

@@ -284,6 +284,10 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /2 interaction levels from the start page[\s\S]*?<span>Exploration depth<\/span>/);
   assert.match(html, /UI states explored/);
   assert.match(html, /Rendered states/);
+  assert.match(html, /Safe Exploration Guardrails/);
+  assert.match(html, /1 action was skipped/);
+  assert.match(html, /Submit\/reset controls are blocked by safe mode unless explicitly allowed/);
+  assert.match(html, /state-1<\/a>:[\s\S]*?Submit order[\s\S]*?button\[type=/);
   assert.match(html, /screenshots\/state-1\.png/);
   assert.match(html, /Unique screenshots/);
   assert.match(html, /Duplicate screenshots skipped/);
@@ -442,6 +446,19 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /Coverage Note/);
   assert.match(html, /\.panel-full-width \{[\s\S]*?grid-column: 1 \/ -1;[\s\S]*?width: 100%;/);
   assert.match(html, /class="panel panel-full-width coverage-note" aria-label="Manual review note"/);
+});
+
+test("renderExplorationHtml hides safe guardrails when no actions were skipped", () => {
+  const html = renderExplorationHtml({
+    ...graph,
+    skippedActions: [],
+    summary: {
+      ...graph.summary,
+      skippedActions: 0
+    }
+  }, issues);
+
+  assert.doesNotMatch(html, /Safe Exploration Guardrails/);
 });
 
 test("renderExplorationHtml groups all ticket drafts by issue type across states", () => {
