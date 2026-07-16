@@ -4,7 +4,7 @@ import { enrichIssueEvidence } from "../core/classification.js";
 import { compareLighthouseWithFindings } from "../core/lighthouseComparison.js";
 import { formatReportDateUtc } from "../core/reportDate.js";
 import { getRemediationHint } from "../core/remediation.js";
-import type { DedupedIssue, ElementBounds, ExplorationGraph, ExplorationState, ExploreSkippedAction, IgnoreSummary, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, ReportRetentionEvidence, Severity } from "../types.js";
+import type { DedupedIssue, ElementBounds, ExplorationGraph, ExplorationState, ExploreSkippedAction, IgnoreSummary, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, RemediationHint, ReportRetentionEvidence, Severity } from "../types.js";
 
 interface StateViewModel extends ExplorationState {
   issues: DedupedIssue[];
@@ -1717,6 +1717,13 @@ export function renderExplorationHtml(
       display: flex;
       flex-wrap: wrap;
       gap: 6px 12px;
+    }
+
+    .remediation-copy-row {
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
     }
 
     .remediation {
@@ -3803,6 +3810,7 @@ function renderRemediation(issue: DedupedIssue): string {
     issue.framework,
     { helpUrl: issue.helpUrl }
   );
+  const fixMarkdown = buildFixMarkdown(issue, remediation);
   const steps = remediation.howToFix.length > 0
     ? `<ol>${remediation.howToFix.map((step) => `<li>${escapeHtml(step)}</li>`).join("\n")}</ol>`
     : "";
@@ -3822,11 +3830,30 @@ function renderRemediation(issue: DedupedIssue): string {
     <summary>How to fix</summary>
     <div class="remediation-body">
       <div>${escapeHtml(remediation.summary)}</div>
+      <div class="remediation-copy-row">
+        <button class="copy-issue" type="button" title="Copy only the suggested fix steps" data-copy-issue="${escapeAttribute(encodeURIComponent(fixMarkdown))}" data-copy-success="Copied fix summary">Copy fix summary</button>
+        <span class="copy-issue-status" data-copy-issue-status aria-live="polite"></span>
+      </div>
       ${steps}
       ${example}
       ${links}
     </div>
   </details>`;
+}
+
+function buildFixMarkdown(issue: DedupedIssue, remediation: RemediationHint): string {
+  const lines: string[] = [
+    `### Suggested fix for ${issue.ruleId}`,
+    "",
+    remediation.summary
+  ];
+  if (remediation.howToFix.length > 0) {
+    lines.push("", ...remediation.howToFix.map((step) => `- ${step}`));
+  }
+  if (remediation.docs.length > 0) {
+    lines.push("", ...remediation.docs.slice(0, 3).map((url) => `- ${url}`));
+  }
+  return lines.join("\n");
 }
 
 function safeExternalUrl(value: string): string | undefined {

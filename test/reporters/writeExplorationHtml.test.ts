@@ -306,6 +306,10 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /<summary>How to fix<\/summary>/);
   assert.match(html, /<details class="remediation">\s*<summary>How to fix<\/summary>/);
   assert.doesNotMatch(html, /<details class="remediation" open>/);
+  assert.match(html, /class="remediation-copy-row"/);
+  assert.match(html, /title="Copy only the suggested fix steps"/);
+  assert.match(html, /data-copy-success="Copied fix summary"/);
+  assert.match(html, />Copy fix summary<\/button>/);
   assert.match(html, /<div class="triage-title">\s*<div class="triage-title-main">\s*<code>button-name<\/code>[\s\S]*?<\/div>\s*<div class="issue-actions">/);
   assert.match(html, /\.triage-title \.issue-actions \{[\s\S]*?margin-top: 0/);
   assert.match(html, /\.copy-issue-ticket \{[\s\S]*?width: 72px/);
@@ -319,6 +323,12 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /data-copy-issue-status aria-live="polite"/);
   assert.match(html, /navigator\.clipboard/);
   assert.match(html, /button\.dataset\.copySuccess \|\| 'Copied'/);
+  const fixPayload = html.match(/title="Copy only the suggested fix steps" data-copy-issue="([^"]+)"/)?.[1];
+  assert.ok(fixPayload);
+  const decodedFixPayload = decodeURIComponent(fixPayload);
+  assert.match(decodedFixPayload, /### Suggested fix for button-name/);
+  assert.match(decodedFixPayload, /Give every button an accessible name/);
+  assert.match(decodedFixPayload, /Use visible button text when possible/);
   assert.match(html, /Ticket Drafts/);
   assert.ok(html.indexOf("Ticket Drafts") < html.indexOf("Exploration summary"));
   assert.match(html, /class="report-header-grid"/);

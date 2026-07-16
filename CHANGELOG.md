@@ -80,6 +80,8 @@
   groups skipped actions by reason and shows examples with state links.
 - Added compact user-impact evidence to visual finding cards so reports show
   affected user groups and practical impact next to the technical rule details.
+- Added a copyable fix-summary action inside visual report "How to fix" blocks
+  so developers can copy only the remediation steps without the full ticket.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.
 - Added compact lifecycle badges to visual finding groups for new, remaining,

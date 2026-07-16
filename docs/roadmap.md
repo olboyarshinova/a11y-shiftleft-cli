@@ -151,8 +151,10 @@ Section 508 certification.
   lifecycle badges for new, remaining, tracked remediation status, needs manual
   review, and third-party findings; next, connect ignored-until dates and fixed
   evidence more directly in the report UI.
-- Add more copyable fix summaries, including targeted snippets for reflow,
-  contrast, iframe ownership, and keyboard/focus issues.
+- Continue adding more copyable fix summaries, including targeted snippets for
+  reflow, contrast, iframe ownership, and keyboard/focus issues. Current visual
+  reports let users copy the suggested remediation steps separately from the
+  full ticket draft.
 - Continue reframing selected report labels around potential exclusion risk,
   affected users, and practical impact while preserving technical WCAG and rule
   metadata for developers. Current visual findings can show compact user-impact
