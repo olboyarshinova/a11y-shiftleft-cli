@@ -136,14 +136,32 @@ export async function runSetup(options: SetupOptions): Promise<SetupResult> {
     created,
     skipped,
     updated,
-    nextSteps: [
-      `Start your app locally: ${options.startCommand}`,
-      options.skipScripts
-        ? `Run a visual audit: npx a11y-shiftleft-cli audit --url ${scanUrls[0]} --out reports --open`
-        : "Run a visual audit: npm run a11y:audit",
-      "Commit the generated config and workflow files after reviewing them."
-    ]
+    nextSteps: buildSetupNextSteps(options, scanUrls[0])
   };
+}
+
+function buildSetupNextSteps(options: SetupOptions, url: string): string[] {
+  const steps = [
+    `Start your app locally: ${options.startCommand}`,
+    options.skipScripts
+      ? `Run a visual audit: npx a11y-shiftleft-cli audit --url ${url} --out reports --open`
+      : "Run a visual audit: npm run a11y:audit"
+  ];
+
+  if (!options.skipCi && options.ci !== "none") {
+    steps.push(formatCiRolloutStep(options));
+  }
+
+  steps.push("Commit the generated config and workflow files after reviewing them.");
+  return steps;
+}
+
+function formatCiRolloutStep(options: SetupOptions): string {
+  if (options.gate === "report-only") {
+    return "CI starts in report-only mode; review uploaded reports first, then tighten to --gate new-critical-only when the baseline is understood.";
+  }
+
+  return `CI quality gate is ${options.gate}; keep reports uploaded as artifacts so findings can be reviewed before changing the gate.`;
 }
 
 type PackageScriptsResult =

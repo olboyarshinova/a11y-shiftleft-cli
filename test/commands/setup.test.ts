@@ -61,6 +61,29 @@ test("runSetup creates config, report ignores, and GitHub Actions workflow", asy
   assert.equal(result.created.some((item) => item.includes(os.homedir())), false);
   assert.equal(result.updated.some((item) => item.includes(os.homedir())), false);
   assert.match(result.nextSteps.join("\n"), /npm run a11y:audit/);
+  assert.match(result.nextSteps.join("\n"), /CI starts in report-only mode/);
+  assert.match(result.nextSteps.join("\n"), /--gate new-critical-only/);
+});
+
+test("runSetup omits CI rollout guidance when CI generation is skipped", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-setup-no-ci-"));
+
+  const result = await runSetup({
+    cwd,
+    url: ["http://localhost:5173"],
+    startCommand: "npm run dev",
+    ci: "github",
+    profile: "pr",
+    gate: "report-only",
+    failOn: "critical",
+    standard: "wcag22-aa",
+    skipCi: true,
+    skipScripts: true
+  });
+
+  const steps = result.nextSteps.join("\n");
+  assert.match(steps, /Run a visual audit: npx a11y-shiftleft-cli audit --url http:\/\/localhost:5173 --out reports --open/);
+  assert.doesNotMatch(steps, /CI starts in report-only mode/);
 });
 
 test("runSetup can create a GitLab CI workflow", async () => {
