@@ -228,6 +228,8 @@ test("runSetup can create an optional Husky pre-commit hook", async () => {
   assert.match(hook, /npx a11y-shiftleft-cli check --static --include \$files --out reports --gate report-only/);
   assert.equal((stat.mode & 0o111) !== 0, true);
   assert.ok(result.created.includes(".husky/pre-commit"));
+  assert.match(result.nextSteps.join("\n"), /npm install --save-dev husky/);
+  assert.match(result.nextSteps.join("\n"), /npm run prepare/);
 });
 
 test("runSetup can create an optional Lefthook pre-commit hook", async () => {
@@ -255,4 +257,6 @@ test("runSetup can create an optional Lefthook pre-commit hook", async () => {
   assert.match(config, /no staged frontend files to check/);
   assert.match(config, /npx a11y-shiftleft-cli check --static --include \$files --out reports --gate new-critical-only/);
   assert.ok(result.created.includes("lefthook.yml"));
+  assert.match(result.nextSteps.join("\n"), /npm install --save-dev lefthook/);
+  assert.match(result.nextSteps.join("\n"), /npx lefthook install/);
 });

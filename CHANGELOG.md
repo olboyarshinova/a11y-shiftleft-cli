@@ -101,6 +101,8 @@
   browser installation or target reachability problems.
 - Added optional `setup --git-hooks husky|lefthook` generation for staged
   static accessibility checks before commits.
+- Added hook-runner enablement next steps after `setup --git-hooks` so generated
+  Husky and Lefthook files are not mistaken for fully installed hooks.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.
 - Added compact lifecycle badges to visual finding groups for new, remaining,

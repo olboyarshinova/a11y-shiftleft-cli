@@ -173,6 +173,11 @@ function buildSetupNextSteps(options: SetupOptions, url: string): string[] {
     steps.push(formatCiRolloutStep(options));
   }
 
+  const gitHookTool = toGitHookTool(options.gitHooks);
+  if (gitHookTool !== "none") {
+    steps.push(formatGitHookNextStep(gitHookTool));
+  }
+
   steps.push("Commit the generated config and workflow files after reviewing them.");
   return steps;
 }
@@ -215,6 +220,14 @@ fi
 
 npx a11y-shiftleft-cli check --static --include $files --out reports --gate ${gate}
 `;
+}
+
+function formatGitHookNextStep(tool: Exclude<GitHookTool, "none">): string {
+  if (tool === "husky") {
+    return "Enable Husky if your project does not already use it: npm install --save-dev husky && npm pkg set scripts.prepare=\"husky\" && npm run prepare";
+  }
+
+  return "Enable Lefthook if your project does not already use it: npm install --save-dev lefthook && npx lefthook install";
 }
 
 function indentBlock(value: string, spaces: number): string {

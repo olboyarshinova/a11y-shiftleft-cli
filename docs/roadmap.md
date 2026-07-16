@@ -197,8 +197,9 @@ Section 508 certification.
   modes.
 - Continue optional Git hook setup for Husky and Lefthook. Current `setup`
   can generate pre-commit hooks that run static checks against staged frontend
-  files in the selected gate mode; next, validate the generated hooks in real
-  React, Vue, and Angular repositories.
+  files in the selected gate mode and prints hook-runner enablement commands;
+  next, validate the generated hooks in real React, Vue, and Angular
+  repositories.
 - Add incremental scan support for pull requests by prioritizing changed static
   files and a small configured set of dynamic smoke-test URLs before broader
   scheduled scans.
