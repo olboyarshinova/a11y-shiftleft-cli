@@ -89,6 +89,8 @@
   sections, including custom ignore-file paths when configured.
 - Improved `setup` next steps with report-only CI rollout guidance and a clear
   path toward `--gate new-critical-only`.
+- Kept generated `a11y:check` npm scripts aligned with the `setup --gate`
+  option so local checks and generated CI use the same rollout gate.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.
 - Added compact lifecycle badges to visual finding groups for new, remaining,

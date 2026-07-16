@@ -90,7 +90,7 @@ export async function runSetup(options: SetupOptions): Promise<SetupResult> {
   }
 
   if (!options.skipScripts) {
-    const scripts = await addPackageScripts(cwd, scanUrls[0], options.force);
+    const scripts = await addPackageScripts(cwd, scanUrls[0], options.gate, options.force);
     const scriptsPath = displayPath(cwd, scripts.path);
     if (scripts.status === "updated") {
       updated.push(`${scriptsPath} (${scripts.added.join(", ")})`);
@@ -172,6 +172,7 @@ type PackageScriptsResult =
 export async function addPackageScripts(
   cwd: string,
   url: string,
+  gate = "report-only",
   force = false
 ): Promise<PackageScriptsResult> {
   const packagePath = path.join(cwd, "package.json");
@@ -187,7 +188,7 @@ export async function addPackageScripts(
     : {};
   const desired = {
     "a11y:audit": `a11y-shiftleft audit --url ${url} --out reports --open`,
-    "a11y:check": `a11y-shiftleft check --dynamic --url ${url} --out reports --gate report-only`
+    "a11y:check": `a11y-shiftleft check --dynamic --url ${url} --out reports --gate ${gate}`
   };
   const added: string[] = [];
 
