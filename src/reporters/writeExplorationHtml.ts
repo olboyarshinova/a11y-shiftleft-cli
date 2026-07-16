@@ -1589,6 +1589,11 @@ export function renderExplorationHtml(
       border-left-color: var(--ok);
     }
 
+    .finding-context-tracking {
+      background: #fff7ed;
+      border-left-color: var(--warning-marker);
+    }
+
     .finding-context-blocked {
       border-left-color: var(--critical);
     }
@@ -3515,6 +3520,7 @@ function renderFindingOccurrenceGroup(
       <div>${escapeHtml(normalizeIssueMessageForDisplay(issue.message))}</div>
       ${grouped ? renderFindingTargets(group.issues, annotationNumberByIssueKey) : renderFindingTarget(group.issues[0], annotationNumberByIssueKey)}
       ${renderUserImpact(issue)}
+      ${renderRemediationTracking(issue)}
       ${renderOwnership(issue)}
       ${renderHumanVerificationContext(issue)}
       ${totalRuleIssues > 1 ? "" : renderContrastEvidence(issue, annotationNumberByIssueKey)}
@@ -3632,6 +3638,29 @@ function formatUserImpactLevel(level: NonNullable<DedupedIssue["userImpact"]>["l
   if (level === "significant") return "Significant";
   if (level === "workaround") return "Workaround available";
   return "Minor";
+}
+
+function renderRemediationTracking(issue: DedupedIssue): string {
+  const tracking = issue.remediationTracking;
+  if (!tracking) return "";
+  const reviewBy = tracking.reviewBy
+    ? `<span>Review by: ${escapeHtml(tracking.reviewBy)}</span>`
+    : "";
+  return `<aside class="finding-context finding-context-tracking" aria-label="Remediation tracking">
+    <strong>Tracking: ${escapeHtml(formatRemediationStatus(tracking.status))}</strong>
+    <span>Owner: ${escapeHtml(tracking.owner)}</span>
+    <span>Updated: ${escapeHtml(tracking.updatedAt)}</span>
+    ${reviewBy}
+    <span>${escapeHtml(tracking.reason)}</span>
+  </aside>`;
+}
+
+function formatRemediationStatus(status: NonNullable<DedupedIssue["remediationTracking"]>["status"]): string {
+  if (status === "in-progress") return "In progress";
+  if (status === "accepted-temporarily") return "Accepted temporarily";
+  if (status === "manual-review") return "Manual review";
+  if (status === "fixed") return "Fixed";
+  return "Open";
 }
 
 function renderHumanVerificationContext(issue: DedupedIssue): string {

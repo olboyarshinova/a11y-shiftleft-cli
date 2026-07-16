@@ -82,6 +82,9 @@
   affected user groups and practical impact next to the technical rule details.
 - Added a copyable fix-summary action inside visual report "How to fix" blocks
   so developers can copy only the remediation steps without the full ticket.
+- Added remediation-tracking context to visual finding cards so owners,
+  temporary acceptance reasons, update dates, and review dates are visible next
+  to tracked findings.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.
 - Added compact lifecycle badges to visual finding groups for new, remaining,

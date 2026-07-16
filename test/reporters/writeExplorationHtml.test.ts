@@ -504,10 +504,11 @@ test("renderExplorationHtml shows issue lifecycle badges", () => {
       retestStatus: "remaining" as const,
       remediationTracking: {
         fingerprint: "button-name::state-1",
-        status: "in-progress" as const,
+        status: "accepted-temporarily" as const,
         owner: "frontend",
         reason: "Queued for design-system fix.",
-        updatedAt: "2026-07-16"
+        updatedAt: "2026-07-16",
+        reviewBy: "2026-08-01"
       }
     },
     {
@@ -526,7 +527,13 @@ test("renderExplorationHtml shows issue lifecycle badges", () => {
 
   assert.match(html, /badge-lifecycle-new">new<\/span>/);
   assert.match(html, /badge-lifecycle-remaining">remaining<\/span>/);
-  assert.match(html, /badge-lifecycle-remaining">tracked: in-progress<\/span>/);
+  assert.match(html, /badge-lifecycle-remaining">tracked: accepted-temporarily<\/span>/);
+  assert.match(html, /aria-label="Remediation tracking"/);
+  assert.match(html, /Tracking: Accepted temporarily/);
+  assert.match(html, /Owner: frontend/);
+  assert.match(html, /Updated: 2026-07-16/);
+  assert.match(html, /Review by: 2026-08-01/);
+  assert.match(html, /Queued for design-system fix/);
   assert.match(html, /badge-lifecycle-review">needs manual review<\/span>/);
   assert.match(html, /badge-lifecycle-remaining">third-party<\/span>/);
 });
