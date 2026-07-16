@@ -145,7 +145,8 @@ function buildSetupNextSteps(options: SetupOptions, url: string): string[] {
     `Start your app locally: ${options.startCommand}`,
     options.skipScripts
       ? `Run a visual audit: npx a11y-shiftleft-cli audit --url ${url} --out reports --open`
-      : "Run a visual audit: npm run a11y:audit"
+      : "Run a visual audit: npm run a11y:audit",
+    `If setup or browser reachability fails, run: npx a11y-shiftleft-cli doctor --url ${url}`
   ];
 
   if (!options.skipCi && options.ci !== "none") {

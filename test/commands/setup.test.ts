@@ -61,6 +61,7 @@ test("runSetup creates config, report ignores, and GitHub Actions workflow", asy
   assert.equal(result.created.some((item) => item.includes(os.homedir())), false);
   assert.equal(result.updated.some((item) => item.includes(os.homedir())), false);
   assert.match(result.nextSteps.join("\n"), /npm run a11y:audit/);
+  assert.match(result.nextSteps.join("\n"), /doctor --url http:\/\/localhost:5173/);
   assert.match(result.nextSteps.join("\n"), /CI starts in report-only mode/);
   assert.match(result.nextSteps.join("\n"), /--gate new-critical-only/);
 });

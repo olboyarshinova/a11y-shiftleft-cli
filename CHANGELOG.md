@@ -97,6 +97,8 @@
   or reachability command instead of ending at the status summary.
 - Updated copy-paste `npx` commands in active docs, generated CI workflows, and
   setup diagnostics to use the published package name `a11y-shiftleft-cli`.
+- Added a `doctor --url` troubleshooting next step to guided setup output for
+  browser installation or target reachability problems.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.
 - Added compact lifecycle badges to visual finding groups for new, remaining,
