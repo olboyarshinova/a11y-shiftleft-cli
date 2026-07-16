@@ -99,7 +99,7 @@
   setup diagnostics to use the published package name `a11y-shiftleft-cli`.
 - Added a `doctor --url` troubleshooting next step to guided setup output for
   browser installation or target reachability problems.
-- Added optional `setup --git-hooks husky|lefthook` generation for report-only
+- Added optional `setup --git-hooks husky|lefthook` generation for staged
   static accessibility checks before commits.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.

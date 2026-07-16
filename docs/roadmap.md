@@ -196,9 +196,9 @@ Section 508 certification.
   `warning`, and `report-only` only when real CI users need additional rollout
   modes.
 - Continue optional Git hook setup for Husky and Lefthook. Current `setup`
-  can generate pre-commit hooks that run static checks in the selected gate
-  mode; next, make them changed-file aware instead of scanning the whole static
-  source set.
+  can generate pre-commit hooks that run static checks against staged frontend
+  files in the selected gate mode; next, validate the generated hooks in real
+  React, Vue, and Angular repositories.
 - Add incremental scan support for pull requests by prioritizing changed static
   files and a small configured set of dynamic smoke-test URLs before broader
   scheduled scans.

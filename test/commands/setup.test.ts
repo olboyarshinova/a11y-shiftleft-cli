@@ -223,7 +223,9 @@ test("runSetup can create an optional Husky pre-commit hook", async () => {
   const stat = await fs.stat(hookPath);
 
   assert.match(hook, /^#!\/usr\/bin\/env sh/);
-  assert.match(hook, /npx a11y-shiftleft-cli check --static --out reports --gate report-only/);
+  assert.match(hook, /git diff --cached --name-only --diff-filter=ACMR/);
+  assert.match(hook, /no staged frontend files to check/);
+  assert.match(hook, /npx a11y-shiftleft-cli check --static --include \$files --out reports --gate report-only/);
   assert.equal((stat.mode & 0o111) !== 0, true);
   assert.ok(result.created.includes(".husky/pre-commit"));
 });
@@ -249,6 +251,8 @@ test("runSetup can create an optional Lefthook pre-commit hook", async () => {
 
   assert.match(config, /pre-commit:/);
   assert.match(config, /a11y-static:/);
-  assert.match(config, /npx a11y-shiftleft-cli check --static --out reports --gate new-critical-only/);
+  assert.match(config, /git diff --cached --name-only --diff-filter=ACMR/);
+  assert.match(config, /no staged frontend files to check/);
+  assert.match(config, /npx a11y-shiftleft-cli check --static --include \$files --out reports --gate new-critical-only/);
   assert.ok(result.created.includes("lefthook.yml"));
 });

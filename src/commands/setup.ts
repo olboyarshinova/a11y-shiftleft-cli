@@ -186,11 +186,11 @@ function toGitHookTool(value?: string): GitHookTool {
 }
 
 function gitHookFiles(tool: GitHookTool, gate: string): Array<{ fileName: string; contents: string; executable?: boolean }> {
-  const command = `npx a11y-shiftleft-cli check --static --out reports --gate ${gate}`;
+  const command = stagedStaticCheckScript(gate);
   if (tool === "husky") {
     return [{
       fileName: ".husky/pre-commit",
-      contents: `#!/usr/bin/env sh\n${command}\n`,
+      contents: `#!/usr/bin/env sh\n${command}`,
       executable: true
     }];
   }
@@ -198,12 +198,28 @@ function gitHookFiles(tool: GitHookTool, gate: string): Array<{ fileName: string
   if (tool === "lefthook") {
     return [{
       fileName: "lefthook.yml",
-      contents: `pre-commit:\n  commands:\n    a11y-static:\n      run: ${command}\n`,
+      contents: `pre-commit:\n  commands:\n    a11y-static:\n      run: |\n${indentBlock(command, 8)}`,
       executable: false
     }];
   }
 
   return [];
+}
+
+function stagedStaticCheckScript(gate: string): string {
+  return `files=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\\.(js|jsx|ts|tsx|vue|html)$' || true)
+if [ -z "$files" ]; then
+  echo "a11y-shiftleft: no staged frontend files to check."
+  exit 0
+fi
+
+npx a11y-shiftleft-cli check --static --include $files --out reports --gate ${gate}
+`;
+}
+
+function indentBlock(value: string, spaces: number): string {
+  const prefix = " ".repeat(spaces);
+  return value.split("\n").map((line) => line ? `${prefix}${line}` : line).join("\n");
 }
 
 function formatCiRolloutStep(options: SetupOptions): string {

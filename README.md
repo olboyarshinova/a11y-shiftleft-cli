@@ -155,7 +155,7 @@ npx a11y-shiftleft-cli setup --ci shell --url $APP_URL --start-command "npm run 
 
 Optional pre-commit checks can be generated with `--git-hooks husky` or
 `--git-hooks lefthook`; they run static accessibility checks in the selected
-gate mode.
+gate mode against staged frontend files.
 
 This creates `.a11y-shiftleft.json`, adds `a11y:audit` and `a11y:check` npm
 scripts when `package.json` exists, updates `.gitignore`, and adds a CI workflow
