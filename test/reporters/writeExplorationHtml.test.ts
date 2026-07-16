@@ -1563,6 +1563,26 @@ test("renderExplorationHtml includes ignore cleanup guidance when ignore metadat
   assert.match(html, /Invalid/);
   assert.match(html, /@frontend/);
   assert.match(html, /3 ignored, 1 expiring soon, 1 expired/);
+  assert.match(html, /npx a11y-shiftleft-cli ignore audit/);
+  assert.doesNotMatch(html, /--ignore-file a11y-ignore\.json/);
+});
+
+test("renderExplorationHtml includes custom ignore audit command", () => {
+  const html = renderExplorationHtml(graph, issues, {
+    ignore: {
+      enabled: true,
+      file: "config/a11y ignore.json",
+      totalRules: 1,
+      activeRules: 1,
+      expiredRules: 0,
+      invalidRules: 0,
+      expiringSoonRules: 0,
+      ignoredIssues: 1,
+      ownerSummaries: []
+    }
+  });
+
+  assert.match(html, /npx a11y-shiftleft-cli ignore audit --ignore-file 'config\/a11y ignore\.json'/);
 });
 
 test("renderExplorationHtml provides fallback guidance for unknown rules", () => {

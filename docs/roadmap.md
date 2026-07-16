@@ -141,7 +141,9 @@ Section 508 certification.
   percentage for each selected check.
 - Add UI-friendly ignore support in HTML reports: copy an `a11y-ignore.json`
   entry, record an expiry/reason/owner, and keep dismissals explicit instead of
-  silently hiding findings.
+  silently hiding findings. Current visual reports include cleanup summaries,
+  owner rollups, copyable ignore-entry templates, and a local `ignore audit`
+  next-step command.
 - Add report audience views without duplicating data: developer view for
   selectors and remediation, QA view for screenshots and reproduction steps,
   manager view for risk, trends, coverage, and ownership. Use these views to

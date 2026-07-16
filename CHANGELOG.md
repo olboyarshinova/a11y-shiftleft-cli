@@ -85,6 +85,8 @@
 - Added remediation-tracking context to visual finding cards so owners,
   temporary acceptance reasons, update dates, and review dates are visible next
   to tracked findings.
+- Added a copyable `ignore audit` next-step command to visual ignore cleanup
+  sections, including custom ignore-file paths when configured.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.
 - Added compact lifecycle badges to visual finding groups for new, remaining,

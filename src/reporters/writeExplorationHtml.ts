@@ -2219,6 +2219,7 @@ function renderIgnoreCleanup(ignore: IgnoreSummary | undefined): string {
     <p class="muted">${needsCleanup
       ? "Review stale or expiring temporary exceptions before they become permanent accessibility debt."
       : "Scoped ignores are active; keep them temporary, owned, and reviewed."}</p>
+    <code class="share-command">${escapeHtml(buildIgnoreAuditCommand(ignore.file))}</code>
     <div class="ignore-cleanup-grid">
       ${ignoreCleanupCard("Ignored findings", ignore.ignoredIssues, "currently hidden by active scoped rules")}
       ${ignoreCleanupCard("Expiring soon", ignore.expiringSoonRules, "review before the expiry date")}
@@ -2227,6 +2228,13 @@ function renderIgnoreCleanup(ignore: IgnoreSummary | undefined): string {
     </div>
     ${ownerList}
   </section>`;
+}
+
+function buildIgnoreAuditCommand(file: string): string {
+  const fileArg = file && file !== "a11y-ignore.json"
+    ? ` --ignore-file ${shellQuote(file)}`
+    : "";
+  return `npx a11y-shiftleft-cli ignore audit${fileArg}`;
 }
 
 function ignoreCleanupCard(label: string, value: number, detail: string): string {
