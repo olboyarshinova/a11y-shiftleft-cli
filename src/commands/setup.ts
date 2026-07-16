@@ -212,14 +212,7 @@ function gitHookFiles(tool: GitHookTool, gate: string): Array<{ fileName: string
 }
 
 function stagedStaticCheckScript(gate: string): string {
-  return `files=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\\.(js|jsx|ts|tsx|vue|html)$' || true)
-if [ -z "$files" ]; then
-  echo "a11y-shiftleft: no staged frontend files to check."
-  exit 0
-fi
-
-npx a11y-shiftleft-cli check --static --include $files --out reports --gate ${gate}
-`;
+  return `npx a11y-shiftleft-cli check --static --staged --out reports --gate ${gate}\n`;
 }
 
 function formatGitHookNextStep(tool: Exclude<GitHookTool, "none">): string {

@@ -1,4 +1,6 @@
 import path from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import type { Command } from "commander";
 import { loadConfig } from "../config/loadConfig.js";
 import { runEslintAdapter } from "../adapters/eslintAdapter.js";
@@ -46,6 +48,7 @@ export interface CheckOptions {
   scrollMaxSteps?: string;
   scrollWaitMs?: string;
   include?: string[];
+  staged?: boolean;
   format?: string[];
   out?: string;
   failOn?: Severity | "none";
@@ -84,6 +87,9 @@ export interface CheckResult {
   failed: boolean;
 }
 
+const execFileAsync = promisify(execFile);
+const FRONTEND_STATIC_FILE_RE = /\.(?:js|jsx|ts|tsx|vue|html)$/iu;
+
 export function registerCheckCommand(program: Command): void {
   program
     .command("check")
@@ -108,6 +114,7 @@ export function registerCheckCommand(program: Command): void {
     .option("--scroll-max-steps <count>", "Maximum auto-scroll steps per page")
     .option("--scroll-wait-ms <ms>", "Wait after each auto-scroll step")
     .option("--include <patterns...>", "Static file globs to scan")
+    .option("--staged", "Run static checks against staged frontend files only")
     .option("--format <formats...>", "Report formats: json, csv, markdown, or all")
     .option("--out <dir>", "Output directory")
     .option("--fail-on <severity>", "critical, warning, info, or none")
@@ -148,6 +155,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
   const startedAt = Date.now();
   const urls = parseUrls(options.url);
   const cwd = options.cwd ? path.resolve(options.cwd) : process.cwd();
+  const stagedStaticFiles = options.staged ? await collectStagedFrontendFiles(cwd) : undefined;
   const authState = resolveAuthStatePath(options.authState, cwd);
   const staticOnly = Boolean(options.static && !options.dynamic);
   const config = await loadConfig({
@@ -160,7 +168,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
     wcagVersion: toWcagVersion(options.wcagVersion),
     failOn: gate.failOn,
     static: {
-      include: options.include
+      include: stagedStaticFiles || options.include
     },
     dynamic: {
       enabled: !staticOnly && (options.dynamic || urls.length > 0 || options.crawl) ? true : undefined,
@@ -213,7 +221,9 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
 
   if (runStatic && effectiveConfig.static.enabled) {
     const adapterStartedAt = Date.now();
-    const issues = await runEslintAdapter(effectiveConfig);
+    const issues = options.staged && stagedStaticFiles?.length === 0
+      ? []
+      : await runEslintAdapter(effectiveConfig);
     adapterRuns.push({
       name: "static",
       enabled: true,
@@ -822,6 +832,20 @@ export function parseFormats(formats?: string[]): ReportFormat[] {
   }
 
   return normalized as ReportFormat[];
+}
+
+export async function collectStagedFrontendFiles(cwd = process.cwd()): Promise<string[]> {
+  const { stdout } = await execFileAsync("git", [
+    "diff",
+    "--cached",
+    "--name-only",
+    "--diff-filter=ACMR"
+  ], { cwd });
+
+  return stdout
+    .split(/\r?\n/u)
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0 && FRONTEND_STATIC_FILE_RE.test(item));
 }
 
 export function parseUrls(urls?: string[]): string[] {

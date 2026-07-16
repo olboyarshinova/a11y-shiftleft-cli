@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { filterByWcagConformance, filterByWcagLevel, formatCheckConsoleSummary, formatCheckProgressMessage, formatVerboseCheckSummary, parseFormats, parseUrls, resolveCheckModes, resolveQualityGate, shouldFail } from "../../dist/commands/check.js";
+import { execFileSync } from "node:child_process";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { collectStagedFrontendFiles, filterByWcagConformance, filterByWcagLevel, formatCheckConsoleSummary, formatCheckProgressMessage, formatVerboseCheckSummary, parseFormats, parseUrls, resolveCheckModes, resolveQualityGate, shouldFail } from "../../dist/commands/check.js";
 
 const summary = {
   critical: 1,
@@ -187,6 +191,24 @@ test("resolveCheckModes treats static and dynamic flags as explicit modes", () =
     runStatic: true,
     runDynamic: true
   });
+});
+
+test("collectStagedFrontendFiles returns staged frontend files only", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-check-staged-"));
+  await fs.mkdir(path.join(cwd, "src"), { recursive: true });
+  await fs.mkdir(path.join(cwd, "docs"), { recursive: true });
+  await fs.writeFile(path.join(cwd, "src/Button.tsx"), "export const Button = () => <button />;\n");
+  await fs.writeFile(path.join(cwd, "src/style.css"), ".button {}\n");
+  await fs.writeFile(path.join(cwd, "docs/index.html"), "<main></main>\n");
+  await fs.writeFile(path.join(cwd, "README.md"), "# Demo\n");
+
+  execFileSync("git", ["init"], { cwd, stdio: "ignore" });
+  execFileSync("git", ["add", "."], { cwd, stdio: "ignore" });
+
+  assert.deepEqual(await collectStagedFrontendFiles(cwd), [
+    "docs/index.html",
+    "src/Button.tsx"
+  ]);
 });
 
 test("formatVerboseCheckSummary renders scan context without JSON parsing requirements", () => {
