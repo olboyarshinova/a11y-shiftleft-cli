@@ -4,7 +4,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { collectStagedFrontendFiles, filterByWcagConformance, filterByWcagLevel, formatCheckConsoleSummary, formatCheckProgressMessage, formatVerboseCheckSummary, parseFormats, parseUrls, resolveCheckModes, resolveQualityGate, shouldFail } from "../../dist/commands/check.js";
+import { collectStagedFrontendFiles, filterByWcagConformance, filterByWcagLevel, formatCheckConsoleSummary, formatCheckProgressMessage, formatVerboseCheckSummary, parseFormats, parseUrls, resolveCheckModes, resolveQualityGate, runCheck, shouldFail } from "../../dist/commands/check.js";
 
 const summary = {
   critical: 1,
@@ -209,6 +209,26 @@ test("collectStagedFrontendFiles returns staged frontend files only", async () =
     "docs/index.html",
     "src/Button.tsx"
   ]);
+});
+
+test("collectStagedFrontendFiles explains non-git directories", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-check-not-git-"));
+
+  await assert.rejects(
+    collectStagedFrontendFiles(cwd),
+    /check --staged requires a Git repository/
+  );
+});
+
+test("runCheck rejects ambiguous staged and include options", async () => {
+  await assert.rejects(
+    runCheck({
+      staged: true,
+      include: ["src/**/*.tsx"],
+      quiet: true
+    }),
+    /Use either --staged or --include, not both/
+  );
 });
 
 test("formatVerboseCheckSummary renders scan context without JSON parsing requirements", () => {

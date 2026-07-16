@@ -152,6 +152,10 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
     throw new Error("Use either --retest or baseline mode, not both.");
   }
 
+  if (options.staged && options.include && options.include.length > 0) {
+    throw new Error("Use either --staged or --include, not both.");
+  }
+
   const startedAt = Date.now();
   const urls = parseUrls(options.url);
   const cwd = options.cwd ? path.resolve(options.cwd) : process.cwd();
@@ -369,6 +373,10 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
   });
 
   if (!options.quiet) {
+    if (options.staged && stagedStaticFiles?.length === 0) {
+      console.log("a11y-shiftleft: no staged frontend files to check.");
+    }
+
     if (options.verbose) {
       console.log(formatVerboseCheckSummary({
         framework,
@@ -835,12 +843,19 @@ export function parseFormats(formats?: string[]): ReportFormat[] {
 }
 
 export async function collectStagedFrontendFiles(cwd = process.cwd()): Promise<string[]> {
-  const { stdout } = await execFileAsync("git", [
-    "diff",
-    "--cached",
-    "--name-only",
-    "--diff-filter=ACMR"
-  ], { cwd });
+  let stdout: string;
+  try {
+    ({ stdout } = await execFileAsync("git", [
+      "diff",
+      "--cached",
+      "--name-only",
+      "--diff-filter=ACMR"
+    ], { cwd }));
+  } catch (error) {
+    throw new Error("check --staged requires a Git repository. Run it inside a repo with staged files, or use --include <patterns...> instead.", {
+      cause: error
+    });
+  }
 
   return stdout
     .split(/\r?\n/u)

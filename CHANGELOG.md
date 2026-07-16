@@ -105,6 +105,8 @@
   Husky and Lefthook files are not mistaken for fully installed hooks.
 - Added `check --staged` for static checks against staged frontend files and
   simplified generated Husky/Lefthook hooks to use it.
+- Hardened `check --staged` with a clearer non-Git error, an explicit
+  `--staged`/`--include` conflict guard, and a no-staged-files console note.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.
 - Added compact lifecycle badges to visual finding groups for new, remaining,
