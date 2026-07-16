@@ -39,9 +39,10 @@ test("workflowTemplate includes compliance standard and multiple URLs", () => {
   });
 
   assert.match(workflow, /curl -fsS http:\/\/localhost:4200/);
+  assert.match(workflow, /fetch-depth: 0/);
   assert.match(
     workflow,
-    /npx a11y-shiftleft-cli check --dynamic --url http:\/\/localhost:4200 http:\/\/localhost:4200\/favorites --crawl --crawl-depth 1 --crawl-limit 10 --out reports --fail-on warning --standard section508/
+    /npx a11y-shiftleft-cli check --dynamic --changed-since origin\/\$\{\{ github\.base_ref \}\} --url http:\/\/localhost:4200 http:\/\/localhost:4200\/favorites --crawl --crawl-depth 1 --crawl-limit 10 --out reports --fail-on warning --standard section508/
   );
 });
 
@@ -58,9 +59,11 @@ test("workflowTemplate supports bounded fast PR crawls", () => {
   assert.match(workflow, /name: Accessibility PR/);
   assert.match(workflow, /pull_request:/);
   assert.match(workflow, /actions\/checkout@v6/);
+  assert.match(workflow, /fetch-depth: 0/);
   assert.match(workflow, /actions\/setup-node@v6/);
   assert.match(workflow, /node-version: 22/);
   assert.match(workflow, /--crawl --crawl-depth 1 --crawl-limit 5/);
+  assert.match(workflow, /--changed-since origin\/\$\{\{ github\.base_ref \}\}/);
   assert.match(workflow, /id: upload-a11y-report/);
   assert.match(workflow, /REPORT_ARTIFACT_URL: \$\{\{ steps\.upload-a11y-report\.outputs\.artifact-url \}\}/);
   assert.match(workflow, /Comment on PR/);
