@@ -147,8 +147,10 @@ Section 508 certification.
   manager view for risk, trends, coverage, and ownership. Use these views to
   reduce report overwhelm while preserving the same underlying evidence.
 - Make issue lifecycle status visible in reports across baseline, retest,
-  ignores, and remediation tracking: new, accepted, ignored until date, fixed,
-  remaining, needs manual review, and third-party.
+  ignores, and remediation tracking. Current visual findings show compact
+  lifecycle badges for new, remaining, tracked remediation status, needs manual
+  review, and third-party findings; next, connect ignored-until dates and fixed
+  evidence more directly in the report UI.
 - Add more copyable fix summaries, including targeted snippets for reflow,
   contrast, iframe ownership, and keyboard/focus issues.
 - Reframe selected report labels around potential exclusion risk, affected

@@ -80,6 +80,8 @@
   groups skipped actions by reason and shows examples with state links.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.
+- Added compact lifecycle badges to visual finding groups for new, remaining,
+  tracked remediation, needs-review, and third-party findings.
 
 ## 0.8.1 - 2026-07-12
 

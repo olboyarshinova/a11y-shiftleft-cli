@@ -1418,6 +1418,23 @@ export function renderExplorationHtml(
       color: #05603a;
     }
 
+    .badge-lifecycle {
+      color: #475569;
+    }
+
+    .badge-lifecycle-new {
+      color: var(--critical);
+    }
+
+    .badge-lifecycle-remaining,
+    .badge-lifecycle-review {
+      color: var(--warning-marker);
+    }
+
+    .badge-lifecycle-fixed {
+      color: var(--ok);
+    }
+
     .issue-list,
     .edge-list {
       align-items: start;
@@ -3428,6 +3445,7 @@ function renderStateIssueGroup(
       ${summary.warning ? badge("warning", `${summary.warning} warning`) : ""}
       ${summary.info ? badge("info", `${summary.info} info`) : ""}
       ${findingTypes.map(findingTypeBadge).join("")}
+      ${renderLifecycleBadges(sortedIssues)}
       ${levels.map((level) => `<span class="badge">WCAG Level ${escapeHtml(level)}</span>`).join("")}
     ${colorSchemes.map((scheme) => `<span class="badge">${escapeHtml(scheme)} color scheme</span>`).join("")}
       ${ownershipLabels.map((label) => `<span class="badge">${escapeHtml(label || "")}</span>`).join("")}
@@ -3464,6 +3482,7 @@ function stateIssueDisplayKey(issue: DedupedIssue): string {
     findingType: issue.findingType,
     message: normalizeIssueMessageForDisplay(issue.message),
     colorScheme: issue.colorScheme || "",
+    lifecycle: lifecycleLabelsForIssue(issue).map((item) => item.label).sort(),
     wcag: (issue.wcagCriteria || []).map((criterion) => `${criterion.id}:${criterion.level}`).sort(),
     ownership: issue.ownership
       ? `${issue.ownership.kind}:${issue.ownership.source || ""}:${issue.ownership.label}`
@@ -3479,7 +3498,7 @@ function renderFindingOccurrenceGroup(
   const issue = group.representative;
   const grouped = group.issues.length > 1;
   return `<li class="finding-occurrence">
-      ${totalRuleIssues > 1 ? `<div>${severityBadge(issue.severity)} ${findingTypeBadge(issue.findingType)}${grouped ? ` <span class="badge">${group.issues.length} locations</span>` : ""}</div>` : ""}
+      ${totalRuleIssues > 1 ? `<div>${severityBadge(issue.severity)} ${findingTypeBadge(issue.findingType)}${renderLifecycleBadges(group.issues)}${grouped ? ` <span class="badge">${group.issues.length} locations</span>` : ""}</div>` : ""}
       ${totalRuleIssues > 1 && issue.colorScheme ? `<div class="badges"><span class="badge">${escapeHtml(issue.colorScheme)} color scheme</span></div>` : ""}
       <div>${escapeHtml(normalizeIssueMessageForDisplay(issue.message))}</div>
       ${grouped ? renderFindingTargets(group.issues, annotationNumberByIssueKey) : renderFindingTarget(group.issues[0], annotationNumberByIssueKey)}
@@ -3963,6 +3982,49 @@ function findingTypeBadge(type: DedupedIssue["findingType"]): string {
   if (type === "needs-review") return `<span class="badge">needs review</span>`;
   if (type === "best-practice") return `<span class="badge">best practice</span>`;
   return `<span class="badge">unmapped review</span>`;
+}
+
+function renderLifecycleBadges(issues: DedupedIssue[]): string {
+  const labels = new Map<string, { label: string; tone: string }>();
+
+  for (const issue of issues) {
+    for (const item of lifecycleLabelsForIssue(issue)) {
+      labels.set(item.label, item);
+    }
+  }
+
+  return [...labels.values()]
+    .map((item) => `<span class="badge badge-lifecycle badge-lifecycle-${escapeAttribute(item.tone)}">${escapeHtml(item.label)}</span>`)
+    .join("");
+}
+
+function lifecycleLabelsForIssue(issue: DedupedIssue): Array<{ label: string; tone: string }> {
+  const labels: Array<{ label: string; tone: string }> = [];
+
+  if (issue.baselineStatus === "new" || issue.retestStatus === "new") {
+    labels.push({ label: "new", tone: "new" });
+  }
+
+  if (issue.baselineStatus === "existing" || issue.retestStatus === "remaining") {
+    labels.push({ label: "remaining", tone: "remaining" });
+  }
+
+  if (issue.remediationTracking) {
+    labels.push({
+      label: `tracked: ${issue.remediationTracking.status}`,
+      tone: issue.remediationTracking.status === "fixed" ? "fixed" : "remaining"
+    });
+  }
+
+  if (issue.findingType === "needs-review") {
+    labels.push({ label: "needs manual review", tone: "review" });
+  }
+
+  if (issue.ownership?.kind === "third-party-embed") {
+    labels.push({ label: "third-party", tone: "remaining" });
+  }
+
+  return labels;
 }
 
 function countFindingTypes(issues: DedupedIssue[]): Record<DedupedIssue["findingType"], number> {

@@ -486,6 +486,41 @@ test("renderExplorationHtml includes report retention evidence without local pat
   assert.doesNotMatch(html, /\/Users\//);
 });
 
+test("renderExplorationHtml shows issue lifecycle badges", () => {
+  const lifecycleIssues = [
+    {
+      ...issues[0],
+      baselineStatus: "new" as const,
+      retestStatus: "remaining" as const,
+      remediationTracking: {
+        fingerprint: "button-name::state-1",
+        status: "in-progress" as const,
+        owner: "frontend",
+        reason: "Queued for design-system fix.",
+        updatedAt: "2026-07-16"
+      }
+    },
+    {
+      ...issues[0],
+      fingerprint: "manual-review::state-1",
+      ruleId: "manual-review",
+      findingType: "needs-review" as const,
+      baselineStatus: undefined,
+      retestStatus: undefined,
+      remediationTracking: undefined,
+      message: "Manual review required for this interaction."
+    }
+  ];
+
+  const html = renderExplorationHtml(graph, lifecycleIssues);
+
+  assert.match(html, /badge-lifecycle-new">new<\/span>/);
+  assert.match(html, /badge-lifecycle-remaining">remaining<\/span>/);
+  assert.match(html, /badge-lifecycle-remaining">tracked: in-progress<\/span>/);
+  assert.match(html, /badge-lifecycle-review">needs manual review<\/span>/);
+  assert.match(html, /badge-lifecycle-remaining">third-party<\/span>/);
+});
+
 test("renderExplorationHtml groups all ticket drafts by issue type across states", () => {
   const html = renderExplorationHtml(graph, [
     issues[0],
