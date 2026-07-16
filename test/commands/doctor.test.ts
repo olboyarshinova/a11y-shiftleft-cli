@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { checkFrameworkAdapterPackages, formatDoctorChecks, runDoctorChecks, summarizeDoctorChecks } from "../../dist/commands/doctor.js";
+import { checkFrameworkAdapterPackages, doctorNextStep, formatDoctorChecks, runDoctorChecks, summarizeDoctorChecks } from "../../dist/commands/doctor.js";
 
 test("runDoctorChecks reports local setup and reachable target URL", async () => {
   const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-doctor-"));
@@ -29,6 +29,7 @@ test("runDoctorChecks reports local setup and reachable target URL", async () =>
   assert.equal(checks.find((check) => check.name === "Audit scope")?.status, "pass");
   assert.match(checks.find((check) => check.name === "Audit scope")?.message || "", /any rendered website URL/);
   assert.equal(checks.find((check) => check.name === "Target URL")?.status, "pass");
+  assert.match(doctorNextStep(checks), /audit --url http:\/\/localhost:3000 --out reports --open/);
 });
 
 test("runDoctorChecks discovers .a11yrc.json config", async () => {
@@ -135,4 +136,14 @@ test("formatDoctorChecks renders status summary", () => {
   });
   assert.match(formatDoctorChecks(checks), /PASS Node.js/);
   assert.match(formatDoctorChecks(checks), /Summary: 1 pass, 1 warn, 1 fail/);
+  assert.match(formatDoctorChecks(checks), /Next step: Fix failed checks above, then rerun doctor\./);
+});
+
+test("doctorNextStep asks for a URL when reachability was skipped", () => {
+  const checks = [
+    { name: "Node.js", status: "pass" as const, message: "Using Node 22." },
+    { name: "Target URL", status: "warn" as const, message: "No --url provided." }
+  ];
+
+  assert.match(doctorNextStep(checks), /Run doctor again with --url <app-url>/);
 });

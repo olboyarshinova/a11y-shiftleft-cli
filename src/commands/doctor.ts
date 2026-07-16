@@ -57,7 +57,11 @@ export function registerDoctorCommand(program: Command): void {
       const checks = await runDoctorChecks(options);
 
       if (options.json) {
-        console.log(JSON.stringify({ checks, summary: summarizeDoctorChecks(checks) }, null, 2));
+        console.log(JSON.stringify({
+          checks,
+          summary: summarizeDoctorChecks(checks),
+          nextStep: doctorNextStep(checks)
+        }, null, 2));
       } else {
         console.log(formatDoctorChecks(checks));
       }
@@ -163,10 +167,30 @@ export function formatDoctorChecks(checks: DoctorCheck[]): string {
     "",
     ...checks.map((check) => `${statusIcon(check.status)} ${check.name}: ${check.message}`),
     "",
-    `Summary: ${summary.pass} pass, ${summary.warn} warn, ${summary.fail} fail`
+    `Summary: ${summary.pass} pass, ${summary.warn} warn, ${summary.fail} fail`,
+    `Next step: ${doctorNextStep(checks)}`
   ];
 
   return lines.join("\n");
+}
+
+export function doctorNextStep(checks: DoctorCheck[]): string {
+  if (checks.some((check) => check.status === "fail")) {
+    return "Fix failed checks above, then rerun doctor.";
+  }
+
+  const targetUrl = targetUrlFromDoctorChecks(checks);
+  if (!targetUrl) {
+    return "Run doctor again with --url <app-url> to verify dynamic scan reachability.";
+  }
+
+  return `Run a visual audit: npx a11y-shiftleft-cli audit --url ${targetUrl} --out reports --open`;
+}
+
+function targetUrlFromDoctorChecks(checks: DoctorCheck[]): string | undefined {
+  const target = checks.find((check) => check.name === "Target URL" && check.status === "pass");
+  const match = target?.message.match(/^(https?:\/\/\S+)\s+responded/u);
+  return match?.[1];
 }
 
 async function resolveDoctorFramework(
