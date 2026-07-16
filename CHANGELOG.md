@@ -78,6 +78,8 @@
   calling the internal comment script directly.
 - Added a compact Safe Exploration Guardrails section to visual reports that
   groups skipped actions by reason and shows examples with state links.
+- Added compact user-impact evidence to visual finding cards so reports show
+  affected user groups and practical impact next to the technical rule details.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.
 - Added compact lifecycle badges to visual finding groups for new, remaining,

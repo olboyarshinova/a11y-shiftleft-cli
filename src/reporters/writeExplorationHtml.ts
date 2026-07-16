@@ -1584,6 +1584,11 @@ export function renderExplorationHtml(
       border-left-color: var(--warning-marker);
     }
 
+    .finding-context-impact {
+      background: #f0fdf4;
+      border-left-color: var(--ok);
+    }
+
     .finding-context-blocked {
       border-left-color: var(--critical);
     }
@@ -3502,6 +3507,7 @@ function renderFindingOccurrenceGroup(
       ${totalRuleIssues > 1 && issue.colorScheme ? `<div class="badges"><span class="badge">${escapeHtml(issue.colorScheme)} color scheme</span></div>` : ""}
       <div>${escapeHtml(normalizeIssueMessageForDisplay(issue.message))}</div>
       ${grouped ? renderFindingTargets(group.issues, annotationNumberByIssueKey) : renderFindingTarget(group.issues[0], annotationNumberByIssueKey)}
+      ${renderUserImpact(issue)}
       ${renderOwnership(issue)}
       ${renderHumanVerificationContext(issue)}
       ${totalRuleIssues > 1 ? "" : renderContrastEvidence(issue, annotationNumberByIssueKey)}
@@ -3596,6 +3602,29 @@ function renderOwnership(issue: DedupedIssue): string {
     ${source}
     ${note}
   </aside>`;
+}
+
+function renderUserImpact(issue: DedupedIssue): string {
+  if (!issue.userImpact) return "";
+  const affectedUsers = compactAffectedUsers(issue.userImpact.affectedUsers);
+  const users = affectedUsers ? `<span>Affected users: ${escapeHtml(affectedUsers)}</span>` : "";
+  return `<aside class="finding-context finding-context-impact" aria-label="User impact">
+    <strong>User impact: ${escapeHtml(formatUserImpactLevel(issue.userImpact.level))}</strong>
+    ${users}
+    <span>${escapeHtml(issue.userImpact.reason)}</span>
+  </aside>`;
+}
+
+function compactAffectedUsers(users: string[]): string {
+  if (users.length <= 4) return users.join(", ");
+  return `${users.slice(0, 4).join(", ")}, +${users.length - 4} more`;
+}
+
+function formatUserImpactLevel(level: NonNullable<DedupedIssue["userImpact"]>["level"]): string {
+  if (level === "blocker") return "Blocker";
+  if (level === "significant") return "Significant";
+  if (level === "workaround") return "Workaround available";
+  return "Minor";
 }
 
 function renderHumanVerificationContext(issue: DedupedIssue): string {

@@ -153,9 +153,10 @@ Section 508 certification.
   evidence more directly in the report UI.
 - Add more copyable fix summaries, including targeted snippets for reflow,
   contrast, iframe ownership, and keyboard/focus issues.
-- Reframe selected report labels around potential exclusion risk, affected
-  users, and practical impact while preserving technical WCAG and rule metadata
-  for developers.
+- Continue reframing selected report labels around potential exclusion risk,
+  affected users, and practical impact while preserving technical WCAG and rule
+  metadata for developers. Current visual findings can show compact user-impact
+  evidence when it is available.
 - Add a future drag-and-drop report viewer for the documentation website so a
   user can open an existing `a11y-report.json` without rerunning the CLI.
 - Continue hardening screenshot annotations, including selector matching,

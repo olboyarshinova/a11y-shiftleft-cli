@@ -1113,6 +1113,28 @@ test("renderExplorationHtml explains human verification blockers", () => {
   assert.match(html, /Use a staging, preview, or allowlisted URL/);
 });
 
+test("renderExplorationHtml shows compact user impact evidence", () => {
+  const html = renderExplorationHtml(graph, [{
+    ...issues[0],
+    userImpact: {
+      level: "significant",
+      affectedUsers: [
+        "Keyboard users",
+        "Screen reader users",
+        "Switch-control users",
+        "Voice-control users",
+        "Low-vision users"
+      ],
+      reason: "This issue can make a core task difficult to complete."
+    }
+  }]);
+
+  assert.match(html, /aria-label="User impact"/);
+  assert.match(html, /User impact: Significant/);
+  assert.match(html, /Affected users: Keyboard users, Screen reader users, Switch-control users, Voice-control users, \+1 more/);
+  assert.match(html, /This issue can make a core task difficult to complete/);
+});
+
 test("renderExplorationHtml marks unavailable coverage evidence", () => {
   const html = renderExplorationHtml({
     ...graph,
