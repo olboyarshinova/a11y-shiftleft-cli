@@ -255,6 +255,7 @@ The commands below assume `APP_URL` is set to your local, staging, or preview UR
 | `audit` | Check one component or page area | `npx a11y-shiftleft-cli audit --url $APP_URL --scope '#main' --out reports` |
 | `check` | Fast CI or PR check | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports` |
 | `check` | Pre-commit static check for changed frontend files | `npx a11y-shiftleft-cli check --static --staged --out reports` |
+| `check` | PR static check against a base branch | `npx a11y-shiftleft-cli check --static --changed-since origin/main --out reports` |
 | `explore` | Debug visual state discovery | `npx a11y-shiftleft-cli explore --url $APP_URL --out reports` |
 | `setup` | Create npm scripts, config, `.gitignore`, and CI workflow | `npx a11y-shiftleft-cli setup --url $APP_URL --start-command "npm run dev"` |
 | `generate-ci` | Regenerate only CI workflow files | `npx a11y-shiftleft-cli generate-ci --provider github --url $APP_URL --start-command "npm run dev"` |

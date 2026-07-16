@@ -200,9 +200,11 @@ Section 508 certification.
   files through a hardened `check --staged` mode in the selected gate mode and
   prints hook-runner enablement commands; next, validate the generated hooks in
   real React, Vue, and Angular repositories.
-- Add incremental scan support for pull requests by prioritizing changed static
-  files and a small configured set of dynamic smoke-test URLs before broader
-  scheduled scans.
+- Continue incremental scan support for pull requests. Current `check
+  --changed-since <ref>` can limit static checks to frontend files changed
+  relative to a base ref; next, connect that mode to generated PR workflows and
+  a small configured set of dynamic smoke-test URLs before broader scheduled
+  scans.
 - Add explicit PR scan presets that separate fast pull-request checks from
   slower scheduled or manual full audits. Keep the default PR path short,
   bounded, and baseline-friendly so teams do not disable the tool because of

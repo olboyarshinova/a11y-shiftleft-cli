@@ -107,6 +107,8 @@
   simplified generated Husky/Lefthook hooks to use it.
 - Hardened `check --staged` with a clearer non-Git error, an explicit
   `--staged`/`--include` conflict guard, and a no-staged-files console note.
+- Added `check --changed-since <ref>` for incremental static checks against
+  frontend files changed relative to a pull request base ref.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.
 - Added compact lifecycle badges to visual finding groups for new, remaining,

@@ -49,6 +49,7 @@ export interface CheckOptions {
   scrollWaitMs?: string;
   include?: string[];
   staged?: boolean;
+  changedSince?: string;
   format?: string[];
   out?: string;
   failOn?: Severity | "none";
@@ -115,6 +116,7 @@ export function registerCheckCommand(program: Command): void {
     .option("--scroll-wait-ms <ms>", "Wait after each auto-scroll step")
     .option("--include <patterns...>", "Static file globs to scan")
     .option("--staged", "Run static checks against staged frontend files only")
+    .option("--changed-since <ref>", "Run static checks against frontend files changed since a Git ref")
     .option("--format <formats...>", "Report formats: json, csv, markdown, or all")
     .option("--out <dir>", "Output directory")
     .option("--fail-on <severity>", "critical, warning, info, or none")
@@ -152,14 +154,20 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
     throw new Error("Use either --retest or baseline mode, not both.");
   }
 
-  if (options.staged && options.include && options.include.length > 0) {
-    throw new Error("Use either --staged or --include, not both.");
-  }
+  assertOneStaticFileSelector(options);
 
   const startedAt = Date.now();
   const urls = parseUrls(options.url);
   const cwd = options.cwd ? path.resolve(options.cwd) : process.cwd();
   const stagedStaticFiles = options.staged ? await collectStagedFrontendFiles(cwd) : undefined;
+  const changedStaticFiles = options.changedSince ? await collectChangedFrontendFiles(cwd, options.changedSince) : undefined;
+  const selectedStaticFiles = stagedStaticFiles || changedStaticFiles;
+  const hasNoSelectedStaticFiles = Boolean(selectedStaticFiles && selectedStaticFiles.length === 0);
+
+  if (hasNoSelectedStaticFiles && !urls.length && !options.crawl && !options.dynamic) {
+    options = { ...options, static: true };
+  }
+
   const authState = resolveAuthStatePath(options.authState, cwd);
   const staticOnly = Boolean(options.static && !options.dynamic);
   const config = await loadConfig({
@@ -172,7 +180,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
     wcagVersion: toWcagVersion(options.wcagVersion),
     failOn: gate.failOn,
     static: {
-      include: stagedStaticFiles || options.include
+      include: selectedStaticFiles || options.include
     },
     dynamic: {
       enabled: !staticOnly && (options.dynamic || urls.length > 0 || options.crawl) ? true : undefined,
@@ -225,7 +233,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
 
   if (runStatic && effectiveConfig.static.enabled) {
     const adapterStartedAt = Date.now();
-    const issues = options.staged && stagedStaticFiles?.length === 0
+    const issues = hasNoSelectedStaticFiles
       ? []
       : await runEslintAdapter(effectiveConfig);
     adapterRuns.push({
@@ -373,8 +381,10 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
   });
 
   if (!options.quiet) {
-    if (options.staged && stagedStaticFiles?.length === 0) {
-      console.log("a11y-shiftleft: no staged frontend files to check.");
+    if (hasNoSelectedStaticFiles) {
+      console.log(options.staged
+        ? "a11y-shiftleft: no staged frontend files to check."
+        : `a11y-shiftleft: no frontend files changed since ${options.changedSince}.`);
     }
 
     if (options.verbose) {
@@ -590,6 +600,18 @@ function formatQualityGateEffect(profile: QualityGateProfile | undefined): strin
   if (profile === "critical") return "fails when any critical finding is present";
   if (profile === "warning") return "fails when any critical or warning finding is present";
   return "uses the selected --fail-on severity";
+}
+
+function assertOneStaticFileSelector(options: Pick<CheckOptions, "include" | "staged" | "changedSince">): void {
+  const selectors = [
+    options.include && options.include.length > 0 ? "--include" : undefined,
+    options.staged ? "--staged" : undefined,
+    options.changedSince ? "--changed-since" : undefined
+  ].filter(Boolean);
+
+  if (selectors.length > 1) {
+    throw new Error(`Choose only one static file selector: ${selectors.join(", ")}.`);
+  }
 }
 
 function createCheckAdapterIssue(
@@ -853,6 +875,32 @@ export async function collectStagedFrontendFiles(cwd = process.cwd()): Promise<s
     ], { cwd }));
   } catch (error) {
     throw new Error("check --staged requires a Git repository. Run it inside a repo with staged files, or use --include <patterns...> instead.", {
+      cause: error
+    });
+  }
+
+  return stdout
+    .split(/\r?\n/u)
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0 && FRONTEND_STATIC_FILE_RE.test(item));
+}
+
+export async function collectChangedFrontendFiles(cwd: string, ref: string): Promise<string[]> {
+  const normalizedRef = ref.trim();
+  if (!normalizedRef) {
+    throw new Error("--changed-since requires a Git ref, for example origin/main.");
+  }
+
+  let stdout: string;
+  try {
+    ({ stdout } = await execFileAsync("git", [
+      "diff",
+      "--name-only",
+      "--diff-filter=ACMR",
+      `${normalizedRef}...HEAD`
+    ], { cwd }));
+  } catch (error) {
+    throw new Error(`check --changed-since could not compare against "${normalizedRef}". Fetch the ref or use --include <patterns...> instead.`, {
       cause: error
     });
   }

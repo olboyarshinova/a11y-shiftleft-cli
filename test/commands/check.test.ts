@@ -4,7 +4,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { collectStagedFrontendFiles, filterByWcagConformance, filterByWcagLevel, formatCheckConsoleSummary, formatCheckProgressMessage, formatVerboseCheckSummary, parseFormats, parseUrls, resolveCheckModes, resolveQualityGate, runCheck, shouldFail } from "../../dist/commands/check.js";
+import { collectChangedFrontendFiles, collectStagedFrontendFiles, filterByWcagConformance, filterByWcagLevel, formatCheckConsoleSummary, formatCheckProgressMessage, formatVerboseCheckSummary, parseFormats, parseUrls, resolveCheckModes, resolveQualityGate, runCheck, shouldFail } from "../../dist/commands/check.js";
 
 const summary = {
   critical: 1,
@@ -220,14 +220,54 @@ test("collectStagedFrontendFiles explains non-git directories", async () => {
   );
 });
 
-test("runCheck rejects ambiguous staged and include options", async () => {
+test("collectChangedFrontendFiles returns files changed since a git ref", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-check-changed-"));
+  await fs.mkdir(path.join(cwd, "src"), { recursive: true });
+  await fs.mkdir(path.join(cwd, "docs"), { recursive: true });
+  await fs.writeFile(path.join(cwd, "README.md"), "# Demo\n");
+
+  execFileSync("git", ["init"], { cwd, stdio: "ignore" });
+  execFileSync("git", ["add", "."], { cwd, stdio: "ignore" });
+  execFileSync("git", ["-c", "user.email=test@example.com", "-c", "user.name=Test", "commit", "-m", "Initial"], { cwd, stdio: "ignore" });
+
+  await fs.writeFile(path.join(cwd, "src/App.tsx"), "export const App = () => <main />;\n");
+  await fs.writeFile(path.join(cwd, "src/style.css"), ".app {}\n");
+  await fs.writeFile(path.join(cwd, "docs/page.html"), "<main></main>\n");
+  execFileSync("git", ["add", "."], { cwd, stdio: "ignore" });
+  execFileSync("git", ["-c", "user.email=test@example.com", "-c", "user.name=Test", "commit", "-m", "Update UI"], { cwd, stdio: "ignore" });
+
+  assert.deepEqual(await collectChangedFrontendFiles(cwd, "HEAD~1"), [
+    "docs/page.html",
+    "src/App.tsx"
+  ]);
+});
+
+test("collectChangedFrontendFiles explains missing git refs", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-check-missing-ref-"));
+  execFileSync("git", ["init"], { cwd, stdio: "ignore" });
+
+  await assert.rejects(
+    collectChangedFrontendFiles(cwd, "origin/main"),
+    /could not compare against "origin\/main"/
+  );
+});
+
+test("runCheck rejects ambiguous static file selectors", async () => {
   await assert.rejects(
     runCheck({
       staged: true,
       include: ["src/**/*.tsx"],
       quiet: true
     }),
-    /Use either --staged or --include, not both/
+    /Choose only one static file selector: --include, --staged/
+  );
+  await assert.rejects(
+    runCheck({
+      staged: true,
+      changedSince: "origin/main",
+      quiet: true
+    }),
+    /Choose only one static file selector: --staged, --changed-since/
   );
 });
 
