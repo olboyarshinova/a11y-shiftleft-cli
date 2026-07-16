@@ -78,7 +78,7 @@ Add accessibility checks to CI in one npm script.
 The built-in generator should remain the primary adoption path:
 
 ```bash
-npx a11y-shiftleft generate-ci \
+npx a11y-shiftleft-cli generate-ci \
   --url http://localhost:4200 http://localhost:4200/favorites \
   --start-command "npm run dev -- --host localhost --port 4200" \
   --fail-on warning \
@@ -202,7 +202,7 @@ Badges should support quick trust-building, not replace clear documentation.
 Add a troubleshooting command:
 
 ```bash
-npx a11y-shiftleft doctor
+npx a11y-shiftleft-cli doctor
 ```
 
 It should check:

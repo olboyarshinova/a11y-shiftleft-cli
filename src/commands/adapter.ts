@@ -52,7 +52,7 @@ export function registerAdapterCommand(program: Command): void {
         installPackages: recommendation.installPackages,
         packageManager,
         install,
-        init: `npx a11y-shiftleft init --framework ${recommendation.framework}`,
+        init: `npx a11y-shiftleft-cli init --framework ${recommendation.framework}`,
         note: recommendation.note
       };
 
@@ -74,7 +74,7 @@ export function formatAdapterList(): string {
     )),
     "",
     "Example:",
-    "npx a11y-shiftleft adapter add react"
+    "npx a11y-shiftleft-cli adapter add react"
   ];
 
   return lines.join("\n");

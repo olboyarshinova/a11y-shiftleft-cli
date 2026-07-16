@@ -61,7 +61,7 @@ Install:
 ```bash
 npm install --save-dev a11y-shiftleft-cli @a11y-shiftleft/react
 npx playwright install chromium
-npx a11y-shiftleft init --framework react
+npx a11y-shiftleft-cli init --framework react
 ```
 
 Add package scripts:
@@ -79,7 +79,7 @@ Add package scripts:
 Generate workflow:
 
 ```bash
-npx a11y-shiftleft generate-ci \
+npx a11y-shiftleft-cli generate-ci \
   --url http://localhost:3000 \
   --start-command "npm run start:a11y" \
   --fail-on none

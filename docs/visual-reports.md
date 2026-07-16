@@ -4,7 +4,7 @@ For a complete report, use `audit`. It adds keyboard evidence and a manual
 review checklist to the visual exploration results:
 
 ```bash
-npx a11y-shiftleft audit --url $APP_URL --out reports
+npx a11y-shiftleft-cli audit --url $APP_URL --out reports
 ```
 
 Open `reports/a11y-report.html`. Add `--excel`, `--pdf`, or `--raw` when those
@@ -18,7 +18,7 @@ Create `a11y-scope.json` before a run when the report should include planned
 audit context:
 
 ```bash
-npx a11y-shiftleft scope init \
+npx a11y-shiftleft-cli scope init \
   --url $APP_URL \
   --product-type "web application" \
   --sample-page "Core page:$APP_URL|Primary app entry" \
@@ -43,7 +43,7 @@ Use `explore` when you want the CLI to walk safe parts of a running app and
 produce only the lower-level visual exploration artifacts:
 
 ```bash
-npx a11y-shiftleft explore --url $APP_URL --max-depth 2 --out reports
+npx a11y-shiftleft-cli explore --url $APP_URL --max-depth 2 --out reports
 ```
 
 `explore` opens the start URL, scans it with axe, then safely follows
@@ -202,7 +202,7 @@ page context. Clean long states use compact viewport evidence.
 Use `--wait-ms` when screenshots are captured before the UI finishes rendering:
 
 ```bash
-npx a11y-shiftleft explore \
+npx a11y-shiftleft-cli explore \
   --url $APP_URL \
   --max-depth 2 \
   --wait-ms 1000 \
@@ -213,7 +213,7 @@ Use `--wait-for-selector` when the app has a stable "ready" element. This keeps
 the scan more deterministic than adding a long fixed delay:
 
 ```bash
-npx a11y-shiftleft explore \
+npx a11y-shiftleft-cli explore \
   --url $APP_URL \
   --wait-for-selector "[data-page-ready]" \
   --wait-ms 1000 \
@@ -260,7 +260,7 @@ page is not extremely tall, the CLI automatically keeps a scrollable full-page
 screenshot instead:
 
 ```bash
-npx a11y-shiftleft explore --url $APP_URL --out reports
+npx a11y-shiftleft-cli explore --url $APP_URL --out reports
 ```
 
 Exact visual duplicates are fingerprinted after capture and stored only once.
@@ -277,13 +277,13 @@ For applications that may expose real personal data, login screens, payment
 details, or production customer records, disable screenshots entirely:
 
 ```bash
-npx a11y-shiftleft explore --url $APP_URL --no-screenshots --out reports
+npx a11y-shiftleft-cli explore --url $APP_URL --no-screenshots --out reports
 ```
 
 If you intentionally need raw local screenshots for debugging, disable masking:
 
 ```bash
-npx a11y-shiftleft explore \
+npx a11y-shiftleft-cli explore \
   --url $APP_URL \
   --no-screenshot-redaction \
   --out reports
@@ -296,7 +296,7 @@ screenshots only for local debugging when you explicitly need the complete page
 around every captured state:
 
 ```bash
-npx a11y-shiftleft explore \
+npx a11y-shiftleft-cli explore \
   --url $APP_URL \
   --screenshot-format png \
   --screenshot-full-page \
@@ -362,7 +362,7 @@ They are not executable JavaScript regexes.
 You can also add one-off rules from the command line:
 
 ```bash
-npx a11y-shiftleft explore \
+npx a11y-shiftleft-cli explore \
   --url $APP_URL \
   --safe-block-text logout delete pay \
   --safe-block-url "*/checkout*" \
@@ -375,18 +375,18 @@ npx a11y-shiftleft explore \
 Suppress progress logs and console summary while still writing report files:
 
 ```bash
-npx a11y-shiftleft explore --url $APP_URL --quiet --out reports
+npx a11y-shiftleft-cli explore --url $APP_URL --quiet --out reports
 ```
 
 Ask for JSON when a script needs to parse stdout:
 
 ```bash
-npx a11y-shiftleft explore --url $APP_URL --json-summary --out reports
+npx a11y-shiftleft-cli explore --url $APP_URL --json-summary --out reports
 ```
 
 Print exploration limits, screenshot settings, safe-mode settings, and output
 formats before progress logs and the final summary:
 
 ```bash
-npx a11y-shiftleft explore --url $APP_URL --verbose --out reports
+npx a11y-shiftleft-cli explore --url $APP_URL --verbose --out reports
 ```

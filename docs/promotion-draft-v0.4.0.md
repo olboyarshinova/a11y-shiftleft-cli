@@ -18,9 +18,9 @@ React example:
 ```bash
 npm install --save-dev a11y-shiftleft-cli @a11y-shiftleft/react
 npx playwright install chromium
-npx a11y-shiftleft init --framework react
-npx a11y-shiftleft doctor --framework react
-npx a11y-shiftleft check --url http://localhost:3000
+npx a11y-shiftleft-cli init --framework react
+npx a11y-shiftleft-cli doctor --framework react
+npx a11y-shiftleft-cli check --url http://localhost:3000
 ```
 
 The goal is not to replace axe, Playwright, or ESLint accessibility plugins. It
@@ -38,8 +38,8 @@ packages for React, Vue, and Angular.
 CLI + one adapter:
 
 npm install --save-dev a11y-shiftleft-cli @a11y-shiftleft/react
-npx a11y-shiftleft init --framework react
-npx a11y-shiftleft check --url http://localhost:3000
+npx a11y-shiftleft-cli init --framework react
+npx a11y-shiftleft-cli check --url http://localhost:3000
 ```
 
 ## Follow-Up Actions

@@ -56,7 +56,7 @@ Where:
 Static scan:
 
 ```bash
-npx a11y-shiftleft check \
+npx a11y-shiftleft-cli check \
   --static \
   --framework react \
   --include "src/**/*.{js,jsx,ts,tsx}" \
@@ -67,7 +67,7 @@ npx a11y-shiftleft check \
 Dynamic scan:
 
 ```bash
-npx a11y-shiftleft check \
+npx a11y-shiftleft-cli check \
   --dynamic \
   --url http://localhost:3000 \
   --out reports \
@@ -77,7 +77,7 @@ npx a11y-shiftleft check \
 Combined scan:
 
 ```bash
-npx a11y-shiftleft check \
+npx a11y-shiftleft-cli check \
   --url http://localhost:3000 \
   --out reports \
   --fail-on none
@@ -97,7 +97,7 @@ reports/a11y-manual-checklist.json
 Generate the manual review checklist during intervention PRs:
 
 ```bash
-npx a11y-shiftleft check \
+npx a11y-shiftleft-cli check \
   --url http://localhost:3000 \
   --semi-auto \
   --out reports \

@@ -438,12 +438,12 @@ mkdir -p /tmp/a11y-consumer-smoke
 cd /tmp/a11y-consumer-smoke
 npm init -y
 npm install --save-dev a11y-shiftleft-cli
-npx a11y-shiftleft adapter add react
+npx a11y-shiftleft-cli adapter add react
 npm install --save-dev @a11y-shiftleft/react
-npx a11y-shiftleft --help
-npx a11y-shiftleft init --framework react
-npx a11y-shiftleft ticket --help
-npx a11y-shiftleft dashboard --help
+npx a11y-shiftleft-cli --help
+npx a11y-shiftleft-cli init --framework react
+npx a11y-shiftleft-cli ticket --help
+npx a11y-shiftleft-cli dashboard --help
 ```
 
 Create a minimal React file with an intentional issue:
@@ -457,7 +457,7 @@ export function App() {
 Run a static scan:
 
 ```bash
-npx a11y-shiftleft check \
+npx a11y-shiftleft-cli check \
   --static \
   --framework react \
   --include "src/**/*.{js,jsx,ts,tsx}" \

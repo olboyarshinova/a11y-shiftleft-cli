@@ -9,13 +9,13 @@ small run-to-run delta.
 Start your app first, then run:
 
 ```bash
-npx a11y-shiftleft watch --url $APP_URL --out reports/watch
+npx a11y-shiftleft-cli watch --url $APP_URL --out reports/watch
 ```
 
 Example without an environment variable:
 
 ```bash
-npx a11y-shiftleft watch --url http://localhost:5173 --out reports/watch
+npx a11y-shiftleft-cli watch --url http://localhost:5173 --out reports/watch
 ```
 
 The command watches common source folders:
@@ -40,7 +40,7 @@ watch mode.
 Use `--watch-path` when your project keeps UI code somewhere else:
 
 ```bash
-npx a11y-shiftleft watch \
+npx a11y-shiftleft-cli watch \
   --url $APP_URL \
   --watch-path src shared/ui packages/app \
   --out reports/watch
@@ -51,7 +51,7 @@ npx a11y-shiftleft watch \
 For fast lint-style feedback without opening the browser:
 
 ```bash
-npx a11y-shiftleft watch --static --out reports/watch
+npx a11y-shiftleft-cli watch --static --out reports/watch
 ```
 
 If your project uses React, Vue, or Angular static checks, install the matching
@@ -67,13 +67,13 @@ For browser-based checks, keep your dev server running:
 
 ```bash
 npm run dev
-npx a11y-shiftleft watch --dynamic --url http://localhost:5173 --out reports/watch
+npx a11y-shiftleft-cli watch --dynamic --url http://localhost:5173 --out reports/watch
 ```
 
 Use multiple URLs when the app has important routes:
 
 ```bash
-npx a11y-shiftleft watch \
+npx a11y-shiftleft-cli watch \
   --dynamic \
   --url http://localhost:5173 http://localhost:5173/settings \
   --out reports/watch
@@ -84,8 +84,8 @@ npx a11y-shiftleft watch \
 For an existing project with known findings:
 
 ```bash
-npx a11y-shiftleft check --url $APP_URL --baseline --out reports
-npx a11y-shiftleft watch --url $APP_URL --baseline --out reports/watch
+npx a11y-shiftleft-cli check --url $APP_URL --baseline --out reports
+npx a11y-shiftleft-cli watch --url $APP_URL --baseline --out reports/watch
 ```
 
 The first command creates `.a11y-baseline.json`. Later `watch` runs show new

@@ -89,8 +89,8 @@ Use `--scope <selector>` when you want browser checks to stay inside one
 component, dialog, checkout step, or page section:
 
 ```bash
-npx a11y-shiftleft audit --url $APP_URL --scope '#checkout' --out reports
-npx a11y-shiftleft check --dynamic --url $APP_URL --scope '#main' --out reports
+npx a11y-shiftleft-cli audit --url $APP_URL --scope '#checkout' --out reports
+npx a11y-shiftleft-cli check --dynamic --url $APP_URL --scope '#main' --out reports
 ```
 
 For shared defaults, use `dynamic.scopeSelector` for `check` and
@@ -117,8 +117,8 @@ Use `--hide-elements <selectors>` when a cookie banner, sticky ad, chat widget,
 survey prompt, or other overlay makes visual evidence hard to read:
 
 ```bash
-npx a11y-shiftleft audit --url $APP_URL --hide-elements ".cookie-banner,.chat-widget" --out reports
-npx a11y-shiftleft check --dynamic --url $APP_URL --hide-elements ".cookie-banner" --out reports
+npx a11y-shiftleft-cli audit --url $APP_URL --hide-elements ".cookie-banner,.chat-widget" --out reports
+npx a11y-shiftleft-cli check --dynamic --url $APP_URL --hide-elements ".cookie-banner" --out reports
 ```
 
 For shared defaults, use `dynamic.hideElements` for `check` and
@@ -144,10 +144,10 @@ By default, browser checks run in Chromium. Use `--browser` when you need
 evidence from another browser engine:
 
 ```bash
-npx a11y-shiftleft audit --url $APP_URL --browser firefox --out reports
-npx a11y-shiftleft audit --url $APP_URL --browser webkit --mobile --out reports
-npx a11y-shiftleft audit --url $APP_URL --browser webkit --tablet --out reports
-npx a11y-shiftleft check --dynamic --url $APP_URL --browser chromium --device "Pixel 5" --out reports
+npx a11y-shiftleft-cli audit --url $APP_URL --browser firefox --out reports
+npx a11y-shiftleft-cli audit --url $APP_URL --browser webkit --mobile --out reports
+npx a11y-shiftleft-cli audit --url $APP_URL --browser webkit --tablet --out reports
+npx a11y-shiftleft-cli check --dynamic --url $APP_URL --browser chromium --device "Pixel 5" --out reports
 ```
 
 Supported browser engines are `chromium`, `firefox`, and `webkit`. Device names
@@ -204,7 +204,7 @@ when you intentionally need cookies to persist across explored states.
 Generated reports should normally stay out of git:
 
 ```bash
-npx a11y-shiftleft init --gitignore
+npx a11y-shiftleft-cli init --gitignore
 ```
 
 This adds common report directories such as `reports/` and `.a11y-reports/` to
@@ -236,7 +236,7 @@ Use baseline mode when adopting the CLI in a project that already has known
 accessibility findings:
 
 ```bash
-npx a11y-shiftleft check --dynamic --baseline --out reports
+npx a11y-shiftleft-cli check --dynamic --baseline --out reports
 ```
 
 Commit `.a11y-baseline.json`. Later CI runs with `--baseline` compare current
@@ -247,7 +247,7 @@ For legacy projects that need a gentle first gate, use the built-in quality
 gate profile:
 
 ```bash
-npx a11y-shiftleft check --dynamic --gate new-critical-only --out reports
+npx a11y-shiftleft-cli check --dynamic --gate new-critical-only --out reports
 ```
 
 This is shorthand for baseline comparison plus a critical-only failure gate. It
@@ -257,7 +257,7 @@ critical issues.
 Refresh the baseline only when the current state is intentionally accepted:
 
 ```bash
-npx a11y-shiftleft check --dynamic --update-baseline --out reports
+npx a11y-shiftleft-cli check --dynamic --update-baseline --out reports
 ```
 
 ## Scoped Ignores
@@ -320,7 +320,7 @@ Use retention when you write timestamped output directories such as
 `reports/run-2026-06-11`:
 
 ```bash
-npx a11y-shiftleft explore \
+npx a11y-shiftleft-cli explore \
   --url $APP_URL \
   --out reports/run-2026-06-11 \
   --retention-max-runs 5 \
@@ -330,7 +330,7 @@ npx a11y-shiftleft explore \
 Preview cleanup without deleting old report runs:
 
 ```bash
-npx a11y-shiftleft explore \
+npx a11y-shiftleft-cli explore \
   --url $APP_URL \
   --out reports/run-2026-06-11 \
   --retention-max-runs 5 \

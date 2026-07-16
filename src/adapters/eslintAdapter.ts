@@ -203,7 +203,7 @@ async function loadAdapterModule<T>(packageName: string, config: A11yConfig): Pr
     if (isModuleResolutionError(error)) {
       throw new Error(
         `${packageName} is required for ${config.framework} static checks. ` +
-        `Install the matching adapter package or run npx a11y-shiftleft doctor --framework ${config.framework}.`
+        `Install the matching adapter package or run npx a11y-shiftleft-cli doctor --framework ${config.framework}.`
       );
     }
 

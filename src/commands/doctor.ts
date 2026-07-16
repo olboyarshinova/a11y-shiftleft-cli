@@ -324,7 +324,7 @@ function checkConfigFile(config: DiscoveredConfig): DoctorCheck {
   return {
     name: "Config file",
     status: "warn",
-    message: "No a11y config found. Run npx a11y-shiftleft init to create one."
+    message: "No a11y config found. Run npx a11y-shiftleft-cli init to create one."
   };
 }
 

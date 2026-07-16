@@ -95,6 +95,8 @@
   selected gate will actually fail on.
 - Added doctor next-step guidance so setup diagnostics point to the next audit
   or reachability command instead of ending at the status summary.
+- Updated copy-paste `npx` commands in active docs, generated CI workflows, and
+  setup diagnostics to use the published package name `a11y-shiftleft-cli`.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.
 - Added compact lifecycle badges to visual finding groups for new, remaining,

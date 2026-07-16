@@ -155,7 +155,7 @@ jobs:
           exit 1
 
       - name: Run fast accessibility checks
-        run: npx a11y-shiftleft check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard}
+        run: npx a11y-shiftleft-cli check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard}
 
       - name: Upload accessibility report
         id: upload-a11y-report
@@ -167,7 +167,7 @@ jobs:
 
       - name: Comment on PR
         if: always()
-        run: npx a11y-shiftleft pr-comment --report reports --include-labels
+        run: npx a11y-shiftleft-cli pr-comment --report reports --include-labels
         env:
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: \${{ github.repository }}
@@ -239,7 +239,7 @@ jobs:
           exit 1
 
       - name: Run full-site accessibility crawl
-        run: npx a11y-shiftleft check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --semi-auto --out reports-full --fail-on ${fullFailOn} --standard ${standard}
+        run: npx a11y-shiftleft-cli check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --semi-auto --out reports-full --fail-on ${fullFailOn} --standard ${standard}
 
       - name: Upload full-site accessibility report
         if: always()
@@ -277,7 +277,7 @@ a11y:
         sleep 2
       done
       exit 1
-    - npx a11y-shiftleft check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard}
+    - npx a11y-shiftleft-cli check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard}
   artifacts:
     when: always
     paths:
@@ -324,7 +324,7 @@ jobs:
             exit 1
       - run:
           name: Run accessibility checks
-          command: npx a11y-shiftleft check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard}
+          command: npx a11y-shiftleft-cli check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard}
       - store_artifacts:
           path: reports
           destination: a11y-report
@@ -370,7 +370,7 @@ for _ in {1..30}; do
 done
 
 curl -fsS "$APP_URL" >/dev/null
-npx a11y-shiftleft check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out "$REPORT_DIR" ${gateArg} --standard ${standard}
+npx a11y-shiftleft-cli check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out "$REPORT_DIR" ${gateArg} --standard ${standard}
 
 echo "Accessibility report written to $REPORT_DIR"
 `;

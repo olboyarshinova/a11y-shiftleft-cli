@@ -6,10 +6,10 @@ Use this recipe to add `a11y-shiftleft-cli` to a Next.js project.
 
 ```bash
 npm install --save-dev a11y-shiftleft-cli
-npx a11y-shiftleft adapter add react
+npx a11y-shiftleft-cli adapter add react
 npm install --save-dev @a11y-shiftleft/react
 npx playwright install chromium
-npx a11y-shiftleft init --framework react
+npx a11y-shiftleft-cli init --framework react
 ```
 
 ## Add Scripts

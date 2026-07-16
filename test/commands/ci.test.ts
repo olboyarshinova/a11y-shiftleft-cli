@@ -41,7 +41,7 @@ test("workflowTemplate includes compliance standard and multiple URLs", () => {
   assert.match(workflow, /curl -fsS http:\/\/localhost:4200/);
   assert.match(
     workflow,
-    /npx a11y-shiftleft check --dynamic --url http:\/\/localhost:4200 http:\/\/localhost:4200\/favorites --crawl --crawl-depth 1 --crawl-limit 10 --out reports --fail-on warning --standard section508/
+    /npx a11y-shiftleft-cli check --dynamic --url http:\/\/localhost:4200 http:\/\/localhost:4200\/favorites --crawl --crawl-depth 1 --crawl-limit 10 --out reports --fail-on warning --standard section508/
   );
 });
 
@@ -64,7 +64,7 @@ test("workflowTemplate supports bounded fast PR crawls", () => {
   assert.match(workflow, /id: upload-a11y-report/);
   assert.match(workflow, /REPORT_ARTIFACT_URL: \$\{\{ steps\.upload-a11y-report\.outputs\.artifact-url \}\}/);
   assert.match(workflow, /Comment on PR/);
-  assert.match(workflow, /npx a11y-shiftleft pr-comment --report reports --include-labels/);
+  assert.match(workflow, /npx a11y-shiftleft-cli pr-comment --report reports --include-labels/);
   assert.doesNotMatch(workflow, /scripts\/post-a11y-comment\.js/);
 });
 
@@ -144,7 +144,7 @@ test("gitLabWorkflowTemplate creates a report-only merge request job", () => {
   assert.match(workflow, /image: mcr\.microsoft\.com\/playwright:v1\.49\.1-jammy/);
   assert.match(workflow, /APP_URL: "http:\/\/localhost:5173"/);
   assert.match(workflow, /npm run build --if-present/);
-  assert.match(workflow, /npx a11y-shiftleft check --dynamic --url http:\/\/localhost:5173 --crawl --crawl-depth 1 --crawl-limit 10 --out reports --gate report-only --standard wcag22-aa/);
+  assert.match(workflow, /npx a11y-shiftleft-cli check --dynamic --url http:\/\/localhost:5173 --crawl --crawl-depth 1 --crawl-limit 10 --out reports --gate report-only --standard wcag22-aa/);
   assert.match(workflow, /paths:\n      - reports\//);
 });
 
@@ -182,7 +182,7 @@ test("circleCiWorkflowTemplate creates a report-only job with artifacts", () => 
   assert.match(workflow, /image: mcr\.microsoft\.com\/playwright:v1\.49\.1-jammy/);
   assert.match(workflow, /APP_URL: "http:\/\/localhost:5173"/);
   assert.match(workflow, /background: true/);
-  assert.match(workflow, /npx a11y-shiftleft check --dynamic --url http:\/\/localhost:5173 --crawl --crawl-depth 1 --crawl-limit 10 --out reports --gate report-only --standard wcag22-aa/);
+  assert.match(workflow, /npx a11y-shiftleft-cli check --dynamic --url http:\/\/localhost:5173 --crawl --crawl-depth 1 --crawl-limit 10 --out reports --gate report-only --standard wcag22-aa/);
   assert.match(workflow, /store_artifacts:/);
 });
 
@@ -222,7 +222,7 @@ test("shellWorkflowTemplate creates a portable CI script", () => {
   assert.match(script, /REPORT_DIR="\$\{A11Y_REPORT_DIR:-reports\}"/);
   assert.match(script, /npm run build --if-present/);
   assert.match(script, /trap cleanup EXIT/);
-  assert.match(script, /npx a11y-shiftleft check --dynamic --url http:\/\/localhost:5173 --crawl --crawl-depth 1 --crawl-limit 10 --out "\$REPORT_DIR" --gate report-only --standard wcag22-aa/);
+  assert.match(script, /npx a11y-shiftleft-cli check --dynamic --url http:\/\/localhost:5173 --crawl --crawl-depth 1 --crawl-limit 10 --out "\$REPORT_DIR" --gate report-only --standard wcag22-aa/);
 });
 
 test("shellWorkflowFiles supports the fast PR profile", () => {

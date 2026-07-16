@@ -17,7 +17,7 @@ The demo uses:
 
 ```bash
 npm install --save-dev a11y-shiftleft-cli @a11y-shiftleft/react
-npx a11y-shiftleft init --framework react
+npx a11y-shiftleft-cli init --framework react
 ```
 
 ## Baseline
@@ -37,8 +37,8 @@ tools can detect:
 The intervention added a CI-friendly accessibility workflow:
 
 ```bash
-npx a11y-shiftleft doctor --framework react --url http://localhost:3000
-npx a11y-shiftleft check --url http://localhost:3000 --framework react --out reports --fail-on none
+npx a11y-shiftleft-cli doctor --framework react --url http://localhost:3000
+npx a11y-shiftleft-cli check --url http://localhost:3000 --framework react --out reports --fail-on none
 ```
 
 The generated report artifacts were:

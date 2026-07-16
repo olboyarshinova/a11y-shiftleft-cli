@@ -50,7 +50,7 @@ Then run:
 
 ```bash
 npx eslint "src/**/*.{js,jsx,ts,tsx}"
-npx a11y-shiftleft check --static --framework react --include "src/**/*.{js,jsx,ts,tsx}"
+npx a11y-shiftleft-cli check --static --framework react --include "src/**/*.{js,jsx,ts,tsx}"
 ```
 
 In VS Code, install the ESLint extension and enable ESLint validation for
@@ -69,18 +69,18 @@ Angular: @angular-eslint
 The CLI includes a basic Vue fallback for repository-level scans:
 
 ```bash
-npx a11y-shiftleft check --static --framework vue --include "src/**/*.vue"
+npx a11y-shiftleft-cli check --static --framework vue --include "src/**/*.vue"
 ```
 
 Angular IDE feedback should come from the project's Angular ESLint setup. The
 CLI also includes an Angular template fallback for repository-level scans:
 
 ```bash
-npx a11y-shiftleft check --static --framework angular --include "src/**/*.html"
+npx a11y-shiftleft-cli check --static --framework angular --include "src/**/*.html"
 ```
 
 The current portable baseline for every framework is dynamic scanning with:
 
 ```bash
-npx a11y-shiftleft check --dynamic --url http://localhost:3000
+npx a11y-shiftleft-cli check --dynamic --url http://localhost:3000
 ```

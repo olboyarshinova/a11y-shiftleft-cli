@@ -22,8 +22,9 @@ Section 508 certification.
   copy-paste command, clear artifact links, and a report-only adoption path for
   teams that are not ready to fail builds yet. Current `setup` next steps
   explain the report-only rollout and the later `--gate new-critical-only`
-  tightening path, and generated npm scripts stay aligned with the selected
-  setup gate.
+  tightening path, generated npm scripts stay aligned with the selected setup
+  gate, and generated `npx` CI commands use the published package name to avoid
+  package-resolution confusion.
 - Extend authenticated testing beyond manual `auth login` with CI-safe custom
   flows: a scripted auth module that reads usernames, passwords, and tokens from
   environment variables or CI secrets, then saves a temporary Playwright

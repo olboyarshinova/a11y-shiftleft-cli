@@ -15,13 +15,13 @@ Start the application, then run:
 
 ```bash
 export APP_URL=http://localhost:5173
-npx a11y-shiftleft keyboard --url $APP_URL --out reports/keyboard
+npx a11y-shiftleft-cli keyboard --url $APP_URL --out reports/keyboard
 ```
 
 For a page with many controls:
 
 ```bash
-npx a11y-shiftleft keyboard \
+npx a11y-shiftleft-cli keyboard \
   --url $APP_URL/settings \
   --max-tabs 80 \
   --out reports/keyboard
@@ -67,7 +67,7 @@ does not store form values, page HTML, or visual captures in this mode.
 Create or refresh the dedicated keyboard baseline:
 
 ```bash
-npx a11y-shiftleft keyboard --url $APP_URL --update-baseline --out reports/keyboard
+npx a11y-shiftleft-cli keyboard --url $APP_URL --update-baseline --out reports/keyboard
 ```
 
 On later runs, `--baseline --fail-on warning` fails only when new warning or
@@ -86,7 +86,7 @@ filter the shared finding report without removing raw focus-path evidence from
 Add `--activation` to exercise a bounded set of role-specific keys:
 
 ```bash
-npx a11y-shiftleft keyboard \
+npx a11y-shiftleft-cli keyboard \
   --url $APP_URL \
   --activation \
   --max-activations 6 \

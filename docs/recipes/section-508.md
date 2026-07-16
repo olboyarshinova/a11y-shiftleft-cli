@@ -20,15 +20,15 @@ https://www.section508.gov/develop/applicability-conformance/
 ```bash
 npm install --save-dev a11y-shiftleft-cli
 npx playwright install chromium
-npx a11y-shiftleft init --framework auto
+npx a11y-shiftleft-cli init --framework auto
 ```
 
 ## Run
 
 ```bash
 export APP_URL=http://localhost:5173
-npx a11y-shiftleft doctor --url $APP_URL
-npx a11y-shiftleft check \
+npx a11y-shiftleft-cli doctor --url $APP_URL
+npx a11y-shiftleft-cli check \
   --url $APP_URL \
   --standard section508 \
   --semi-auto \

@@ -6,7 +6,7 @@ that matter most, such as the home page, settings page, and checkout flow.
 ```bash
 export APP_URL=http://localhost:5173
 
-npx a11y-shiftleft check \
+npx a11y-shiftleft-cli check \
   --dynamic \
   --url "$APP_URL" "$APP_URL/settings" "$APP_URL/checkout" \
   --out reports

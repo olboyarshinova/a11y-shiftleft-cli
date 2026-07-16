@@ -16,7 +16,7 @@ remediation hints, metrics, and reports without requiring an AI provider.
 Start with read-only suggestions:
 
 ```bash
-npx a11y-shiftleft suggest --report reports/a11y-report.json --issue 3
+npx a11y-shiftleft-cli suggest --report reports/a11y-report.json --issue 3
 ```
 
 Enable AI suggestions only when the user explicitly opts in:
@@ -24,13 +24,13 @@ Enable AI suggestions only when the user explicitly opts in:
 ```bash
 A11Y_SHIFTLEFT_AI_PROVIDER=openai \
 A11Y_SHIFTLEFT_AI_CONSENT=true \
-npx a11y-shiftleft suggest --report reports/a11y-report.json --issue 3 --ai
+npx a11y-shiftleft-cli suggest --report reports/a11y-report.json --issue 3 --ai
 ```
 
 Interactive review can reuse the same suggestion engine:
 
 ```bash
-npx a11y-shiftleft check --interactive
+npx a11y-shiftleft-cli check --interactive
 ```
 
 ## Package Boundary

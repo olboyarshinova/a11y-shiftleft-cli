@@ -15,13 +15,13 @@ sensitive-looking values from URLs, selectors, and messages before export.
 Run an accessibility scan first:
 
 ```bash
-npx a11y-shiftleft check --url $APP_URL --out reports
+npx a11y-shiftleft-cli check --url $APP_URL --out reports
 ```
 
 Then create Markdown ticket drafts:
 
 ```bash
-npx a11y-shiftleft ticket export \
+npx a11y-shiftleft-cli ticket export \
   --report reports/a11y-report.json \
   --out reports/a11y-tickets.md
 ```
@@ -33,21 +33,21 @@ The output is a reviewable document. It does not create real tracker issues.
 Use `--tracker` to adjust labels and wording for a target tracker:
 
 ```bash
-npx a11y-shiftleft ticket export \
+npx a11y-shiftleft-cli ticket export \
   --report reports/a11y-report.json \
   --tracker jira \
   --out reports/a11y-jira-drafts.md
 ```
 
 ```bash
-npx a11y-shiftleft ticket export \
+npx a11y-shiftleft-cli ticket export \
   --report reports/a11y-report.json \
   --tracker linear \
   --out reports/a11y-linear-drafts.md
 ```
 
 ```bash
-npx a11y-shiftleft ticket export \
+npx a11y-shiftleft-cli ticket export \
   --report reports/a11y-report.json \
   --tracker github \
   --out reports/a11y-github-drafts.md
@@ -67,7 +67,7 @@ the same stable `fingerprint` value shown in Markdown, so later tracker
 integrations can detect duplicates without relying on title text alone:
 
 ```bash
-npx a11y-shiftleft ticket export \
+npx a11y-shiftleft-cli ticket export \
   --report reports/a11y-report.json \
   --tracker linear \
   --format json \
@@ -80,7 +80,7 @@ Use `--format payloads` when you want to inspect the issue payload shape before
 connecting any tracker API:
 
 ```bash
-npx a11y-shiftleft ticket export \
+npx a11y-shiftleft-cli ticket export \
   --report reports/a11y-report.json \
   --tracker github \
   --format payloads \
@@ -97,7 +97,7 @@ Compare a new export with a previous JSON or payload export before creating
 issues:
 
 ```bash
-npx a11y-shiftleft ticket export \
+npx a11y-shiftleft-cli ticket export \
   --report reports/a11y-report.json \
   --known-tickets reports/previous-a11y-tickets.json \
   --out reports/a11y-tickets.md
@@ -109,7 +109,7 @@ Markdown table, ticket body, JSON drafts, and payload previews.
 Skip known drafts when you only want new work:
 
 ```bash
-npx a11y-shiftleft ticket export \
+npx a11y-shiftleft-cli ticket export \
   --report reports/a11y-report.json \
   --known-tickets reports/previous-a11y-tickets.json \
   --skip-known \
@@ -133,7 +133,7 @@ duplicate-detection behavior continue to stabilize.
 Export only critical findings:
 
 ```bash
-npx a11y-shiftleft ticket export \
+npx a11y-shiftleft-cli ticket export \
   --report reports/a11y-report.json \
   --min-severity critical \
   --out reports/a11y-critical-tickets.md
@@ -142,7 +142,7 @@ npx a11y-shiftleft ticket export \
 Limit the number of drafts:
 
 ```bash
-npx a11y-shiftleft ticket export \
+npx a11y-shiftleft-cli ticket export \
   --report reports/a11y-report.json \
   --max-tickets 10 \
   --out reports/a11y-tickets.md

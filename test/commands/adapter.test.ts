@@ -17,11 +17,11 @@ test("formatAdapterInstall renders copy-paste commands", () => {
     installPackages: ["@a11y-shiftleft/react"],
     packageManager: "npm",
     install: "npm install --save-dev @a11y-shiftleft/react",
-    init: "npx a11y-shiftleft init --framework react",
+    init: "npx a11y-shiftleft-cli init --framework react",
     note: "React static checks use eslint-plugin-jsx-a11y."
   });
 
   assert.match(output, /Adapter: react/);
   assert.match(output, /npm install --save-dev @a11y-shiftleft\/react/);
-  assert.match(output, /npx a11y-shiftleft init --framework react/);
+  assert.match(output, /npx a11y-shiftleft-cli init --framework react/);
 });

@@ -27,7 +27,7 @@ npm install --save-dev a11y-shiftleft-cli
 npx playwright install chromium
 ```
 
-Run `npx a11y-shiftleft doctor --url <your-url>` if setup feels unclear. It
+Run `npx a11y-shiftleft-cli doctor --url <your-url>` if setup feels unclear. It
 checks Node, Playwright, Chromium, config discovery, URL reachability, and
 whether an optional source adapter would add value for your detected framework.
 If no React, Vue, or Angular adapter is installed, browser audits still work.
@@ -52,7 +52,7 @@ Use the URL printed by your development server when you run `npm run dev` (or eq
 Pass the URL with `--url`:
 
 ```bash
-npx a11y-shiftleft audit --url http://localhost:5173 --out reports
+npx a11y-shiftleft-cli audit --url http://localhost:5173 --out reports
 ```
 
 Not sure? Check your terminal output after starting the dev server — it always prints the port.
@@ -62,7 +62,7 @@ Not sure? Check your terminal output after starting the dev server — it always
 Run the built-in doctor command to diagnose Node, Playwright, Chromium, config, and URL issues:
 
 ```bash
-npx a11y-shiftleft doctor --url http://localhost:5173
+npx a11y-shiftleft-cli doctor --url http://localhost:5173
 ```
 
 It prints a checklist of what passed, what failed, and suggested fixes. The
@@ -75,12 +75,12 @@ Yes — pass multiple URLs with `--url`, or use `--crawl` to let the CLI discove
 
 ```bash
 # Multiple explicit pages
-npx a11y-shiftleft check --dynamic \
+npx a11y-shiftleft-cli check --dynamic \
   --url http://localhost:5173 http://localhost:5173/settings http://localhost:5173/checkout \
   --out reports
 
 # Auto-discover up to 10 same-origin pages
-npx a11y-shiftleft check --dynamic --url http://localhost:5173 \
+npx a11y-shiftleft-cli check --dynamic --url http://localhost:5173 \
   --crawl --crawl-depth 1 --crawl-limit 10 --out reports
 ```
 
@@ -120,7 +120,7 @@ These findings cannot always be fixed on your end. We recommend manually verifyi
 reports/
 ```
 
-Run `npx a11y-shiftleft init --gitignore` to have the CLI add this for you automatically.
+Run `npx a11y-shiftleft-cli init --gitignore` to have the CLI add this for you automatically.
 
 The exceptions are shared config and baseline files:
 
@@ -135,6 +135,6 @@ The exceptions are shared config and baseline files:
 
 ## Still Stuck?
 
-- Run `npx a11y-shiftleft doctor --url <your-url>` to diagnose setup issues.
+- Run `npx a11y-shiftleft-cli doctor --url <your-url>` to diagnose setup issues.
 - Check the [Recipes](recipes/index.md) page for framework-specific guides.
 - Open a [GitHub issue](https://github.com/olboyarshinova/a11y-shiftleft-cli/issues) if you find a bug or missing docs.
