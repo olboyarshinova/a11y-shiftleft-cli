@@ -386,7 +386,9 @@ export function registerExploreCommand(program: Command): void {
         semiAuto: Boolean(options.semiAuto)
       });
       if (options.html !== false) {
-        await writeExplorationHtml(effectiveConfig.outputDir, exploration.graph, report.issues);
+        await writeExplorationHtml(effectiveConfig.outputDir, exploration.graph, report.issues, {
+          retention: retentionSummary.enabled ? retentionSummary : undefined
+        });
       }
       if (options.pdf) {
         await writeExplorationPdf(effectiveConfig.outputDir);

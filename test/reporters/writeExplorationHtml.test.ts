@@ -461,6 +461,31 @@ test("renderExplorationHtml hides safe guardrails when no actions were skipped",
   assert.doesNotMatch(html, /Safe Exploration Guardrails/);
 });
 
+test("renderExplorationHtml includes report retention evidence without local paths", () => {
+  const html = renderExplorationHtml(graph, issues, {
+    retention: {
+      enabled: true,
+      dryRun: true,
+      maxRuns: 5,
+      maxAgeDays: 14,
+      candidateRuns: 8,
+      plannedDeletedRuns: 3,
+      deletedRuns: 0,
+      keptRuns: 5
+    }
+  });
+
+  assert.match(html, /Report Retention/);
+  assert.match(html, /Dry-run preview/);
+  assert.match(html, /keeps up to 5 report runs/);
+  assert.match(html, /removes runs older than 14 days/);
+  assert.match(html, /Candidate runs[\s\S]*?8/);
+  assert.match(html, /Would delete[\s\S]*?3/);
+  assert.match(html, /Deleted[\s\S]*?0/);
+  assert.match(html, /Kept[\s\S]*?5/);
+  assert.doesNotMatch(html, /\/Users\//);
+});
+
 test("renderExplorationHtml groups all ticket drafts by issue type across states", () => {
   const html = renderExplorationHtml(graph, [
     issues[0],

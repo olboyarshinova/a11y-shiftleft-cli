@@ -216,8 +216,10 @@ Section 508 certification.
   visual reports group skipped actions by reason with examples and state links;
   next, evaluate optional request blocking for external or high-risk API
   traffic.
-- Continue hardening report retention with optional detailed local-only preview
-  output and clearer history-management UX for timestamped report runs.
+- Continue hardening report retention. Current visual reports can summarize the
+  active retention policy and dry-run/cleanup counts without exposing local
+  paths; next, evaluate more detailed local-only preview output and clearer
+  history-management UX for timestamped report runs.
 
 ## Integrations And Sharing
 

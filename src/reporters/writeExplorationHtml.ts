@@ -4,7 +4,7 @@ import { enrichIssueEvidence } from "../core/classification.js";
 import { compareLighthouseWithFindings } from "../core/lighthouseComparison.js";
 import { formatReportDateUtc } from "../core/reportDate.js";
 import { getRemediationHint } from "../core/remediation.js";
-import type { DedupedIssue, ElementBounds, ExplorationGraph, ExplorationState, ExploreSkippedAction, IgnoreSummary, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, Severity } from "../types.js";
+import type { DedupedIssue, ElementBounds, ExplorationGraph, ExplorationState, ExploreSkippedAction, IgnoreSummary, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, ReportRetentionEvidence, Severity } from "../types.js";
 
 interface StateViewModel extends ExplorationState {
   issues: DedupedIssue[];
@@ -19,6 +19,7 @@ interface ExplorationHtmlOptions {
   manualChecklist?: ManualChecklist;
   lighthouse?: LighthouseAuditResult[];
   ignore?: IgnoreSummary;
+  retention?: ReportRetentionEvidence;
 }
 
 interface CoverageMatrixRow {
@@ -1910,6 +1911,8 @@ export function renderExplorationHtml(
 
     ${renderIgnoreCleanup(options.ignore)}
 
+    ${renderReportRetention(options.retention)}
+
     <section class="panel triage" aria-label="Triage overview">
       ${renderTriageOverview(states, reportIssues)}
     </section>
@@ -2194,6 +2197,27 @@ function renderIgnoreCleanup(ignore: IgnoreSummary | undefined): string {
 
 function ignoreCleanupCard(label: string, value: number, detail: string): string {
   return `<div class="ignore-cleanup-card"><strong>${value}</strong><span>${escapeHtml(label)}</span><span>${escapeHtml(detail)}</span></div>`;
+}
+
+function renderReportRetention(retention: ReportRetentionEvidence | undefined): string {
+  if (!retention?.enabled) return "";
+
+  const mode = retention.dryRun ? "Dry-run preview" : "Cleanup recorded";
+  const plannedLabel = retention.dryRun ? "Would delete" : "Planned delete";
+  const deletedDetail = retention.dryRun
+    ? "no files deleted in preview mode"
+    : "old report runs deleted";
+
+  return `<section class="panel ignore-cleanup" aria-label="Report retention">
+    <h2>Report Retention</h2>
+    <p class="muted">${escapeHtml(mode)}. Policy keeps up to ${retention.maxRuns} report run${retention.maxRuns === 1 ? "" : "s"} and removes runs older than ${retention.maxAgeDays} day${retention.maxAgeDays === 1 ? "" : "s"}.</p>
+    <div class="ignore-cleanup-grid">
+      ${ignoreCleanupCard("Candidate runs", retention.candidateRuns, "older timestamped report folders found")}
+      ${ignoreCleanupCard(plannedLabel, retention.plannedDeletedRuns, retention.dryRun ? "review before enabling cleanup" : "selected by retention policy")}
+      ${ignoreCleanupCard("Deleted", retention.deletedRuns, deletedDetail)}
+      ${ignoreCleanupCard("Kept", retention.keptRuns, "runs retained by the current policy")}
+    </div>
+  </section>`;
 }
 
 function formatIgnoreOwnerCleanup(owner: IgnoreSummary["ownerSummaries"][number]): string {

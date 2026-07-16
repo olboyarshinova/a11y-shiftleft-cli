@@ -78,6 +78,8 @@
   calling the internal comment script directly.
 - Added a compact Safe Exploration Guardrails section to visual reports that
   groups skipped actions by reason and shows examples with state links.
+- Added Report Retention evidence to visual exploration reports so dry-run and
+  cleanup counts are visible without exposing local report paths.
 
 ## 0.8.1 - 2026-07-12
 
