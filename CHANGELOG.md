@@ -91,6 +91,8 @@
   path toward `--gate new-critical-only`.
 - Kept generated `a11y:check` npm scripts aligned with the `setup --gate`
   option so local checks and generated CI use the same rollout gate.
+- Added `check --verbose` quality-gate explanations so CI logs show what the
+  selected gate will actually fail on.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.
 - Added compact lifecycle badges to visual finding groups for new, remaining,

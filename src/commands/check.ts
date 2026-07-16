@@ -555,6 +555,7 @@ export function formatVerboseCheckSummary(options: {
     `standard: ${options.standard}`,
     `wcag: ${options.wcagVersion} ${options.wcagLevel}`,
     `gate: ${options.gateProfile || "custom"}`,
+    `gate effect: ${formatQualityGateEffect(options.gateProfile)}`,
     `baseline: ${baseline}`,
     `ignore: ${ignore}`,
     `retention: ${retention}`,
@@ -563,6 +564,14 @@ export function formatVerboseCheckSummary(options: {
     "adapters:",
     ...adapterLines
   ].join("\n");
+}
+
+function formatQualityGateEffect(profile: QualityGateProfile | undefined): string {
+  if (profile === "report-only") return "never fails the command";
+  if (profile === "new-critical-only") return "fails only on new critical findings against the baseline";
+  if (profile === "critical") return "fails when any critical finding is present";
+  if (profile === "warning") return "fails when any critical or warning finding is present";
+  return "uses the selected --fail-on severity";
 }
 
 function createCheckAdapterIssue(

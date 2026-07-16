@@ -244,11 +244,45 @@ test("formatVerboseCheckSummary renders scan context without JSON parsing requir
   assert.match(output, /scroll: enabled step=800px maxSteps=25 wait=100ms/);
   assert.match(output, /lighthouse: enabled/);
   assert.match(output, /gate: new-critical-only/);
+  assert.match(output, /gate effect: fails only on new critical findings against the baseline/);
   assert.match(output, /baseline: enabled file=.a11y-baseline.json/);
   assert.match(output, /ignore: enabled file=a11y-ignore.json ignored=2/);
   assert.match(output, /retention: enabled deletedRuns=2/);
   assert.match(output, /static: enabled, findings=1, duration=25ms/);
   assert.match(output, /dynamic: enabled, findings=2, duration=150ms/);
+});
+
+test("formatVerboseCheckSummary explains report-only and custom gates", () => {
+  const baseOptions = {
+    framework: "react" as const,
+    runStatic: false,
+    runDynamic: true,
+    adapterRuns: [],
+    urls: ["http://localhost:3000"],
+    outputDir: "reports",
+    formats: ["json" as const],
+    baselineEnabled: false,
+    baselineFile: ".a11y-baseline.json",
+    ignoreEnabled: false,
+    ignoreFile: "a11y-ignore.json",
+    ignoredIssues: 0,
+    updateBaseline: false,
+    standard: "wcag22-aa" as const,
+    wcagVersion: "2.2" as const,
+    wcagLevel: "AA" as const,
+    retentionEnabled: false,
+    retentionDryRun: false,
+    retentionPlannedDeletedRuns: 0,
+    retentionDeletedRuns: 0
+  };
+
+  assert.match(formatVerboseCheckSummary({
+    ...baseOptions,
+    gateProfile: "report-only"
+  }), /gate effect: never fails the command/);
+  assert.match(formatVerboseCheckSummary({
+    ...baseOptions
+  }), /gate effect: uses the selected --fail-on severity/);
 });
 
 test("formatCheckConsoleSummary renders a readable local summary", () => {

@@ -203,7 +203,8 @@ Section 508 certification.
   bounded, and baseline-friendly so teams do not disable the tool because of
   noisy legacy findings.
 - Continue expanding CLI quality-of-life controls around report paths,
-  troubleshooting context, progress output, `--quiet`, and `--verbose`.
+  troubleshooting context, progress output, `--quiet`, and `--verbose`. Current
+  verbose check output explains the selected quality gate effect for CI logs.
 - After the CLI report schema is stable for 1.0, create a VS Code extension
   that uses the CLI as its engine, reads `a11y-report.json`, shows source
   findings in the Problems panel, provides commands to run audits, and opens the
