@@ -15,6 +15,7 @@ test("setup command is registered as the guided first-run path", () => {
   assert.equal(flags.includes("--url"), true);
   assert.equal(flags.includes("--start-command"), true);
   assert.equal(flags.includes("--gate"), true);
+  assert.equal(flags.includes("--git-hooks"), true);
   assert.equal(flags.includes("--skip-ci"), true);
   assert.equal(flags.includes("--skip-scripts"), true);
 });
@@ -198,4 +199,56 @@ test("runSetup can create a portable shell CI script", async () => {
   assert.equal((stat.mode & 0o111) !== 0, true);
   assert.ok(result.created.includes("scripts/a11y-ci.sh"));
   assert.equal(result.created.some((item) => item.includes(os.homedir())), false);
+});
+
+test("runSetup can create an optional Husky pre-commit hook", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-setup-husky-"));
+
+  const result = await runSetup({
+    cwd,
+    url: ["http://localhost:5173"],
+    startCommand: "npm run dev -- --host localhost --port 5173",
+    ci: "none",
+    profile: "pr",
+    gate: "report-only",
+    failOn: "critical",
+    standard: "wcag22-aa",
+    gitHooks: "husky",
+    skipCi: true,
+    skipScripts: true
+  });
+
+  const hookPath = path.join(cwd, ".husky/pre-commit");
+  const hook = await fs.readFile(hookPath, "utf8");
+  const stat = await fs.stat(hookPath);
+
+  assert.match(hook, /^#!\/usr\/bin\/env sh/);
+  assert.match(hook, /npx a11y-shiftleft-cli check --static --out reports --gate report-only/);
+  assert.equal((stat.mode & 0o111) !== 0, true);
+  assert.ok(result.created.includes(".husky/pre-commit"));
+});
+
+test("runSetup can create an optional Lefthook pre-commit hook", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-setup-lefthook-"));
+
+  const result = await runSetup({
+    cwd,
+    url: ["http://localhost:5173"],
+    startCommand: "npm run dev -- --host localhost --port 5173",
+    ci: "none",
+    profile: "pr",
+    gate: "new-critical-only",
+    failOn: "critical",
+    standard: "wcag22-aa",
+    gitHooks: "lefthook",
+    skipCi: true,
+    skipScripts: true
+  });
+
+  const config = await fs.readFile(path.join(cwd, "lefthook.yml"), "utf8");
+
+  assert.match(config, /pre-commit:/);
+  assert.match(config, /a11y-static:/);
+  assert.match(config, /npx a11y-shiftleft-cli check --static --out reports --gate new-critical-only/);
+  assert.ok(result.created.includes("lefthook.yml"));
 });

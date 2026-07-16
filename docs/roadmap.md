@@ -195,8 +195,10 @@ Section 508 certification.
 - Extend quality-gate profiles beyond `new-critical-only`, `critical`,
   `warning`, and `report-only` only when real CI users need additional rollout
   modes.
-- Add optional Git hook setup for Husky and Lefthook so staged accessibility
-  checks can run before commits without becoming a hard dependency.
+- Continue optional Git hook setup for Husky and Lefthook. Current `setup`
+  can generate pre-commit hooks that run static checks in the selected gate
+  mode; next, make them changed-file aware instead of scanning the whole static
+  source set.
 - Add incremental scan support for pull requests by prioritizing changed static
   files and a small configured set of dynamic smoke-test URLs before broader
   scheduled scans.

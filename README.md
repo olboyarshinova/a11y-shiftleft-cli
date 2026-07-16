@@ -153,6 +153,10 @@ For Jenkins or another shell-based runner, generate a portable script:
 npx a11y-shiftleft-cli setup --ci shell --url $APP_URL --start-command "npm run dev"
 ```
 
+Optional pre-commit checks can be generated with `--git-hooks husky` or
+`--git-hooks lefthook`; they run static accessibility checks in the selected
+gate mode.
+
 This creates `.a11y-shiftleft.json`, adds `a11y:audit` and `a11y:check` npm
 scripts when `package.json` exists, updates `.gitignore`, and adds a CI workflow
 that installs the project, starts your app, runs accessibility checks, and keeps

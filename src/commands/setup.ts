@@ -14,12 +14,15 @@ interface SetupOptions {
   gate: string;
   failOn: string;
   standard: string;
+  gitHooks?: string;
   force?: boolean;
   skipConfig?: boolean;
   skipGitignore?: boolean;
   skipCi?: boolean;
   skipScripts?: boolean;
 }
+
+type GitHookTool = "none" | "husky" | "lefthook";
 
 interface SetupResult {
   created: string[];
@@ -41,6 +44,7 @@ export function registerSetupCommand(program: Command): void {
     .option("--gate <profile>", "CI quality gate: report-only, critical, warning, or new-critical-only", "report-only")
     .option("--fail-on <severity>", "Fallback severity gate when --gate is not set", "critical")
     .option("--standard <standard>", "Compliance support preset: wcag22-aa, ada-title-ii, section508, or en301549", "wcag22-aa")
+    .option("--git-hooks <tool>", "Optional pre-commit hook setup: none, husky, or lefthook", "none")
     .option("--force", "Overwrite existing generated config and workflow files")
     .option("--skip-config", "Do not create .a11y-shiftleft.json")
     .option("--skip-gitignore", "Do not update .gitignore")
@@ -132,6 +136,22 @@ export async function runSetup(options: SetupOptions): Promise<SetupResult> {
     }
   }
 
+  const gitHookTool = toGitHookTool(options.gitHooks);
+  if (gitHookTool !== "none") {
+    const hookFiles = gitHookFiles(gitHookTool, options.gate);
+    for (const hookFile of hookFiles) {
+      const target = path.join(cwd, hookFile.fileName);
+      if (!options.force && await exists(target)) {
+        skipped.push(`${displayPath(cwd, target)} already exists`);
+        continue;
+      }
+      await fs.mkdir(path.dirname(target), { recursive: true });
+      await fs.writeFile(target, hookFile.contents);
+      if (hookFile.executable) await fs.chmod(target, 0o755);
+      created.push(displayPath(cwd, target));
+    }
+  }
+
   return {
     created,
     skipped,
@@ -155,6 +175,35 @@ function buildSetupNextSteps(options: SetupOptions, url: string): string[] {
 
   steps.push("Commit the generated config and workflow files after reviewing them.");
   return steps;
+}
+
+function toGitHookTool(value?: string): GitHookTool {
+  const normalized = (value || "none").toLowerCase();
+  if (normalized === "none" || normalized === "husky" || normalized === "lefthook") {
+    return normalized;
+  }
+  throw new Error(`Unsupported git hook setup "${value}". Use none, husky, or lefthook.`);
+}
+
+function gitHookFiles(tool: GitHookTool, gate: string): Array<{ fileName: string; contents: string; executable?: boolean }> {
+  const command = `npx a11y-shiftleft-cli check --static --out reports --gate ${gate}`;
+  if (tool === "husky") {
+    return [{
+      fileName: ".husky/pre-commit",
+      contents: `#!/usr/bin/env sh\n${command}\n`,
+      executable: true
+    }];
+  }
+
+  if (tool === "lefthook") {
+    return [{
+      fileName: "lefthook.yml",
+      contents: `pre-commit:\n  commands:\n    a11y-static:\n      run: ${command}\n`,
+      executable: false
+    }];
+  }
+
+  return [];
 }
 
 function formatCiRolloutStep(options: SetupOptions): string {
