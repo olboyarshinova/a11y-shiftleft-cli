@@ -53,7 +53,7 @@ test("runSetup creates config, report ignores, and GitHub Actions workflow", asy
   assert.equal(manifest.scripts["a11y:audit"], "a11y-shiftleft audit --url http://localhost:5173 --out reports --open");
   assert.equal(manifest.scripts["a11y:check"], "a11y-shiftleft check --dynamic --url http://localhost:5173 --out reports --gate report-only");
   assert.match(workflow, /fetch-depth: 0/);
-  assert.match(workflow, /npx a11y-shiftleft-cli check --dynamic --changed-since origin\/\$\{\{ github\.base_ref \}\} --url http:\/\/localhost:5173/);
+  assert.match(workflow, /npx a11y-shiftleft-cli check --static --dynamic --changed-since origin\/\$\{\{ github\.base_ref \}\} --url http:\/\/localhost:5173/);
   assert.match(workflow, /--gate report-only/);
   assert.match(workflow, /npm run dev -- --host localhost --port 5173/);
   assert.ok(result.created.includes(".a11y-shiftleft.json"));

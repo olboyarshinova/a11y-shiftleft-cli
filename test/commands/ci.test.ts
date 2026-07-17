@@ -42,7 +42,7 @@ test("workflowTemplate includes compliance standard and multiple URLs", () => {
   assert.match(workflow, /fetch-depth: 0/);
   assert.match(
     workflow,
-    /npx a11y-shiftleft-cli check --dynamic --changed-since origin\/\$\{\{ github\.base_ref \}\} --url http:\/\/localhost:4200 http:\/\/localhost:4200\/favorites --crawl --crawl-depth 1 --crawl-limit 10 --out reports --fail-on warning --standard section508/
+    /npx a11y-shiftleft-cli check --static --dynamic --changed-since origin\/\$\{\{ github\.base_ref \}\} --url http:\/\/localhost:4200 http:\/\/localhost:4200\/favorites --crawl --crawl-depth 1 --crawl-limit 10 --out reports --fail-on warning --standard section508/
   );
 });
 

@@ -111,6 +111,8 @@
   frontend files changed relative to a pull request base ref.
 - Updated generated GitHub PR workflows to combine `check --changed-since
   origin/${{ github.base_ref }}` with the bounded dynamic crawl.
+- Fixed generated GitHub PR workflows to pass both `--static` and `--dynamic`
+  so changed-file static checks actually run alongside browser checks.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.
 - Added compact lifecycle badges to visual finding groups for new, remaining,

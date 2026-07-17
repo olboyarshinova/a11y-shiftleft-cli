@@ -157,7 +157,7 @@ jobs:
           exit 1
 
       - name: Run fast accessibility checks
-        run: npx a11y-shiftleft-cli check --dynamic --changed-since origin/\${{ github.base_ref }} --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard}
+        run: npx a11y-shiftleft-cli check --static --dynamic --changed-since origin/\${{ github.base_ref }} --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard}
 
       - name: Upload accessibility report
         id: upload-a11y-report

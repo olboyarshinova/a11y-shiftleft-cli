@@ -15,9 +15,9 @@ npx a11y-shiftleft-cli generate-ci \
 
 Use the local or preview URL your app exposes in CI.
 
-The default workflow runs on `pull_request`. It checks static accessibility
-rules only for frontend files changed since the pull request base branch, then
-uses a bounded browser crawl (`--crawl-depth 1`, `--crawl-limit 10`) so feedback
+The default workflow runs on `pull_request`. It runs static accessibility rules
+only for frontend files changed since the pull request base branch, and also
+runs a bounded browser crawl (`--crawl-depth 1`, `--crawl-limit 10`) so feedback
 usually stays in the 30-90 second range for small and medium frontend apps.
 
 The workflow uploads the generated `reports/` folder as a GitHub Actions
