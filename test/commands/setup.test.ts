@@ -77,6 +77,38 @@ test("runSetup creates config, report ignores, and GitHub Actions workflow", asy
   assert.match(result.nextSteps.join("\n"), /\.github\/workflows\/a11y\.yml/);
 });
 
+test("setup CLI prints concrete next steps for first-run users", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-setup-cli-"));
+  await fs.writeFile(path.join(cwd, "package.json"), JSON.stringify({
+    scripts: {
+      dev: "vite"
+    }
+  }, null, 2));
+
+  const output = await captureConsoleOutput(async () => {
+    await createProgram().parseAsync([
+      "node",
+      "test",
+      "setup",
+      "--cwd",
+      cwd,
+      "--url",
+      "http://localhost:5173",
+      "--start-command",
+      "npm run dev -- --host localhost --port 5173"
+    ]);
+  });
+
+  assert.match(output, /Created \.a11y-shiftleft\.json/);
+  assert.match(output, /Updated \.gitignore/);
+  assert.match(output, /Updated package\.json/);
+  assert.match(output, /Created \.github\/workflows\/a11y\.yml/);
+  assert.match(output, /Next steps:/);
+  assert.match(output, /Run a visual audit: npm run a11y:audit/);
+  assert.match(output, /Run a fast check: npm run a11y:check/);
+  assert.match(output, /Review generated or updated files:/);
+});
+
 test("runSetup omits CI rollout guidance when CI generation is skipped", async () => {
   const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-setup-no-ci-"));
 
@@ -333,3 +365,19 @@ test("runSetup can create an optional Lefthook pre-commit hook", async () => {
   assert.match(result.nextSteps.join("\n"), /npm install --save-dev lefthook/);
   assert.match(result.nextSteps.join("\n"), /npx lefthook install/);
 });
+
+async function captureConsoleOutput(action: () => Promise<void>): Promise<string> {
+  const originalLog = console.log;
+  const lines: string[] = [];
+  console.log = (...args: unknown[]) => {
+    lines.push(args.map(String).join(" "));
+  };
+
+  try {
+    await action();
+  } finally {
+    console.log = originalLog;
+  }
+
+  return lines.join("\n");
+}

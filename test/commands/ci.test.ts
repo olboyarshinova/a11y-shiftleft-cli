@@ -1,5 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { createProgram } from "../../dist/cli.js";
 import {
   checkGateArgument,
@@ -26,6 +29,33 @@ test("generate-ci is the documented command and ci remains a short alias", () =>
   const flags = command.options.map((option) => option.long);
   assert.equal(flags.includes("--provider"), true);
   assert.equal(flags.includes("--start-command"), true);
+});
+
+test("generate-ci CLI prints created files and next steps", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-ci-cli-"));
+
+  const output = await captureConsoleOutput(async () => {
+    await createProgram().parseAsync([
+      "node",
+      "test",
+      "generate-ci",
+      "--cwd",
+      cwd,
+      "--url",
+      "http://localhost:5173",
+      "--start-command",
+      "npm run dev -- --host localhost --port 5173",
+      "--gate",
+      "report-only"
+    ]);
+  });
+
+  assert.match(output, /Created .*\.github\/workflows\/a11y\.yml/);
+  assert.match(output, /Next steps:/);
+  assert.match(output, /Review generated workflow file\(s\): \.github\/workflows\/a11y\.yml/);
+  assert.match(output, /Open a pull request/);
+  assert.match(output, /--gate report-only/);
+  assert.match(output, /--gate new-critical-only/);
 });
 
 test("workflowTemplate includes compliance standard and multiple URLs", () => {
@@ -295,3 +325,19 @@ test("toCiProvider supports GitHub, GitLab, CircleCI, and shell aliases", () => 
   assert.equal(toCiProvider("Jenkins"), "shell");
   assert.throws(() => toCiProvider("teamcity"), /Unsupported CI provider/);
 });
+
+async function captureConsoleOutput(action: () => Promise<void>): Promise<string> {
+  const originalLog = console.log;
+  const lines: string[] = [];
+  console.log = (...args: unknown[]) => {
+    lines.push(args.map(String).join(" "));
+  };
+
+  try {
+    await action();
+  } finally {
+    console.log = originalLog;
+  }
+
+  return lines.join("\n");
+}
