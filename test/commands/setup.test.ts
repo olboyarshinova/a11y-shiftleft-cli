@@ -51,7 +51,7 @@ test("runSetup creates config, report ignores, and GitHub Actions workflow", asy
   assert.match(gitignore, /\.a11y-auth\//);
   assert.equal(manifest.scripts.dev, "vite");
   assert.equal(manifest.scripts["a11y:audit"], "a11y-shiftleft audit --url http://localhost:5173 --out reports --open");
-  assert.equal(manifest.scripts["a11y:check"], "a11y-shiftleft check --dynamic --url http://localhost:5173 --out reports --gate report-only");
+  assert.equal(manifest.scripts["a11y:check"], "a11y-shiftleft check --dynamic --url http://localhost:5173 --out reports --gate report-only --verbose");
   assert.match(workflow, /fetch-depth: 0/);
   assert.match(workflow, /npx a11y-shiftleft-cli check --static --dynamic --changed-since origin\/\$\{\{ github\.base_ref \}\} --url http:\/\/localhost:5173/);
   assert.match(workflow, /--standard wcag22-aa --verbose/);
@@ -113,7 +113,7 @@ test("runSetup keeps generated npm check script aligned with the requested gate"
   const manifest = JSON.parse(await fs.readFile(path.join(cwd, "package.json"), "utf8")) as {
     scripts: Record<string, string>;
   };
-  assert.equal(manifest.scripts["a11y:check"], "a11y-shiftleft check --dynamic --url http://localhost:5173 --out reports --gate new-critical-only");
+  assert.equal(manifest.scripts["a11y:check"], "a11y-shiftleft check --dynamic --url http://localhost:5173 --out reports --gate new-critical-only --verbose");
   assert.match(result.nextSteps.join("\n"), /npm run a11y:audit/);
 });
 

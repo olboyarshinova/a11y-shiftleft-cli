@@ -260,7 +260,7 @@ export async function addPackageScripts(
     : {};
   const desired = {
     "a11y:audit": `a11y-shiftleft audit --url ${url} --out reports --open`,
-    "a11y:check": `a11y-shiftleft check --dynamic --url ${url} --out reports --gate ${gate}`
+    "a11y:check": `a11y-shiftleft check --dynamic --url ${url} --out reports --gate ${gate} --verbose`
   };
   const added: string[] = [];
 
