@@ -138,7 +138,8 @@ test("runSetup can create a GitLab CI workflow", async () => {
   const workflow = await fs.readFile(path.join(cwd, ".gitlab-ci.yml"), "utf8");
 
   assert.match(workflow, /image: mcr\.microsoft\.com\/playwright:v1\.49\.1-jammy/);
-  assert.match(workflow, /npx a11y-shiftleft-cli check --dynamic --url http:\/\/localhost:5173/);
+  assert.match(workflow, /GIT_DEPTH: "0"/);
+  assert.match(workflow, /npx a11y-shiftleft-cli check --static --dynamic --changed-since "origin\/\$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --url http:\/\/localhost:5173/);
   assert.match(workflow, /--gate report-only/);
   assert.ok(result.created.includes(".gitlab-ci.yml"));
   assert.equal(result.created.some((item) => item.includes(os.homedir())), false);

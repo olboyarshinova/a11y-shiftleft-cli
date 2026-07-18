@@ -115,6 +115,8 @@
   so changed-file static checks actually run alongside browser checks.
 - Added a guard that rejects static file selectors with `--dynamic` unless
   `--static` is also present, preventing silently skipped incremental checks.
+- Updated generated GitLab CI workflows to use changed-file static checks for
+  merge requests, with a static+dynamic fallback for branch pipelines.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.
 - Added compact lifecycle badges to visual finding groups for new, remaining,

@@ -146,8 +146,11 @@ test("gitLabWorkflowTemplate creates a report-only merge request job", () => {
 
   assert.match(workflow, /image: mcr\.microsoft\.com\/playwright:v1\.49\.1-jammy/);
   assert.match(workflow, /APP_URL: "http:\/\/localhost:5173"/);
+  assert.match(workflow, /GIT_DEPTH: "0"/);
   assert.match(workflow, /npm run build --if-present/);
-  assert.match(workflow, /npx a11y-shiftleft-cli check --dynamic --url http:\/\/localhost:5173 --crawl --crawl-depth 1 --crawl-limit 10 --out reports --gate report-only --standard wcag22-aa/);
+  assert.match(workflow, /git fetch origin "\$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"/);
+  assert.match(workflow, /npx a11y-shiftleft-cli check --static --dynamic --changed-since "origin\/\$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --url http:\/\/localhost:5173 --crawl --crawl-depth 1 --crawl-limit 10 --out reports --gate report-only --standard wcag22-aa/);
+  assert.match(workflow, /npx a11y-shiftleft-cli check --static --dynamic --url http:\/\/localhost:5173 --crawl --crawl-depth 1 --crawl-limit 10 --out reports --gate report-only --standard wcag22-aa/);
   assert.match(workflow, /paths:\n      - reports\//);
 });
 

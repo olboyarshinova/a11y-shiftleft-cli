@@ -269,6 +269,7 @@ a11y:
   image: mcr.microsoft.com/playwright:v1.49.1-jammy
   variables:
     APP_URL: "${firstUrl}"
+    GIT_DEPTH: "0"
   script:
     - npm ci
     - npm run build --if-present
@@ -279,7 +280,13 @@ a11y:
         sleep 2
       done
       exit 1
-    - npx a11y-shiftleft-cli check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard}
+    - |
+      if [ -n "\${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-}" ]; then
+        git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+        npx a11y-shiftleft-cli check --static --dynamic --changed-since "origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard}
+      else
+        npx a11y-shiftleft-cli check --static --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard}
+      fi
   artifacts:
     when: always
     paths:

@@ -17,12 +17,19 @@ a11y:
   image: mcr.microsoft.com/playwright:v1.49.1-jammy
   variables:
     APP_URL: "http://localhost:5173"
+    GIT_DEPTH: "0"
   script:
     - npm ci
     - npm run build --if-present
     - npm run dev -- --host 0.0.0.0 --port 5173 &
     - npx wait-on "$APP_URL"
-    - npx a11y-shiftleft-cli check --dynamic --url "$APP_URL" --out reports --gate report-only
+    - |
+      if [ -n "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-}" ]; then
+        git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+        npx a11y-shiftleft-cli check --static --dynamic --changed-since "origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --url "$APP_URL" --out reports --gate report-only
+      else
+        npx a11y-shiftleft-cli check --static --dynamic --url "$APP_URL" --out reports --gate report-only
+      fi
   artifacts:
     when: always
     paths:
@@ -42,12 +49,19 @@ a11y:
   image: mcr.microsoft.com/playwright:v1.49.1-jammy
   variables:
     APP_URL: "http://localhost:5173"
+    GIT_DEPTH: "0"
   script:
     - npm ci
     - npm run build --if-present
     - npm run dev -- --host 0.0.0.0 --port 5173 &
     - npx wait-on "$APP_URL"
-    - npx a11y-shiftleft-cli check --dynamic --url "$APP_URL" --out reports --baseline --gate new-critical-only
+    - |
+      if [ -n "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-}" ]; then
+        git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+        npx a11y-shiftleft-cli check --static --dynamic --changed-since "origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --url "$APP_URL" --out reports --baseline --gate new-critical-only
+      else
+        npx a11y-shiftleft-cli check --static --dynamic --url "$APP_URL" --out reports --baseline --gate new-critical-only
+      fi
   artifacts:
     when: always
     paths:
