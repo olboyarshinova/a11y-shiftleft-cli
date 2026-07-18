@@ -15,6 +15,17 @@ npx a11y-shiftleft-cli generate-ci \
 
 Use the local or preview URL your app exposes in CI.
 
+For a stronger PR smoke test, pass a short list of representative URLs instead
+of relying on one page:
+
+```bash
+export APP_URL=http://localhost:5173
+npx a11y-shiftleft-cli generate-ci \
+  --url $APP_URL $APP_URL/account $APP_URL/checkout \
+  --start-command "npm run dev -- --host localhost --port 5173" \
+  --gate report-only
+```
+
 The default workflow runs on `pull_request`. It runs static accessibility rules
 only for frontend files changed since the pull request base branch, and also
 runs a bounded browser crawl (`--crawl-depth 1`, `--crawl-limit 10`) so feedback

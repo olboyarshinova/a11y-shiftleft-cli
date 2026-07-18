@@ -117,6 +117,36 @@ test("runSetup keeps generated npm check script aligned with the requested gate"
   assert.match(result.nextSteps.join("\n"), /npm run a11y:audit/);
 });
 
+test("runSetup includes multiple smoke URLs in the generated npm check script", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-setup-urls-"));
+  await fs.writeFile(path.join(cwd, "package.json"), JSON.stringify({
+    scripts: {
+      dev: "vite"
+    }
+  }, null, 2));
+
+  await runSetup({
+    cwd,
+    url: ["http://localhost:5173", "http://localhost:5173/account", "http://localhost:5173/checkout"],
+    startCommand: "npm run dev -- --host localhost --port 5173",
+    ci: "none",
+    profile: "pr",
+    gate: "report-only",
+    failOn: "critical",
+    standard: "wcag22-aa",
+    skipCi: true
+  });
+
+  const manifest = JSON.parse(await fs.readFile(path.join(cwd, "package.json"), "utf8")) as {
+    scripts: Record<string, string>;
+  };
+  assert.equal(manifest.scripts["a11y:audit"], "a11y-shiftleft audit --url http://localhost:5173 --out reports --open");
+  assert.equal(
+    manifest.scripts["a11y:check"],
+    "a11y-shiftleft check --dynamic --url http://localhost:5173 http://localhost:5173/account http://localhost:5173/checkout --out reports --gate report-only --verbose"
+  );
+});
+
 test("runSetup can create a GitLab CI workflow", async () => {
   const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-setup-gitlab-"));
   await fs.writeFile(path.join(cwd, "package.json"), JSON.stringify({

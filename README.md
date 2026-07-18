@@ -135,6 +135,15 @@ report `.gitignore` entries, and a report-only CI workflow:
 npx a11y-shiftleft-cli setup --url $APP_URL --start-command "npm run dev"
 ```
 
+For faster pull-request coverage, pass two or three important smoke-test pages.
+The generated `a11y:check` script and CI workflow will scan all of them:
+
+```bash
+npx a11y-shiftleft-cli setup \
+  --url http://localhost:YOUR_PORT http://localhost:YOUR_PORT/account http://localhost:YOUR_PORT/checkout \
+  --start-command "npm run dev"
+```
+
 GitHub Actions is the default. For GitLab CI, add `--ci gitlab`:
 
 ```bash

@@ -123,6 +123,9 @@
   show the same scan and gate context as CI runs.
 - Updated staged CI rollout recipes to use verbose check output in copy-paste
   commands.
+- Updated `setup` npm script generation so multiple `--url` values become a
+  small dynamic smoke-test set for `a11y:check`, while `a11y:audit` still opens
+  the first URL for visual review.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.
 - Added compact lifecycle badges to visual finding groups for new, remaining,

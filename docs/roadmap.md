@@ -202,9 +202,11 @@ Section 508 certification.
   real React, Vue, and Angular repositories.
 - Continue incremental scan support for pull requests. Current `check
   --changed-since <ref>` can limit static checks to frontend files changed
-  relative to a base ref, and generated GitHub/GitLab PR workflows use it
-  alongside a bounded dynamic crawl. Next, connect a small configured set of
-  dynamic smoke-test URLs before broader scheduled scans.
+  relative to a base ref, generated GitHub/GitLab PR workflows use it alongside
+  a bounded dynamic crawl, and `setup` can turn multiple `--url` values into a
+  small dynamic smoke-test set for generated `a11y:check` scripts. Next,
+  validate this pattern in real preview deployments before broader scheduled
+  scans.
 - Add explicit PR scan presets that separate fast pull-request checks from
   slower scheduled or manual full audits. Keep the default PR path short,
   bounded, and baseline-friendly so teams do not disable the tool because of

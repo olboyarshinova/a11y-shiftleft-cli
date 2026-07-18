@@ -94,7 +94,7 @@ export async function runSetup(options: SetupOptions): Promise<SetupResult> {
   }
 
   if (!options.skipScripts) {
-    const scripts = await addPackageScripts(cwd, scanUrls[0], options.gate, options.force);
+    const scripts = await addPackageScripts(cwd, scanUrls, options.gate, options.force);
     const scriptsPath = displayPath(cwd, scripts.path);
     if (scripts.status === "updated") {
       updated.push(`${scriptsPath} (${scripts.added.join(", ")})`);
@@ -243,7 +243,7 @@ type PackageScriptsResult =
 
 export async function addPackageScripts(
   cwd: string,
-  url: string,
+  urls: string[],
   gate = "report-only",
   force = false
 ): Promise<PackageScriptsResult> {
@@ -258,9 +258,12 @@ export async function addPackageScripts(
   const scripts = manifest.scripts && typeof manifest.scripts === "object"
     ? { ...manifest.scripts }
     : {};
+  const scanUrls = urls.length > 0 ? urls : ["http://localhost:3000"];
+  const firstUrl = scanUrls[0];
+  const urlArgs = scanUrls.join(" ");
   const desired = {
-    "a11y:audit": `a11y-shiftleft audit --url ${url} --out reports --open`,
-    "a11y:check": `a11y-shiftleft check --dynamic --url ${url} --out reports --gate ${gate} --verbose`
+    "a11y:audit": `a11y-shiftleft audit --url ${firstUrl} --out reports --open`,
+    "a11y:check": `a11y-shiftleft check --dynamic --url ${urlArgs} --out reports --gate ${gate} --verbose`
   };
   const added: string[] = [];
 
