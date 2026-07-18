@@ -7,11 +7,11 @@ needs a staged rollout instead of failing every pull request on day one.
 
 | Stage | Goal | Command |
 |---|---|---|
-| 1. Observe | Collect reports without blocking CI | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --gate report-only` |
+| 1. Observe | Collect reports without blocking CI | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --gate report-only --verbose` |
 | 2. Baseline | Accept the current known state | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --update-baseline` |
-| 3. Protect | Block only new critical regressions | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --gate new-critical-only` |
-| 4. Tighten | Block all critical findings | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --gate critical` |
-| 5. Mature | Block warnings when the team is ready | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --gate warning` |
+| 3. Protect | Block only new critical regressions | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --gate new-critical-only --verbose` |
+| 4. Tighten | Block all critical findings | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --gate critical --verbose` |
+| 5. Mature | Block warnings when the team is ready | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --gate warning --verbose` |
 
 ## First CI Setup
 
@@ -62,7 +62,8 @@ npx a11y-shiftleft-cli check \
   --dynamic \
   --url $APP_URL \
   --out reports \
-  --gate new-critical-only
+  --gate new-critical-only \
+  --verbose
 ```
 
 This compares current findings with `.a11y-baseline.json` and fails only when a
@@ -73,8 +74,8 @@ new critical issue appears.
 When the project has fewer legacy findings, move to stricter gates:
 
 ```bash
-npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --gate critical
-npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --gate warning
+npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --gate critical --verbose
+npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --gate warning --verbose
 ```
 
 Use `critical` for teams that want to stop high-impact regressions. Use

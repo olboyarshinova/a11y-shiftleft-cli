@@ -98,13 +98,13 @@ starts blocking work:
 
 ```bash
 # Visibility first
-npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --gate report-only
+npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --gate report-only --verbose
 
 # Then block only new critical regressions
-npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --gate new-critical-only
+npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --gate new-critical-only --verbose
 
 # Later, tighten when ownership and fix flow are clear
-npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --gate critical
+npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --gate critical --verbose
 ```
 
 See [Quality Gates For Existing Projects](quality-gates.md) for the full staged

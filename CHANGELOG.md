@@ -121,6 +121,8 @@
   quality-gate effects, crawl settings, and report outputs.
 - Added `--verbose` to generated `a11y:check` npm scripts so local setup checks
   show the same scan and gate context as CI runs.
+- Updated staged CI rollout recipes to use verbose check output in copy-paste
+  commands.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.
 - Added compact lifecycle badges to visual finding groups for new, remaining,
