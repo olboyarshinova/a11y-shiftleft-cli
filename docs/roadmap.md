@@ -27,6 +27,8 @@ Section 508 certification.
   package-resolution confusion. Guided setup also points users to `doctor --url`
   when browser installation or target reachability needs troubleshooting and
   prints the generated or updated files that should be reviewed before commit.
+  Standalone `generate-ci` now prints the created workflow files and next steps
+  for pull-request verification or shell-runner integration.
 - Extend authenticated testing beyond manual `auth login` with CI-safe custom
   flows: a scripted auth module that reads usernames, passwords, and tokens from
   environment variables or CI secrets, then saves a temporary Playwright

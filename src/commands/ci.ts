@@ -77,12 +77,25 @@ export function registerCiCommand(program: Command): void {
         }
       }
 
+      const createdTargets: string[] = [];
       for (const workflow of workflows) {
         const target = ciTargetPath(cwd, provider, workflow.fileName);
         await fs.mkdir(path.dirname(target), { recursive: true });
         await fs.writeFile(target, workflow.contents);
         if (workflow.executable) await fs.chmod(target, 0o755);
+        createdTargets.push(displayPath(cwd, target));
         console.log(`Created ${target}`);
+      }
+
+      console.log("\nNext steps:");
+      for (const [index, step] of formatCiGenerationNextSteps({
+        provider,
+        profile: workflowOptions.profile,
+        createdFiles: createdTargets,
+        gate: options.gate,
+        failOn: options.failOn
+      }).entries()) {
+        console.log(`${index + 1}. ${step}`);
       }
     });
 }
@@ -535,6 +548,41 @@ export function ciTargetPath(cwd: string, provider: CiProvider, fileName: string
   if (provider === "circleci") return path.join(cwd, ".circleci", fileName);
   if (provider === "shell") return path.join(cwd, "scripts", fileName);
   return path.join(cwd, fileName);
+}
+
+export function formatCiGenerationNextSteps(options: {
+  provider: CiProvider;
+  profile: CiProfile;
+  createdFiles: string[];
+  gate?: string;
+  failOn: string;
+}): string[] {
+  const files = options.createdFiles.length > 0 ? options.createdFiles.join(", ") : "the generated workflow file";
+  const gate = options.gate ? `--gate ${options.gate}` : `--fail-on ${options.failOn}`;
+  const steps = [
+    `Review generated workflow file(s): ${files}`,
+    "Commit the workflow file(s) after reviewing them."
+  ];
+
+  if (options.provider === "shell") {
+    steps.push("Call the generated shell script from your CI job after installing dependencies.");
+  } else if (options.profile === "full") {
+    steps.push("Run the workflow manually first, then keep the scheduled full-site scan report-only until the findings are understood.");
+  } else {
+    steps.push(`Open a pull request and confirm the accessibility job runs with ${gate}.`);
+  }
+
+  if (options.gate === "report-only") {
+    steps.push("After the first reports are reviewed, tighten the workflow to --gate new-critical-only.");
+  }
+
+  return steps;
+}
+
+function displayPath(cwd: string, filePath: string): string {
+  const relative = path.relative(cwd, filePath);
+  if (!relative || relative.startsWith("..") || path.isAbsolute(relative)) return filePath;
+  return relative;
 }
 
 function parseUrls(urls?: string[]): string[] {

@@ -5,6 +5,7 @@ import {
   checkGateArgument,
   circleCiWorkflowFiles,
   circleCiWorkflowTemplate,
+  formatCiGenerationNextSteps,
   gitLabWorkflowFiles,
   gitLabWorkflowTemplate,
   fullWorkflowTemplate,
@@ -89,6 +90,33 @@ test("checkGateArgument maps supported gates and rejects unknown profiles", () =
   assert.equal(checkGateArgument(undefined, "warning"), "--fail-on warning");
   assert.equal(checkGateArgument("report-only", "critical"), "--gate report-only");
   assert.throws(() => checkGateArgument("everything", "critical"), /Unsupported CI quality gate/);
+});
+
+test("formatCiGenerationNextSteps gives concrete review and rollout guidance", () => {
+  const steps = formatCiGenerationNextSteps({
+    provider: "github",
+    profile: "pr",
+    createdFiles: [".github/workflows/a11y.yml"],
+    gate: "report-only",
+    failOn: "critical"
+  }).join("\n");
+
+  assert.match(steps, /Review generated workflow file\(s\): \.github\/workflows\/a11y\.yml/);
+  assert.match(steps, /Open a pull request/);
+  assert.match(steps, /--gate report-only/);
+  assert.match(steps, /--gate new-critical-only/);
+});
+
+test("formatCiGenerationNextSteps explains shell runner usage", () => {
+  const steps = formatCiGenerationNextSteps({
+    provider: "shell",
+    profile: "pr",
+    createdFiles: ["scripts/a11y-ci.sh"],
+    failOn: "warning"
+  }).join("\n");
+
+  assert.match(steps, /scripts\/a11y-ci\.sh/);
+  assert.match(steps, /Call the generated shell script from your CI job/);
 });
 
 test("fullWorkflowTemplate creates scheduled full-site crawl workflow", () => {
