@@ -25,7 +25,8 @@ Section 508 certification.
   tightening path, generated npm scripts stay aligned with the selected setup
   gate, and generated `npx` CI commands use the published package name to avoid
   package-resolution confusion. Guided setup also points users to `doctor --url`
-  when browser installation or target reachability needs troubleshooting.
+  when browser installation or target reachability needs troubleshooting and
+  prints the generated or updated files that should be reviewed before commit.
 - Extend authenticated testing beyond manual `auth login` with CI-safe custom
   flows: a scripted auth module that reads usernames, passwords, and tokens from
   environment variables or CI secrets, then saves a temporary Playwright

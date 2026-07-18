@@ -129,6 +129,8 @@
 - Added `setup --crawl-depth`, `--crawl-limit`, `--full-crawl-depth`,
   `--full-crawl-limit`, and `--full-schedule` so guided setup can tune fast PR
   and scheduled full-site workflow bounds without manual YAML edits.
+- Improved `setup` next steps with an explicit fast-check command and a list of
+  generated or updated files to review before committing.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.
 - Added compact lifecycle badges to visual finding groups for new, remaining,

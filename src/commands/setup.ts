@@ -166,17 +166,22 @@ export async function runSetup(options: SetupOptions): Promise<SetupResult> {
     created,
     skipped,
     updated,
-    nextSteps: buildSetupNextSteps(options, scanUrls[0])
+    nextSteps: buildSetupNextSteps(options, scanUrls, changedSetupFiles(created, updated))
   };
 }
 
-function buildSetupNextSteps(options: SetupOptions, url: string): string[] {
+function buildSetupNextSteps(options: SetupOptions, urls: string[], changedFiles: string[]): string[] {
+  const firstUrl = urls[0] || "http://localhost:3000";
+  const urlArgs = urls.join(" ") || firstUrl;
   const steps = [
     `Start your app locally: ${options.startCommand}`,
     options.skipScripts
-      ? `Run a visual audit: npx a11y-shiftleft-cli audit --url ${url} --out reports --open`
+      ? `Run a visual audit: npx a11y-shiftleft-cli audit --url ${firstUrl} --out reports --open`
       : "Run a visual audit: npm run a11y:audit",
-    `If setup or browser reachability fails, run: npx a11y-shiftleft-cli doctor --url ${url}`
+    options.skipScripts
+      ? `Run a fast check: npx a11y-shiftleft-cli check --dynamic --url ${urlArgs} --out reports --gate ${options.gate} --verbose`
+      : "Run a fast check: npm run a11y:check",
+    `If setup or browser reachability fails, run: npx a11y-shiftleft-cli doctor --url ${firstUrl}`
   ];
 
   if (!options.skipCi && options.ci !== "none") {
@@ -188,8 +193,16 @@ function buildSetupNextSteps(options: SetupOptions, url: string): string[] {
     steps.push(formatGitHookNextStep(gitHookTool));
   }
 
-  steps.push("Commit the generated config and workflow files after reviewing them.");
+  if (changedFiles.length > 0) {
+    steps.push(`Review generated or updated files: ${changedFiles.join(", ")}`);
+  }
+
+  steps.push("Commit the generated config, scripts, and workflow files after reviewing them.");
   return steps;
+}
+
+function changedSetupFiles(created: string[], updated: string[]): string[] {
+  return [...new Set([...created, ...updated].map((item) => item.replace(/\s+\(.+\)$/, "")))];
 }
 
 function toGitHookTool(value?: string): GitHookTool {

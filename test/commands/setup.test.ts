@@ -68,9 +68,13 @@ test("runSetup creates config, report ignores, and GitHub Actions workflow", asy
   assert.equal(result.created.some((item) => item.includes(os.homedir())), false);
   assert.equal(result.updated.some((item) => item.includes(os.homedir())), false);
   assert.match(result.nextSteps.join("\n"), /npm run a11y:audit/);
+  assert.match(result.nextSteps.join("\n"), /npm run a11y:check/);
   assert.match(result.nextSteps.join("\n"), /doctor --url http:\/\/localhost:5173/);
   assert.match(result.nextSteps.join("\n"), /CI starts in report-only mode/);
   assert.match(result.nextSteps.join("\n"), /--gate new-critical-only/);
+  assert.match(result.nextSteps.join("\n"), /Review generated or updated files: .*\.a11y-shiftleft\.json/);
+  assert.match(result.nextSteps.join("\n"), /package\.json/);
+  assert.match(result.nextSteps.join("\n"), /\.github\/workflows\/a11y\.yml/);
 });
 
 test("runSetup omits CI rollout guidance when CI generation is skipped", async () => {
@@ -91,6 +95,7 @@ test("runSetup omits CI rollout guidance when CI generation is skipped", async (
 
   const steps = result.nextSteps.join("\n");
   assert.match(steps, /Run a visual audit: npx a11y-shiftleft-cli audit --url http:\/\/localhost:5173 --out reports --open/);
+  assert.match(steps, /Run a fast check: npx a11y-shiftleft-cli check --dynamic --url http:\/\/localhost:5173 --out reports --gate report-only --verbose/);
   assert.doesNotMatch(steps, /CI starts in report-only mode/);
 });
 
