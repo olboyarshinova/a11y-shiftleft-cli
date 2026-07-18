@@ -54,6 +54,7 @@ test("runSetup creates config, report ignores, and GitHub Actions workflow", asy
   assert.equal(manifest.scripts["a11y:check"], "a11y-shiftleft check --dynamic --url http://localhost:5173 --out reports --gate report-only");
   assert.match(workflow, /fetch-depth: 0/);
   assert.match(workflow, /npx a11y-shiftleft-cli check --static --dynamic --changed-since origin\/\$\{\{ github\.base_ref \}\} --url http:\/\/localhost:5173/);
+  assert.match(workflow, /--standard wcag22-aa --verbose/);
   assert.match(workflow, /--gate report-only/);
   assert.match(workflow, /npm run dev -- --host localhost --port 5173/);
   assert.ok(result.created.includes(".a11y-shiftleft.json"));
@@ -140,6 +141,7 @@ test("runSetup can create a GitLab CI workflow", async () => {
   assert.match(workflow, /image: mcr\.microsoft\.com\/playwright:v1\.49\.1-jammy/);
   assert.match(workflow, /GIT_DEPTH: "0"/);
   assert.match(workflow, /npx a11y-shiftleft-cli check --static --dynamic --changed-since "origin\/\$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --url http:\/\/localhost:5173/);
+  assert.match(workflow, /--standard wcag22-aa --verbose/);
   assert.match(workflow, /--gate report-only/);
   assert.ok(result.created.includes(".gitlab-ci.yml"));
   assert.equal(result.created.some((item) => item.includes(os.homedir())), false);
@@ -169,6 +171,7 @@ test("runSetup can create a CircleCI workflow", async () => {
   assert.match(workflow, /version: 2\.1/);
   assert.match(workflow, /store_artifacts:/);
   assert.match(workflow, /npx a11y-shiftleft-cli check --dynamic --url http:\/\/localhost:5173/);
+  assert.match(workflow, /--standard wcag22-aa --verbose/);
   assert.ok(result.created.includes(".circleci/config.yml"));
   assert.equal(result.created.some((item) => item.includes(os.homedir())), false);
 });
@@ -198,6 +201,7 @@ test("runSetup can create a portable shell CI script", async () => {
 
   assert.match(script, /^#!\/usr\/bin\/env bash/);
   assert.match(script, /npx a11y-shiftleft-cli check --dynamic --url http:\/\/localhost:5173/);
+  assert.match(script, /--standard wcag22-aa --verbose/);
   assert.equal((stat.mode & 0o111) !== 0, true);
   assert.ok(result.created.includes("scripts/a11y-ci.sh"));
   assert.equal(result.created.some((item) => item.includes(os.homedir())), false);

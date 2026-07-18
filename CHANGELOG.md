@@ -117,6 +117,8 @@
   `--static` is also present, preventing silently skipped incremental checks.
 - Updated generated GitLab CI workflows to use changed-file static checks for
   merge requests, with a static+dynamic fallback for branch pipelines.
+- Added `--verbose` to generated CI check commands so logs show scan modes,
+  quality-gate effects, crawl settings, and report outputs.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.
 - Added compact lifecycle badges to visual finding groups for new, remaining,

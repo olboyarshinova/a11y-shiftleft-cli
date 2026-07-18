@@ -157,7 +157,7 @@ jobs:
           exit 1
 
       - name: Run fast accessibility checks
-        run: npx a11y-shiftleft-cli check --static --dynamic --changed-since origin/\${{ github.base_ref }} --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard}
+        run: npx a11y-shiftleft-cli check --static --dynamic --changed-since origin/\${{ github.base_ref }} --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard} --verbose
 
       - name: Upload accessibility report
         id: upload-a11y-report
@@ -241,7 +241,7 @@ jobs:
           exit 1
 
       - name: Run full-site accessibility crawl
-        run: npx a11y-shiftleft-cli check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --semi-auto --out reports-full --fail-on ${fullFailOn} --standard ${standard}
+        run: npx a11y-shiftleft-cli check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --semi-auto --out reports-full --fail-on ${fullFailOn} --standard ${standard} --verbose
 
       - name: Upload full-site accessibility report
         if: always()
@@ -283,9 +283,9 @@ a11y:
     - |
       if [ -n "\${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-}" ]; then
         git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
-        npx a11y-shiftleft-cli check --static --dynamic --changed-since "origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard}
+        npx a11y-shiftleft-cli check --static --dynamic --changed-since "origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard} --verbose
       else
-        npx a11y-shiftleft-cli check --static --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard}
+        npx a11y-shiftleft-cli check --static --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard} --verbose
       fi
   artifacts:
     when: always
@@ -333,7 +333,7 @@ jobs:
             exit 1
       - run:
           name: Run accessibility checks
-          command: npx a11y-shiftleft-cli check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard}
+          command: npx a11y-shiftleft-cli check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard} --verbose
       - store_artifacts:
           path: reports
           destination: a11y-report
@@ -379,7 +379,7 @@ for _ in {1..30}; do
 done
 
 curl -fsS "$APP_URL" >/dev/null
-npx a11y-shiftleft-cli check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out "$REPORT_DIR" ${gateArg} --standard ${standard}
+npx a11y-shiftleft-cli check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out "$REPORT_DIR" ${gateArg} --standard ${standard} --verbose
 
 echo "Accessibility report written to $REPORT_DIR"
 `;

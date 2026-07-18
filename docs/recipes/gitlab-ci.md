@@ -26,9 +26,9 @@ a11y:
     - |
       if [ -n "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-}" ]; then
         git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
-        npx a11y-shiftleft-cli check --static --dynamic --changed-since "origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --url "$APP_URL" --out reports --gate report-only
+        npx a11y-shiftleft-cli check --static --dynamic --changed-since "origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --url "$APP_URL" --out reports --gate report-only --verbose
       else
-        npx a11y-shiftleft-cli check --static --dynamic --url "$APP_URL" --out reports --gate report-only
+        npx a11y-shiftleft-cli check --static --dynamic --url "$APP_URL" --out reports --gate report-only --verbose
       fi
   artifacts:
     when: always
@@ -58,9 +58,9 @@ a11y:
     - |
       if [ -n "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-}" ]; then
         git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
-        npx a11y-shiftleft-cli check --static --dynamic --changed-since "origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --url "$APP_URL" --out reports --baseline --gate new-critical-only
+        npx a11y-shiftleft-cli check --static --dynamic --changed-since "origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --url "$APP_URL" --out reports --baseline --gate new-critical-only --verbose
       else
-        npx a11y-shiftleft-cli check --static --dynamic --url "$APP_URL" --out reports --baseline --gate new-critical-only
+        npx a11y-shiftleft-cli check --static --dynamic --url "$APP_URL" --out reports --baseline --gate new-critical-only --verbose
       fi
   artifacts:
     when: always
