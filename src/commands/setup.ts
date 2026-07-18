@@ -2,7 +2,7 @@ import type { Command } from "commander";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { addReportEntriesToGitignore, createInitialConfig, toFramework } from "./init.js";
-import { ciTargetPath, ciWorkflowFiles, toCiProfile, toCiProvider } from "./ci.js";
+import { ciTargetPath, ciWorkflowFiles, toCiProfile, toCiProvider, toPositiveInteger } from "./ci.js";
 
 interface SetupOptions {
   cwd?: string;
@@ -14,6 +14,11 @@ interface SetupOptions {
   gate: string;
   failOn: string;
   standard: string;
+  crawlDepth?: string;
+  crawlLimit?: string;
+  fullCrawlDepth?: string;
+  fullCrawlLimit?: string;
+  fullSchedule?: string;
   gitHooks?: string;
   force?: boolean;
   skipConfig?: boolean;
@@ -44,6 +49,11 @@ export function registerSetupCommand(program: Command): void {
     .option("--gate <profile>", "CI quality gate: report-only, critical, warning, or new-critical-only", "report-only")
     .option("--fail-on <severity>", "Fallback severity gate when --gate is not set", "critical")
     .option("--standard <standard>", "Compliance support preset: wcag22-aa, ada-title-ii, section508, or en301549", "wcag22-aa")
+    .option("--crawl-depth <depth>", "Fast PR crawl depth", "1")
+    .option("--crawl-limit <limit>", "Fast PR crawl URL limit", "10")
+    .option("--full-crawl-depth <depth>", "Scheduled full-site crawl depth", "3")
+    .option("--full-crawl-limit <limit>", "Scheduled full-site crawl URL limit", "100")
+    .option("--full-schedule <cron>", "Scheduled full-site workflow cron expression", "0 7 * * 1")
     .option("--git-hooks <tool>", "Optional pre-commit hook setup: none, husky, or lefthook", "none")
     .option("--force", "Overwrite existing generated config and workflow files")
     .option("--skip-config", "Do not create .a11y-shiftleft.json")
@@ -115,11 +125,11 @@ export async function runSetup(options: SetupOptions): Promise<SetupResult> {
       gate: options.gate,
       fullFailOn: "none",
       standard: options.standard,
-      crawlDepth: 1,
-      crawlLimit: 10,
-      fullCrawlDepth: 3,
-      fullCrawlLimit: 100,
-      fullSchedule: "0 7 * * 1"
+      crawlDepth: toPositiveInteger(options.crawlDepth, 1),
+      crawlLimit: toPositiveInteger(options.crawlLimit, 10),
+      fullCrawlDepth: toPositiveInteger(options.fullCrawlDepth, 3),
+      fullCrawlLimit: toPositiveInteger(options.fullCrawlLimit, 100),
+      fullSchedule: options.fullSchedule || "0 7 * * 1"
     };
     const workflows = ciWorkflowFiles(provider, workflowOptions);
 

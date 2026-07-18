@@ -126,6 +126,9 @@
 - Updated `setup` npm script generation so multiple `--url` values become a
   small dynamic smoke-test set for `a11y:check`, while `a11y:audit` still opens
   the first URL for visual review.
+- Added `setup --crawl-depth`, `--crawl-limit`, `--full-crawl-depth`,
+  `--full-crawl-limit`, and `--full-schedule` so guided setup can tune fast PR
+  and scheduled full-site workflow bounds without manual YAML edits.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.
 - Added compact lifecycle badges to visual finding groups for new, remaining,

@@ -208,9 +208,11 @@ Section 508 certification.
   validate this pattern in real preview deployments before broader scheduled
   scans.
 - Add explicit PR scan presets that separate fast pull-request checks from
-  slower scheduled or manual full audits. Keep the default PR path short,
-  bounded, and baseline-friendly so teams do not disable the tool because of
-  noisy legacy findings.
+  slower scheduled or manual full audits. Current `generate-ci` and `setup`
+  support `pr`, `full`, and `split` profiles, plus configurable fast and
+  full-site crawl bounds. Keep the default PR path short, bounded, and
+  baseline-friendly so teams do not disable the tool because of noisy legacy
+  findings.
 - Continue expanding CLI quality-of-life controls around report paths,
   troubleshooting context, progress output, `--quiet`, and `--verbose`. Current
   verbose check output explains the selected quality gate effect for CI logs,

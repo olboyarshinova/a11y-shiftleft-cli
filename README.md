@@ -141,6 +141,8 @@ The generated `a11y:check` script and CI workflow will scan all of them:
 ```bash
 npx a11y-shiftleft-cli setup \
   --url http://localhost:YOUR_PORT http://localhost:YOUR_PORT/account http://localhost:YOUR_PORT/checkout \
+  --crawl-depth 1 \
+  --crawl-limit 10 \
   --start-command "npm run dev"
 ```
 

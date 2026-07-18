@@ -546,7 +546,7 @@ function parseUrls(urls?: string[]): string[] {
     .filter(Boolean))];
 }
 
-function toPositiveInteger(value: number | string | undefined, fallback: number): number {
+export function toPositiveInteger(value: number | string | undefined, fallback: number): number {
   const parsed = typeof value === "number" ? value : Number.parseInt(String(value ?? ""), 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }

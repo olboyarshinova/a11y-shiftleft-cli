@@ -15,6 +15,10 @@ test("setup command is registered as the guided first-run path", () => {
   assert.equal(flags.includes("--url"), true);
   assert.equal(flags.includes("--start-command"), true);
   assert.equal(flags.includes("--gate"), true);
+  assert.equal(flags.includes("--crawl-depth"), true);
+  assert.equal(flags.includes("--crawl-limit"), true);
+  assert.equal(flags.includes("--full-crawl-depth"), true);
+  assert.equal(flags.includes("--full-crawl-limit"), true);
   assert.equal(flags.includes("--git-hooks"), true);
   assert.equal(flags.includes("--skip-ci"), true);
   assert.equal(flags.includes("--skip-scripts"), true);
@@ -145,6 +149,38 @@ test("runSetup includes multiple smoke URLs in the generated npm check script", 
     manifest.scripts["a11y:check"],
     "a11y-shiftleft check --dynamic --url http://localhost:5173 http://localhost:5173/account http://localhost:5173/checkout --out reports --gate report-only --verbose"
   );
+});
+
+test("runSetup forwards custom crawl bounds to generated CI workflows", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-setup-crawl-"));
+  await fs.writeFile(path.join(cwd, "package.json"), JSON.stringify({
+    scripts: {
+      dev: "vite"
+    }
+  }, null, 2));
+
+  await runSetup({
+    cwd,
+    url: ["http://localhost:5173"],
+    startCommand: "npm run dev -- --host localhost --port 5173",
+    ci: "github",
+    profile: "split",
+    gate: "report-only",
+    failOn: "critical",
+    standard: "wcag22-aa",
+    crawlDepth: "2",
+    crawlLimit: "7",
+    fullCrawlDepth: "4",
+    fullCrawlLimit: "80",
+    fullSchedule: "0 8 * * 2"
+  });
+
+  const prWorkflow = await fs.readFile(path.join(cwd, ".github/workflows/a11y-pr.yml"), "utf8");
+  const fullWorkflow = await fs.readFile(path.join(cwd, ".github/workflows/a11y-full.yml"), "utf8");
+
+  assert.match(prWorkflow, /--crawl --crawl-depth 2 --crawl-limit 7/);
+  assert.match(fullWorkflow, /--crawl --crawl-depth 4 --crawl-limit 80/);
+  assert.match(fullWorkflow, /cron: "0 8 \* \* 2"/);
 });
 
 test("runSetup can create a GitLab CI workflow", async () => {
