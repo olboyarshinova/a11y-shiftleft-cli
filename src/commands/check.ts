@@ -155,6 +155,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
   }
 
   assertOneStaticFileSelector(options);
+  assertStaticFileSelectorCanRun(options);
 
   const startedAt = Date.now();
   const urls = parseUrls(options.url);
@@ -611,6 +612,20 @@ function assertOneStaticFileSelector(options: Pick<CheckOptions, "include" | "st
 
   if (selectors.length > 1) {
     throw new Error(`Choose only one static file selector: ${selectors.join(", ")}.`);
+  }
+}
+
+function assertStaticFileSelectorCanRun(options: Pick<CheckOptions, "include" | "staged" | "changedSince" | "static" | "dynamic">): void {
+  const selector = options.include && options.include.length > 0
+    ? "--include"
+    : options.staged
+      ? "--staged"
+      : options.changedSince
+        ? "--changed-since"
+        : undefined;
+
+  if (selector && options.dynamic && !options.static) {
+    throw new Error(`${selector} selects files for static checks. Add --static, or remove --dynamic.`);
   }
 }
 

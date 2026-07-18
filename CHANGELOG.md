@@ -113,6 +113,8 @@
   origin/${{ github.base_ref }}` with the bounded dynamic crawl.
 - Fixed generated GitHub PR workflows to pass both `--static` and `--dynamic`
   so changed-file static checks actually run alongside browser checks.
+- Added a guard that rejects static file selectors with `--dynamic` unless
+  `--static` is also present, preventing silently skipped incremental checks.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.
 - Added compact lifecycle badges to visual finding groups for new, remaining,

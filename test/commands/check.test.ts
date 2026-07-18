@@ -271,6 +271,25 @@ test("runCheck rejects ambiguous static file selectors", async () => {
   );
 });
 
+test("runCheck rejects static file selectors when static mode is disabled", async () => {
+  await assert.rejects(
+    runCheck({
+      dynamic: true,
+      changedSince: "origin/main",
+      quiet: true
+    }),
+    /--changed-since selects files for static checks. Add --static/
+  );
+  await assert.rejects(
+    runCheck({
+      dynamic: true,
+      staged: true,
+      quiet: true
+    }),
+    /--staged selects files for static checks. Add --static/
+  );
+});
+
 test("formatVerboseCheckSummary renders scan context without JSON parsing requirements", () => {
   const output = formatVerboseCheckSummary({
     framework: "react",
