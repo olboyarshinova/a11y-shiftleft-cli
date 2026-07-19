@@ -56,6 +56,16 @@ export interface TicketPayloadPreview {
   payload: Record<string, unknown>;
 }
 
+export interface TicketDraftSummary {
+  total: number;
+  newDrafts: number;
+  knownDuplicates: number;
+  totalFindings: number;
+  bySeverity: Record<Severity, number>;
+  byOwnerHint: Array<{ ownerHint: string; drafts: number; findings: number }>;
+  topRules: Array<{ ruleId: string; drafts: number; findings: number }>;
+}
+
 const SEVERITY_RANK: Record<Severity, number> = {
   critical: 3,
   warning: 2,
@@ -95,19 +105,43 @@ export function createTicketDrafts(
 }
 
 export function ticketDraftsToMarkdown(drafts: TicketDraft[], report: A11yReport): string {
+  const summary = summarizeTicketDrafts(drafts);
   const rows = drafts.map((draft) => (
     `| ${escapeTable(draft.severity.toUpperCase())} | ${escapeTable(draft.ruleId)} | ${escapeTable(draft.page)} | ${draft.count} | ${escapeTable(existingTicketSummary(draft))} |`
   ));
-  const knownCount = drafts.filter((draft) => draft.existingTicket).length;
+  const ownerRows = summary.byOwnerHint.map((item) => (
+    `| ${escapeTable(item.ownerHint)} | ${item.drafts} | ${item.findings} |`
+  ));
+  const ruleRows = summary.topRules.map((item) => (
+    `| ${escapeTable(item.ruleId)} | ${item.drafts} | ${item.findings} |`
+  ));
 
   return [
     "# Accessibility Ticket Drafts",
     "",
     `Generated from report: ${report.generatedAt}`,
-    `Total drafts: ${drafts.length}`,
-    `Known duplicates: ${knownCount}`,
+    `Total drafts: ${summary.total}`,
+    `New drafts: ${summary.newDrafts}`,
+    `Known duplicates: ${summary.knownDuplicates}`,
+    `Findings represented: ${summary.totalFindings}`,
     "",
     "These are dry-run ticket drafts. Review them before creating Jira, Linear, or other tracker issues.",
+    "",
+    "## Triage Summary",
+    "",
+    `Critical drafts: ${summary.bySeverity.critical}`,
+    `Warning drafts: ${summary.bySeverity.warning}`,
+    `Info drafts: ${summary.bySeverity.info}`,
+    "",
+    "| Owner hint | Drafts | Findings |",
+    "|---|---:|---:|",
+    ...(ownerRows.length > 0 ? ownerRows : ["| None | 0 | 0 |"]),
+    "",
+    "| Rule | Drafts | Findings |",
+    "|---|---:|---:|",
+    ...(ruleRows.length > 0 ? ruleRows : ["| None | 0 | 0 |"]),
+    "",
+    "## Draft Index",
     "",
     "| Severity | Rule | Page | Findings | Existing ticket |",
     "|---|---|---|---:|---|",
@@ -122,6 +156,24 @@ export function ticketDraftsToMarkdown(drafts: TicketDraft[], report: A11yReport
   ].join("\n");
 }
 
+export function summarizeTicketDrafts(drafts: TicketDraft[]): TicketDraftSummary {
+  return {
+    total: drafts.length,
+    newDrafts: drafts.filter((draft) => !draft.existingTicket).length,
+    knownDuplicates: drafts.filter((draft) => draft.existingTicket).length,
+    totalFindings: drafts.reduce((sum, draft) => sum + draft.count, 0),
+    bySeverity: {
+      critical: drafts.filter((draft) => draft.severity === "critical").length,
+      warning: drafts.filter((draft) => draft.severity === "warning").length,
+      info: drafts.filter((draft) => draft.severity === "info").length
+    },
+    byOwnerHint: rankedDraftSummary(drafts, (draft) => draft.ownerHint)
+      .map((item) => ({ ownerHint: item.key, drafts: item.drafts, findings: item.findings })),
+    topRules: rankedDraftSummary(drafts, (draft) => draft.ruleId)
+      .map((item) => ({ ruleId: item.key, drafts: item.drafts, findings: item.findings }))
+  };
+}
+
 export function createTicketPayloadPreviews(drafts: TicketDraft[]): TicketPayloadPreview[] {
   return drafts.map((draft) => ({
     tracker: draft.tracker,
@@ -132,6 +184,29 @@ export function createTicketPayloadPreviews(drafts: TicketDraft[]): TicketPayloa
     endpointHint: trackerEndpointHint(draft.tracker),
     payload: trackerPayload(draft)
   }));
+}
+
+function rankedDraftSummary(
+  drafts: TicketDraft[],
+  getKey: (draft: TicketDraft) => string
+): Array<{ key: string; drafts: number; findings: number }> {
+  const groups = new Map<string, { key: string; drafts: number; findings: number }>();
+
+  for (const draft of drafts) {
+    const key = getKey(draft);
+    const current = groups.get(key) || { key, drafts: 0, findings: 0 };
+    current.drafts += 1;
+    current.findings += draft.count;
+    groups.set(key, current);
+  }
+
+  return [...groups.values()]
+    .sort((a, b) => {
+      if (b.findings !== a.findings) return b.findings - a.findings;
+      if (b.drafts !== a.drafts) return b.drafts - a.drafts;
+      return a.key.localeCompare(b.key);
+    })
+    .slice(0, 5);
 }
 
 function toTicketDraft(issues: DedupedIssue[], tracker: TicketTracker): TicketDraft {

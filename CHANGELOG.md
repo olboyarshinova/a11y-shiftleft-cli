@@ -92,6 +92,10 @@
 - Added action-count summaries to `ignore cleanup-plan` so stale exception
   reviews show how many entries need review, remove-or-renew, or fix-entry
   actions.
+- Added triage summaries to `ticket export` Markdown, JSON, and dry-run payload
+  exports so remediation planning can start from new/known draft counts,
+  severity counts, owner hints, and top rule groups before any tracker API is
+  connected.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

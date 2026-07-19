@@ -4,6 +4,7 @@ import type { Command } from "commander";
 import {
   createTicketDrafts,
   createTicketPayloadPreviews,
+  summarizeTicketDrafts,
   ticketDraftsToMarkdown,
   type KnownTicket,
   type TicketFormat,
@@ -152,6 +153,7 @@ function ticketExportOutput(options: {
       generatedAt: options.generatedAt,
       tracker: options.tracker,
       dryRun: true,
+      summary: summarizeTicketDrafts(options.drafts),
       drafts: options.drafts
     }, null, 2)}\n`;
   }
@@ -161,6 +163,7 @@ function ticketExportOutput(options: {
       generatedAt: options.generatedAt,
       tracker: options.tracker,
       dryRun: true,
+      summary: summarizeTicketDrafts(options.drafts),
       payloads: createTicketPayloadPreviews(options.drafts)
     }, null, 2)}\n`;
   }

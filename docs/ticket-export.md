@@ -9,6 +9,8 @@ dry-run ticket drafts in Markdown or JSON.
 
 It also adds a stable ticket fingerprint to each draft and redacts
 sensitive-looking values from URLs, selectors, and messages before export.
+Each export starts with a triage summary showing new drafts, known duplicates,
+represented findings, owner hints, and the highest-volume rule groups.
 
 ## Quick Start
 
@@ -27,6 +29,9 @@ npx a11y-shiftleft-cli ticket export \
 ```
 
 The output is a reviewable document. It does not create real tracker issues.
+Use the triage summary at the top to decide whether the work should go to one
+team or be split across design system, forms, content, embedded-content, or
+frontend interaction owners.
 
 ## Jira, Linear, Or GitHub Style
 
@@ -74,6 +79,10 @@ npx a11y-shiftleft-cli ticket export \
   --out reports/a11y-tickets.json
 ```
 
+The JSON output includes a top-level `summary` object with counts by severity,
+owner hint, and rule. This is useful for dashboards or release notes without
+parsing every draft body.
+
 ## Dry-run Payload Preview
 
 Use `--format payloads` when you want to inspect the issue payload shape before
@@ -88,8 +97,8 @@ npx a11y-shiftleft-cli ticket export \
 ```
 
 The output includes `dryRun: true`, the draft fingerprint, an endpoint hint,
-and the tracker-specific payload. It still does not make network requests or
-create real issues.
+the triage summary, and the tracker-specific payload. It still does not make
+network requests or create real issues.
 
 ## Duplicate Lookup
 

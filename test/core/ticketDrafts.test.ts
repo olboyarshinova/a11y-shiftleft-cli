@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   createTicketDrafts,
   createTicketPayloadPreviews,
+  summarizeTicketDrafts,
   ticketDraftsToMarkdown
 } from "../../dist/core/ticketDrafts.js";
 import type { A11yReport, DedupedIssue } from "../../dist/types.js";
@@ -71,8 +72,53 @@ test("ticketDraftsToMarkdown renders dry-run ticket content", () => {
 
   assert.match(markdown, /# Accessibility Ticket Drafts/);
   assert.match(markdown, /These are dry-run ticket drafts/);
+  assert.match(markdown, /## Triage Summary/);
+  assert.match(markdown, /New drafts: 1/);
   assert.match(markdown, /\[a11y\]\[warning\] button-name/);
   assert.match(markdown, /### Suggested Fix/);
+});
+
+test("summarizeTicketDrafts counts severity, owners, rules, and represented findings", () => {
+  const report = reportWithIssues([
+    issue({
+      ruleId: "button-name",
+      selector: "#menu",
+      duplicateCount: 2
+    }),
+    issue({
+      ruleId: "button-name",
+      selector: "#menu"
+    }),
+    issue({
+      ruleId: "color-contrast",
+      selector: ".cta",
+      severity: "critical",
+      category: "contrast"
+    }),
+    issue({
+      ruleId: "form-field-multiple-labels",
+      selector: "#email",
+      category: "forms"
+    })
+  ]);
+  const drafts = createTicketDrafts(report);
+  const summary = summarizeTicketDrafts(drafts);
+
+  assert.equal(summary.total, 3);
+  assert.equal(summary.newDrafts, 3);
+  assert.equal(summary.knownDuplicates, 0);
+  assert.equal(summary.totalFindings, 6);
+  assert.deepEqual(summary.bySeverity, {
+    critical: 1,
+    warning: 2,
+    info: 0
+  });
+  assert.deepEqual(summary.topRules[0], {
+    ruleId: "button-name",
+    drafts: 1,
+    findings: 4
+  });
+  assert.equal(summary.byOwnerHint[0].ownerHint, "Frontend UI owner");
 });
 
 test("createTicketDrafts adds stable fingerprints for duplicate detection", () => {

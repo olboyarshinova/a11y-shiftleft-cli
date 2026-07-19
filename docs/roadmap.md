@@ -278,12 +278,13 @@ Section 508 certification.
 - Extend the post-1.0 GitHub Action wrapper with direct artifact links, preview
   URL inputs, existing-comment updates, and optional severity labels.
 - Continue the Jira and Linear ticket workflow carefully. The current CLI
-  supports safe Markdown and JSON ticket drafts with stable fingerprints and
-  basic redaction, plus tracker-specific dry-run payload previews for Jira,
-  Linear, and GitHub Issues, with deterministic owner hints and local duplicate
-  lookup for triage. `--create` is currently blocked with a safety message.
-  Next, evaluate whether explicit create mode is worth adding at all; do not
-  create tracker issues automatically by default.
+  supports safe Markdown and JSON ticket drafts with stable fingerprints,
+  redaction, triage summaries, tracker-specific dry-run payload previews for
+  Jira, Linear, and GitHub Issues, deterministic owner hints, and local
+  duplicate lookup. `--create` is currently blocked with a safety message. Next,
+  validate this review-first workflow in real remediation queues and evaluate
+  whether explicit create mode is worth adding at all; do not create tracker
+  issues automatically by default.
 - Continue hardening scoped `a11y-ignore.json` support. Current reports count
   active, expired, invalid, expiring-soon, and owner-grouped ignore rules, and
   visual reports include cleanup guidance plus copyable ignore-entry templates.
