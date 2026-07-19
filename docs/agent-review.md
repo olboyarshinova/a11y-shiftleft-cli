@@ -64,12 +64,13 @@ npx a11y-shiftleft-cli agent review \
   --history reports/history
 ```
 
-With `--history`, the text and JSON output include a compact history context:
-how many local runs were indexed and how total, critical, warning, and info
-counts changed from the first run in that folder. It also lists the top rule
-groups and pages that increased or improved, so you can spot recurring
-regressions before opening the full dashboard. Suggested next commands keep the
-same `--history` workflow so future runs remain comparable.
+With `--history`, the text and JSON output include compact history context:
+how many local runs were indexed, how total, critical, warning, and info counts
+changed from the first run in that folder, and the latest dashboard-style delta
+between the two most recent runs. It also lists the top rule groups and pages
+that increased or improved, so you can spot recurring regressions before
+opening the full dashboard. Suggested next commands keep the same `--history`
+workflow so future runs remain comparable.
 
 Write the review to a file:
 
