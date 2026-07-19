@@ -270,6 +270,8 @@ The commands below assume `APP_URL` is set to your local, staging, or preview UR
 | `audit` | Broader local scan | `npx a11y-shiftleft-cli audit --url $APP_URL --max-depth 3 --limit 50 --out reports` |
 | `audit` | Check one component or page area | `npx a11y-shiftleft-cli audit --url $APP_URL --scope '#main' --out reports` |
 | `check` | Fast CI or PR check | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports` |
+| `check` | Save current known findings as a baseline | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --update-baseline` |
+| `check` | Block only new critical regressions | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --gate new-critical-only --verbose` |
 | `check` | Pre-commit static check for changed frontend files | `npx a11y-shiftleft-cli check --static --staged --out reports` |
 | `check` | PR static check against a base branch | `npx a11y-shiftleft-cli check --static --changed-since origin/main --out reports` |
 | `explore` | Debug visual state discovery | `npx a11y-shiftleft-cli explore --url $APP_URL --out reports` |
@@ -281,6 +283,11 @@ The commands below assume `APP_URL` is set to your local, staging, or preview UR
 | `ignore audit` | Review expired or invalid temporary exceptions | `npx a11y-shiftleft-cli ignore audit` |
 | `ignore cleanup-plan` | Generate a read-only cleanup plan for stale exceptions | `npx a11y-shiftleft-cli ignore cleanup-plan` |
 | `doctor` | Diagnose setup problems | `npx a11y-shiftleft-cli doctor --url $APP_URL` |
+
+Use `--update-baseline` only after reviewing the first report. The baseline is
+for known existing findings, not a pass certificate. Use `--gate
+new-critical-only` while the team fixes legacy issues without allowing new
+critical regressions.
 
 By default, `audit` explores up to 2 interaction levels from the start page.
 `--max-depth` lets you change that safety limit; it does not mean "scan forever"

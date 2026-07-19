@@ -137,6 +137,9 @@
 - Clarified the recommended PR setup in README and GitHub Actions docs: a
   bounded smoke URL set, `report-only` adoption, later `new-critical-only`
   tightening, and separate full-site audits.
+- Added baseline and `new-critical-only` commands to the README common-command
+  table with a note that baselines represent reviewed known findings rather
+  than accessibility certification.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.
 - Added compact lifecycle badges to visual finding groups for new, remaining,
