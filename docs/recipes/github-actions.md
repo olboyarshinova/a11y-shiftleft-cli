@@ -15,16 +15,25 @@ npx a11y-shiftleft-cli generate-ci \
 
 Use the local or preview URL your app exposes in CI.
 
-For a stronger PR smoke test, pass a short list of representative URLs instead
-of relying on one page:
+## Recommended PR Setup
+
+For most teams, keep pull-request checks small and predictable: scan two or
+three representative URLs, use a shallow crawl, and start in report-only mode.
 
 ```bash
 export APP_URL=http://localhost:5173
 npx a11y-shiftleft-cli generate-ci \
   --url $APP_URL $APP_URL/account $APP_URL/checkout \
+  --crawl-depth 1 \
+  --crawl-limit 10 \
   --start-command "npm run dev -- --host localhost --port 5173" \
   --gate report-only
 ```
+
+After the first reports are reviewed, switch the PR workflow to
+`--gate new-critical-only` so CI blocks only newly introduced critical issues.
+Run broader coverage separately with the split workflow below or a scheduled
+manual audit.
 
 The default workflow runs on `pull_request`. It runs static accessibility rules
 only for frontend files changed since the pull request base branch, and also

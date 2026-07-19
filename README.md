@@ -135,16 +135,21 @@ report `.gitignore` entries, and a report-only CI workflow:
 npx a11y-shiftleft-cli setup --url $APP_URL --start-command "npm run dev"
 ```
 
-For faster pull-request coverage, pass two or three important smoke-test pages.
-The generated `a11y:check` script and CI workflow will scan all of them:
+Recommended pull-request setup: scan two or three important smoke-test pages,
+keep the crawl bounded, and start in `report-only` mode:
 
 ```bash
 npx a11y-shiftleft-cli setup \
   --url http://localhost:YOUR_PORT http://localhost:YOUR_PORT/account http://localhost:YOUR_PORT/checkout \
   --crawl-depth 1 \
   --crawl-limit 10 \
+  --gate report-only \
   --start-command "npm run dev"
 ```
+
+After the team reviews the first reports, tighten the PR workflow to
+`--gate new-critical-only`. Keep slower full-site audits separate with
+`--profile split` or a scheduled/manual workflow.
 
 GitHub Actions is the default. For GitLab CI, add `--ci gitlab`:
 
