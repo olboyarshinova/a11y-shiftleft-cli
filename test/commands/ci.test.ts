@@ -12,6 +12,7 @@ import {
   gitLabWorkflowFiles,
   gitLabWorkflowTemplate,
   fullWorkflowTemplate,
+  resolveCiAuthFlow,
   shellWorkflowFiles,
   shellWorkflowTemplate,
   toCiProvider,
@@ -29,6 +30,10 @@ test("generate-ci is the documented command and ci remains a short alias", () =>
   const flags = command.options.map((option) => option.long);
   assert.equal(flags.includes("--provider"), true);
   assert.equal(flags.includes("--start-command"), true);
+  assert.equal(flags.includes("--auth-login-url"), true);
+  assert.equal(flags.includes("--auth-username-selector"), true);
+  assert.equal(flags.includes("--auth-password-selector"), true);
+  assert.equal(flags.includes("--auth-submit-selector"), true);
 });
 
 test("generate-ci CLI prints created files and next steps", async () => {
@@ -116,10 +121,75 @@ test("workflowTemplate supports quality gate profiles for PR workflows", () => {
   assert.doesNotMatch(workflow, /--fail-on critical --standard/);
 });
 
+test("workflowTemplate can create CI-safe auth state before browser checks", () => {
+  const workflow = workflowTemplate({
+    urls: ["http://localhost:3000/dashboard"],
+    startCommand: "npm run dev -- --host localhost --port 3000",
+    failOn: "critical",
+    gate: "report-only",
+    standard: "wcag22-aa",
+    auth: {
+      loginUrl: "http://localhost:3000/login",
+      usernameSelector: "input[name='email']",
+      passwordSelector: "input[name='password']",
+      submitSelector: "button[type='submit']",
+      waitForUrl: "**/dashboard",
+      usernameEnv: "A11Y_USERNAME",
+      passwordEnv: "A11Y_PASSWORD"
+    }
+  });
+
+  assert.match(workflow, /Create authenticated browser state/);
+  assert.match(workflow, /auth scripted-login --url 'http:\/\/localhost:3000\/login'/);
+  assert.match(workflow, /--username-selector 'input\[name='\\''email'\\''\]'/);
+  assert.match(workflow, /--wait-for-url '\*\*\/dashboard'/);
+  assert.match(workflow, /A11Y_USERNAME: \$\{\{ secrets\.A11Y_USERNAME \}\}/);
+  assert.match(workflow, /A11Y_PASSWORD: \$\{\{ secrets\.A11Y_PASSWORD \}\}/);
+  assert.match(workflow, /--auth-state \.a11y-auth\/state\.json/);
+  assert.doesNotMatch(workflow, /test-user@example\.com|password123/);
+});
+
 test("checkGateArgument maps supported gates and rejects unknown profiles", () => {
   assert.equal(checkGateArgument(undefined, "warning"), "--fail-on warning");
   assert.equal(checkGateArgument("report-only", "critical"), "--gate report-only");
   assert.throws(() => checkGateArgument("everything", "critical"), /Unsupported CI quality gate/);
+});
+
+test("resolveCiAuthFlow validates complete CI auth configuration", () => {
+  assert.deepEqual(resolveCiAuthFlow({}), undefined);
+  assert.deepEqual(resolveCiAuthFlow({
+    authLoginUrl: "https://example.com/login",
+    authUsernameSelector: "#email",
+    authPasswordSelector: "#password",
+    authSubmitSelector: "button[type='submit']",
+    authWaitForSelector: "[data-ready]",
+    authUsernameEnv: "TEST_USER",
+    authPasswordEnv: "TEST_PASSWORD"
+  }), {
+    loginUrl: "https://example.com/login",
+    usernameSelector: "#email",
+    passwordSelector: "#password",
+    submitSelector: "button[type='submit']",
+    waitForSelector: "[data-ready]",
+    usernameEnv: "TEST_USER",
+    passwordEnv: "TEST_PASSWORD"
+  });
+
+  assert.throws(
+    () => resolveCiAuthFlow({ authLoginUrl: "https://example.com/login" }),
+    /--auth-username-selector/
+  );
+  assert.throws(
+    () => resolveCiAuthFlow({
+      authLoginUrl: "https://example.com/login",
+      authUsernameSelector: "#email",
+      authPasswordSelector: "#password",
+      authSubmitSelector: "button",
+      authWaitForUrl: "**/dashboard",
+      authUsernameEnv: "BAD-NAME"
+    }),
+    /valid environment variable/
+  );
 });
 
 test("formatCiGenerationNextSteps gives concrete review and rollout guidance", () => {
@@ -162,6 +232,28 @@ test("formatCiGenerationNextSteps explains shell runner usage", () => {
 
   assert.match(steps, /scripts\/a11y-ci\.sh/);
   assert.match(steps, /Call the generated shell script from your CI job/);
+});
+
+test("formatCiGenerationNextSteps explains auth secrets when auth flow is configured", () => {
+  const steps = formatCiGenerationNextSteps({
+    provider: "github",
+    profile: "pr",
+    createdFiles: [".github/workflows/a11y.yml"],
+    gate: "report-only",
+    failOn: "critical",
+    auth: {
+      loginUrl: "https://example.com/login",
+      usernameSelector: "#email",
+      passwordSelector: "#password",
+      submitSelector: "button",
+      waitForUrl: "**/dashboard",
+      usernameEnv: "A11Y_USERNAME",
+      passwordEnv: "A11Y_PASSWORD"
+    }
+  }).join("\n");
+
+  assert.match(steps, /A11Y_USERNAME and A11Y_PASSWORD/);
+  assert.match(steps, /do not commit credentials/);
 });
 
 test("fullWorkflowTemplate creates scheduled full-site crawl workflow", () => {

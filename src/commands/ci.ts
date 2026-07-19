@@ -17,6 +17,14 @@ interface CiOptions {
   fullCrawlDepth: string;
   fullCrawlLimit: string;
   fullSchedule: string;
+  authLoginUrl?: string;
+  authUsernameSelector?: string;
+  authPasswordSelector?: string;
+  authSubmitSelector?: string;
+  authWaitForUrl?: string;
+  authWaitForSelector?: string;
+  authUsernameEnv?: string;
+  authPasswordEnv?: string;
   force?: boolean;
 }
 
@@ -28,6 +36,19 @@ type WorkflowFile = {
   contents: string;
   executable?: boolean;
 };
+
+export interface CiAuthFlowOptions {
+  loginUrl: string;
+  usernameSelector: string;
+  passwordSelector: string;
+  submitSelector: string;
+  waitForUrl?: string;
+  waitForSelector?: string;
+  usernameEnv: string;
+  passwordEnv: string;
+}
+
+const CI_AUTH_STATE_PATH = ".a11y-auth/state.json";
 
 export function registerCiCommand(program: Command): void {
   program
@@ -48,6 +69,14 @@ export function registerCiCommand(program: Command): void {
     .option("--full-crawl-depth <depth>", "Scheduled full-site crawl depth", "3")
     .option("--full-crawl-limit <limit>", "Scheduled full-site crawl URL limit", "100")
     .option("--full-schedule <cron>", "Scheduled full-site workflow cron expression", "0 7 * * 1")
+    .option("--auth-login-url <url>", "Optional login URL for CI-safe scripted auth state")
+    .option("--auth-username-selector <selector>", "Username/email field selector for CI-safe scripted auth")
+    .option("--auth-password-selector <selector>", "Password field selector for CI-safe scripted auth")
+    .option("--auth-submit-selector <selector>", "Submit control selector for CI-safe scripted auth")
+    .option("--auth-wait-for-url <pattern>", "Save CI auth state after the URL matches this pattern")
+    .option("--auth-wait-for-selector <selector>", "Save CI auth state after this selector appears")
+    .option("--auth-username-env <name>", "CI environment or secret name for the username", "A11Y_USERNAME")
+    .option("--auth-password-env <name>", "CI environment or secret name for the password", "A11Y_PASSWORD")
     .option("--force", "Overwrite existing workflow")
     .action(async (options: CiOptions) => {
       const cwd = path.resolve(options.cwd || process.cwd());
@@ -64,7 +93,8 @@ export function registerCiCommand(program: Command): void {
         crawlLimit: toPositiveInteger(options.crawlLimit, 10),
         fullCrawlDepth: toPositiveInteger(options.fullCrawlDepth, 3),
         fullCrawlLimit: toPositiveInteger(options.fullCrawlLimit, 100),
-        fullSchedule: options.fullSchedule
+        fullSchedule: options.fullSchedule,
+        auth: resolveCiAuthFlow(options)
       };
       const workflows = ciWorkflowFiles(provider, workflowOptions);
 
@@ -93,7 +123,8 @@ export function registerCiCommand(program: Command): void {
         profile: workflowOptions.profile,
         createdFiles: createdTargets,
         gate: options.gate,
-        failOn: options.failOn
+        failOn: options.failOn,
+        auth: workflowOptions.auth
       }).entries()) {
         console.log(`${index + 1}. ${step}`);
       }
@@ -117,6 +148,7 @@ interface WorkflowTemplateOptions {
   standard: string;
   crawlDepth?: number;
   crawlLimit?: number;
+  auth?: CiAuthFlowOptions;
 }
 
 export function workflowTemplate(options: WorkflowTemplateOptions): string {
@@ -127,6 +159,7 @@ export function workflowTemplate(options: WorkflowTemplateOptions): string {
   const crawlDepth = toPositiveInteger(options.crawlDepth, 1);
   const crawlLimit = toPositiveInteger(options.crawlLimit, 10);
   const gateArg = checkGateArgument(options.gate, failOn);
+  const authStateArg = options.auth ? ` --auth-state ${CI_AUTH_STATE_PATH}` : "";
 
   return `name: Accessibility PR
 
@@ -168,9 +201,10 @@ jobs:
             sleep 2
           done
           exit 1
+${formatGitHubAuthStep(options.auth)}
 
       - name: Run fast accessibility checks
-        run: npx a11y-shiftleft-cli check --static --dynamic --changed-since origin/\${{ github.base_ref }} --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard} --verbose
+        run: npx a11y-shiftleft-cli check --static --dynamic --changed-since origin/\${{ github.base_ref }} --url ${urlArgs}${authStateArg} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard} --verbose
 
       - name: Upload accessibility report
         id: upload-a11y-report
@@ -200,6 +234,7 @@ interface FullWorkflowTemplateOptions {
   crawlDepth: number;
   crawlLimit: number;
   schedule: string;
+  auth?: CiAuthFlowOptions;
 }
 
 export function fullWorkflowTemplate({
@@ -209,11 +244,13 @@ export function fullWorkflowTemplate({
   standard,
   crawlDepth,
   crawlLimit,
-  schedule
+  schedule,
+  auth
 }: FullWorkflowTemplateOptions): string {
   const scanUrls = urls.length > 0 ? urls : ["http://localhost:3000"];
   const firstUrl = scanUrls[0];
   const urlArgs = scanUrls.join(" ");
+  const authStateArg = auth ? ` --auth-state ${CI_AUTH_STATE_PATH}` : "";
 
   return `name: Accessibility Full Site
 
@@ -252,9 +289,10 @@ jobs:
             sleep 2
           done
           exit 1
+${formatGitHubAuthStep(auth)}
 
       - name: Run full-site accessibility crawl
-        run: npx a11y-shiftleft-cli check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --semi-auto --out reports-full --fail-on ${fullFailOn} --standard ${standard} --verbose
+        run: npx a11y-shiftleft-cli check --dynamic --url ${urlArgs}${authStateArg} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --semi-auto --out reports-full --fail-on ${fullFailOn} --standard ${standard} --verbose
 
       - name: Upload full-site accessibility report
         if: always()
@@ -273,6 +311,8 @@ export function gitLabWorkflowTemplate(options: WorkflowTemplateOptions): string
   const crawlDepth = toPositiveInteger(options.crawlDepth, 1);
   const crawlLimit = toPositiveInteger(options.crawlLimit, 10);
   const gateArg = checkGateArgument(options.gate, failOn);
+  const authStateArg = options.auth ? ` --auth-state ${CI_AUTH_STATE_PATH}` : "";
+  const authCommand = formatInlineAuthCommand(options.auth, "    - ");
 
   return `stages:
   - test
@@ -293,12 +333,13 @@ a11y:
         sleep 2
       done
       exit 1
+${authCommand}
     - |
       if [ -n "\${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-}" ]; then
         git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
-        npx a11y-shiftleft-cli check --static --dynamic --changed-since "origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard} --verbose
+        npx a11y-shiftleft-cli check --static --dynamic --changed-since "origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --url ${urlArgs}${authStateArg} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard} --verbose
       else
-        npx a11y-shiftleft-cli check --static --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard} --verbose
+        npx a11y-shiftleft-cli check --static --dynamic --url ${urlArgs}${authStateArg} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard} --verbose
       fi
   artifacts:
     when: always
@@ -315,6 +356,13 @@ export function circleCiWorkflowTemplate(options: WorkflowTemplateOptions): stri
   const crawlDepth = toPositiveInteger(options.crawlDepth, 1);
   const crawlLimit = toPositiveInteger(options.crawlLimit, 10);
   const gateArg = checkGateArgument(options.gate, failOn);
+  const authStateArg = options.auth ? ` --auth-state ${CI_AUTH_STATE_PATH}` : "";
+  const authStep = options.auth
+    ? `      - run:
+          name: Create authenticated browser state
+          command: ${formatAuthCommand(options.auth)}
+`
+    : "";
 
   return `version: 2.1
 
@@ -344,9 +392,10 @@ jobs:
               sleep 2
             done
             exit 1
+${authStep}
       - run:
           name: Run accessibility checks
-          command: npx a11y-shiftleft-cli check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard} --verbose
+          command: npx a11y-shiftleft-cli check --dynamic --url ${urlArgs}${authStateArg} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out reports ${gateArg} --standard ${standard} --verbose
       - store_artifacts:
           path: reports
           destination: a11y-report
@@ -366,6 +415,8 @@ export function shellWorkflowTemplate(options: WorkflowTemplateOptions): string 
   const crawlDepth = toPositiveInteger(options.crawlDepth, 1);
   const crawlLimit = toPositiveInteger(options.crawlLimit, 10);
   const gateArg = checkGateArgument(options.gate, failOn);
+  const authStateArg = options.auth ? ` --auth-state ${CI_AUTH_STATE_PATH}` : "";
+  const authCommand = formatInlineAuthCommand(options.auth);
 
   return `#!/usr/bin/env bash
 set -euo pipefail
@@ -392,7 +443,7 @@ for _ in {1..30}; do
 done
 
 curl -fsS "$APP_URL" >/dev/null
-npx a11y-shiftleft-cli check --dynamic --url ${urlArgs} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out "$REPORT_DIR" ${gateArg} --standard ${standard} --verbose
+${authCommand}npx a11y-shiftleft-cli check --dynamic --url ${urlArgs}${authStateArg} --crawl --crawl-depth ${crawlDepth} --crawl-limit ${crawlLimit} --out "$REPORT_DIR" ${gateArg} --standard ${standard} --verbose
 
 echo "Accessibility report written to $REPORT_DIR"
 `;
@@ -411,6 +462,7 @@ interface WorkflowFilesOptions {
   fullCrawlDepth: number;
   fullCrawlLimit: number;
   fullSchedule: string;
+  auth?: CiAuthFlowOptions;
 }
 
 export function workflowFiles(options: WorkflowFilesOptions): WorkflowFile[] {
@@ -423,7 +475,8 @@ export function workflowFiles(options: WorkflowFilesOptions): WorkflowFile[] {
       gate: options.gate,
       standard: options.standard,
       crawlDepth: options.crawlDepth,
-      crawlLimit: options.crawlLimit
+      crawlLimit: options.crawlLimit,
+      auth: options.auth
     })
   };
   const fullWorkflow = {
@@ -435,7 +488,8 @@ export function workflowFiles(options: WorkflowFilesOptions): WorkflowFile[] {
       standard: options.standard,
       crawlDepth: options.fullCrawlDepth,
       crawlLimit: options.fullCrawlLimit,
-      schedule: options.fullSchedule
+      schedule: options.fullSchedule,
+      auth: options.auth
     })
   };
 
@@ -458,7 +512,8 @@ export function gitLabWorkflowFiles(options: WorkflowFilesOptions): WorkflowFile
       gate: options.gate,
       standard: options.standard,
       crawlDepth: options.crawlDepth,
-      crawlLimit: options.crawlLimit
+      crawlLimit: options.crawlLimit,
+      auth: options.auth
     })
   }];
 }
@@ -477,7 +532,8 @@ export function circleCiWorkflowFiles(options: WorkflowFilesOptions): WorkflowFi
       gate: options.gate,
       standard: options.standard,
       crawlDepth: options.crawlDepth,
-      crawlLimit: options.crawlLimit
+      crawlLimit: options.crawlLimit,
+      auth: options.auth
     })
   }];
 }
@@ -497,7 +553,8 @@ export function shellWorkflowFiles(options: WorkflowFilesOptions): WorkflowFile[
       gate: options.gate,
       standard: options.standard,
       crawlDepth: options.crawlDepth,
-      crawlLimit: options.crawlLimit
+      crawlLimit: options.crawlLimit,
+      auth: options.auth
     })
   }];
 }
@@ -556,6 +613,7 @@ export function formatCiGenerationNextSteps(options: {
   createdFiles: string[];
   gate?: string;
   failOn: string;
+  auth?: CiAuthFlowOptions;
 }): string[] {
   const files = options.createdFiles.length > 0 ? options.createdFiles.join(", ") : "the generated workflow file";
   const gate = options.gate ? `--gate ${options.gate}` : `--fail-on ${options.failOn}`;
@@ -578,6 +636,10 @@ export function formatCiGenerationNextSteps(options: {
     steps.push("After the first reports are reviewed, tighten the workflow to --gate new-critical-only.");
   }
 
+  if (options.auth) {
+    steps.push(`Add CI secrets or variables named ${options.auth.usernameEnv} and ${options.auth.passwordEnv}; do not commit credentials or generated auth-state files.`);
+  }
+
   return steps;
 }
 
@@ -594,6 +656,105 @@ function parseUrls(urls?: string[]): string[] {
     .flatMap((url) => url.split(","))
     .map((url) => url.trim())
     .filter(Boolean))];
+}
+
+export function resolveCiAuthFlow(options: {
+  authLoginUrl?: string;
+  authUsernameSelector?: string;
+  authPasswordSelector?: string;
+  authSubmitSelector?: string;
+  authWaitForUrl?: string;
+  authWaitForSelector?: string;
+  authUsernameEnv?: string;
+  authPasswordEnv?: string;
+}): CiAuthFlowOptions | undefined {
+  const hasAuthInput = Boolean(
+    options.authLoginUrl ||
+    options.authUsernameSelector ||
+    options.authPasswordSelector ||
+    options.authSubmitSelector ||
+    options.authWaitForUrl ||
+    options.authWaitForSelector
+  );
+  if (!hasAuthInput) return undefined;
+
+  const loginUrl = requiredAuthOption(options.authLoginUrl, "--auth-login-url");
+  const usernameSelector = requiredAuthOption(options.authUsernameSelector, "--auth-username-selector");
+  const passwordSelector = requiredAuthOption(options.authPasswordSelector, "--auth-password-selector");
+  const submitSelector = requiredAuthOption(options.authSubmitSelector, "--auth-submit-selector");
+  if (!options.authWaitForUrl && !options.authWaitForSelector) {
+    throw new Error("CI auth flow requires --auth-wait-for-url or --auth-wait-for-selector.");
+  }
+
+  const auth: CiAuthFlowOptions = {
+    loginUrl,
+    usernameSelector,
+    passwordSelector,
+    submitSelector,
+    usernameEnv: normalizeCiSecretName(options.authUsernameEnv || "A11Y_USERNAME", "--auth-username-env"),
+    passwordEnv: normalizeCiSecretName(options.authPasswordEnv || "A11Y_PASSWORD", "--auth-password-env")
+  };
+  if (options.authWaitForUrl) auth.waitForUrl = options.authWaitForUrl;
+  if (options.authWaitForSelector) auth.waitForSelector = options.authWaitForSelector;
+  return auth;
+}
+
+function requiredAuthOption(value: string | undefined, flag: string): string {
+  const normalized = value?.trim();
+  if (!normalized) throw new Error(`CI auth flow requires ${flag}.`);
+  return normalized;
+}
+
+function normalizeCiSecretName(value: string, flag: string): string {
+  const normalized = value.trim();
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(normalized)) {
+    throw new Error(`${flag} must be a valid environment variable name.`);
+  }
+  return normalized;
+}
+
+function formatGitHubAuthStep(auth: CiAuthFlowOptions | undefined): string {
+  if (!auth) return "";
+
+  return `
+
+      - name: Create authenticated browser state
+        run: ${formatAuthCommand(auth)}
+        env:
+          ${auth.usernameEnv}: \${{ secrets.${auth.usernameEnv} }}
+          ${auth.passwordEnv}: \${{ secrets.${auth.passwordEnv} }}`;
+}
+
+function formatInlineAuthCommand(auth: CiAuthFlowOptions | undefined, prefix = ""): string {
+  if (!auth) return "";
+  return `${prefix}${formatAuthCommand(auth)}\n`;
+}
+
+function formatAuthCommand(auth: CiAuthFlowOptions): string {
+  return [
+    "npx a11y-shiftleft-cli auth scripted-login",
+    "--url",
+    shellArg(auth.loginUrl),
+    "--username-selector",
+    shellArg(auth.usernameSelector),
+    "--password-selector",
+    shellArg(auth.passwordSelector),
+    "--submit-selector",
+    shellArg(auth.submitSelector),
+    ...(auth.waitForUrl ? ["--wait-for-url", shellArg(auth.waitForUrl)] : []),
+    ...(auth.waitForSelector ? ["--wait-for-selector", shellArg(auth.waitForSelector)] : []),
+    "--username-env",
+    auth.usernameEnv,
+    "--password-env",
+    auth.passwordEnv,
+    "--out",
+    CI_AUTH_STATE_PATH,
+    "--quiet"
+  ].join(" ");
+}
+
+function shellArg(value: string): string {
+  return `'${value.replace(/'/g, "'\\''")}'`;
 }
 
 export function toPositiveInteger(value: number | string | undefined, fallback: number): number {

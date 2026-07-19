@@ -19,6 +19,10 @@ test("setup command is registered as the guided first-run path", () => {
   assert.equal(flags.includes("--crawl-limit"), true);
   assert.equal(flags.includes("--full-crawl-depth"), true);
   assert.equal(flags.includes("--full-crawl-limit"), true);
+  assert.equal(flags.includes("--auth-login-url"), true);
+  assert.equal(flags.includes("--auth-username-selector"), true);
+  assert.equal(flags.includes("--auth-password-selector"), true);
+  assert.equal(flags.includes("--auth-submit-selector"), true);
   assert.equal(flags.includes("--git-hooks"), true);
   assert.equal(flags.includes("--skip-ci"), true);
   assert.equal(flags.includes("--skip-scripts"), true);
@@ -221,6 +225,39 @@ test("runSetup forwards custom crawl bounds to generated CI workflows", async ()
   assert.match(result.nextSteps.join("\n"), /split profile/);
   assert.match(result.nextSteps.join("\n"), /PR workflow stays fast|PR workflow fast/);
   assert.match(result.nextSteps.join("\n"), /full-site workflow/);
+});
+
+test("runSetup can generate CI-safe scripted auth workflow steps", async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-setup-auth-ci-"));
+  await fs.writeFile(path.join(cwd, "package.json"), JSON.stringify({
+    scripts: {
+      dev: "vite"
+    }
+  }, null, 2));
+
+  const result = await runSetup({
+    cwd,
+    url: ["http://localhost:5173/dashboard"],
+    startCommand: "npm run dev -- --host localhost --port 5173",
+    ci: "github",
+    profile: "pr",
+    gate: "report-only",
+    failOn: "critical",
+    standard: "wcag22-aa",
+    authLoginUrl: "http://localhost:5173/login",
+    authUsernameSelector: "input[name='email']",
+    authPasswordSelector: "input[name='password']",
+    authSubmitSelector: "button[type='submit']",
+    authWaitForUrl: "**/dashboard"
+  });
+
+  const workflow = await fs.readFile(path.join(cwd, ".github/workflows/a11y.yml"), "utf8");
+
+  assert.match(workflow, /Create authenticated browser state/);
+  assert.match(workflow, /auth scripted-login/);
+  assert.match(workflow, /--auth-state \.a11y-auth\/state\.json/);
+  assert.match(workflow, /A11Y_USERNAME: \$\{\{ secrets\.A11Y_USERNAME \}\}/);
+  assert.match(result.nextSteps.join("\n"), /A11Y_USERNAME and A11Y_PASSWORD/);
 });
 
 test("runSetup can create a GitLab CI workflow", async () => {

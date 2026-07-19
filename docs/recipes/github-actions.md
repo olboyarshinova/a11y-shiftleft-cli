@@ -84,6 +84,28 @@ schedule. The full-site workflow uploads artifacts and keeps `--fail-on none`
 by default so it does not create noisy scheduled failures while the team is
 tracking remediation.
 
+## Authenticated Preview URLs
+
+For preview environments behind login, use a dedicated test account and store
+credentials as GitHub Actions secrets. The generated workflow creates a local
+Playwright auth-state file before running the accessibility check.
+
+```bash
+npx a11y-shiftleft-cli generate-ci \
+  --url https://preview.example.com/dashboard \
+  --start-command "npm run dev -- --host localhost --port 5173" \
+  --gate report-only \
+  --auth-login-url https://preview.example.com/login \
+  --auth-username-selector 'input[name="email"]' \
+  --auth-password-selector 'input[name="password"]' \
+  --auth-submit-selector 'button[type="submit"]' \
+  --auth-wait-for-url "**/dashboard"
+```
+
+Add repository secrets named `A11Y_USERNAME` and `A11Y_PASSWORD`. The workflow
+does not store credential values in YAML. Do not commit generated auth-state
+files; they may contain session cookies or tokens.
+
 ## Commit Workflow Files
 
 The single-profile generator writes:

@@ -2,7 +2,7 @@ import type { Command } from "commander";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { addReportEntriesToGitignore, createInitialConfig, toFramework } from "./init.js";
-import { ciTargetPath, ciWorkflowFiles, toCiProfile, toCiProvider, toPositiveInteger } from "./ci.js";
+import { ciTargetPath, ciWorkflowFiles, resolveCiAuthFlow, toCiProfile, toCiProvider, toPositiveInteger } from "./ci.js";
 
 interface SetupOptions {
   cwd?: string;
@@ -19,6 +19,14 @@ interface SetupOptions {
   fullCrawlDepth?: string;
   fullCrawlLimit?: string;
   fullSchedule?: string;
+  authLoginUrl?: string;
+  authUsernameSelector?: string;
+  authPasswordSelector?: string;
+  authSubmitSelector?: string;
+  authWaitForUrl?: string;
+  authWaitForSelector?: string;
+  authUsernameEnv?: string;
+  authPasswordEnv?: string;
   gitHooks?: string;
   force?: boolean;
   skipConfig?: boolean;
@@ -54,6 +62,14 @@ export function registerSetupCommand(program: Command): void {
     .option("--full-crawl-depth <depth>", "Scheduled full-site crawl depth", "3")
     .option("--full-crawl-limit <limit>", "Scheduled full-site crawl URL limit", "100")
     .option("--full-schedule <cron>", "Scheduled full-site workflow cron expression", "0 7 * * 1")
+    .option("--auth-login-url <url>", "Optional login URL for CI-safe scripted auth state")
+    .option("--auth-username-selector <selector>", "Username/email field selector for CI-safe scripted auth")
+    .option("--auth-password-selector <selector>", "Password field selector for CI-safe scripted auth")
+    .option("--auth-submit-selector <selector>", "Submit control selector for CI-safe scripted auth")
+    .option("--auth-wait-for-url <pattern>", "Save CI auth state after the URL matches this pattern")
+    .option("--auth-wait-for-selector <selector>", "Save CI auth state after this selector appears")
+    .option("--auth-username-env <name>", "CI environment or secret name for the username", "A11Y_USERNAME")
+    .option("--auth-password-env <name>", "CI environment or secret name for the password", "A11Y_PASSWORD")
     .option("--git-hooks <tool>", "Optional pre-commit hook setup: none, husky, or lefthook", "none")
     .option("--force", "Overwrite existing generated config and workflow files")
     .option("--skip-config", "Do not create .a11y-shiftleft.json")
@@ -81,6 +97,9 @@ export async function runSetup(options: SetupOptions): Promise<SetupResult> {
   const created: string[] = [];
   const skipped: string[] = [];
   const updated: string[] = [];
+  const ciAuthFlow = !options.skipCi && options.ci !== "none"
+    ? resolveCiAuthFlow(options)
+    : undefined;
 
   if (!options.skipConfig) {
     const configPath = path.join(cwd, ".a11y-shiftleft.json");
@@ -129,7 +148,8 @@ export async function runSetup(options: SetupOptions): Promise<SetupResult> {
       crawlLimit: toPositiveInteger(options.crawlLimit, 10),
       fullCrawlDepth: toPositiveInteger(options.fullCrawlDepth, 3),
       fullCrawlLimit: toPositiveInteger(options.fullCrawlLimit, 100),
-      fullSchedule: options.fullSchedule || "0 7 * * 1"
+      fullSchedule: options.fullSchedule || "0 7 * * 1",
+      auth: ciAuthFlow
     };
     const workflows = ciWorkflowFiles(provider, workflowOptions);
 
@@ -166,11 +186,11 @@ export async function runSetup(options: SetupOptions): Promise<SetupResult> {
     created,
     skipped,
     updated,
-    nextSteps: buildSetupNextSteps(options, scanUrls, changedSetupFiles(created, updated))
+    nextSteps: buildSetupNextSteps(options, scanUrls, changedSetupFiles(created, updated), ciAuthFlow)
   };
 }
 
-function buildSetupNextSteps(options: SetupOptions, urls: string[], changedFiles: string[]): string[] {
+function buildSetupNextSteps(options: SetupOptions, urls: string[], changedFiles: string[], ciAuthFlow?: { usernameEnv: string; passwordEnv: string }): string[] {
   const firstUrl = urls[0] || "http://localhost:3000";
   const urlArgs = urls.join(" ") || firstUrl;
   const steps = [
@@ -186,6 +206,10 @@ function buildSetupNextSteps(options: SetupOptions, urls: string[], changedFiles
 
   if (!options.skipCi && options.ci !== "none") {
     steps.push(formatCiRolloutStep(options));
+  }
+
+  if (ciAuthFlow) {
+    steps.push(`Add CI secrets or variables named ${ciAuthFlow.usernameEnv} and ${ciAuthFlow.passwordEnv}; do not commit credentials or generated auth-state files.`);
   }
 
   const gitHookTool = toGitHookTool(options.gitHooks);

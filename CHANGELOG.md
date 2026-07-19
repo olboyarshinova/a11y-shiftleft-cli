@@ -19,6 +19,9 @@
 - Added `auth scripted-login` for CI-safe test-account flows that read
   credentials from environment variables, fill configured login selectors, and
   save local Playwright auth state without printing secret values.
+- Added authenticated CI workflow generation options for `setup` and
+  `generate-ci`, including login selectors, post-login wait conditions, and
+  secret-name guidance.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

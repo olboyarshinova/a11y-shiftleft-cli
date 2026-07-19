@@ -192,6 +192,8 @@ Copy-paste CI examples are available for
 [GitHub Actions](docs/recipes/github-actions.md),
 [GitLab CI](docs/recipes/gitlab-ci.md), and
 [CI/CD without SaaS](docs/recipes/ci-without-saas.md).
+The GitHub Actions recipe also shows how to generate a CI-safe authenticated
+workflow for preview URLs behind login using test-account secrets.
 
 For an existing pipeline, the smallest integration is one npm script:
 
