@@ -71,6 +71,8 @@
   package in one command.
 - Updated `agent review` follow-up guidance to use the current report directory
   for ticket export and refreshed share-package commands.
+- Added a compact dashboard-history summary to `agent review --history`,
+  including latest deltas, rule regressions, and resolved rule counts.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

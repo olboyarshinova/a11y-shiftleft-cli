@@ -91,6 +91,9 @@ test("agent review can compare with the previous report from history", async () 
   assert.match(output, /History: 2 runs indexed \| total 0 \| critical 0 \| warning 0 \| info 0/);
   assert.match(output, /Rules increased: image-alt \+1 \(0 -> 1\)/);
   assert.match(output, /Rules improved: button-name -1 \(1 -> 0\)/);
+  assert.match(output, /Dashboard history: 2 runs \| run-1 -> run-2 \| total 0 \| critical 0 \| Lighthouse n\/a/);
+  assert.match(output, /Dashboard rule regressions: image-alt \+1/);
+  assert.match(output, /Dashboard rule resolved: button-name -1/);
 });
 
 test("agent review writes a deterministic progress summary", async () => {

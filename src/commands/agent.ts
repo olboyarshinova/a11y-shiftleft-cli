@@ -1,8 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { Command } from "commander";
-import { createAgentReview, formatAgentReview } from "../core/agentReview.js";
+import { createAgentReview, formatAgentReview, type AgentDashboardHistorySummary } from "../core/agentReview.js";
 import { findPreviousReportInHistory, summarizeAgentHistory } from "../core/agentHistory.js";
+import { collectDashboardData, type DashboardData } from "../core/dashboard.js";
 import { readA11yReport } from "../core/evidenceExport.js";
 import { openReportFile } from "../core/openReport.js";
 import { prepareShareReport } from "../core/sharePrepare.js";
@@ -354,6 +355,11 @@ async function createAgentReviewOutput(options: {
       maxDepth: toPositiveInteger(options.historyMaxDepth)
     })
     : undefined;
+  const dashboardHistory = options.history
+    ? toAgentDashboardHistorySummary(await collectDashboardData(options.history, {
+      maxDepth: toPositiveInteger(options.historyMaxDepth)
+    }))
+    : undefined;
   const review = createAgentReview({
     report,
     previousReport,
@@ -361,6 +367,7 @@ async function createAgentReviewOutput(options: {
     previousReportPath: options.previousReportPath,
     previousReportSource: options.previousReportSource,
     history,
+    dashboardHistory,
     historyRoot: options.history,
     maxItems: toPositiveInteger(options.maxItems)
   });
@@ -402,6 +409,25 @@ function toAgentAuditOptions(options: AgentRunOptions): AuditOptions {
     humanVerificationTimeoutMs: options.humanVerificationTimeoutMs,
     open: options.open,
     quiet: options.quiet
+  };
+}
+
+function toAgentDashboardHistorySummary(data: DashboardData): AgentDashboardHistorySummary {
+  return {
+    totalRuns: data.totalRuns,
+    latestRunId: data.latestDelta?.latestRunId || data.latestRun?.id,
+    previousRunId: data.latestDelta?.previousRunId,
+    totalChange: data.latestDelta?.total.change,
+    criticalChange: data.latestDelta?.critical.change,
+    lighthouseScoreChange: data.latestDelta?.lighthouseScore.change,
+    ruleRegressions: (data.regressions?.rules || []).slice(0, 3).map((item) => ({
+      id: item.id,
+      change: item.change
+    })),
+    ruleResolved: (data.resolved?.rules || []).slice(0, 3).map((item) => ({
+      id: item.id,
+      resolved: item.resolved
+    }))
   };
 }
 

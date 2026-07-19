@@ -8,6 +8,7 @@ export interface AgentReviewOptions {
   previousReportPath?: string;
   previousReportSource?: "explicit" | "history";
   history?: AgentHistorySummary;
+  dashboardHistory?: AgentDashboardHistorySummary;
   historyRoot?: string;
   maxItems?: number;
 }
@@ -31,12 +32,30 @@ export interface AgentRiskFocusItem {
   action: string;
 }
 
+export interface AgentDashboardHistorySummary {
+  totalRuns: number;
+  latestRunId?: string;
+  previousRunId?: string;
+  totalChange?: number | null;
+  criticalChange?: number | null;
+  lighthouseScoreChange?: number | null;
+  ruleRegressions: Array<{
+    id: string;
+    change: number;
+  }>;
+  ruleResolved: Array<{
+    id: string;
+    resolved: number;
+  }>;
+}
+
 export interface AgentReview {
   reportPath: string;
   visualReportPath: string;
   previousReportPath?: string;
   previousReportSource?: "explicit" | "history";
   history?: AgentHistorySummary;
+  dashboardHistory?: AgentDashboardHistorySummary;
   historyRoot?: string;
   summary: {
     total: number;
@@ -69,6 +88,7 @@ export function createAgentReview(options: AgentReviewOptions): AgentReview {
     previousReportPath: options.previousReportPath,
     previousReportSource: options.previousReportPath ? options.previousReportSource || "explicit" : undefined,
     history: options.history,
+    dashboardHistory: options.dashboardHistory,
     historyRoot: options.historyRoot,
     summary: {
       total: options.report.summary.total,
@@ -105,6 +125,10 @@ export function formatAgentReview(review: AgentReview): string {
     lines.push(formatHistorySummary(review.history));
     lines.push(...formatHistoryRuleChanges(review.history));
     lines.push(...formatHistoryPageChanges(review.history));
+  }
+
+  if (review.dashboardHistory) {
+    lines.push(...formatDashboardHistorySummary(review.dashboardHistory));
   }
 
   if (review.riskFocus.length > 0) {
@@ -244,6 +268,28 @@ function formatPageChange(change: AgentHistorySummary["pageRegressions"][number]
   return `${compactUrl(change.url)} ${formatSignedNumber(change.change)} (${change.first} -> ${change.current})`;
 }
 
+function formatDashboardHistorySummary(history: AgentDashboardHistorySummary): string[] {
+  const lines = [
+    [
+      `Dashboard history: ${history.totalRuns} runs`,
+      history.previousRunId && history.latestRunId ? `${history.previousRunId} -> ${history.latestRunId}` : "",
+      `total ${formatNullableSignedNumber(history.totalChange)}`,
+      `critical ${formatNullableSignedNumber(history.criticalChange)}`,
+      `Lighthouse ${formatNullableSignedNumber(history.lighthouseScoreChange)}`
+    ].filter(Boolean).join(" | ")
+  ];
+
+  if (history.ruleRegressions.length > 0) {
+    lines.push(`Dashboard rule regressions: ${history.ruleRegressions.map((item) => `${item.id} ${formatSignedNumber(item.change)}`).join("; ")}`);
+  }
+
+  if (history.ruleResolved.length > 0) {
+    lines.push(`Dashboard rule resolved: ${history.ruleResolved.map((item) => `${item.id} -${item.resolved}`).join("; ")}`);
+  }
+
+  return lines;
+}
+
 function summarizeAgentChanges(previousReport: A11yReport | undefined, currentReport: A11yReport): AgentReviewChangeSummary {
   if (!previousReport) {
     return {
@@ -341,6 +387,10 @@ function reportDirectoryForCommand(reportPath: string): string {
 
 function formatSignedNumber(value: number): string {
   return value > 0 ? `+${value}` : String(value);
+}
+
+function formatNullableSignedNumber(value: number | null | undefined): string {
+  return typeof value === "number" ? formatSignedNumber(value) : "n/a";
 }
 
 function compactUrl(value: string): string {

@@ -92,6 +92,28 @@ test("createAgentReview recommends continuing history workflow when available", 
   assert.equal(review.nextCommands.some((command) => /--previous <previous-report-dir>/.test(command)), false);
 });
 
+test("formatAgentReview includes dashboard history deltas when available", () => {
+  const review = createAgentReview({
+    report: report([issue("warning", "color-contrast", "warning")]),
+    reportPath: "reports/history/run-2/a11y-report.json",
+    dashboardHistory: {
+      totalRuns: 2,
+      previousRunId: "run-1",
+      latestRunId: "run-2",
+      totalChange: -3,
+      criticalChange: 0,
+      lighthouseScoreChange: 4,
+      ruleRegressions: [{ id: "image-alt", change: 1 }],
+      ruleResolved: [{ id: "button-name", resolved: 2 }]
+    }
+  });
+  const text = formatAgentReview(review);
+
+  assert.match(text, /Dashboard history: 2 runs \| run-1 -> run-2 \| total -3 \| critical 0 \| Lighthouse \+4/);
+  assert.match(text, /Dashboard rule regressions: image-alt \+1/);
+  assert.match(text, /Dashboard rule resolved: button-name -2/);
+});
+
 test("createAgentReview summarizes practical risk focus areas", () => {
   const reportWithRisk = {
     ...report([
