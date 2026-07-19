@@ -28,6 +28,9 @@
 - Clarified generated setup and CI guidance for authenticated CI: use a
   least-privilege test account, keep auth state temporary, and never commit
   credentials or generated session files.
+- Added a conservative cross-page consistency heuristic that flags repeated
+  links or stable controls with different accessible names as manual-review
+  evidence for WCAG 3.2.4.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

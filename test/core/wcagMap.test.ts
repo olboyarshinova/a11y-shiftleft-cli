@@ -29,6 +29,7 @@ test("mapRuleToWcag maps exact known rules", () => {
   assert.deepEqual(mapRuleToWcag("document-title"), ["2.4.2"]);
   assert.deepEqual(mapRuleToWcag("page-title-duplicate"), ["2.4.2"]);
   assert.deepEqual(mapRuleToWcag("page-title-placeholder"), ["2.4.2"]);
+  assert.deepEqual(mapRuleToWcag("control-name-inconsistent"), ["3.2.4"]);
   assert.deepEqual(mapRuleToWcag("html-has-lang"), ["3.1.1"]);
   assert.deepEqual(mapRuleToWcag("aria-valid-attr-value"), ["4.1.2"]);
   assert.deepEqual(mapRuleToWcag("autocomplete-valid"), ["1.3.5"]);

@@ -331,6 +331,18 @@ const RULE_HINTS: Record<string, RemediationHint> = {
       "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/title"
     ]
   },
+  "control-name-inconsistent": {
+    summary: "Use consistent accessible names for controls that perform the same function.",
+    howToFix: [
+      "Review the listed controls and confirm whether they have the same purpose.",
+      "If they do, align the visible text, aria-label, aria-labelledby, or shared component label across pages.",
+      "If the controls intentionally differ, document that decision during manual review instead of treating it as an automatic failure."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/consistent-identification.html",
+      "https://www.w3.org/WAI/WCAG22/Understanding/label-in-name.html"
+    ]
+  },
   "html-has-lang": {
     summary: "Declare the primary language of the page on the html element.",
     howToFix: [

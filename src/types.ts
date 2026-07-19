@@ -869,6 +869,7 @@ export interface ExplorationState {
   forcedColors?: ForcedColorsEvidence;
   modalFocus?: ModalFocusEvidence;
   dynamicAnnouncements?: DynamicAnnouncementEvidence;
+  interactiveControls?: InteractiveControlEvidence[];
   formErrors?: FormErrorEvidence;
   imageAlternatives?: ImageAlternativeEvidence;
   media?: MediaEvidence;
@@ -879,6 +880,14 @@ export interface AccessibilityTreeNodeEvidence {
   role: string;
   name?: string;
   level?: number;
+}
+
+export interface InteractiveControlEvidence {
+  selector: string;
+  role: string;
+  name?: string;
+  text?: string;
+  href?: string;
 }
 
 export interface AccessibilityTreeEvidence {

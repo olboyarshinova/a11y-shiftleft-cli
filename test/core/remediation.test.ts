@@ -264,6 +264,18 @@ test("getRemediationHint explains cross-page title findings", () => {
   assert.match(placeholderHint.howToFix[0], /Vite \+ React/);
 });
 
+test("getRemediationHint explains cross-page control naming findings", () => {
+  const hint = getRemediationHint(
+    "control-name-inconsistent",
+    getWcagCriteria(["3.2.4"]),
+    "unknown"
+  );
+
+  assert.match(hint.summary, /consistent accessible names/);
+  assert.match(hint.howToFix[0], /same purpose/);
+  assert.equal(hint.docs.some((url) => url.includes("consistent-identification")), true);
+});
+
 test("getRemediationHint explains ARIA validation findings", () => {
   const hint = getRemediationHint("aria-valid-attr-value", getWcagCriteria(["4.1.2"]), "unknown");
 

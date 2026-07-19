@@ -13,10 +13,10 @@ Section 508 certification.
 - Promote planned journey matches into a richer journey-review workflow where a
   reviewer can confirm every step, record missing states, and attach manual
   task-completion evidence.
-- Extend cross-page consistency analysis beyond the current duplicate and
-  placeholder page-title checks into repeated navigation, help mechanisms, and
-  same-purpose control names. Surface differences for review rather than
-  asserting that every difference is a WCAG failure.
+- Extend cross-page consistency analysis beyond the current duplicate
+  page-title, placeholder page-title, and same-purpose control-name checks into
+  repeated navigation and help mechanisms. Surface differences for review
+  rather than asserting that every difference is a WCAG failure.
 - Add report grouping controls for rule, page/state, affected element, WCAG
   criterion, and POUR principle while preserving root-cause grouping.
 - Make the PR/CI workflow extremely simple: one generated workflow, one

@@ -9,6 +9,7 @@ import { launchBrowserRuntime } from "../core/browserRuntime.js";
 import { hidePageElements, normalizeHideElementSelectors } from "../core/hideElements.js";
 import { applyColorScheme, detectPageColorSchemes, getPageAppearanceSignature, normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig } from "../core/pageScroll.js";
 import { createHumanVerificationIssue, detectHumanVerification, waitForHumanVerificationToClear } from "../core/humanVerification.js";
+import { analyzeControlNameConsistency } from "../core/crossPageConsistency.js";
 import { analyzePageTitles } from "../core/pageTitles.js";
 import type {
   A11yConfig,
@@ -26,6 +27,7 @@ import type {
   FormErrorEvidence,
   ImageAlternativeConcern,
   ImageAlternativeEvidence,
+  InteractiveControlEvidence,
   Issue,
   MediaElementEvidence,
   MediaEvidence,
@@ -405,6 +407,7 @@ export async function runExplorePlaywrightAdapter(
           scopeSelector
         });
         const accessibilityTree = await captureAccessibilityTree(page);
+        const interactiveControls = await captureInteractiveControls(page);
         const formErrors = await auditFormErrors(page, config, {
           stateId,
           stateLabel: actionLabel,
@@ -531,6 +534,7 @@ export async function runExplorePlaywrightAdapter(
           forcedColors: forcedColors.evidence,
           modalFocus,
           dynamicAnnouncements,
+          interactiveControls,
           formErrors: formErrors.evidence,
           imageAlternatives: imageAlternatives.evidence,
           media: media.evidence,
@@ -591,12 +595,15 @@ export async function runExplorePlaywrightAdapter(
     await browser.close();
   }
 
-  const titleIssues = scopeSelector
+  const crossPageIssues = scopeSelector
     ? []
-    : analyzePageTitles(states.map((state) => ({
-      url: state.url,
-      title: state.title
-    })), config.framework).map((issue) => {
+    : [
+      ...analyzePageTitles(states.map((state) => ({
+        url: state.url,
+        title: state.title
+      })), config.framework),
+      ...analyzeControlNameConsistency(states, config.framework)
+    ].map((issue) => {
       const state = states.find((candidate) => candidate.url === issue.url);
       return {
         ...issue,
@@ -604,7 +611,7 @@ export async function runExplorePlaywrightAdapter(
         stateLabel: state?.actionLabel
       };
     });
-  issues.push(...titleIssues);
+  issues.push(...crossPageIssues);
 
   return {
     issues,
@@ -1203,6 +1210,116 @@ async function captureAccessibilityTree(page: Page): Promise<AccessibilityTreeEv
   } finally {
     await session.detach().catch(() => undefined);
   }
+}
+
+async function captureInteractiveControls(page: Page): Promise<InteractiveControlEvidence[]> {
+  return page.evaluate(() => {
+    const selector = [
+      "a[href]",
+      "button",
+      "input",
+      "select",
+      "textarea",
+      "summary",
+      "[role='button']",
+      "[role='link']",
+      "[role='menuitem']",
+      "[role='tab']",
+      "[role='switch']",
+      "[role='checkbox']",
+      "[role='radio']",
+      "[role='combobox']",
+      "[role='textbox']",
+      "[tabindex]"
+    ].join(", ");
+
+    function clean(value: string | null | undefined): string {
+      return (value || "").replace(/\s+/g, " ").trim();
+    }
+
+    function isVisible(element: Element): boolean {
+      const htmlElement = element as HTMLElement;
+      const rect = htmlElement.getBoundingClientRect();
+      const style = window.getComputedStyle(htmlElement);
+      return rect.width > 0 &&
+        rect.height > 0 &&
+        style.display !== "none" &&
+        style.visibility !== "hidden";
+    }
+
+    function attrSelector(name: string, value: string): string {
+      return `[${name}="${value.replace(/\\/g, "\\\\").replace(/"/g, "\\\"")}"]`;
+    }
+
+    function selectorFor(element: Element): string {
+      const testId = element.getAttribute("data-testid");
+      if (testId) return attrSelector("data-testid", testId);
+
+      const test = element.getAttribute("data-test");
+      if (test) return attrSelector("data-test", test);
+
+      const id = element.getAttribute("id");
+      if (id) return attrSelector("id", id);
+
+      const tag = element.tagName.toLowerCase();
+      const parent = element.parentElement;
+      if (!parent) return tag;
+
+      const sameTagSiblings = Array.from(parent.children).filter((sibling) => (
+        sibling.tagName === element.tagName
+      ));
+      const index = sameTagSiblings.indexOf(element) + 1;
+      return `${parent.tagName.toLowerCase()} > ${tag}:nth-of-type(${Math.max(index, 1)})`;
+    }
+
+    function roleFor(element: Element): string {
+      const explicitRole = clean(element.getAttribute("role"));
+      if (explicitRole) return explicitRole.toLowerCase();
+
+      const tag = element.tagName.toLowerCase();
+      if (tag === "a") return "link";
+      if (tag === "button" || tag === "summary") return "button";
+      if (tag === "select") return "combobox";
+      if (tag === "textarea") return "textbox";
+      if (tag === "input") {
+        const type = clean((element as HTMLInputElement).type).toLowerCase();
+        if (type === "checkbox" || type === "radio") return type;
+        if (type === "button" || type === "submit" || type === "reset") return "button";
+        return "textbox";
+      }
+
+      return tag;
+    }
+
+    function textFromLabelledBy(element: Element): string {
+      const ids = clean(element.getAttribute("aria-labelledby")).split(/\s+/).filter(Boolean);
+      return ids.map((id) => clean(document.getElementById(id)?.textContent)).filter(Boolean).join(" ");
+    }
+
+    function accessibleNameFor(element: Element): string {
+      return clean(element.getAttribute("aria-label")) ||
+        clean(textFromLabelledBy(element)) ||
+        clean(element.textContent) ||
+        clean(element.getAttribute("title")) ||
+        clean(element.getAttribute("alt"));
+    }
+
+    return Array.from(document.querySelectorAll(selector))
+      .filter((element) => isVisible(element))
+      .slice(0, 80)
+      .map((element) => {
+        const href = element instanceof HTMLAnchorElement ? element.href : undefined;
+        const name = accessibleNameFor(element);
+        const text = clean(element.textContent);
+        return {
+          selector: selectorFor(element),
+          role: roleFor(element),
+          ...(name ? { name } : {}),
+          ...(text ? { text } : {}),
+          ...(href ? { href } : {})
+        };
+      });
+  });
 }
 
 async function auditReflow(

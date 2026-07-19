@@ -11,6 +11,7 @@ const RULE_TO_WCAG: Record<string, string[]> = {
   "bypass": ["2.4.1"],
   "canvas-alternative-not-detected": ["1.1.1"],
   "color-contrast": ["1.4.3"],
+  "control-name-inconsistent": ["3.2.4"],
   "css-orientation-lock": ["1.3.4"],
   "document-title": ["2.4.2"],
   "page-title-duplicate": ["2.4.2"],
@@ -294,6 +295,14 @@ const WCAG_CRITERIA: Record<string, WcagCriterion> = {
     principle: "understandable",
     introducedIn: "2.0",
     url: "https://www.w3.org/WAI/WCAG22/Understanding/language-of-parts.html"
+  },
+  "3.2.4": {
+    id: "3.2.4",
+    title: "Consistent Identification",
+    level: "AA",
+    principle: "understandable",
+    introducedIn: "2.0",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/consistent-identification.html"
   },
   "3.3.1": {
     id: "3.3.1",
