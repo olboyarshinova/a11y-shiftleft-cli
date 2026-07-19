@@ -196,7 +196,7 @@ test("runSetup forwards custom crawl bounds to generated CI workflows", async ()
     }
   }, null, 2));
 
-  await runSetup({
+  const result = await runSetup({
     cwd,
     url: ["http://localhost:5173"],
     startCommand: "npm run dev -- --host localhost --port 5173",
@@ -218,6 +218,9 @@ test("runSetup forwards custom crawl bounds to generated CI workflows", async ()
   assert.match(prWorkflow, /--crawl --crawl-depth 2 --crawl-limit 7/);
   assert.match(fullWorkflow, /--crawl --crawl-depth 4 --crawl-limit 80/);
   assert.match(fullWorkflow, /cron: "0 8 \* \* 2"/);
+  assert.match(result.nextSteps.join("\n"), /split profile/);
+  assert.match(result.nextSteps.join("\n"), /PR workflow stays fast|PR workflow fast/);
+  assert.match(result.nextSteps.join("\n"), /full-site workflow/);
 });
 
 test("runSetup can create a GitLab CI workflow", async () => {

@@ -252,6 +252,16 @@ function indentBlock(value: string, spaces: number): string {
 }
 
 function formatCiRolloutStep(options: SetupOptions): string {
+  const profile = toCiProfile(options.profile);
+
+  if (profile === "split") {
+    return "CI uses the split profile: keep the PR workflow fast and use the full-site workflow manually or on schedule while remediation is being tracked.";
+  }
+
+  if (profile === "full") {
+    return "CI uses the full-site profile; run it manually first and keep scheduled scans report-only until the findings are understood.";
+  }
+
   if (options.gate === "report-only") {
     return "CI starts in report-only mode; review uploaded reports first, then tighten to --gate new-critical-only when the baseline is understood.";
   }

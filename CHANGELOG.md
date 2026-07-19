@@ -140,6 +140,9 @@
 - Added baseline and `new-critical-only` commands to the README common-command
   table with a note that baselines represent reviewed known findings rather
   than accessibility certification.
+- Improved guided setup next steps for split and full CI profiles so users can
+  see which workflow should stay fast for pull requests and which one is meant
+  for manual or scheduled full-site review.
 - Added Report Retention evidence to visual exploration reports so dry-run and
   cleanup counts are visible without exposing local report paths.
 - Added compact lifecycle badges to visual finding groups for new, remaining,
