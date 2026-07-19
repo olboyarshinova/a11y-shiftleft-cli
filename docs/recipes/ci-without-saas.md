@@ -33,6 +33,10 @@ npx a11y-shiftleft-cli setup \
   --gate report-only
 ```
 
+Generated CI runs `npm ci`, then `npm run build --if-present`, then starts your
+app. Add `--build-command "<your command>"` for custom generated-code or build
+steps, or `--no-build` when the app should start without a separate build.
+
 This creates:
 
 ```txt

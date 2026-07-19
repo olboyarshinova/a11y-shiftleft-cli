@@ -42,6 +42,9 @@ usually stays in the 30-90 second range for small and medium frontend apps.
 Before scanning, the workflow runs `npm ci`, `npm run build --if-present`,
 installs Chromium for Playwright, starts your configured app command, and waits
 for the first URL to respond.
+Use `--build-command "npm run generate && npm run build"` when your project
+needs a custom preparation step. Use `--no-build` when the app should start
+without a separate build step.
 
 The workflow uploads the generated `reports/` folder as a GitHub Actions
 artifact. Pull request comments include a direct artifact link when GitHub

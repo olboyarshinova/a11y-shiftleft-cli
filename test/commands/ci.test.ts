@@ -30,6 +30,8 @@ test("generate-ci is the documented command and ci remains a short alias", () =>
   const flags = command.options.map((option) => option.long);
   assert.equal(flags.includes("--provider"), true);
   assert.equal(flags.includes("--start-command"), true);
+  assert.equal(flags.includes("--build-command"), true);
+  assert.equal(flags.includes("--no-build"), true);
   assert.equal(flags.includes("--auth-login-url"), true);
   assert.equal(flags.includes("--auth-username-selector"), true);
   assert.equal(flags.includes("--auth-password-selector"), true);
@@ -123,6 +125,27 @@ test("workflowTemplate supports quality gate profiles for PR workflows", () => {
 
   assert.match(workflow, /--gate new-critical-only --standard wcag22-aa/);
   assert.doesNotMatch(workflow, /--fail-on critical --standard/);
+});
+
+test("workflowTemplate supports custom and disabled build steps", () => {
+  const customBuild = workflowTemplate({
+    urls: ["http://localhost:3000"],
+    startCommand: "npm run dev",
+    buildCommand: "npm run generate && npm run build",
+    failOn: "critical",
+    standard: "wcag22-aa"
+  });
+  const noBuild = workflowTemplate({
+    urls: ["http://localhost:3000"],
+    startCommand: "npm run dev",
+    buildCommand: null,
+    failOn: "critical",
+    standard: "wcag22-aa"
+  });
+
+  assert.match(customBuild, /run: npm run generate && npm run build/);
+  assert.doesNotMatch(noBuild, /Build app if needed/);
+  assert.doesNotMatch(noBuild, /npm run build --if-present/);
 });
 
 test("workflowTemplate can create CI-safe auth state before browser checks", () => {
@@ -390,6 +413,23 @@ test("circleCiWorkflowTemplate creates a report-only job with artifacts", () => 
   assert.match(workflow, /background: true/);
   assert.match(workflow, /npx a11y-shiftleft-cli check --dynamic --url http:\/\/localhost:5173 --crawl --crawl-depth 1 --crawl-limit 10 --out reports --gate report-only --standard wcag22-aa --verbose/);
   assert.match(workflow, /store_artifacts:/);
+});
+
+test("non-GitHub workflow templates can disable build steps", () => {
+  const options = {
+    urls: ["http://localhost:5173"],
+    startCommand: "npm run dev",
+    buildCommand: null,
+    failOn: "critical",
+    gate: "report-only",
+    standard: "wcag22-aa",
+    crawlDepth: 1,
+    crawlLimit: 10
+  };
+
+  assert.doesNotMatch(gitLabWorkflowTemplate(options), /npm run build --if-present/);
+  assert.doesNotMatch(circleCiWorkflowTemplate(options), /Build app if needed/);
+  assert.doesNotMatch(shellWorkflowTemplate(options), /npm run build --if-present/);
 });
 
 test("circleCiWorkflowTemplate can create auth state before checks", () => {

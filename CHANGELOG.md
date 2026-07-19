@@ -104,6 +104,9 @@
 - Added `npm run build --if-present` to generated GitHub Actions PR and
   full-site workflows, matching the GitLab, CircleCI, and shell presets so
   projects with a build step are prepared before the accessibility scan starts.
+- Added `--build-command` and `--no-build` to `setup` and `generate-ci` so
+  generated CI can use a custom preparation command or skip the build step when
+  a project does not need one.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

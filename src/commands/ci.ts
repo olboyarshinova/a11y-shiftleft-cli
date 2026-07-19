@@ -7,6 +7,8 @@ interface CiOptions {
   provider: string;
   url: string[];
   startCommand: string;
+  build?: boolean;
+  buildCommand?: string;
   failOn: string;
   gate?: string;
   fullFailOn: string;
@@ -49,6 +51,7 @@ export interface CiAuthFlowOptions {
 }
 
 const CI_AUTH_STATE_PATH = ".a11y-auth/state.json";
+const DEFAULT_CI_BUILD_COMMAND = "npm run build --if-present";
 
 export function registerCiCommand(program: Command): void {
   program
@@ -59,6 +62,8 @@ export function registerCiCommand(program: Command): void {
     .option("--provider <provider>", "CI provider: github, gitlab, circleci, or shell", "github")
     .option("--url <urls...>", "URL(s) to scan in CI", ["http://localhost:3000"])
     .option("--start-command <command>", "Command that starts the app in CI", "npm run dev -- --host localhost --port 3000")
+    .option("--build-command <command>", "Command that prepares the app before starting it in CI", "npm run build --if-present")
+    .option("--no-build", "Do not add a build step before starting the app in generated CI")
     .option("--fail-on <severity>", "critical, warning, info, or none", "critical")
     .option("--gate <profile>", "PR quality gate profile: critical, warning, report-only, or new-critical-only")
     .option("--full-fail-on <severity>", "critical, warning, info, or none for scheduled full-site scans", "none")
@@ -85,6 +90,7 @@ export function registerCiCommand(program: Command): void {
         profile: toCiProfile(options.profile),
         urls: parseUrls(options.url),
         startCommand: options.startCommand,
+        buildCommand: options.build === false ? null : options.buildCommand,
         failOn: options.failOn,
         gate: options.gate,
         fullFailOn: options.fullFailOn,
@@ -143,6 +149,7 @@ async function exists(filePath: string): Promise<boolean> {
 interface WorkflowTemplateOptions {
   urls: string[];
   startCommand: string;
+  buildCommand?: string | null;
   failOn: string;
   gate?: string;
   standard: string;
@@ -188,9 +195,7 @@ jobs:
 
       - run: npm ci
 
-      - name: Build app if needed
-        run: npm run build --if-present
-
+${formatGitHubBuildStep(resolveBuildCommand(options.buildCommand))}
       - name: Install Playwright
         run: npx playwright install --with-deps chromium
 
@@ -232,6 +237,7 @@ ${formatGitHubAuthStep(options.auth)}
 interface FullWorkflowTemplateOptions {
   urls: string[];
   startCommand: string;
+  buildCommand?: string | null;
   fullFailOn: string;
   standard: string;
   crawlDepth: number;
@@ -243,6 +249,7 @@ interface FullWorkflowTemplateOptions {
 export function fullWorkflowTemplate({
   urls,
   startCommand,
+  buildCommand,
   fullFailOn,
   standard,
   crawlDepth,
@@ -279,9 +286,7 @@ jobs:
 
       - run: npm ci
 
-      - name: Build app if needed
-        run: npm run build --if-present
-
+${formatGitHubBuildStep(resolveBuildCommand(buildCommand))}
       - name: Install Playwright
         run: npx playwright install --with-deps chromium
 
@@ -331,7 +336,7 @@ a11y:
     GIT_DEPTH: "0"
   script:
     - npm ci
-    - npm run build --if-present
+${formatListBuildStep(resolveBuildCommand(options.buildCommand), "    - ")}
     - ${startCommand} &
     - |
       for i in {1..30}; do
@@ -383,9 +388,7 @@ jobs:
       - run:
           name: Install dependencies
           command: npm ci
-      - run:
-          name: Build app if needed
-          command: npm run build --if-present
+${formatCircleCiBuildStep(resolveBuildCommand(options.buildCommand))}
       - run:
           name: Start application
           command: ${startCommand}
@@ -431,7 +434,7 @@ APP_URL="\${APP_URL:-${firstUrl}}"
 REPORT_DIR="\${A11Y_REPORT_DIR:-reports}"
 
 npm ci
-npm run build --if-present
+${formatListBuildStep(resolveBuildCommand(options.buildCommand))}
 
 ${startCommand} &
 APP_PID=$!
@@ -455,10 +458,37 @@ echo "Accessibility report written to $REPORT_DIR"
 `;
 }
 
+function resolveBuildCommand(buildCommand: string | null | undefined): string | undefined {
+  return buildCommand === null ? undefined : buildCommand || DEFAULT_CI_BUILD_COMMAND;
+}
+
+function formatGitHubBuildStep(buildCommand: string | undefined): string {
+  return buildCommand
+    ? `      - name: Build app if needed
+        run: ${buildCommand}
+
+`
+    : "";
+}
+
+function formatListBuildStep(buildCommand: string | undefined, prefix = ""): string {
+  return buildCommand ? `${prefix}${buildCommand}` : "";
+}
+
+function formatCircleCiBuildStep(buildCommand: string | undefined): string {
+  return buildCommand
+    ? `      - run:
+          name: Build app if needed
+          command: ${buildCommand}
+`
+    : "";
+}
+
 interface WorkflowFilesOptions {
   profile: CiProfile;
   urls: string[];
   startCommand: string;
+  buildCommand?: string | null;
   failOn: string;
   gate?: string;
   fullFailOn: string;
@@ -477,6 +507,7 @@ export function workflowFiles(options: WorkflowFilesOptions): WorkflowFile[] {
     contents: workflowTemplate({
       urls: options.urls,
       startCommand: options.startCommand,
+      buildCommand: options.buildCommand,
       failOn: options.failOn,
       gate: options.gate,
       standard: options.standard,
@@ -490,6 +521,7 @@ export function workflowFiles(options: WorkflowFilesOptions): WorkflowFile[] {
     contents: fullWorkflowTemplate({
       urls: options.urls,
       startCommand: options.startCommand,
+      buildCommand: options.buildCommand,
       fullFailOn: options.fullFailOn,
       standard: options.standard,
       crawlDepth: options.fullCrawlDepth,
@@ -514,6 +546,7 @@ export function gitLabWorkflowFiles(options: WorkflowFilesOptions): WorkflowFile
     contents: gitLabWorkflowTemplate({
       urls: options.urls,
       startCommand: options.startCommand,
+      buildCommand: options.buildCommand,
       failOn: options.failOn,
       gate: options.gate,
       standard: options.standard,
@@ -534,6 +567,7 @@ export function circleCiWorkflowFiles(options: WorkflowFilesOptions): WorkflowFi
     contents: circleCiWorkflowTemplate({
       urls: options.urls,
       startCommand: options.startCommand,
+      buildCommand: options.buildCommand,
       failOn: options.failOn,
       gate: options.gate,
       standard: options.standard,
@@ -555,6 +589,7 @@ export function shellWorkflowFiles(options: WorkflowFilesOptions): WorkflowFile[
     contents: shellWorkflowTemplate({
       urls: options.urls,
       startCommand: options.startCommand,
+      buildCommand: options.buildCommand,
       failOn: options.failOn,
       gate: options.gate,
       standard: options.standard,

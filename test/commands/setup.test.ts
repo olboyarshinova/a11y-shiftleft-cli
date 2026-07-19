@@ -14,6 +14,8 @@ test("setup command is registered as the guided first-run path", () => {
   const flags = command.options.map((option) => option.long);
   assert.equal(flags.includes("--url"), true);
   assert.equal(flags.includes("--start-command"), true);
+  assert.equal(flags.includes("--build-command"), true);
+  assert.equal(flags.includes("--no-build"), true);
   assert.equal(flags.includes("--gate"), true);
   assert.equal(flags.includes("--crawl-depth"), true);
   assert.equal(flags.includes("--crawl-limit"), true);
@@ -61,6 +63,7 @@ test("runSetup creates config, report ignores, and GitHub Actions workflow", asy
   assert.equal(manifest.scripts["a11y:audit"], "a11y-shiftleft audit --url http://localhost:5173 --out reports --open");
   assert.equal(manifest.scripts["a11y:check"], "a11y-shiftleft check --dynamic --url http://localhost:5173 --out reports --gate report-only --verbose");
   assert.match(workflow, /fetch-depth: 0/);
+  assert.match(workflow, /npm run build --if-present/);
   assert.match(workflow, /npx a11y-shiftleft-cli check --static --dynamic --changed-since origin\/\$\{\{ github\.base_ref \}\} --url http:\/\/localhost:5173/);
   assert.match(workflow, /--standard wcag22-aa --verbose/);
   assert.match(workflow, /--gate report-only/);
@@ -79,6 +82,43 @@ test("runSetup creates config, report ignores, and GitHub Actions workflow", asy
   assert.match(result.nextSteps.join("\n"), /Review generated or updated files: .*\.a11y-shiftleft\.json/);
   assert.match(result.nextSteps.join("\n"), /package\.json/);
   assert.match(result.nextSteps.join("\n"), /\.github\/workflows\/a11y\.yml/);
+});
+
+test("runSetup can customize or disable generated CI build steps", async () => {
+  const customCwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-setup-build-custom-"));
+  const noBuildCwd = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-setup-build-none-"));
+
+  await runSetup({
+    cwd: customCwd,
+    url: ["http://localhost:5173"],
+    startCommand: "npm run dev",
+    buildCommand: "npm run generate && npm run build",
+    ci: "github",
+    profile: "pr",
+    gate: "report-only",
+    failOn: "critical",
+    standard: "wcag22-aa",
+    skipScripts: true
+  });
+  await runSetup({
+    cwd: noBuildCwd,
+    url: ["http://localhost:5173"],
+    startCommand: "npm run dev",
+    build: false,
+    ci: "github",
+    profile: "pr",
+    gate: "report-only",
+    failOn: "critical",
+    standard: "wcag22-aa",
+    skipScripts: true
+  });
+
+  const customWorkflow = await fs.readFile(path.join(customCwd, ".github/workflows/a11y.yml"), "utf8");
+  const noBuildWorkflow = await fs.readFile(path.join(noBuildCwd, ".github/workflows/a11y.yml"), "utf8");
+
+  assert.match(customWorkflow, /run: npm run generate && npm run build/);
+  assert.doesNotMatch(noBuildWorkflow, /Build app if needed/);
+  assert.doesNotMatch(noBuildWorkflow, /npm run build --if-present/);
 });
 
 test("setup CLI prints concrete next steps for first-run users", async () => {

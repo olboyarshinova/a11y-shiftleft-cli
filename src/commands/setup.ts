@@ -8,6 +8,8 @@ interface SetupOptions {
   cwd?: string;
   url: string[];
   startCommand: string;
+  build?: boolean;
+  buildCommand?: string;
   framework?: string;
   ci: string;
   profile: string;
@@ -51,6 +53,8 @@ export function registerSetupCommand(program: Command): void {
     .option("--cwd <dir>", "Target project directory")
     .option("--url <urls...>", "URL(s) to scan", ["http://localhost:3000"])
     .option("--start-command <command>", "Command that starts the app in CI", "npm run dev -- --host localhost --port 3000")
+    .option("--build-command <command>", "Command that prepares the app before starting it in CI", "npm run build --if-present")
+    .option("--no-build", "Do not add a build step before starting the app in generated CI")
     .option("--framework <name>", "Target framework: auto, react, vue, angular, or unknown")
     .option("--ci <provider>", "CI provider: github, gitlab, circleci, shell, or none", "github")
     .option("--profile <profile>", "CI profile: pr, full, or split", "pr")
@@ -140,6 +144,7 @@ export async function runSetup(options: SetupOptions): Promise<SetupResult> {
       profile: toCiProfile(options.profile),
       urls: scanUrls,
       startCommand: options.startCommand,
+      buildCommand: options.build === false ? null : options.buildCommand,
       failOn: options.failOn,
       gate: options.gate,
       fullFailOn: "none",
