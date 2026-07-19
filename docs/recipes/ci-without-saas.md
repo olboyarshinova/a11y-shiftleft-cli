@@ -72,6 +72,29 @@ scripts/a11y-ci.sh
 Call that script from any CI job that can install Node dependencies and start
 your app.
 
+## Authenticated CI
+
+For authenticated preview or staging URLs, generate the workflow or shell script
+with a CI-safe scripted login. Store credentials as CI secrets or protected
+variables, not in the repository.
+
+```bash
+npx a11y-shiftleft-cli setup \
+  --ci shell \
+  --url https://preview.example.com/dashboard \
+  --start-command "npm run dev" \
+  --gate report-only \
+  --auth-login-url https://preview.example.com/login \
+  --auth-username-selector 'input[name="email"]' \
+  --auth-password-selector 'input[name="password"]' \
+  --auth-submit-selector 'button[type="submit"]' \
+  --auth-wait-for-url "**/dashboard"
+```
+
+The generated CI step creates a temporary `.a11y-auth/state.json` inside the
+runner, then passes it to `check --auth-state`. Keep `.a11y-auth/` ignored and
+use a least-privilege test account.
+
 ## CI Artifacts
 
 Keep generated reports as CI artifacts instead of committed files:

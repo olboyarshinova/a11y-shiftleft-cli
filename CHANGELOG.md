@@ -22,6 +22,9 @@
 - Added authenticated CI workflow generation options for `setup` and
   `generate-ci`, including login selectors, post-login wait conditions, and
   secret-name guidance.
+- Added GitLab, CircleCI, and shell-runner test coverage for authenticated CI
+  generation, plus GitLab and generic CI documentation for protected
+  test-account variables.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

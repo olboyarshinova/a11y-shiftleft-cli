@@ -320,6 +320,32 @@ test("gitLabWorkflowTemplate creates a report-only merge request job", () => {
   assert.match(workflow, /paths:\n      - reports\//);
 });
 
+test("gitLabWorkflowTemplate can create auth state before checks", () => {
+  const workflow = gitLabWorkflowTemplate({
+    urls: ["https://preview.example.com/dashboard"],
+    startCommand: "npm run dev -- --host 0.0.0.0 --port 5173",
+    failOn: "critical",
+    gate: "report-only",
+    standard: "wcag22-aa",
+    crawlDepth: 1,
+    crawlLimit: 10,
+    auth: {
+      loginUrl: "https://preview.example.com/login",
+      usernameSelector: "#email",
+      passwordSelector: "#password",
+      submitSelector: "button[type='submit']",
+      waitForSelector: "[data-app-ready]",
+      usernameEnv: "A11Y_USERNAME",
+      passwordEnv: "A11Y_PASSWORD"
+    }
+  });
+
+  assert.match(workflow, /auth scripted-login --url 'https:\/\/preview\.example\.com\/login'/);
+  assert.match(workflow, /--wait-for-selector '\[data-app-ready\]'/);
+  assert.match(workflow, /--auth-state \.a11y-auth\/state\.json/);
+  assert.doesNotMatch(workflow, /\$\{\{ secrets\./);
+});
+
 test("gitLabWorkflowFiles supports the fast PR profile", () => {
   const workflows = gitLabWorkflowFiles({
     profile: "pr",
@@ -356,6 +382,32 @@ test("circleCiWorkflowTemplate creates a report-only job with artifacts", () => 
   assert.match(workflow, /background: true/);
   assert.match(workflow, /npx a11y-shiftleft-cli check --dynamic --url http:\/\/localhost:5173 --crawl --crawl-depth 1 --crawl-limit 10 --out reports --gate report-only --standard wcag22-aa --verbose/);
   assert.match(workflow, /store_artifacts:/);
+});
+
+test("circleCiWorkflowTemplate can create auth state before checks", () => {
+  const workflow = circleCiWorkflowTemplate({
+    urls: ["https://preview.example.com/dashboard"],
+    startCommand: "npm run dev -- --host 0.0.0.0 --port 5173",
+    failOn: "critical",
+    gate: "report-only",
+    standard: "wcag22-aa",
+    crawlDepth: 1,
+    crawlLimit: 10,
+    auth: {
+      loginUrl: "https://preview.example.com/login",
+      usernameSelector: "#email",
+      passwordSelector: "#password",
+      submitSelector: "button[type='submit']",
+      waitForUrl: "**/dashboard",
+      usernameEnv: "A11Y_USERNAME",
+      passwordEnv: "A11Y_PASSWORD"
+    }
+  });
+
+  assert.match(workflow, /name: Create authenticated browser state/);
+  assert.match(workflow, /auth scripted-login --url 'https:\/\/preview\.example\.com\/login'/);
+  assert.match(workflow, /--wait-for-url '\*\*\/dashboard'/);
+  assert.match(workflow, /--auth-state \.a11y-auth\/state\.json/);
 });
 
 test("circleCiWorkflowFiles supports the fast PR profile", () => {
@@ -395,6 +447,31 @@ test("shellWorkflowTemplate creates a portable CI script", () => {
   assert.match(script, /npm run build --if-present/);
   assert.match(script, /trap cleanup EXIT/);
   assert.match(script, /npx a11y-shiftleft-cli check --dynamic --url http:\/\/localhost:5173 --crawl --crawl-depth 1 --crawl-limit 10 --out "\$REPORT_DIR" --gate report-only --standard wcag22-aa --verbose/);
+});
+
+test("shellWorkflowTemplate can create auth state before checks", () => {
+  const script = shellWorkflowTemplate({
+    urls: ["https://preview.example.com/dashboard"],
+    startCommand: "npm run dev -- --host 0.0.0.0 --port 5173",
+    failOn: "critical",
+    gate: "report-only",
+    standard: "wcag22-aa",
+    crawlDepth: 1,
+    crawlLimit: 10,
+    auth: {
+      loginUrl: "https://preview.example.com/login",
+      usernameSelector: "#email",
+      passwordSelector: "#password",
+      submitSelector: "button[type='submit']",
+      waitForUrl: "**/dashboard",
+      usernameEnv: "A11Y_USERNAME",
+      passwordEnv: "A11Y_PASSWORD"
+    }
+  });
+
+  assert.match(script, /auth scripted-login --url 'https:\/\/preview\.example\.com\/login'/);
+  assert.match(script, /--out \.a11y-auth\/state\.json --quiet\nnpx a11y-shiftleft-cli check/);
+  assert.match(script, /--auth-state \.a11y-auth\/state\.json/);
 });
 
 test("shellWorkflowFiles supports the fast PR profile", () => {

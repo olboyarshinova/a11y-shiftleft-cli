@@ -77,6 +77,28 @@ git add .a11y-baseline.json
 git commit -m "Add accessibility baseline"
 ```
 
+## Authenticated Preview URLs
+
+For pages behind login, use a dedicated test account and store credentials as
+masked GitLab CI/CD variables such as `A11Y_USERNAME` and `A11Y_PASSWORD`.
+
+```bash
+npx a11y-shiftleft-cli generate-ci \
+  --provider gitlab \
+  --url https://preview.example.com/dashboard \
+  --start-command "npm run dev -- --host 0.0.0.0 --port 5173" \
+  --gate report-only \
+  --auth-login-url https://preview.example.com/login \
+  --auth-username-selector 'input[name="email"]' \
+  --auth-password-selector 'input[name="password"]' \
+  --auth-submit-selector 'button[type="submit"]' \
+  --auth-wait-for-url "**/dashboard"
+```
+
+The generated job creates `.a11y-auth/state.json` inside the CI runner before
+running `check --auth-state .a11y-auth/state.json`. Do not commit credentials or
+generated auth-state files.
+
 ## Notes
 
 - Keep generated `reports/` as artifacts, not committed files.
