@@ -35,6 +35,7 @@ test("agent run exposes audit plus review workflow options", () => {
   assert.equal(flags.includes("--review-out"), true);
   assert.equal(flags.includes("--profile"), true);
   assert.equal(flags.includes("--with-lighthouse"), true);
+  assert.equal(flags.includes("--safe-block-request"), true);
   assert.equal(flags.includes("--open"), true);
   assert.match(runCommand.description(), /Run an audit/);
 });

@@ -48,6 +48,7 @@ interface AgentRunOptions extends AgentReviewOptions {
   standard?: string;
   wcagOnly?: boolean;
   screenshots?: boolean;
+  safeBlockRequest?: string[];
   waitMs?: string;
   waitForSelector?: string;
   waitUntilUrl?: string;
@@ -129,6 +130,7 @@ export function registerAgentCommand(program: Command): void {
     .option("--standard <standard>", "wcag22-aa, ada-title-ii, section508, or en301549")
     .option("--wcag-only", "Only report findings mapped to WCAG; exclude best practices and unmapped review signals")
     .option("--no-screenshots", "Do not capture visual state screenshots")
+    .option("--safe-block-request <patterns...>", "Additional network request URL patterns to abort during exploration")
     .option("--wait-ms <ms>", "Extra settle time before screenshots and scans")
     .option("--wait-for-selector <selector>", "Wait for a selector before screenshots and scans")
     .option("--wait-until-url <pattern>", "Wait until the current URL contains a pattern before screenshots and scans")
@@ -401,6 +403,7 @@ function toAgentAuditOptions(options: AgentRunOptions): AuditOptions {
     standard: options.standard,
     wcagOnly: options.wcagOnly,
     screenshots: options.screenshots,
+    safeBlockRequest: options.safeBlockRequest,
     waitMs: options.waitMs,
     waitForSelector: options.waitForSelector,
     waitUntilUrl: options.waitUntilUrl,

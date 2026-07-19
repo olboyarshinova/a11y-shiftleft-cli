@@ -82,6 +82,8 @@
 - Added safe-mode network request blocking via `--safe-block-request` and
   `explore.safeMode.blockedRequests` for high-risk APIs, analytics, payment, or
   other external traffic during exploration.
+- Exposed `--safe-block-request` through `agent run` so the local assistant
+  workflow keeps the same exploration safety controls as `audit`.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,
