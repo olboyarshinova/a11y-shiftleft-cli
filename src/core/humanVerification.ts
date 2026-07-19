@@ -15,22 +15,31 @@ export interface HumanVerificationWaitOptions {
   pollMs?: number;
 }
 
-const SIGNALS: Array<{ provider: HumanVerificationSignal["provider"]; pattern: RegExp; label: string }> = [
-  { provider: "cloudflare", pattern: /verify you are human|checking your browser|cf-challenge|cf-turnstile/i, label: "Cloudflare human verification" },
-  { provider: "turnstile", pattern: /turnstile|cf-turnstile/i, label: "Turnstile human verification" },
-  { provider: "recaptcha", pattern: /g-recaptcha|recaptcha|i'?m not a robot/i, label: "reCAPTCHA human verification" },
+const VISIBLE_SIGNALS: Array<{ provider: HumanVerificationSignal["provider"]; pattern: RegExp; label: string }> = [
+  { provider: "cloudflare", pattern: /verify you are human|checking your browser/i, label: "Cloudflare human verification" },
+  { provider: "recaptcha", pattern: /i'?m not a robot|recaptcha/i, label: "reCAPTCHA human verification" },
   { provider: "hcaptcha", pattern: /hcaptcha|h-captcha/i, label: "hCaptcha human verification" },
   { provider: "generic", pattern: /verify that you are human|verify you are human|are you a human|human verification|complete the security check|captcha/i, label: "Human verification" }
+];
+
+const MARKUP_SIGNALS: Array<{ provider: HumanVerificationSignal["provider"]; pattern: RegExp; label: string }> = [
+  { provider: "cloudflare", pattern: /cf-challenge|cf-turnstile|challenge-platform|\/cdn-cgi\/challenge-platform/i, label: "Cloudflare human verification" },
+  { provider: "turnstile", pattern: /class=["'][^"']*cf-turnstile|data-sitekey=["'][^"']+["'][^>]*turnstile|challenges\.cloudflare\.com\/turnstile/i, label: "Turnstile human verification" },
+  { provider: "recaptcha", pattern: /class=["'][^"']*g-recaptcha|www\.google\.com\/recaptcha|www\.gstatic\.com\/recaptcha/i, label: "reCAPTCHA human verification" },
+  { provider: "hcaptcha", pattern: /class=["'][^"']*h-captcha|hcaptcha\.com\/1\/api/i, label: "hCaptcha human verification" }
 ];
 
 export async function detectHumanVerification(page: DetectablePage): Promise<HumanVerificationSignal | undefined> {
   try {
     const snapshot = await page.evaluate(() => {
-      const text = document.body?.innerText || "";
+      const visibleText = document.body?.innerText || "";
       const html = document.documentElement?.innerHTML || "";
-      return `${text}\n${html}`.slice(0, 200_000);
+      return {
+        visibleText: visibleText.slice(0, 80_000),
+        html: html.slice(0, 200_000)
+      };
     });
-    return detectHumanVerificationText(snapshot);
+    return detectHumanVerificationSnapshot(snapshot);
   } catch {
     return undefined;
   }
@@ -54,8 +63,28 @@ export async function waitForHumanVerificationToClear(
 }
 
 export function detectHumanVerificationText(value: string): HumanVerificationSignal | undefined {
-  for (const signal of SIGNALS) {
-    const match = value.match(signal.pattern);
+  return detectHumanVerificationSnapshot({
+    visibleText: stripNonVisibleText(value),
+    html: value
+  });
+}
+
+function detectHumanVerificationSnapshot(snapshot: {
+  visibleText: string;
+  html: string;
+}): HumanVerificationSignal | undefined {
+  for (const signal of VISIBLE_SIGNALS) {
+    const match = snapshot.visibleText.match(signal.pattern);
+    if (!match) continue;
+    return {
+      provider: signal.provider,
+      matched: match[0],
+      message: signal.label
+    };
+  }
+
+  for (const signal of MARKUP_SIGNALS) {
+    const match = snapshot.html.match(signal.pattern);
     if (!match) continue;
     return {
       provider: signal.provider,
@@ -65,6 +94,15 @@ export function detectHumanVerificationText(value: string): HumanVerificationSig
   }
 
   return undefined;
+}
+
+function stripNonVisibleText(value: string): string {
+  return value
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export function createHumanVerificationIssue(options: {

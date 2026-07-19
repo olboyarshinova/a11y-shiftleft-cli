@@ -16,6 +16,13 @@ test("detectHumanVerificationText detects common challenge pages", () => {
   assert.equal(detectHumanVerificationText("Welcome to the product page"), undefined);
 });
 
+test("detectHumanVerificationText ignores captcha strings in non-visible scripts", () => {
+  assert.equal(
+    detectHumanVerificationText("<main>Welcome to the product page</main><script>const captchaMessage = 'captcha';</script>"),
+    undefined
+  );
+});
+
 test("createHumanVerificationIssue returns a clear adapter finding", () => {
   const signal = detectHumanVerificationText("<div class=\"g-recaptcha\">I'm not a robot</div>");
   assert.ok(signal);
@@ -42,7 +49,8 @@ test("waitForHumanVerificationToClear waits until the challenge disappears", asy
   const page = {
     async evaluate() {
       calls += 1;
-      return calls < 3 ? "Verify you are human" : "Welcome";
+      const visibleText = calls < 3 ? "Verify you are human" : "Welcome";
+      return { visibleText, html: visibleText };
     }
   };
 
