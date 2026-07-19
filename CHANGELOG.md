@@ -54,6 +54,9 @@
 - Added compact rule-level history deltas to `agent --history`, highlighting
   the top increased and improved accessibility rule groups without opening the
   dashboard.
+- Added compact page-level history deltas to `agent --history` when report
+  page summaries are available, so teams can spot which routes improved or
+  regressed from the first local history run.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

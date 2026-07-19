@@ -44,7 +44,9 @@ test("findPreviousReportInHistory selects the latest older report", async () => 
       warningDeltaFromFirst: -3,
       infoDeltaFromFirst: 0,
       ruleRegressions: [],
-      ruleImprovements: []
+      ruleImprovements: [],
+      pageRegressions: [],
+      pageImprovements: []
     }
   );
 });
@@ -91,6 +93,46 @@ test("summarizeAgentHistory highlights compact rule changes from the first run",
   ]);
 });
 
+test("summarizeAgentHistory highlights compact page changes from the first run", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-agent-history-pages-"));
+  await writeReport(root, "run-1", "2026-07-01T00:00:00.000Z", 7, [], [
+    { url: "https://example.com/", total: 4 },
+    { url: "https://example.com/account", total: 3 }
+  ]);
+  const currentPath = await writeReport(root, "run-2", "2026-07-02T00:00:00.000Z", 8, [], [
+    { url: "https://example.com/", total: 2 },
+    { url: "https://example.com/account", total: 5 },
+    { url: "https://example.com/checkout", total: 1 }
+  ]);
+
+  const summary = await summarizeAgentHistory({
+    currentReportPath: currentPath,
+    currentReport: report("2026-07-02T00:00:00.000Z", 8),
+    historyRoot: root
+  });
+
+  assert.deepEqual(summary?.pageRegressions, [
+    {
+      url: "https://example.com/account",
+      first: 3,
+      current: 5,
+      change: 2
+    },
+    {
+      url: "https://example.com/checkout",
+      first: 0,
+      current: 1,
+      change: 1
+    }
+  ]);
+  assert.deepEqual(summary?.pageImprovements, [{
+    url: "https://example.com/",
+    first: 4,
+    current: 2,
+    change: -2
+  }]);
+});
+
 test("findPreviousReportInHistory ignores the current file and invalid report JSON", async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-agent-history-invalid-"));
   const currentPath = await writeReport(root, "current", "2026-07-03T00:00:00.000Z", 1);
@@ -112,23 +154,36 @@ async function writeReport(
   dirName: string,
   generatedAt: string,
   total: number,
-  issues: DedupedIssue[] = []
+  issues: DedupedIssue[] = [],
+  pages: Array<{ url: string; total: number }> = []
 ): Promise<string> {
   const dir = path.join(root, dirName);
   const reportPath = path.join(dir, "a11y-report.json");
   await fs.mkdir(dir);
-  await fs.writeFile(reportPath, JSON.stringify(report(generatedAt, total, issues)));
+  await fs.writeFile(reportPath, JSON.stringify(report(generatedAt, total, issues, pages)));
   return reportPath;
 }
 
-function report(generatedAt: string, total: number, issues: DedupedIssue[] = []): A11yReport {
+function report(
+  generatedAt: string,
+  total: number,
+  issues: DedupedIssue[] = [],
+  pages: Array<{ url: string; total: number }> = []
+): A11yReport {
   return {
     generatedAt,
     summary: {
       total,
       critical: 0,
       warning: total,
-      info: 0
+      info: 0,
+      byPage: pages.map((page) => ({
+        ...page,
+        critical: 0,
+        warning: page.total,
+        info: 0,
+        severityScore: page.total
+      }))
     },
     issues
   } as A11yReport;

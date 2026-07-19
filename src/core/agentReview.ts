@@ -91,6 +91,7 @@ export function formatAgentReview(review: AgentReview): string {
   if (review.history) {
     lines.push(formatHistorySummary(review.history));
     lines.push(...formatHistoryRuleChanges(review.history));
+    lines.push(...formatHistoryPageChanges(review.history));
   }
 
   if (review.focus.length > 0) {
@@ -131,6 +132,23 @@ function formatHistoryRuleChanges(history: AgentHistorySummary): string[] {
 
 function formatRuleChange(change: AgentHistorySummary["ruleRegressions"][number]): string {
   return `${change.ruleId} ${formatSignedNumber(change.change)} (${change.first} -> ${change.current})`;
+}
+
+function formatHistoryPageChanges(history: AgentHistorySummary): string[] {
+  const lines: string[] = [];
+  if (history.pageRegressions.length > 0) {
+    lines.push(`Pages increased: ${history.pageRegressions.map(formatPageChange).join("; ")}`);
+  }
+
+  if (history.pageImprovements.length > 0) {
+    lines.push(`Pages improved: ${history.pageImprovements.map(formatPageChange).join("; ")}`);
+  }
+
+  return lines;
+}
+
+function formatPageChange(change: AgentHistorySummary["pageRegressions"][number]): string {
+  return `${compactUrl(change.url)} ${formatSignedNumber(change.change)} (${change.first} -> ${change.current})`;
 }
 
 function summarizeAgentChanges(previousReport: A11yReport | undefined, currentReport: A11yReport): AgentReviewChangeSummary {
@@ -211,6 +229,15 @@ function visualReportPathFor(reportPath: string): string {
 
 function formatSignedNumber(value: number): string {
   return value > 0 ? `+${value}` : String(value);
+}
+
+function compactUrl(value: string): string {
+  try {
+    const url = new URL(value);
+    return `${url.pathname || "/"}${url.search}`;
+  } catch {
+    return value.length > 64 ? `${value.slice(0, 61)}...` : value;
+  }
 }
 
 function formatFocusIssue(issue: DedupedIssue, index: number): string {
