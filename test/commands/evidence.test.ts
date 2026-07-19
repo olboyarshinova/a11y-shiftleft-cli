@@ -60,3 +60,47 @@ test("evidence export writes JSONL records from an accessibility report", async 
   assert.equal(lines.length, 1);
   assert.equal(JSON.parse(lines[0]).ruleId, "button-name");
 });
+
+test("evidence export writes JSON-LD evidence from an accessibility report", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-evidence-export-jsonld-"));
+  const reportPath = path.join(root, "a11y-report.json");
+  const outputPath = path.join(root, "evidence.jsonld");
+  await fs.writeFile(reportPath, JSON.stringify({
+    generatedAt: "2026-07-13T00:00:00.000Z",
+    summary: {},
+    issues: [{
+      source: "axe",
+      framework: "react",
+      ruleId: "button-name",
+      wcag: ["4.1.2"],
+      wcagCriteria: [],
+      tags: [],
+      severity: "critical",
+      confidence: "high",
+      confidenceScore: 95,
+      confidenceReason: "Rendered DOM evidence.",
+      findingType: "wcag",
+      category: "semantics",
+      message: "Buttons must have discernible text",
+      fingerprint: "button-name::test",
+      duplicateCount: 1
+    }]
+  }));
+
+  await createProgram().parseAsync([
+    "node",
+    "a11y-shiftleft",
+    "evidence",
+    "export",
+    "--report",
+    reportPath,
+    "--out",
+    outputPath,
+    "--format",
+    "jsonld"
+  ]);
+
+  const linkedData = JSON.parse(await fs.readFile(outputPath, "utf8"));
+  assert.equal(linkedData["@type"], "schema:Dataset");
+  assert.equal(linkedData["earl:assertions"][0]["earl:test"]["schema:identifier"], "button-name");
+});

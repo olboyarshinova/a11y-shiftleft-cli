@@ -293,10 +293,10 @@ Section 508 certification.
   stable. Require explicit confirmation, unguessable URLs, expiration,
   revocation, and deletion.
 - Continue machine-readable evaluation evidence work. The current
-  `evidence export` command writes local JSON/JSONL finding evidence with WCAG,
-  ownership, confidence, and remediation fields. Next, evaluate whether an
-  EARL-inspired or JSON-LD profile is worth adding after manual-review statuses
-  are stable enough.
+  `evidence export` command writes local JSON, JSONL, and EARL-inspired JSON-LD
+  finding evidence with WCAG, ownership, confidence, and remediation fields.
+  Next, validate the JSON-LD shape with real downstream scripts before treating
+  it as stable API surface.
 
 ## Adoption And Documentation
 

@@ -84,6 +84,8 @@
   other external traffic during exploration.
 - Exposed `--safe-block-request` through `agent run` so the local assistant
   workflow keeps the same exploration safety controls as `audit`.
+- Added `evidence export --format jsonld` for local EARL-inspired linked-data
+  finding evidence alongside the existing JSON and JSONL exports.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

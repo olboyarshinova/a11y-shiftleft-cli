@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import type { A11yReport, DedupedIssue, WcagCriterion } from "../types.js";
 
-export type EvidenceExportFormat = "json" | "jsonl";
+export type EvidenceExportFormat = "json" | "jsonl" | "jsonld";
 
 export interface EvidenceExportRecord {
   fingerprint: string;
@@ -96,7 +96,73 @@ export function serializeEvidenceExport(evidence: EvidenceExport, format: Eviden
     })).join("\n")}\n`;
   }
 
+  if (format === "jsonld") {
+    return `${JSON.stringify(toJsonLdEvidenceExport(evidence), null, 2)}\n`;
+  }
+
   return `${JSON.stringify(evidence, null, 2)}\n`;
+}
+
+function toJsonLdEvidenceExport(evidence: EvidenceExport) {
+  return {
+    "@context": {
+      "schema": "https://schema.org/",
+      "earl": "https://www.w3.org/ns/earl#",
+      "wcag": "https://www.w3.org/WAI/WCAG22/Understanding/",
+      "a11y": "https://github.com/olboyarshinova/a11y-shiftleft-cli#"
+    },
+    "@type": "schema:Dataset",
+    "schema:name": "a11y-shiftleft accessibility evidence export",
+    "schema:dateCreated": evidence.generatedAt,
+    "a11y:sourceReportGeneratedAt": evidence.sourceReportGeneratedAt,
+    "a11y:localOnly": evidence.localOnly,
+    "a11y:summary": evidence.summary,
+    "earl:assertions": evidence.records.map((record) => ({
+      "@type": "earl:Assertion",
+      "a11y:fingerprint": record.fingerprint,
+      "earl:assertedBy": {
+        "@type": "earl:Software",
+        "schema:name": "a11y-shiftleft-cli"
+      },
+      "earl:subject": {
+        "@type": "schema:WebPageElement",
+        "schema:url": record.url,
+        "a11y:stateId": record.stateId,
+        "a11y:selector": record.selector,
+        "a11y:file": record.file,
+        "a11y:line": record.line,
+        "a11y:column": record.column
+      },
+      "earl:test": {
+        "@type": "earl:TestCase",
+        "schema:identifier": record.ruleId,
+        "schema:name": record.ruleId,
+        "a11y:wcag": record.wcag.map((criterion) => ({
+          "@type": "a11y:WcagCriterion",
+          "schema:identifier": criterion.id,
+          "schema:name": criterion.title,
+          "a11y:level": criterion.level,
+          "a11y:principle": criterion.principle,
+          "schema:url": criterion.url
+        }))
+      },
+      "earl:result": {
+        "@type": "earl:TestResult",
+        "earl:outcome": jsonLdOutcome(record),
+        "a11y:severity": record.severity,
+        "a11y:findingType": record.findingType,
+        "a11y:confidence": record.confidence,
+        "schema:description": record.message
+      },
+      "a11y:ownership": record.ownership,
+      "a11y:remediation": record.remediation
+    }))
+  };
+}
+
+function jsonLdOutcome(record: EvidenceExportRecord): string {
+  if (record.findingType === "needs-review") return "earl:cantTell";
+  return "earl:failed";
 }
 
 function toEvidenceRecord(issue: DedupedIssue): EvidenceExportRecord {

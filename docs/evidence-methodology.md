@@ -19,10 +19,25 @@ npx a11y-shiftleft-cli evidence export \
   --format jsonl
 ```
 
+Use `jsonld` when another tool needs linked-data-style evidence inspired by
+EARL terms:
+
+```bash
+npx a11y-shiftleft-cli evidence export \
+  --report reports/a11y-report.json \
+  --out reports/a11y-evidence.jsonld \
+  --format jsonld
+```
+
 The export stays local and contains structured finding evidence: fingerprint,
 rule, severity, WCAG metadata, URL, selector or source location, ownership,
 confidence, and remediation guidance. It does not include screenshots or
 rendered HTML.
+
+The JSON-LD export is intentionally described as EARL-inspired evidence, not a
+formal conformance certificate. `needs-review` findings are represented as
+`earl:cantTell`; automated findings are represented as `earl:failed` evidence
+for triage and remediation.
 
 ## Finding Types
 

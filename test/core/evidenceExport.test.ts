@@ -21,16 +21,22 @@ test("createEvidenceExport normalizes findings into portable evidence records", 
   assert.deepEqual(evidence.records[0]?.remediation?.howToFix, ["Add accessible text."]);
 });
 
-test("serializeEvidenceExport supports JSON and JSONL", () => {
+test("serializeEvidenceExport supports JSON, JSONL, and JSON-LD", () => {
   const evidence = createEvidenceExport(report(), "2026-07-14T00:00:00.000Z");
   const json = serializeEvidenceExport(evidence, "json");
   const jsonl = serializeEvidenceExport(evidence, "jsonl");
+  const jsonld = serializeEvidenceExport(evidence, "jsonld");
 
   assert.equal(JSON.parse(json).records.length, 2);
   const lines = jsonl.trim().split("\n");
   assert.equal(lines.length, 2);
   assert.equal(JSON.parse(lines[0]).generatedAt, "2026-07-14T00:00:00.000Z");
   assert.equal(JSON.parse(lines[0]).ruleId, "button-name");
+  const linkedData = JSON.parse(jsonld);
+  assert.equal(linkedData["@type"], "schema:Dataset");
+  assert.equal(linkedData["earl:assertions"].length, 2);
+  assert.equal(linkedData["earl:assertions"][0]["earl:result"]["earl:outcome"], "earl:failed");
+  assert.equal(linkedData["earl:assertions"][1]["earl:result"]["earl:outcome"], "earl:cantTell");
 });
 
 function report(): A11yReport {

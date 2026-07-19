@@ -50,7 +50,7 @@ export function registerEvidenceCommand(program: Command): void {
     .description("Export a machine-readable finding evidence dataset from a11y-report.json.")
     .option("--report <file>", "Path to a11y-report.json", "reports/a11y-report.json")
     .option("--out <file>", "Write evidence dataset to a file instead of stdout")
-    .option("--format <format>", "Output format: json or jsonl", "json")
+    .option("--format <format>", "Output format: json, jsonl, or jsonld", "json")
     .action(async (options: EvidenceExportOptions) => {
       const format = toEvidenceExportFormat(options.format);
       const reportPath = path.resolve(options.report || "reports/a11y-report.json");
@@ -73,5 +73,6 @@ export function registerEvidenceCommand(program: Command): void {
 function toEvidenceExportFormat(value: string | undefined): EvidenceExportFormat {
   if (value === "json" || value === undefined) return "json";
   if (value === "jsonl") return "jsonl";
-  throw new Error("Unsupported evidence export format. Use json or jsonl.");
+  if (value === "jsonld") return "jsonld";
+  throw new Error("Unsupported evidence export format. Use json, jsonl, or jsonld.");
 }
