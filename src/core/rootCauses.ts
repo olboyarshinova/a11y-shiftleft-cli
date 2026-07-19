@@ -23,7 +23,7 @@ export function summarizeRootCauses(issues: DedupedIssue[]): RootCauseGroup[] {
       representativeFile: issue.file
     };
 
-    group.occurrenceCount += 1 + issue.duplicateCount;
+    group.occurrenceCount += 1 + (issue.duplicateCount || 0);
     group.severity = higherSeverity(group.severity, issue.severity);
     if (issue.url) group.affectedPages.add(issue.url);
     if (issue.stateId) group.affectedStates.add(issue.stateId);

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Added top-of-report human-verification guidance with a recommended rerun
+  command when CAPTCHA, bot protection, or verify-you-are-human challenges block
+  exploration.
+- Fixed root-cause occurrence counts for findings that do not include duplicate
+  metadata.
 - Added a guided `setup` command that creates the starter config, report/auth
   `.gitignore` entries, and report-only GitHub Actions workflow in one pass.
 - Extended `setup` to add `a11y:audit` and `a11y:check` npm scripts when a

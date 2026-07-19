@@ -513,6 +513,7 @@ export function toMarkdown(report: A11yReport): string {
 
   return `## Accessibility Shift-Left Report
 
+${formatHumanVerificationWarning(report)}
 | Metric | Value |
 |---|---:|
 | Total | ${report.summary.total} |
@@ -574,6 +575,23 @@ ${topIssues || "No accessibility findings detected."}
 ${topIssueGroups.length > 10 ? `Showing 10 of ${topIssueGroups.length} finding groups. See \`a11y-report.json\` for every finding and \`a11y-report.html\` for the visual report. Add CSV export only when spreadsheet triage is needed.` : ""}
 
 ${formatDisclaimer(report.summary.standard)}
+`;
+}
+
+function formatHumanVerificationWarning(report: A11yReport): string {
+  const blockerCount = report.summary.blockedByHumanVerification || 0;
+  if (blockerCount === 0) return "";
+
+  const url = report.summary.urls[0] || "<app-url>";
+  const command = `npx a11y-shiftleft-cli audit --url ${shellQuoteMarkdown(url)} --out reports --pause-on-human-verification --open`;
+
+  return `> [!WARNING]
+> Scan blocked by human verification. The site may show CAPTCHA, bot protection, or a verify-you-are-human challenge, so automated exploration can be incomplete.
+>
+> Recommended rerun command:
+>
+> \`${command}\`
+
 `;
 }
 
@@ -1064,6 +1082,12 @@ ${items}`;
 
 function markdownCell(value: string): string {
   return value.replace(/\|/g, "\\|").replace(/[\r\n]+/g, " ").trim();
+}
+
+function shellQuoteMarkdown(value: string): string {
+  return /^[A-Za-z0-9_./:@-]+$/u.test(value)
+    ? value
+    : `'${value.replaceAll("'", "'\\''")}'`;
 }
 
 function markdownInline(value: string): string {

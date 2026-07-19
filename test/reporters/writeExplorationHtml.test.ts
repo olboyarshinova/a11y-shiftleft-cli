@@ -1160,6 +1160,10 @@ test("renderExplorationHtml explains human verification blockers", () => {
     fingerprint: "adapter/human-verification::state-1"
   }]);
 
+  assert.match(html, /class="panel scan-blocker"/);
+  assert.match(html, /Recommended rerun command:/);
+  assert.match(html, /npx a11y-shiftleft-cli audit --url 'http:\/\/localhost:3000' --out reports --pause-on-human-verification --open/);
+  assert.ok(html.indexOf("Scan blocked by human verification") < html.indexOf('aria-label="Exploration summary"'));
   assert.match(html, /class="finding-context finding-context-blocked"/);
   assert.match(html, /Scan blocked by human verification/);
   assert.match(html, /CAPTCHA, bot protection, or a verify-you-are-human challenge/);

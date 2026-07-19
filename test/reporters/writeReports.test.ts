@@ -442,6 +442,39 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /react example: `<button type="button" aria-label="Open menu">/);
 });
 
+test("writeReports puts human verification guidance at the top of Markdown reports", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-human-verification-"));
+
+  await writeReports(
+    outputDir,
+    [{
+      source: "axe",
+      severity: "warning",
+      ruleId: "adapter/human-verification",
+      wcag: [],
+      wcagCriteria: [],
+      selector: "body",
+      url: "https://commission.europa.eu/index_en",
+      message: "Human verification challenge detected"
+    }],
+    {
+      framework: "unknown",
+      urls: ["https://commission.europa.eu/index_en"],
+      rawCount: 1,
+      uniqueCount: 1,
+      duplicateCount: 0,
+      scanDurationMs: 100
+    }
+  );
+
+  const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+
+  assert.match(markdown, /> \[!WARNING\]/);
+  assert.match(markdown, /Scan blocked by human verification/);
+  assert.match(markdown, /--pause-on-human-verification --open/);
+  assert.ok(markdown.indexOf("Scan blocked by human verification") < markdown.indexOf("| Metric | Value |"));
+});
+
 test("writeReports hides auto-detected framework examples from dynamic findings", async () => {
   const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-generic-example-"));
 

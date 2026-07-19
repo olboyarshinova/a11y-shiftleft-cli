@@ -194,6 +194,28 @@ export function renderExplorationHtml(
       border-left: 4px solid var(--warning-marker);
     }
 
+    .scan-blocker {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-left: 4px solid var(--warning-marker);
+      grid-column: 1 / -1;
+    }
+
+    .scan-blocker h2 {
+      color: #9a3412;
+    }
+
+    .scan-blocker code {
+      background: #ffffff;
+      border: 1px solid #fdba74;
+      border-radius: 6px;
+      display: block;
+      margin-top: 8px;
+      overflow-x: auto;
+      padding: 8px;
+      white-space: pre-wrap;
+    }
+
     .safe-guardrails-grid {
       display: grid;
       gap: 10px;
@@ -1989,6 +2011,8 @@ export function renderExplorationHtml(
     </div>
   </header>
   <main>
+    ${renderHumanVerificationBanner(reportIssues, graph)}
+
     <section class="summary" aria-label="Exploration summary">
       ${metric("Exploration depth", formatDepthMetric(graph.summary.maxDepth))}
       ${metric("UI states explored", graph.summary.uiStatesVisited ?? graph.summary.statesVisited)}
@@ -3955,6 +3979,28 @@ function renderHumanVerificationContext(issue: DedupedIssue): string {
     <span>The page appears to be replaced by CAPTCHA, bot protection, or a verify-you-are-human challenge, so automated accessibility results for this URL are incomplete.</span>
     <span>Use a staging, preview, or allowlisted URL for automation, or record manual accessibility evidence for this flow.</span>
   </aside>`;
+}
+
+function renderHumanVerificationBanner(issues: DedupedIssue[], graph: ExplorationGraph): string {
+  const count = issues.filter((issue) => issue.ruleId === "adapter/human-verification").length;
+  if (count === 0) return "";
+
+  const command = [
+    "npx a11y-shiftleft-cli audit",
+    "--url",
+    shellQuote(graph.startUrl),
+    "--out",
+    "reports",
+    "--pause-on-human-verification",
+    "--open"
+  ].join(" ");
+
+  return `<section class="panel scan-blocker" aria-label="Scan blocked by human verification">
+    <h2>Scan blocked by human verification</h2>
+    <p>The site appears to show CAPTCHA, bot protection, or a verify-you-are-human challenge. Automated exploration may be incomplete: only ${count} blocker finding${count === 1 ? "" : "s"} ${count === 1 ? "was" : "were"} recorded.</p>
+    <p>Recommended rerun command:</p>
+    <code>${escapeHtml(command)}</code>
+  </section>`;
 }
 
 function renderCopyIssueAction(ruleId: string, issues: DedupedIssue[]): string {
