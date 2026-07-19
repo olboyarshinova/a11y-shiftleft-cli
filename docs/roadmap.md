@@ -272,7 +272,8 @@ Section 508 certification.
   report artifacts, and optionally posts a pull request summary.
 - Extend the `pr-comment` command with optional preview-URL scanning and
   severity labels. The current command posts or updates an existing GitHub PR
-  comment from a local report and can include read-only suggested PR labels.
+  comment from a local report and can include read-only suggested PR labels for
+  severity, manual review, third-party embeds, and human-verification blockers.
   Keep actual GitHub label mutation behind a future explicit opt-in, if added.
 - Extend the post-1.0 GitHub Action wrapper with direct artifact links, preview
   URL inputs, existing-comment updates, and optional severity labels.

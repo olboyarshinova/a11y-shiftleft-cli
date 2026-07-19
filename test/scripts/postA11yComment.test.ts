@@ -57,7 +57,11 @@ test("buildCommentBody can append suggested PR labels from JSON summary", async 
         framework: "react",
         byFindingType: {
           "needs-review": 1
-        }
+        },
+        byOwnership: {
+          "third-party-embed": 1
+        },
+        blockedByHumanVerification: 1
       },
       issues: []
     })
@@ -69,6 +73,8 @@ test("buildCommentBody can append suggested PR labels from JSON summary", async 
   assert.match(body, /Suggested PR Labels/);
   assert.match(body, /`a11y-critical` - 2 critical findings/);
   assert.match(body, /`a11y-needs-review` - manual verification recommended/);
+  assert.match(body, /`a11y-third-party` - 1 third-party embedded content finding/);
+  assert.match(body, /`a11y-human-verification` - 1 state blocked by human verification/);
 });
 
 test("buildCommentBody falls back to JSON report", async () => {

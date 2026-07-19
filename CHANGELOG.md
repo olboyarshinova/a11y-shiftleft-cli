@@ -86,6 +86,9 @@
   workflow keeps the same exploration safety controls as `audit`.
 - Added `evidence export --format jsonld` for local EARL-inspired linked-data
   finding evidence alongside the existing JSON and JSONL exports.
+- Expanded read-only PR label suggestions with `a11y-third-party` and
+  `a11y-human-verification` when reports include embedded-content ownership or
+  CAPTCHA/human-verification blockers.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

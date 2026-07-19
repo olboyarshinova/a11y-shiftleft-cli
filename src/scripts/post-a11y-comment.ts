@@ -208,6 +208,21 @@ export function suggestPrLabels(report: A11yReport | null): PrLabelSuggestion[] 
     });
   }
 
+  const thirdPartyEmbedded = summary.byOwnership?.["third-party-embed"] || 0;
+  if (thirdPartyEmbedded > 0) {
+    labels.push({
+      label: "a11y-third-party",
+      reason: `${thirdPartyEmbedded} third-party embedded content finding${thirdPartyEmbedded === 1 ? "" : "s"}`
+    });
+  }
+
+  if ((summary.blockedByHumanVerification || 0) > 0) {
+    labels.push({
+      label: "a11y-human-verification",
+      reason: `${summary.blockedByHumanVerification} state${summary.blockedByHumanVerification === 1 ? "" : "s"} blocked by human verification`
+    });
+  }
+
   return labels;
 }
 
