@@ -14,6 +14,8 @@
   `generate-ci --provider circleci`.
 - Added portable shell CI script generation through `setup --ci shell` and
   `generate-ci --provider shell` for Jenkins and other generic runners.
+- Improved `generate-ci --profile split` next steps so generated PR and
+  full-site workflows have clearer rollout guidance.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

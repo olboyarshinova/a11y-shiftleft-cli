@@ -137,6 +137,21 @@ test("formatCiGenerationNextSteps gives concrete review and rollout guidance", (
   assert.match(steps, /--gate new-critical-only/);
 });
 
+test("formatCiGenerationNextSteps explains split CI profiles", () => {
+  const steps = formatCiGenerationNextSteps({
+    provider: "github",
+    profile: "split",
+    createdFiles: [".github/workflows/a11y-pr.yml", ".github/workflows/a11y-full.yml"],
+    gate: "report-only",
+    failOn: "critical"
+  }).join("\n");
+
+  assert.match(steps, /a11y-pr\.yml/);
+  assert.match(steps, /a11y-full\.yml/);
+  assert.match(steps, /fast PR workflow/);
+  assert.match(steps, /full-site workflow/);
+});
+
 test("formatCiGenerationNextSteps explains shell runner usage", () => {
   const steps = formatCiGenerationNextSteps({
     provider: "shell",

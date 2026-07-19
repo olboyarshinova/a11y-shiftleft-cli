@@ -566,6 +566,8 @@ export function formatCiGenerationNextSteps(options: {
 
   if (options.provider === "shell") {
     steps.push("Call the generated shell script from your CI job after installing dependencies.");
+  } else if (options.profile === "split") {
+    steps.push("Open a pull request to verify the fast PR workflow, then run the full-site workflow manually or on schedule while remediation is being tracked.");
   } else if (options.profile === "full") {
     steps.push("Run the workflow manually first, then keep the scheduled full-site scan report-only until the findings are understood.");
   } else {
