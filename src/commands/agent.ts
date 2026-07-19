@@ -4,6 +4,9 @@ import type { Command } from "commander";
 import { createAgentReview, formatAgentReview } from "../core/agentReview.js";
 import { findPreviousReportInHistory, summarizeAgentHistory } from "../core/agentHistory.js";
 import { readA11yReport } from "../core/evidenceExport.js";
+import { openReportFile } from "../core/openReport.js";
+import { writeExplorationHtml } from "../reporters/writeExplorationHtml.js";
+import type { A11yReport } from "../types.js";
 import { runAudit, type AuditOptions } from "./audit.js";
 
 interface AgentReviewOptions {
@@ -14,6 +17,13 @@ interface AgentReviewOptions {
   maxItems?: string;
   out?: string;
   json?: boolean;
+}
+
+interface AgentRefreshHtmlOptions {
+  report?: string;
+  out?: string;
+  fileName?: string;
+  open?: boolean;
 }
 
 interface AgentRunOptions extends AgentReviewOptions {
@@ -153,6 +163,97 @@ export function registerAgentCommand(program: Command): void {
 
       if (result.failed) process.exitCode = 1;
     });
+
+  agent
+    .command("refresh-html")
+    .description("Rebuild the visual HTML report from an existing a11y-report.json without rerunning the browser audit.")
+    .option("--report <file-or-dir>", "Source a11y-report.json file or report directory", "reports/a11y-report.json")
+    .option("--out <dir>", "Output directory; defaults to the source report directory")
+    .option("--file-name <name>", "HTML file name to write", "a11y-report.html")
+    .option("--open", "Open the refreshed visual HTML report")
+    .action(async (options: AgentRefreshHtmlOptions) => {
+      const reportPath = await resolveReportPath(options.report || "reports/a11y-report.json");
+      const report = await readA11yReport(reportPath);
+      const outputDir = path.resolve(options.out || path.dirname(reportPath));
+      const fileName = options.fileName || "a11y-report.html";
+
+      await refreshVisualHtmlReport({
+        report,
+        reportPath,
+        outputDir,
+        fileName
+      });
+
+      const htmlPath = path.join(outputDir, fileName);
+      console.log(`Refreshed visual HTML report: ${htmlPath}`);
+
+      if (options.open) {
+        try {
+          await openReportFile(htmlPath);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          console.warn(`Could not open the report automatically: ${message}`);
+          console.warn(`Open it manually: ${htmlPath}`);
+        }
+      }
+    });
+}
+
+async function refreshVisualHtmlReport(options: {
+  report: A11yReport;
+  reportPath: string;
+  outputDir: string;
+  fileName: string;
+}): Promise<void> {
+  if (!options.report.exploration) {
+    throw new Error("Cannot refresh visual HTML because this report does not include exploration evidence. Run audit or explore to create a visual report first.");
+  }
+
+  await copyReferencedVisualAssets(path.dirname(options.reportPath), options.outputDir, options.report);
+  await writeExplorationHtml(options.outputDir, options.report.exploration, options.report.issues, {
+    fileName: options.fileName,
+    title: "Accessibility Audit Report",
+    keyboard: options.report.keyboard,
+    manualChecklist: options.report.manualChecklist,
+    lighthouse: options.report.lighthouse,
+    ignore: options.report.summary.ignore,
+    retention: options.report.summary.retention
+  });
+}
+
+async function copyReferencedVisualAssets(sourceDir: string, outputDir: string, report: A11yReport): Promise<void> {
+  const from = path.resolve(sourceDir);
+  const to = path.resolve(outputDir);
+  if (from === to) return;
+
+  for (const relativeDir of referencedRelativeAssetDirs(report)) {
+    const sourceAssetDir = path.join(from, relativeDir);
+    const outputAssetDir = path.join(to, relativeDir);
+
+    try {
+      await fs.cp(sourceAssetDir, outputAssetDir, { recursive: true, force: true });
+    } catch (error) {
+      if (isNodeError(error) && error.code === "ENOENT") continue;
+      throw error;
+    }
+  }
+}
+
+function referencedRelativeAssetDirs(report: A11yReport): string[] {
+  const paths = [
+    ...(report.exploration?.states || []).flatMap((state) => [
+      state.screenshot,
+      ...(state.screenshotEvidence || []).map((evidence) => evidence.path)
+    ]),
+    ...report.issues.map((issue) => issue.screenshot)
+  ].filter((value): value is string => Boolean(value));
+
+  const dirs = paths
+    .filter((value) => !path.isAbsolute(value))
+    .map((value) => path.dirname(value))
+    .filter((value) => value && value !== ".");
+
+  return [...new Set(dirs)].sort();
 }
 
 async function resolveAgentPreviousReportPath(options: {
@@ -256,4 +357,8 @@ function toPositiveInteger(value: string | undefined): number | undefined {
     throw new Error("Maximum item count must be a positive integer.");
   }
   return parsed;
+}
+
+function isNodeError(error: unknown): error is NodeJS.ErrnoException {
+  return error instanceof Error && "code" in error;
 }

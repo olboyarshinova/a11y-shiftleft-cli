@@ -39,6 +39,19 @@ test("agent run exposes audit plus review workflow options", () => {
   assert.match(runCommand.description(), /Run an audit/);
 });
 
+test("agent refresh-html exposes visual rebuild options", () => {
+  const agent = createProgram().commands.find((item) => item.name() === "agent");
+  const refreshCommand = agent?.commands.find((item) => item.name() === "refresh-html");
+
+  assert.ok(refreshCommand);
+  const flags = refreshCommand.options.map((option) => option.long);
+  assert.equal(flags.includes("--report"), true);
+  assert.equal(flags.includes("--out"), true);
+  assert.equal(flags.includes("--file-name"), true);
+  assert.equal(flags.includes("--open"), true);
+  assert.match(refreshCommand.description(), /Rebuild the visual HTML report/);
+});
+
 test("agent review can compare with the previous report from history", async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-agent-review-history-"));
   const historyDir = path.join(root, "history");
@@ -111,6 +124,59 @@ test("agent review writes a deterministic progress summary", async () => {
   assert.match(output, /Findings: total 2 \| critical 1 \| warning 1 \| info 0/);
   assert.match(output, /Change: fixed 1, new 1, remaining 1/);
   assert.match(output, /image-alt/);
+});
+
+test("agent refresh-html rebuilds visual report from existing JSON and copies screenshots", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-agent-refresh-html-"));
+  const sourceDir = path.join(root, "source");
+  const outputDir = path.join(root, "output");
+  await fs.mkdir(path.join(sourceDir, "screenshots"), { recursive: true });
+  await fs.writeFile(path.join(sourceDir, "screenshots", "state-1.png"), "image-data");
+  await fs.writeFile(path.join(sourceDir, "a11y-report.json"), JSON.stringify({
+    ...report([issue("finding", "button-name", "critical")]),
+    exploration: {
+      generatedAt: "2026-07-19T00:00:00.000Z",
+      startUrl: "http://localhost:3000",
+      states: [{
+        id: "state-1",
+        url: "http://localhost:3000/",
+        title: "Demo",
+        depth: 0,
+        fingerprint: "state-1",
+        actionLabel: "Initial page",
+        screenshot: "screenshots/state-1.png",
+        issueCount: 1,
+        actionCount: 0
+      }],
+      edges: [],
+      skippedActions: [],
+      summary: {
+        statesVisited: 1,
+        actionsTried: 0,
+        skippedActions: 0,
+        screenshots: 1,
+        duplicateScreenshots: 0,
+        maxDepth: 1,
+        maxStates: 1
+      }
+    }
+  }));
+
+  await createProgram().parseAsync([
+    "node",
+    "a11y-shiftleft",
+    "agent",
+    "refresh-html",
+    "--report",
+    sourceDir,
+    "--out",
+    outputDir
+  ]);
+
+  const html = await fs.readFile(path.join(outputDir, "a11y-report.html"), "utf8");
+  assert.match(html, /Accessibility Audit Report/);
+  assert.match(html, /state-1/);
+  assert.equal(await fs.readFile(path.join(outputDir, "screenshots", "state-1.png"), "utf8"), "image-data");
 });
 
 function report(issues: DedupedIssue[]) {

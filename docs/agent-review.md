@@ -79,6 +79,17 @@ npx a11y-shiftleft-cli agent review \
   --out reports/agent-review.md
 ```
 
+Refresh the visual HTML report from an existing JSON report:
+
+```bash
+npx a11y-shiftleft-cli agent refresh-html --report reports --open
+```
+
+Use this when `a11y-report.json` already exists and you want to rebuild
+`a11y-report.html` after updating the CLI, changing the report template, or
+restoring a deleted HTML file. The command does not rerun Playwright or
+Lighthouse.
+
 Use JSON when another local script needs the summary:
 
 ```bash

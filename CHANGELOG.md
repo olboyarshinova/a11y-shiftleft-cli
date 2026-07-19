@@ -63,6 +63,9 @@
 - Improved `agent` next-step guidance for report-history workflows so runs
   started with `--history` suggest continuing local history instead of switching
   back to manual `--previous` comparisons.
+- Added `agent refresh-html` to rebuild the visual `a11y-report.html` from an
+  existing `a11y-report.json` without rerunning browser automation, including
+  copying referenced screenshot directories when writing to a new output folder.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,
