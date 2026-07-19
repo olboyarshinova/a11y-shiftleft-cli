@@ -57,7 +57,8 @@ test("formatAgentReview renders concise next-step guidance", () => {
   assert.match(text, /Fix first:/);
   assert.match(text, /button-name/);
   assert.match(text, /Suggested next commands:/);
-  assert.match(text, /ticket export/);
+  assert.match(text, /ticket export --report reports\/a11y-report\.json/);
+  assert.match(text, /agent refresh-html --report reports --share-out a11y-share/);
 });
 
 test("createAgentReview recommends focused follow-up from report evidence", () => {
@@ -86,6 +87,8 @@ test("createAgentReview recommends continuing history workflow when available", 
   });
 
   assert.equal(review.nextCommands.some((command) => /--history reports\/history/.test(command)), true);
+  assert.equal(review.nextCommands.some((command) => /ticket export --report reports\/history\/run-2\/a11y-report\.json/.test(command)), true);
+  assert.equal(review.nextCommands.some((command) => /agent refresh-html --report reports\/history\/run-2/.test(command)), true);
   assert.equal(review.nextCommands.some((command) => /--previous <previous-report-dir>/.test(command)), false);
 });
 

@@ -69,6 +69,8 @@
 - Extended `agent refresh-html` with `--share-out` and `--share-include-html`
   so teams can refresh the visual report and create a sanitized local share
   package in one command.
+- Updated `agent review` follow-up guidance to use the current report directory
+  for ticket export and refreshed share-package commands.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

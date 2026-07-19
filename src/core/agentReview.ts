@@ -79,7 +79,7 @@ export function createAgentReview(options: AgentReviewOptions): AgentReview {
     changes,
     riskFocus: createRiskFocus(options.report, changes),
     focus,
-    nextCommands: recommendAgentNextCommands(options.report, Boolean(options.previousReport), options.historyRoot)
+    nextCommands: recommendAgentNextCommands(options.report, options.reportPath, Boolean(options.previousReport), options.historyRoot)
   };
 }
 
@@ -276,8 +276,15 @@ function summarizeAgentChanges(previousReport: A11yReport | undefined, currentRe
   };
 }
 
-function recommendAgentNextCommands(report: A11yReport, hasPreviousReport: boolean, historyRoot: string | undefined): string[] {
+function recommendAgentNextCommands(
+  report: A11yReport,
+  reportPath: string,
+  hasPreviousReport: boolean,
+  historyRoot: string | undefined
+): string[] {
   const commands: string[] = [];
+  const reportDir = reportDirectoryForCommand(reportPath);
+  const reportJson = `${reportDir}/a11y-report.json`;
   const hasCritical = report.summary.critical > 0;
   const hasWarnings = report.summary.warning > 0;
   const hasNeedsReview = report.issues.some((issue) => issue.findingType === "needs-review");
@@ -293,7 +300,8 @@ function recommendAgentNextCommands(report: A11yReport, hasPreviousReport: boole
     commands.push("Run a manual screen-reader and task review before treating the page as complete.");
   }
 
-  commands.push("Export grouped ticket drafts: npx a11y-shiftleft-cli ticket export --report reports/a11y-report.json --tracker github");
+  commands.push(`Export grouped ticket drafts: npx a11y-shiftleft-cli ticket export --report ${reportJson} --tracker github`);
+  commands.push(`Refresh and package a local share copy: npx a11y-shiftleft-cli agent refresh-html --report ${reportDir} --share-out a11y-share --share-include-html`);
 
   if (hasKeyboardFindings) {
     commands.push("Review the visual Keyboard Audit section; rerun with --activation if you need safe key-activation evidence.");
@@ -320,6 +328,15 @@ function visualReportPathFor(reportPath: string): string {
   return reportPath.endsWith("a11y-report.json")
     ? reportPath.replace(/a11y-report\.json$/u, "a11y-report.html")
     : "a11y-report.html";
+}
+
+function reportDirectoryForCommand(reportPath: string): string {
+  if (reportPath.endsWith("a11y-report.json")) {
+    const directory = reportPath.replace(/\/?a11y-report\.json$/u, "");
+    return directory || ".";
+  }
+
+  return reportPath.replace(/\/$/u, "") || ".";
 }
 
 function formatSignedNumber(value: number): string {
