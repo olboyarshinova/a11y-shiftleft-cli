@@ -258,6 +258,8 @@ test("runSetup can generate CI-safe scripted auth workflow steps", async () => {
   assert.match(workflow, /--auth-state \.a11y-auth\/state\.json/);
   assert.match(workflow, /A11Y_USERNAME: \$\{\{ secrets\.A11Y_USERNAME \}\}/);
   assert.match(result.nextSteps.join("\n"), /A11Y_USERNAME and A11Y_PASSWORD/);
+  assert.match(result.nextSteps.join("\n"), /least-privilege test account/);
+  assert.match(result.nextSteps.join("\n"), /temporary \.a11y-auth\/state\.json/);
 });
 
 test("runSetup can create a GitLab CI workflow", async () => {

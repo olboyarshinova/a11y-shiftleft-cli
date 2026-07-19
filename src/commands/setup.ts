@@ -209,7 +209,7 @@ function buildSetupNextSteps(options: SetupOptions, urls: string[], changedFiles
   }
 
   if (ciAuthFlow) {
-    steps.push(`Add CI secrets or variables named ${ciAuthFlow.usernameEnv} and ${ciAuthFlow.passwordEnv}; do not commit credentials or generated auth-state files.`);
+    steps.push(`Add CI secrets or protected variables named ${ciAuthFlow.usernameEnv} and ${ciAuthFlow.passwordEnv} for a least-privilege test account; CI will create a temporary .a11y-auth/state.json, so do not commit credentials or generated auth-state files.`);
   }
 
   const gitHookTool = toGitHookTool(options.gitHooks);
