@@ -41,6 +41,9 @@
   generated report when browser storage is available.
 - Improved `watch` feedback with changed-file group counts and conservative
   affected-route hints for common `pages`, `app`, and `routes` file layouts.
+- Added `agent review`, a local deterministic report assistant that summarizes
+  fix-first findings, compares against a previous report, and recommends the
+  next CLI step without using external services.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

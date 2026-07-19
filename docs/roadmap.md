@@ -193,10 +193,10 @@ Section 508 certification.
 - Continue hardening `watch` after the initial run-to-run deltas,
   changed-file grouping, and affected-route hints: next steps are visual report
   refresh support and more explicit changed-component to smoke-route guidance.
-- Add a local `agent` workflow after `watch` and retest are stable. Keep it
-  deterministic at first: run the audit, compare with the previous report,
-  summarize fixed/new/remaining findings, recommend the next CLI command, and
-  refresh the visual report.
+- Continue the local `agent` workflow after the initial deterministic
+  `agent review` command. Next steps: optionally run an audit before review,
+  compare with the previous report, and refresh the visual report in one local
+  workflow.
 - Evaluate a dedicated Jenkinsfile preset only if teams need more than the
   generated portable shell CI script. Keep any future preset focused on
   installing the package, starting the app, running `audit` or `check`, and

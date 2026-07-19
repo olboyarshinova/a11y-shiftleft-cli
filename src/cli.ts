@@ -1,5 +1,6 @@
 import { createRequire } from "node:module";
 import { Command } from "commander";
+import { registerAgentCommand } from "./commands/agent.js";
 import { registerAdapterCommand } from "./commands/adapter.js";
 import { registerAuthCommand } from "./commands/auth.js";
 import { registerAuditCommand } from "./commands/audit.js";
@@ -33,6 +34,7 @@ export function createProgram(): Command {
     .version(version);
 
   registerInitCommand(program);
+  registerAgentCommand(program);
   registerAuthCommand(program);
   registerAuditCommand(program);
   registerCheckCommand(program);
