@@ -5,6 +5,7 @@ export interface AgentReviewOptions {
   previousReport?: A11yReport;
   reportPath: string;
   previousReportPath?: string;
+  previousReportSource?: "explicit" | "history";
   maxItems?: number;
 }
 
@@ -24,6 +25,7 @@ export interface AgentReview {
   reportPath: string;
   visualReportPath: string;
   previousReportPath?: string;
+  previousReportSource?: "explicit" | "history";
   summary: {
     total: number;
     critical: number;
@@ -51,6 +53,7 @@ export function createAgentReview(options: AgentReviewOptions): AgentReview {
     reportPath: options.reportPath,
     visualReportPath: visualReportPathFor(options.reportPath),
     previousReportPath: options.previousReportPath,
+    previousReportSource: options.previousReportPath ? options.previousReportSource || "explicit" : undefined,
     summary: {
       total: options.report.summary.total,
       critical: options.report.summary.critical,
@@ -73,7 +76,7 @@ export function formatAgentReview(review: AgentReview): string {
 
   if (review.changes.enabled) {
     lines.push(
-      `Compared with: ${review.previousReportPath || "previous report"}`,
+      `Compared with${review.previousReportSource ? ` (${review.previousReportSource})` : ""}: ${review.previousReportPath || "previous report"}`,
       `Change: fixed ${review.changes.fixedIssues}, new ${review.changes.newIssues}, remaining ${review.changes.remainingIssues}`,
       `New by severity: critical ${review.changes.newCritical}, warning ${review.changes.newWarning}, info ${review.changes.newInfo}`
     );

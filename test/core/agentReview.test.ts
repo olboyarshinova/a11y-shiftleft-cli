@@ -22,6 +22,7 @@ test("createAgentReview summarizes current findings and previous progress", () =
     previousReport: previous,
     reportPath: "reports/current/a11y-report.json",
     previousReportPath: "reports/previous/a11y-report.json",
+    previousReportSource: "history",
     maxItems: 2
   });
 
@@ -32,6 +33,7 @@ test("createAgentReview summarizes current findings and previous progress", () =
     info: 1
   });
   assert.equal(review.visualReportPath, "reports/current/a11y-report.html");
+  assert.equal(review.previousReportSource, "history");
   assert.equal(review.changes.fixedIssues, 1);
   assert.equal(review.changes.newIssues, 2);
   assert.equal(review.changes.remainingIssues, 1);

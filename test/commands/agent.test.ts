@@ -70,7 +70,7 @@ test("agent review can compare with the previous report from history", async () 
   ]);
 
   const output = await fs.readFile(outputPath, "utf8");
-  assert.match(output, /Compared with:/);
+  assert.match(output, /Compared with \(history\):/);
   assert.match(output, /run-1\/a11y-report\.json/);
   assert.match(output, /Change: fixed 1, new 1, remaining 0/);
 });

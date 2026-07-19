@@ -71,6 +71,7 @@ export function registerAgentCommand(program: Command): void {
       const output = await createAgentReviewOutput({
         reportPath,
         previousReportPath,
+        previousReportSource: previousReportPath ? previousSourceFromOptions(options) : undefined,
         maxItems: options.maxItems,
         json: options.json
       });
@@ -132,6 +133,7 @@ export function registerAgentCommand(program: Command): void {
       const output = await createAgentReviewOutput({
         reportPath,
         previousReportPath,
+        previousReportSource: previousReportPath ? previousSourceFromOptions(options) : undefined,
         maxItems: options.maxItems,
         json: false
       });
@@ -170,6 +172,7 @@ async function resolveAgentPreviousReportPath(options: {
 async function createAgentReviewOutput(options: {
   reportPath: string;
   previousReportPath?: string;
+  previousReportSource?: "explicit" | "history";
   maxItems?: string;
   json?: boolean;
 }): Promise<string> {
@@ -180,12 +183,17 @@ async function createAgentReviewOutput(options: {
     previousReport,
     reportPath: options.reportPath,
     previousReportPath: options.previousReportPath,
+    previousReportSource: options.previousReportSource,
     maxItems: toPositiveInteger(options.maxItems)
   });
 
   return options.json
     ? `${JSON.stringify(review, null, 2)}\n`
     : formatAgentReview(review);
+}
+
+function previousSourceFromOptions(options: Pick<AgentReviewOptions, "previous" | "history">): "explicit" | "history" {
+  return options.previous ? "explicit" : "history";
 }
 
 function toAgentAuditOptions(options: AgentRunOptions): AuditOptions {
