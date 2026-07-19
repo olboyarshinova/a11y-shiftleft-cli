@@ -357,7 +357,13 @@ export function formatWatchRunSummary(options: {
     }
   }
 
-  const visualCommand = formatWatchVisualAuditCommand(routeHints.routes, options.urls, options.outputDir);
+  const visualCommand = formatWatchVisualAuditCommand(
+    routeHints.routes,
+    options.urls,
+    options.outputDir,
+    3,
+    routeHints.unmappedChangedFiles > 0
+  );
   if (visualCommand) {
     lines.push(`Visual report follow-up: ${visualCommand}`);
   }
@@ -377,9 +383,13 @@ export function formatWatchVisualAuditCommand(
   routeHints: string[],
   urls: string[] | undefined,
   outputDir: string,
-  limit = 3
+  limit = 3,
+  includeFallbackUrls = false
 ): string | undefined {
-  const targets = (routeHints.length > 0 ? routeHints : urls || [])
+  const targets = uniqueInOrder([
+    ...routeHints,
+    ...(includeFallbackUrls || routeHints.length === 0 ? urls || [] : [])
+  ])
     .map((value) => value.trim())
     .filter(Boolean)
     .slice(0, limit);
@@ -618,6 +628,10 @@ function formatRouteHint(routePath: string, urls: string[] | undefined): string 
 
 function uniqueSorted(values: string[]): string[] {
   return [...new Set(values)].sort();
+}
+
+function uniqueInOrder(values: string[]): string[] {
+  return [...new Set(values)];
 }
 
 function toPositiveInteger(value: string | undefined): number | undefined {

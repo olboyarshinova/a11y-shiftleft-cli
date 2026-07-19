@@ -192,9 +192,10 @@ Section 508 certification.
   without crowding the beginner path.
 - Continue hardening `watch` after the initial run-to-run deltas,
   changed-file grouping, affected-route hints, and visual audit follow-up
-  commands: next steps are validating changed-component to smoke-route guidance
-  in real projects and deciding whether an opt-in visual refresh loop is useful
-  without making every save too slow.
+  commands. Current follow-up commands include configured smoke URLs when
+  shared-component changes cannot be mapped to a single route. Next steps are
+  validating this guidance in real projects and deciding whether an opt-in
+  visual refresh loop is useful without making every save too slow.
 - Continue the local `agent` workflow after the initial deterministic
   `agent review`, `agent run`, local report-history comparison, and
   `agent refresh-html`. Current agent guidance can refresh visual reports and

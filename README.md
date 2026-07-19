@@ -176,10 +176,13 @@ that hook runner, `setup` prints the install command to enable it.
 
 This creates `.a11y-shiftleft.json`, adds `a11y:audit` and `a11y:check` npm
 scripts when `package.json` exists, updates `.gitignore`, and adds a CI workflow
-that installs the project, starts your app, runs accessibility checks, and keeps
-reports as CI artifacts. Shell setup creates `scripts/a11y-ci.sh`. GitHub
-workflows also post a pull request comment. The default quality gate is
-`report-only`, so teams can adopt it before failing builds on legacy issues.
+that installs the project, runs `npm run build --if-present`, starts your app,
+runs accessibility checks, and keeps reports as CI artifacts. Use
+`--build-command "<your command>"` for custom generated-code or build steps, or
+`--no-build` when CI should start the app without a separate build. Shell setup
+creates `scripts/a11y-ci.sh`. GitHub workflows also post a pull request comment.
+The default quality gate is `report-only`, so teams can adopt it before failing
+builds on legacy issues.
 
 After setup, local checks become:
 

@@ -97,7 +97,7 @@ test("formatWatchRunSummary renders concise developer feedback", () => {
   assert.match(output, /modified src\/pages\/account.tsx/);
   assert.match(output, /Shared\/component changes: 1 file without a direct route hint; visual follow-up will use configured --url smoke routes\./);
   assert.match(output, /Unmapped changed files: 1/);
-  assert.match(output, /Visual report follow-up: npx a11y-shiftleft-cli audit --url http:\/\/localhost:5173\/account --out reports\/watch-visual --open/);
+  assert.match(output, /Visual report follow-up: npx a11y-shiftleft-cli audit --url http:\/\/localhost:5173\/account --url http:\/\/localhost:5173 --out reports\/watch-visual --open/);
 });
 
 test("formatUnmappedWatchGuidance explains shared component smoke-route setup", () => {
@@ -116,6 +116,11 @@ test("formatWatchVisualAuditCommand prefers route hints and falls back to config
   assert.equal(
     formatWatchVisualAuditCommand([], ["https://example.com/base"], "reports/watch"),
     "npx a11y-shiftleft-cli audit --url https://example.com/base --out reports/watch-visual --open"
+  );
+
+  assert.equal(
+    formatWatchVisualAuditCommand(["https://example.com/account"], ["https://example.com"], "reports/watch", 3, true),
+    "npx a11y-shiftleft-cli audit --url https://example.com/account --url https://example.com --out reports/watch-visual --open"
   );
 });
 

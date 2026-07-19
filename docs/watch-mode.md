@@ -106,7 +106,7 @@ Duration: 842ms
 Reports: reports/watch/a11y-comment.md
 Affected route hints: http://localhost:5173/account
 Shared/component changes: 1 file without a direct route hint; visual follow-up will use configured --url smoke routes.
-Visual report follow-up: npx a11y-shiftleft-cli audit --url http://localhost:5173/account --out reports/watch-visual --open
+Visual report follow-up: npx a11y-shiftleft-cli audit --url http://localhost:5173/account --url http://localhost:5173 --out reports/watch-visual --open
 ```
 
 Use `--verbose` to include a small changed-file sample and the number of
@@ -116,8 +116,8 @@ Route hints are conservative. `watch` can infer common route files such as
 `src/pages/account.tsx`, `src/app/account/page.tsx`, and
 `src/routes/account.svelte`. Shared components do not have one reliable URL, so
 keep representative smoke-test routes in `--url` for important flows. When
-only shared components change, the visual follow-up command falls back to those
-configured smoke URLs.
+shared components change, the visual follow-up command includes those
+configured smoke URLs alongside any affected route hints.
 
 The visual report follow-up stays explicit on purpose. `watch` keeps the fast
 check loop small, then prints a ready-to-run `audit` command for the affected

@@ -107,6 +107,9 @@
 - Added `--build-command` and `--no-build` to `setup` and `generate-ci` so
   generated CI can use a custom preparation command or skip the build step when
   a project does not need one.
+- Improved `watch` visual follow-up commands so shared-component changes can
+  include configured smoke URLs alongside inferred route hints instead of
+  auditing only the route file that changed.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,
