@@ -346,8 +346,13 @@ function recommendAgentNextCommands(
     commands.push("Run a manual screen-reader and task review before treating the page as complete.");
   }
 
-  commands.push(`Export grouped ticket drafts: npx a11y-shiftleft-cli ticket export --report ${reportJson} --tracker github`);
-  commands.push(`Refresh and package a local share copy: npx a11y-shiftleft-cli agent refresh-html --report ${reportDir} --share-out a11y-share --share-include-html`);
+  commands.push(`Export grouped ticket drafts: npx a11y-shiftleft-cli ticket export --report ${commandPath(reportJson)} --tracker github --out ${commandPath(`${reportDir}/a11y-tickets.md`)}`);
+  commands.push(`Refresh and package a local share copy: npx a11y-shiftleft-cli agent refresh-html --report ${commandPath(reportDir)} --share-out a11y-share --share-include-html`);
+
+  const ignoreCleanupCommand = recommendedIgnoreCleanupCommand(report);
+  if (ignoreCleanupCommand) {
+    commands.push(ignoreCleanupCommand);
+  }
 
   if (hasKeyboardFindings) {
     commands.push("Review the visual Keyboard Audit section; rerun with --activation if you need safe key-activation evidence.");
@@ -370,6 +375,16 @@ function recommendAgentNextCommands(
   return commands;
 }
 
+function recommendedIgnoreCleanupCommand(report: A11yReport): string | null {
+  const ignore = report.summary.ignore;
+  if (!ignore?.enabled) return null;
+
+  const needsCleanup = ignore.expiredRules > 0 || ignore.invalidRules > 0 || ignore.expiringSoonRules > 0;
+  if (!needsCleanup) return null;
+
+  return `Review stale ignore entries: npx a11y-shiftleft-cli ignore cleanup-plan${ignore.file && ignore.file !== "a11y-ignore.json" ? ` --ignore-file ${commandPath(ignore.file)}` : ""}`;
+}
+
 function visualReportPathFor(reportPath: string): string {
   return reportPath.endsWith("a11y-report.json")
     ? reportPath.replace(/a11y-report\.json$/u, "a11y-report.html")
@@ -383,6 +398,12 @@ function reportDirectoryForCommand(reportPath: string): string {
   }
 
   return reportPath.replace(/\/$/u, "") || ".";
+}
+
+function commandPath(value: string): string {
+  return /^[A-Za-z0-9_./:-]+$/u.test(value)
+    ? value
+    : `'${value.replaceAll("'", "'\\''")}'`;
 }
 
 function formatSignedNumber(value: number): string {

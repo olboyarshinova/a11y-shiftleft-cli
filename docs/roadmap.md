@@ -199,9 +199,11 @@ Section 508 certification.
   `agent review`, `agent run`, local report-history comparison, and
   `agent refresh-html`. Current agent guidance can refresh visual reports and
   prepare sanitized local share packages from the current report path, and
-  `agent review --history` includes compact dashboard-history deltas. Next
-  steps: validate this output against real report-history folders and keep
-  follow-up commands aligned with real user workflows.
+  `agent review --history` includes compact dashboard-history deltas. Agent
+  follow-up commands now write ticket drafts to a local file and surface stale
+  ignore cleanup when the report includes expiring, expired, or invalid
+  exceptions. Next steps: validate this output against real report-history
+  folders and keep follow-up commands aligned with real user workflows.
 - Evaluate a dedicated Jenkinsfile preset only if teams need more than the
   generated portable shell CI script. Keep any future preset focused on
   installing the package, starting the app, running `audit` or `check`, and

@@ -114,7 +114,9 @@ The output focuses on:
 - fixed, new, and remaining findings when `--previous` is provided;
 - a short `Review focus` list for the most practical risk areas;
 - a short "Fix first" list sorted by severity;
-- practical next commands, such as rerunning `audit` or exporting ticket drafts.
+- practical next commands, such as rerunning `audit`, exporting ticket drafts
+  to `a11y-tickets.md`, refreshing a share package, or reviewing stale
+  temporary ignores.
 
 This is intentionally smaller than a tracker integration. Use it when you want
 quick local guidance before opening the visual report, creating tickets, or

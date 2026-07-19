@@ -57,7 +57,7 @@ test("formatAgentReview renders concise next-step guidance", () => {
   assert.match(text, /Fix first:/);
   assert.match(text, /button-name/);
   assert.match(text, /Suggested next commands:/);
-  assert.match(text, /ticket export --report reports\/a11y-report\.json/);
+  assert.match(text, /ticket export --report reports\/a11y-report\.json --tracker github --out reports\/a11y-tickets\.md/);
   assert.match(text, /agent refresh-html --report reports --share-out a11y-share/);
 });
 
@@ -162,6 +162,52 @@ test("createAgentReview summarizes practical risk focus areas", () => {
     "human-verification"
   ]);
   assert.equal(review.riskFocus.some((item) => item.id === "lighthouse"), false);
+});
+
+test("createAgentReview recommends ignore cleanup only when scoped ignores need review", () => {
+  const cleanReview = createAgentReview({
+    report: {
+      ...report([issue("warning", "color-contrast", "warning")]),
+      summary: {
+        ...report([issue("warning", "color-contrast", "warning")]).summary,
+        ignore: {
+          enabled: true,
+          file: "a11y-ignore.json",
+          totalRules: 1,
+          activeRules: 1,
+          expiredRules: 0,
+          invalidRules: 0,
+          expiringSoonRules: 0,
+          ignoredIssues: 1,
+          ownerSummaries: []
+        }
+      }
+    } as A11yReport,
+    reportPath: "reports/a11y-report.json"
+  });
+  const staleReview = createAgentReview({
+    report: {
+      ...report([issue("warning", "color-contrast", "warning")]),
+      summary: {
+        ...report([issue("warning", "color-contrast", "warning")]).summary,
+        ignore: {
+          enabled: true,
+          file: "config/a11y ignore.json",
+          totalRules: 2,
+          activeRules: 1,
+          expiredRules: 1,
+          invalidRules: 0,
+          expiringSoonRules: 1,
+          ignoredIssues: 1,
+          ownerSummaries: []
+        }
+      }
+    } as A11yReport,
+    reportPath: "reports/a11y-report.json"
+  });
+
+  assert.equal(cleanReview.nextCommands.some((command) => /ignore cleanup-plan/.test(command)), false);
+  assert.equal(staleReview.nextCommands.some((command) => /ignore cleanup-plan --ignore-file 'config\/a11y ignore\.json'/.test(command)), true);
 });
 
 function report(issues: DedupedIssue[]): A11yReport {

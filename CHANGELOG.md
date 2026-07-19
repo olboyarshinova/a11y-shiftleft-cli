@@ -96,6 +96,9 @@
   exports so remediation planning can start from new/known draft counts,
   severity counts, owner hints, and top rule groups before any tracker API is
   connected.
+- Improved `agent review` next commands so ticket drafts are written to an
+  `a11y-tickets.md` file by default and stale scoped ignores trigger an
+  explicit `ignore cleanup-plan` follow-up.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,
