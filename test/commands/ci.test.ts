@@ -253,6 +253,8 @@ test("formatCiGenerationNextSteps explains auth secrets when auth flow is config
   }).join("\n");
 
   assert.match(steps, /A11Y_USERNAME and A11Y_PASSWORD/);
+  assert.match(steps, /least-privilege test account/);
+  assert.match(steps, /temporary \.a11y-auth\/state\.json/);
   assert.match(steps, /do not commit credentials/);
 });
 

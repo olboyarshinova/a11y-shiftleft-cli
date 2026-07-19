@@ -25,7 +25,7 @@
 - Added GitLab, CircleCI, and shell-runner test coverage for authenticated CI
   generation, plus GitLab and generic CI documentation for protected
   test-account variables.
-- Clarified generated setup guidance for authenticated CI: use a
+- Clarified generated setup and CI guidance for authenticated CI: use a
   least-privilege test account, keep auth state temporary, and never commit
   credentials or generated session files.
 - Added a quality-gates recipe for existing projects that need report-only

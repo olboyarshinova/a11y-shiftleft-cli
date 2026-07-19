@@ -637,7 +637,7 @@ export function formatCiGenerationNextSteps(options: {
   }
 
   if (options.auth) {
-    steps.push(`Add CI secrets or variables named ${options.auth.usernameEnv} and ${options.auth.passwordEnv}; do not commit credentials or generated auth-state files.`);
+    steps.push(`Add CI secrets or protected variables named ${options.auth.usernameEnv} and ${options.auth.passwordEnv} for a least-privilege test account; CI will create a temporary .a11y-auth/state.json, so do not commit credentials or generated auth-state files.`);
   }
 
   return steps;
