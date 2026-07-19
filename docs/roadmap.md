@@ -18,8 +18,11 @@ Section 508 certification.
   navigation order, and help mechanisms in real multi-page projects. Surface
   differences for review rather than asserting that every difference is a WCAG
   failure.
-- Add report grouping controls for rule, page/state, affected element, WCAG
-  criterion, and POUR principle while preserving root-cause grouping.
+- Continue improving report grouping controls. Current visual reports include a
+  compact `Group Findings` control for rule, WCAG criterion, page/state,
+  affected element, and POUR principle while preserving the main triage,
+  root-cause, and per-state findings. Next, evaluate saved view preferences and
+  whether teams need deeper grouping filters.
 - Make the PR/CI workflow extremely simple: one generated workflow, one
   copy-paste command, clear artifact links, and a report-only adoption path for
   teams that are not ready to fail builds yet. Current `setup` next steps

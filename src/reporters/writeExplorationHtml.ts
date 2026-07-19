@@ -996,6 +996,80 @@ export function renderExplorationHtml(
       margin: 10px 0 0;
     }
 
+    .finding-groups {
+      grid-column: 1 / -1;
+      margin-top: 12px;
+    }
+
+    .finding-groups summary {
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .finding-group-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 10px 0;
+    }
+
+    .finding-group-tab {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--ink);
+      cursor: pointer;
+      font: inherit;
+      font-weight: 800;
+      padding: 5px 9px;
+    }
+
+    .finding-group-tab[aria-selected="true"] {
+      background: #e7f0ff;
+      border-color: #9dbdf5;
+      color: var(--info);
+    }
+
+    .finding-group-panel[hidden] {
+      display: none;
+    }
+
+    .finding-group-table {
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 8px;
+      width: 100%;
+    }
+
+    .finding-group-table th,
+    .finding-group-table td {
+      border: 1px solid var(--line);
+      padding: 6px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .finding-group-table th {
+      background: #f3f6fa;
+      font-weight: 800;
+    }
+
+    .severity-text {
+      font-weight: 800;
+    }
+
+    .severity-text.critical {
+      color: var(--critical);
+    }
+
+    .severity-text.warning {
+      color: var(--warning);
+    }
+
+    .severity-text.info {
+      color: var(--info);
+    }
+
     .focus-path-note {
       margin: 10px 0 0;
     }
@@ -1949,6 +2023,7 @@ export function renderExplorationHtml(
 
     <section class="panel triage" aria-label="Triage overview">
       ${renderTriageOverview(states, reportIssues)}
+      ${renderFindingGroupControls(states, reportIssues)}
     </section>
 
     <section class="panel states" aria-label="Checked states">
@@ -2026,6 +2101,26 @@ export function renderExplorationHtml(
       }
 
       update();
+    })();
+
+    (() => {
+      const tabs = Array.from(document.querySelectorAll('[data-finding-group-tab]'));
+      const panels = Array.from(document.querySelectorAll('[data-finding-group-panel]'));
+      if (tabs.length === 0 || panels.length === 0) return;
+
+      const activate = (mode) => {
+        for (const tab of tabs) {
+          const active = tab.dataset.findingGroupTab === mode;
+          tab.setAttribute('aria-selected', active ? 'true' : 'false');
+        }
+        for (const panel of panels) {
+          panel.hidden = panel.dataset.findingGroupPanel !== mode;
+        }
+      };
+
+      for (const tab of tabs) {
+        tab.addEventListener('click', () => activate(tab.dataset.findingGroupTab));
+      }
     })();
 
     (() => {
@@ -3187,6 +3282,174 @@ function renderTriageOverview(
       ${renderTopRules(ruleSummaries, topRuleLimit)}
     </div>
   </div>`;
+}
+
+type FindingGroupMode = "rule" | "wcag" | "state" | "element" | "pour";
+
+interface FindingGroupSummary {
+  key: string;
+  label: string;
+  issues: DedupedIssue[];
+}
+
+function renderFindingGroupControls(
+  states: StateViewModel[],
+  issues: DedupedIssue[]
+): string {
+  if (issues.length === 0) return "";
+
+  const modes: Array<{ id: FindingGroupMode; label: string; groups: FindingGroupSummary[] }> = [
+    { id: "rule", label: "Rule", groups: groupFindingsByRule(issues) },
+    { id: "wcag", label: "WCAG", groups: groupFindingsByWcag(issues) },
+    { id: "state", label: "Page / State", groups: groupFindingsByState(states, issues) },
+    { id: "element", label: "Element", groups: groupFindingsByElement(issues) },
+    { id: "pour", label: "POUR", groups: groupFindingsByPour(issues) }
+  ];
+  const availableModes = modes.filter((mode) => mode.groups.length > 0);
+  if (availableModes.length === 0) return "";
+
+  return `<details class="finding-groups">
+    <summary>Group Findings</summary>
+    <p class="muted">Switch between compact grouping views for triage. Root-cause and per-state findings remain below.</p>
+    <div class="finding-group-controls" role="tablist" aria-label="Finding grouping views">
+      ${availableModes.map((mode, index) => `<button class="finding-group-tab" type="button" role="tab" aria-selected="${index === 0 ? "true" : "false"}" aria-controls="finding-group-${mode.id}" data-finding-group-tab="${mode.id}">${escapeHtml(mode.label)}</button>`).join("")}
+    </div>
+    ${availableModes.map((mode, index) => `<div class="finding-group-panel" id="finding-group-${mode.id}" role="tabpanel" ${index === 0 ? "" : "hidden"} data-finding-group-panel="${mode.id}">
+      ${renderFindingGroupTable(mode.groups)}
+    </div>`).join("")}
+  </details>`;
+}
+
+function renderFindingGroupTable(groups: FindingGroupSummary[]): string {
+  const visibleGroups = groups.slice(0, 8);
+  const hiddenCount = Math.max(0, groups.length - visibleGroups.length);
+
+  return `<table class="finding-group-table" aria-label="Finding groups">
+    <thead>
+      <tr>
+        <th>Group</th>
+        <th>Findings</th>
+        <th>Priority</th>
+        <th>Evidence</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${visibleGroups.map((group) => {
+        const summary = summarizeIssues(group.issues);
+        return `<tr>
+          <th scope="row">${escapeHtml(group.label)}</th>
+          <td>${group.issues.length}</td>
+          <td>${renderGroupPriority(summary)}</td>
+          <td>${escapeHtml(formatGroupEvidence(group.issues))}</td>
+        </tr>`;
+      }).join("")}
+    </tbody>
+  </table>
+  ${hiddenCount > 0 ? `<p class="muted triage-more">+ ${hiddenCount} more group${hiddenCount === 1 ? "" : "s"} shown in the state findings below.</p>` : ""}`;
+}
+
+function renderGroupPriority(summary: Record<Severity, number>): string {
+  return [
+    summary.critical ? `<span class="severity-text critical">${summary.critical} critical</span>` : "",
+    summary.warning ? `<span class="severity-text warning">${summary.warning} warning</span>` : "",
+    summary.info ? `<span class="severity-text info">${summary.info} info</span>` : ""
+  ].filter(Boolean).join(" ") || "0";
+}
+
+function groupFindingsByRule(issues: DedupedIssue[]): FindingGroupSummary[] {
+  return rankFindingGroups(groupBy(issues, (issue) => issue.ruleId || "unknown rule"));
+}
+
+function groupFindingsByWcag(issues: DedupedIssue[]): FindingGroupSummary[] {
+  const groups = new Map<string, FindingGroupSummary>();
+
+  for (const issue of issues) {
+    const criteria = issue.wcagCriteria?.length
+      ? issue.wcagCriteria.map((criterion) => `WCAG ${criterion.id} ${criterion.title}`)
+      : ["Unmapped"];
+    for (const criterion of criteria) {
+      addIssueToGroup(groups, criterion, criterion, issue);
+    }
+  }
+
+  return rankFindingGroups([...groups.values()]);
+}
+
+function groupFindingsByState(states: StateViewModel[], issues: DedupedIssue[]): FindingGroupSummary[] {
+  const labelByStateId = new Map(states.map((state) => [
+    state.id,
+    `${state.id}: ${state.actionLabel || state.title || state.url}`
+  ]));
+  return rankFindingGroups(groupBy(issues, (issue) => (
+    issue.stateId
+      ? labelByStateId.get(issue.stateId) || issue.stateId
+      : issue.url || "Non-visual findings"
+  )));
+}
+
+function groupFindingsByElement(issues: DedupedIssue[]): FindingGroupSummary[] {
+  return rankFindingGroups(groupBy(issues, (issue) => issue.selector || issue.file || "No element target"));
+}
+
+function groupFindingsByPour(issues: DedupedIssue[]): FindingGroupSummary[] {
+  const groups = new Map<string, FindingGroupSummary>();
+
+  for (const issue of issues) {
+    const principles = issue.wcagCriteria?.length
+      ? [...new Set(issue.wcagCriteria.map((criterion) => criterion.principle))]
+      : ["unmapped"];
+    for (const principle of principles) {
+      addIssueToGroup(groups, principle, titleCase(principle), issue);
+    }
+  }
+
+  return rankFindingGroups([...groups.values()]);
+}
+
+function groupBy(issues: DedupedIssue[], labelForIssue: (issue: DedupedIssue) => string): FindingGroupSummary[] {
+  const groups = new Map<string, FindingGroupSummary>();
+
+  for (const issue of issues) {
+    const label = labelForIssue(issue);
+    addIssueToGroup(groups, label, label, issue);
+  }
+
+  return [...groups.values()];
+}
+
+function addIssueToGroup(
+  groups: Map<string, FindingGroupSummary>,
+  key: string,
+  label: string,
+  issue: DedupedIssue
+): void {
+  const current = groups.get(key) || { key, label, issues: [] };
+  current.issues.push(issue);
+  groups.set(key, current);
+}
+
+function rankFindingGroups(groups: FindingGroupSummary[]): FindingGroupSummary[] {
+  return groups.sort((left, right) => {
+    const severityDiff = sumSeverityScore(right.issues) - sumSeverityScore(left.issues);
+    if (severityDiff !== 0) return severityDiff;
+    if (right.issues.length !== left.issues.length) return right.issues.length - left.issues.length;
+    return left.label.localeCompare(right.label);
+  });
+}
+
+function formatGroupEvidence(issues: DedupedIssue[]): string {
+  const pages = new Set(issues.map((issue) => issue.url).filter(Boolean));
+  const states = new Set(issues.map((issue) => issue.stateLabel || issue.stateId).filter(Boolean));
+  const targets = new Set(issues.map((issue) => issue.selector || issue.file).filter(Boolean));
+  return [
+    pages.size ? `${pages.size} page${pages.size === 1 ? "" : "s"}` : "",
+    states.size ? `${states.size} state${states.size === 1 ? "" : "s"}` : "",
+    targets.size ? `${targets.size} target${targets.size === 1 ? "" : "s"}` : ""
+  ].filter(Boolean).join(", ") || "local report evidence";
+}
+
+function titleCase(value: string): string {
+  return value.replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function renderSafeExplorationGuardrails(graph: ExplorationGraph): string {

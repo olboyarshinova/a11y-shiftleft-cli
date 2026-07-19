@@ -842,6 +842,40 @@ test("renderExplorationHtml summarizes cross-page rule impact in triage", () => 
   assert.match(topRules, /likely shared component or template/);
 });
 
+test("renderExplorationHtml includes compact finding grouping controls", () => {
+  const html = renderExplorationHtml(graph, [
+    issues[0],
+    {
+      ...issues[0],
+      ruleId: "color-contrast",
+      severity: "warning",
+      selector: ".low-contrast",
+      fingerprint: "color-contrast::state-1",
+      wcagCriteria: [{
+        id: "1.4.3",
+        title: "Contrast (Minimum)",
+        level: "AA",
+        principle: "perceivable",
+        introducedIn: "2.0",
+        url: "https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html"
+      }]
+    }
+  ]);
+
+  assert.match(html, /<summary>Group Findings<\/summary>/);
+  assert.match(html, /data-finding-group-tab="rule"/);
+  assert.match(html, /data-finding-group-tab="wcag"/);
+  assert.match(html, /data-finding-group-tab="state"/);
+  assert.match(html, /data-finding-group-tab="element"/);
+  assert.match(html, /data-finding-group-tab="pour"/);
+  assert.match(html, /WCAG 4\.1\.2 Name, Role, Value/);
+  assert.match(html, /WCAG 1\.4\.3 Contrast \(Minimum\)/);
+  assert.match(html, /state-1: Initial page/);
+  assert.match(html, /\.low-contrast/);
+  assert.match(html, /Perceivable/);
+  assert.match(html, /Robust/);
+});
+
 test("renderExplorationHtml groups repeated remediation by rule", () => {
   const html = renderExplorationHtml(graph, [
     issues[0],

@@ -34,6 +34,9 @@
 - Added manual-review evidence for potentially inconsistent repeated navigation
   order and help mechanisms across scanned pages, mapped to WCAG 3.2.3 and
   3.2.6.
+- Added compact visual-report grouping controls for rule, WCAG criterion,
+  page/state, affected element, and POUR principle while keeping the main
+  triage and state findings unchanged.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,
