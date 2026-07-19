@@ -90,6 +90,7 @@ export function formatAgentReview(review: AgentReview): string {
 
   if (review.history) {
     lines.push(formatHistorySummary(review.history));
+    lines.push(...formatHistoryRuleChanges(review.history));
   }
 
   if (review.focus.length > 0) {
@@ -113,6 +114,23 @@ function formatHistorySummary(history: AgentHistorySummary): string {
     `warning ${formatSignedNumber(history.warningDeltaFromFirst)}`,
     `info ${formatSignedNumber(history.infoDeltaFromFirst)}`
   ].join(" | ");
+}
+
+function formatHistoryRuleChanges(history: AgentHistorySummary): string[] {
+  const lines: string[] = [];
+  if (history.ruleRegressions.length > 0) {
+    lines.push(`Rules increased: ${history.ruleRegressions.map(formatRuleChange).join("; ")}`);
+  }
+
+  if (history.ruleImprovements.length > 0) {
+    lines.push(`Rules improved: ${history.ruleImprovements.map(formatRuleChange).join("; ")}`);
+  }
+
+  return lines;
+}
+
+function formatRuleChange(change: AgentHistorySummary["ruleRegressions"][number]): string {
+  return `${change.ruleId} ${formatSignedNumber(change.change)} (${change.first} -> ${change.current})`;
 }
 
 function summarizeAgentChanges(previousReport: A11yReport | undefined, currentReport: A11yReport): AgentReviewChangeSummary {

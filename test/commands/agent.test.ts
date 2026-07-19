@@ -74,6 +74,8 @@ test("agent review can compare with the previous report from history", async () 
   assert.match(output, /run-1\/a11y-report\.json/);
   assert.match(output, /Change: fixed 1, new 1, remaining 0/);
   assert.match(output, /History: 2 runs indexed \| total 0 \| critical 0 \| warning 0 \| info 0/);
+  assert.match(output, /Rules increased: image-alt \+1 \(0 -> 1\)/);
+  assert.match(output, /Rules improved: button-name -1 \(1 -> 0\)/);
 });
 
 test("agent review writes a deterministic progress summary", async () => {

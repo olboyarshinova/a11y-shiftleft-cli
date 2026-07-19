@@ -19,12 +19,22 @@ export interface AgentHistorySummary {
   criticalDeltaFromFirst: number;
   warningDeltaFromFirst: number;
   infoDeltaFromFirst: number;
+  ruleRegressions: AgentHistoryRuleChange[];
+  ruleImprovements: AgentHistoryRuleChange[];
+}
+
+export interface AgentHistoryRuleChange {
+  ruleId: string;
+  first: number;
+  current: number;
+  change: number;
 }
 
 interface AgentHistoryRun {
   path: string;
   id: string;
   generatedAt: string;
+  report: A11yReport;
   total: number;
   critical: number;
   warning: number;
@@ -83,7 +93,9 @@ export async function summarizeAgentHistory(options: AgentHistoryOptions): Promi
     totalDeltaFromFirst: current.total - first.total,
     criticalDeltaFromFirst: current.critical - first.critical,
     warningDeltaFromFirst: current.warning - first.warning,
-    infoDeltaFromFirst: current.info - first.info
+    infoDeltaFromFirst: current.info - first.info,
+    ruleRegressions: compareRuleCounts(first.report, current.report, "regression").slice(0, 3),
+    ruleImprovements: compareRuleCounts(first.report, current.report, "improvement").slice(0, 3)
   };
 }
 
@@ -141,11 +153,56 @@ function toHistoryRun(reportPath: string, report: A11yReport, rootDir: string): 
     path: path.resolve(reportPath),
     id: normalizePath(path.relative(path.resolve(rootDir), path.resolve(reportPath))) || path.basename(path.dirname(reportPath)),
     generatedAt: report.generatedAt,
+    report,
     total: report.summary.total,
     critical: report.summary.critical,
     warning: report.summary.warning,
     info: report.summary.info
   };
+}
+
+function compareRuleCounts(
+  firstReport: A11yReport,
+  currentReport: A11yReport,
+  direction: "regression" | "improvement"
+): AgentHistoryRuleChange[] {
+  const firstCounts = countRules(firstReport);
+  const currentCounts = countRules(currentReport);
+  const ruleIds = new Set([...firstCounts.keys(), ...currentCounts.keys()]);
+  const changes: AgentHistoryRuleChange[] = [];
+
+  for (const ruleId of ruleIds) {
+    const first = firstCounts.get(ruleId) || 0;
+    const current = currentCounts.get(ruleId) || 0;
+    const change = current - first;
+    if (direction === "regression" && change <= 0) continue;
+    if (direction === "improvement" && change >= 0) continue;
+
+    changes.push({
+      ruleId,
+      first,
+      current,
+      change
+    });
+  }
+
+  return changes.sort((left, right) => {
+    const magnitude = Math.abs(right.change) - Math.abs(left.change);
+    if (magnitude !== 0) return magnitude;
+    if (right.current !== left.current) return right.current - left.current;
+    return left.ruleId.localeCompare(right.ruleId);
+  });
+}
+
+function countRules(report: A11yReport): Map<string, number> {
+  const counts = new Map<string, number>();
+
+  for (const issue of report.issues || []) {
+    const ruleId = issue.ruleId || "unknown";
+    counts.set(ruleId, (counts.get(ruleId) || 0) + 1 + (issue.duplicateCount || 0));
+  }
+
+  return counts;
 }
 
 function normalizePath(value: string): string {

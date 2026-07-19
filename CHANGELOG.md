@@ -51,6 +51,9 @@
   folders when `--previous` is not provided.
 - Added compact history context to `agent` output, showing indexed run count
   and total/critical/warning/info deltas from the first local history run.
+- Added compact rule-level history deltas to `agent --history`, highlighting
+  the top increased and improved accessibility rule groups without opening the
+  dashboard.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

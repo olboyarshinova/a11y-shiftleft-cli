@@ -8,7 +8,9 @@ import {
   findPreviousReportInHistory,
   summarizeAgentHistory
 } from "../../dist/core/agentHistory.js";
-import type { A11yReport } from "../../dist/types.js";
+import type { A11yReport, DedupedIssue, Severity } from "../../dist/types.js";
+
+let issueCounter = 0;
 
 test("findPreviousReportInHistory selects the latest older report", async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-agent-history-"));
@@ -40,9 +42,53 @@ test("findPreviousReportInHistory selects the latest older report", async () => 
       totalDeltaFromFirst: -3,
       criticalDeltaFromFirst: 0,
       warningDeltaFromFirst: -3,
-      infoDeltaFromFirst: 0
+      infoDeltaFromFirst: 0,
+      ruleRegressions: [],
+      ruleImprovements: []
     }
   );
+});
+
+test("summarizeAgentHistory highlights compact rule changes from the first run", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-agent-history-rules-"));
+  await writeReport(root, "run-1", "2026-07-01T00:00:00.000Z", 4, [
+    issue("button-name", "critical"),
+    issue("button-name", "critical"),
+    issue("image-alt", "warning")
+  ]);
+  const currentPath = await writeReport(root, "run-2", "2026-07-02T00:00:00.000Z", 5, [
+    issue("button-name", "critical"),
+    issue("color-contrast", "warning"),
+    issue("color-contrast", "warning"),
+    issue("color-contrast", "warning")
+  ]);
+
+  const summary = await summarizeAgentHistory({
+    currentReportPath: currentPath,
+    currentReport: report("2026-07-02T00:00:00.000Z", 5),
+    historyRoot: root
+  });
+
+  assert.deepEqual(summary?.ruleRegressions, [{
+    ruleId: "color-contrast",
+    first: 0,
+    current: 3,
+    change: 3
+  }]);
+  assert.deepEqual(summary?.ruleImprovements, [
+    {
+      ruleId: "button-name",
+      first: 2,
+      current: 1,
+      change: -1
+    },
+    {
+      ruleId: "image-alt",
+      first: 1,
+      current: 0,
+      change: -1
+    }
+  ]);
 });
 
 test("findPreviousReportInHistory ignores the current file and invalid report JSON", async () => {
@@ -61,15 +107,21 @@ test("findPreviousReportInHistory ignores the current file and invalid report JS
   );
 });
 
-async function writeReport(root: string, dirName: string, generatedAt: string, total: number): Promise<string> {
+async function writeReport(
+  root: string,
+  dirName: string,
+  generatedAt: string,
+  total: number,
+  issues: DedupedIssue[] = []
+): Promise<string> {
   const dir = path.join(root, dirName);
   const reportPath = path.join(dir, "a11y-report.json");
   await fs.mkdir(dir);
-  await fs.writeFile(reportPath, JSON.stringify(report(generatedAt, total)));
+  await fs.writeFile(reportPath, JSON.stringify(report(generatedAt, total, issues)));
   return reportPath;
 }
 
-function report(generatedAt: string, total: number): A11yReport {
+function report(generatedAt: string, total: number, issues: DedupedIssue[] = []): A11yReport {
   return {
     generatedAt,
     summary: {
@@ -78,6 +130,27 @@ function report(generatedAt: string, total: number): A11yReport {
       warning: total,
       info: 0
     },
-    issues: []
+    issues
   } as A11yReport;
+}
+
+function issue(ruleId: string, severity: Severity): DedupedIssue {
+  issueCounter += 1;
+  return {
+    fingerprint: `${ruleId}-${issueCounter}`,
+    ruleId,
+    severity,
+    source: "test",
+    framework: "react",
+    message: `${ruleId} message`,
+    wcag: [],
+    wcagCriteria: [],
+    tags: [],
+    confidence: "high",
+    confidenceScore: 0.9,
+    confidenceReason: "test",
+    findingType: "wcag",
+    category: "other",
+    duplicateCount: 0
+  } as DedupedIssue;
 }
