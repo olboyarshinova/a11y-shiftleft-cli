@@ -2107,8 +2107,11 @@ export function renderExplorationHtml(
       const tabs = Array.from(document.querySelectorAll('[data-finding-group-tab]'));
       const panels = Array.from(document.querySelectorAll('[data-finding-group-panel]'));
       if (tabs.length === 0 || panels.length === 0) return;
+      const reportId = document.body.dataset.coverageReportId || 'report';
+      const storageKey = 'a11y-shiftleft:finding-group:' + reportId;
 
       const activate = (mode) => {
+        if (!mode || !tabs.some((tab) => tab.dataset.findingGroupTab === mode)) return;
         for (const tab of tabs) {
           const active = tab.dataset.findingGroupTab === mode;
           tab.setAttribute('aria-selected', active ? 'true' : 'false');
@@ -2116,10 +2119,21 @@ export function renderExplorationHtml(
         for (const panel of panels) {
           panel.hidden = panel.dataset.findingGroupPanel !== mode;
         }
+        try {
+          localStorage.setItem(storageKey, mode);
+        } catch {
+          // The report remains usable when storage is unavailable.
+        }
       };
 
       for (const tab of tabs) {
         tab.addEventListener('click', () => activate(tab.dataset.findingGroupTab));
+      }
+
+      try {
+        activate(localStorage.getItem(storageKey));
+      } catch {
+        // The default grouping remains visible when storage is unavailable.
       }
     })();
 

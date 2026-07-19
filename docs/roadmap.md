@@ -21,7 +21,8 @@ Section 508 certification.
 - Continue improving report grouping controls. Current visual reports include a
   compact `Group Findings` control for rule, WCAG criterion, page/state,
   affected element, and POUR principle while preserving the main triage,
-  root-cause, and per-state findings. Next, evaluate saved view preferences and
+  root-cause, and per-state findings. The selected grouping view is stored
+  locally per generated report when browser storage is available. Next, evaluate
   whether teams need deeper grouping filters.
 - Make the PR/CI workflow extremely simple: one generated workflow, one
   copy-paste command, clear artifact links, and a report-only adoption path for

@@ -37,6 +37,8 @@
 - Added compact visual-report grouping controls for rule, WCAG criterion,
   page/state, affected element, and POUR principle while keeping the main
   triage and state findings unchanged.
+- Persisted the selected visual-report finding grouping view locally per
+  generated report when browser storage is available.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

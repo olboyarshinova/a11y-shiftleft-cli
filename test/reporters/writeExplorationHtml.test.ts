@@ -874,6 +874,8 @@ test("renderExplorationHtml includes compact finding grouping controls", () => {
   assert.match(html, /\.low-contrast/);
   assert.match(html, /Perceivable/);
   assert.match(html, /Robust/);
+  assert.match(html, /a11y-shiftleft:finding-group:/);
+  assert.match(html, /localStorage\.getItem\(storageKey\)/);
 });
 
 test("renderExplorationHtml groups repeated remediation by rule", () => {
