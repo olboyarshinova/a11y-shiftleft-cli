@@ -79,6 +79,9 @@
   to a single route, including smoke-route guidance.
 - Added local-only retention preview labels in verbose `check` and `explore`
   output so users can review affected run folders without exposing full paths.
+- Added safe-mode network request blocking via `--safe-block-request` and
+  `explore.safeMode.blockedRequests` for high-risk APIs, analytics, payment, or
+  other external traffic during exploration.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

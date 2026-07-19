@@ -230,6 +230,7 @@ export interface ExploreSafeModeConfig {
   blockedRoles: string[];
   blockedUrls: string[];
   blockedSelectors: string[];
+  blockedRequests: string[];
   allowedSelectors: string[];
   dismissDialogs: boolean;
   isolateCookies: boolean;

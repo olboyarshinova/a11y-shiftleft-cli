@@ -55,6 +55,7 @@ export const defaultConfig = {
       blockedRoles: [],
       blockedUrls: [],
       blockedSelectors: [],
+      blockedRequests: [],
       allowedSelectors: ["[data-a11y-explore]"],
       dismissDialogs: true,
       isolateCookies: true

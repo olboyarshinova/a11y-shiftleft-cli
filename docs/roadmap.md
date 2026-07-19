@@ -252,9 +252,10 @@ Section 508 certification.
   browser-audit targets unless a concrete source-analysis integration proves
   useful and lightweight.
 - Continue hardening configurable safe-mode policies for `explore`. Current
-  visual reports group skipped actions by reason with examples and state links;
-  next, evaluate optional request blocking for external or high-risk API
-  traffic.
+  visual reports group skipped actions by reason with examples and state links,
+  and safe mode can abort configured high-risk network request patterns during
+  exploration. Next, validate request blocking in real applications and keep
+  the default policy conservative.
 - Continue hardening report retention. Current visual reports can summarize the
   active retention policy and dry-run/cleanup counts without exposing local
   paths, and console output can show short local-only run labels for planned

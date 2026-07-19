@@ -27,6 +27,7 @@ import {
   readScreenshotDimensions,
   SENSITIVE_SCREENSHOT_SELECTOR,
   isThemeAction,
+  shouldBlockSafeModeRequest,
   shouldCaptureFullPageScreenshot,
   summarizeEmbeddedContentEvidence,
   summarizeAccessibilityTreeNodes
@@ -290,6 +291,7 @@ test("isSafeExploreActionWithConfig applies custom safe-mode patterns", () => {
     blockedRoles: ["menuitem"],
     blockedUrls: ["*/account/*"],
     blockedSelectors: ["[data-danger]"],
+    blockedRequests: [],
     allowedSelectors: ["[data-a11y-explore]"],
     dismissDialogs: true,
     isolateCookies: true
@@ -346,6 +348,7 @@ test("getExploreActionSafety returns reviewable skip reasons", () => {
     blockedRoles: [],
     blockedUrls: [],
     blockedSelectors: [],
+    blockedRequests: [],
     allowedSelectors: ["[data-a11y-explore]"],
     dismissDialogs: true,
     isolateCookies: true
@@ -370,6 +373,7 @@ test("getExploreActionSafety explains advertising blocks", () => {
     blockedRoles: [],
     blockedUrls: [],
     blockedSelectors: [],
+    blockedRequests: [],
     allowedSelectors: ["[data-a11y-explore]"],
     dismissDialogs: false,
     isolateCookies: false
@@ -386,6 +390,7 @@ test("isSafeExploreActionWithConfig keeps hard blocks when safe mode is disabled
     blockedRoles: [],
     blockedUrls: [],
     blockedSelectors: [],
+    blockedRequests: [],
     allowedSelectors: ["[data-a11y-explore]"],
     dismissDialogs: false,
     isolateCookies: false
@@ -417,6 +422,36 @@ test("isSafeExploreActionWithConfig keeps hard blocks when safe mode is disabled
     text: "external docs",
     role: "a"
   }, "http://localhost:3000/", safeMode), false);
+});
+
+test("shouldBlockSafeModeRequest blocks configured subrequests without blocking document navigation", () => {
+  const safeMode = {
+    enabled: true,
+    blockedText: [],
+    blockedRoles: [],
+    blockedUrls: [],
+    blockedSelectors: [],
+    blockedRequests: ["*/api/delete*", "*analytics*"],
+    allowedSelectors: ["[data-a11y-explore]"],
+    dismissDialogs: true,
+    isolateCookies: true
+  };
+
+  assert.equal(shouldBlockSafeModeRequest({
+    url: "https://example.com/api/delete-account",
+    resourceType: "fetch",
+    isNavigationRequest: false
+  }, safeMode), true);
+  assert.equal(shouldBlockSafeModeRequest({
+    url: "https://analytics.example.com/pixel.gif",
+    resourceType: "image",
+    isNavigationRequest: false
+  }, safeMode), true);
+  assert.equal(shouldBlockSafeModeRequest({
+    url: "https://example.com/api/delete-account",
+    resourceType: "document",
+    isNavigationRequest: true
+  }, safeMode), false);
 });
 
 test("SENSITIVE_SCREENSHOT_SELECTOR covers common private form fields", () => {

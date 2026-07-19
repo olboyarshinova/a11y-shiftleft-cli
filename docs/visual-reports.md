@@ -334,6 +334,19 @@ click in one state does not change later replay attempts. Use
 `--no-isolate-cookies` only when you intentionally need cookie persistence
 during local debugging.
 
+You can also block network requests during exploration. This is useful for
+high-risk APIs, analytics pixels, payment providers, or external services that
+should not receive automated scan traffic:
+
+```bash
+npx a11y-shiftleft-cli audit \
+  --url $APP_URL \
+  --safe-block-request "*/api/delete*" "*analytics*" "*stripe*"
+```
+
+Matching subrequests are aborted, while the main page navigation is allowed so
+the audit can still start.
+
 Add `data-a11y-skip` to any element that should never be clicked during
 automated exploration. Add `data-a11y-explore` only when a form button or custom
 control is safe to exercise in automated scans.
@@ -348,6 +361,7 @@ Project-specific rules can live in `.a11y-shiftleft.json`:
       "blockedRoles": ["menuitem"],
       "blockedUrls": ["*/checkout*", "*/account/billing*"],
       "blockedSelectors": ["[data-danger]", "[data-payment]"],
+      "blockedRequests": ["*/api/delete*", "*analytics*", "*stripe*"],
       "allowedSelectors": ["[data-a11y-explore]"],
       "dismissDialogs": true,
       "isolateCookies": true

@@ -56,6 +56,7 @@ export interface AuditOptions {
   screenshots?: boolean;
   screenshotRedaction?: boolean;
   screenshotFullPage?: boolean;
+  safeBlockRequest?: string[];
   waitMs?: string;
   waitForSelector?: string;
   waitUntilUrl?: string;
@@ -110,6 +111,7 @@ export function registerAuditCommand(program: Command): void {
     .option("--no-screenshots", "Do not capture visual state screenshots")
     .option("--no-screenshot-redaction", "Do not mask sensitive form fields in screenshots")
     .option("--screenshot-full-page", "Force full-page screenshots instead of automatic error-region crops")
+    .option("--safe-block-request <patterns...>", "Additional network request URL patterns to abort during exploration")
     .option("--wait-ms <ms>", "Extra settle time before screenshots and scans")
     .option("--wait-for-selector <selector>", "Wait for a selector before screenshots and scans")
     .option("--wait-until-url <pattern>", "Wait until the current URL contains a pattern before screenshots and scans")
@@ -165,6 +167,7 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
         waitMs: optionalNonNegativeInteger(options.scrollWaitMs, "Scroll wait time")
       },
       safeMode: {
+        blockedRequests: normalizePatternList(options.safeBlockRequest),
         isolateCookies: authState ? false : undefined
       }
     }
@@ -494,6 +497,11 @@ export function normalizeAuditUrl(value: string): string {
 
 function normalizeOptionalCliValue(value: string | undefined): string | undefined {
   return value === undefined ? undefined : normalizeCliValue(value);
+}
+
+function normalizePatternList(values: string[] | undefined): string[] | undefined {
+  const patterns = (values || []).map((value) => value.trim()).filter(Boolean);
+  return patterns.length > 0 ? patterns : undefined;
 }
 
 function shouldPrintAuditProgress(options: Pick<AuditOptions, "quiet">): boolean {

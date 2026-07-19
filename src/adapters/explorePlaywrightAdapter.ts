@@ -281,6 +281,39 @@ export function attachExplorePopupGuard(page: PopupEventSource): void {
   });
 }
 
+export interface SafeModeRequestSafetyInput {
+  url: string;
+  resourceType: string;
+  isNavigationRequest: boolean;
+}
+
+export function shouldBlockSafeModeRequest(
+  request: SafeModeRequestSafetyInput,
+  safeMode: ExploreSafeModeConfig
+): boolean {
+  if (!safeMode.enabled || safeMode.blockedRequests.length === 0) return false;
+  if (request.isNavigationRequest && request.resourceType === "document") return false;
+  return matchesAnyPattern(safeMode.blockedRequests, request.url);
+}
+
+async function attachSafeModeRequestGuard(page: Page, safeMode: ExploreSafeModeConfig): Promise<void> {
+  if (!safeMode.enabled || safeMode.blockedRequests.length === 0) return;
+
+  await page.route("**/*", async (route) => {
+    const request = route.request();
+    if (shouldBlockSafeModeRequest({
+      url: request.url(),
+      resourceType: request.resourceType(),
+      isNavigationRequest: request.isNavigationRequest()
+    }, safeMode)) {
+      await route.abort("blockedbyclient");
+      return;
+    }
+
+    await route.continue();
+  });
+}
+
 export async function runExplorePlaywrightAdapter(
   config: A11yConfig,
   options: ExplorePlaywrightOptions
@@ -330,6 +363,7 @@ export async function runExplorePlaywrightAdapter(
     const context = await browser.newContext(runtime.contextOptions);
     const page = await context.newPage();
     attachExplorePopupGuard(page);
+    await attachSafeModeRequestGuard(page, safeMode);
     if (safeMode.enabled && safeMode.dismissDialogs) {
       page.on("dialog", async (dialog) => {
         await dialog.dismiss().catch(() => undefined);
@@ -3756,6 +3790,7 @@ function normalizeSafeMode(safeMode: ExploreSafeModeConfig | undefined): Explore
     blockedRoles: normalizePatterns(safeMode?.blockedRoles),
     blockedUrls: normalizePatterns(safeMode?.blockedUrls),
     blockedSelectors: normalizePatterns(safeMode?.blockedSelectors),
+    blockedRequests: normalizePatterns(safeMode?.blockedRequests),
     allowedSelectors: normalizePatterns(safeMode?.allowedSelectors).length > 0
       ? normalizePatterns(safeMode?.allowedSelectors)
       : fallback.allowedSelectors,
@@ -3771,6 +3806,7 @@ function defaultSafeMode(): ExploreSafeModeConfig {
     blockedRoles: [],
     blockedUrls: [],
     blockedSelectors: [],
+    blockedRequests: [],
     allowedSelectors: ["[data-a11y-explore]"],
     dismissDialogs: true,
     isolateCookies: true

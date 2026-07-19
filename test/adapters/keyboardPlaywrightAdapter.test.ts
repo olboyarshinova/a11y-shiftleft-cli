@@ -112,6 +112,7 @@ test("getKeyboardActivationSafety reuses safe mode and blocks form and navigatio
       blockedRoles: [],
       blockedUrls: [],
       blockedSelectors: [],
+      blockedRequests: [],
       allowedSelectors: [],
       dismissDialogs: true,
       isolateCookies: true

@@ -21,6 +21,7 @@ test("explore supports opening the visual report", () => {
   assert.equal(flags.includes("--auth-state"), true);
   assert.equal(flags.includes("--wait-until-url"), true);
   assert.equal(flags.includes("--wait-until-path"), true);
+  assert.equal(flags.includes("--safe-block-request"), true);
   assert.equal(flags.includes("--pause-on-human-verification"), true);
   assert.equal(flags.includes("--human-verification-timeout-ms"), true);
 });
@@ -57,6 +58,7 @@ test("formatVerboseExploreSummary renders exploration context", () => {
     safeModeBlockedRoles: [],
     safeModeBlockedUrls: ["*/checkout*"],
     safeModeBlockedSelectors: ["[data-danger]"],
+    safeModeBlockedRequests: ["*/api/delete*"],
     retentionEnabled: true,
     retentionDryRun: false
   });
@@ -78,6 +80,7 @@ test("formatVerboseExploreSummary renders exploration context", () => {
   assert.match(output, /safeModeBlockedRoles: none/);
   assert.match(output, /safeModeBlockedUrls: \*\/checkout\*/);
   assert.match(output, /safeModeBlockedSelectors: \[data-danger\]/);
+  assert.match(output, /safeModeBlockedRequests: \*\/api\/delete\*/);
   assert.match(output, /retention: on/);
 });
 

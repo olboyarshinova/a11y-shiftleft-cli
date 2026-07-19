@@ -70,6 +70,7 @@ interface ExploreOptions {
   safeBlockRole?: string[];
   safeBlockUrl?: string[];
   safeBlockSelector?: string[];
+  safeBlockRequest?: string[];
   safeAllowSelector?: string[];
   dismissDialogs?: boolean;
   isolateCookies?: boolean;
@@ -139,6 +140,7 @@ export function registerExploreCommand(program: Command): void {
     .option("--safe-block-role <patterns...>", "Additional role patterns to skip during exploration")
     .option("--safe-block-url <patterns...>", "Additional URL patterns to skip during exploration")
     .option("--safe-block-selector <selectors...>", "Additional selectors to skip during exploration")
+    .option("--safe-block-request <patterns...>", "Additional network request URL patterns to abort during exploration")
     .option("--safe-allow-selector <selectors...>", "Selectors allowed to override form-button safety blocks")
     .option("--no-dismiss-dialogs", "Do not auto-dismiss browser dialogs during exploration")
     .option("--no-isolate-cookies", "Allow cookies to persist between explored states")
@@ -209,6 +211,7 @@ export function registerExploreCommand(program: Command): void {
             blockedRoles: toPatternList(options.safeBlockRole),
             blockedUrls: toPatternList(options.safeBlockUrl),
             blockedSelectors: toPatternList(options.safeBlockSelector),
+            blockedRequests: toPatternList(options.safeBlockRequest),
             allowedSelectors: toPatternList(options.safeAllowSelector),
             dismissDialogs: options.dismissDialogs === false ? false : undefined,
             isolateCookies: authState ? false : options.isolateCookies === false ? false : undefined
@@ -283,6 +286,7 @@ export function registerExploreCommand(program: Command): void {
           safeModeBlockedRoles: effectiveConfig.explore.safeMode.blockedRoles,
           safeModeBlockedUrls: effectiveConfig.explore.safeMode.blockedUrls,
           safeModeBlockedSelectors: effectiveConfig.explore.safeMode.blockedSelectors,
+          safeModeBlockedRequests: effectiveConfig.explore.safeMode.blockedRequests,
           retentionEnabled: effectiveConfig.retention.enabled,
           retentionDryRun: effectiveConfig.retention.dryRun
         }));
@@ -543,6 +547,7 @@ export function formatVerboseExploreSummary(options: {
   safeModeBlockedRoles: string[];
   safeModeBlockedUrls: string[];
   safeModeBlockedSelectors: string[];
+  safeModeBlockedRequests: string[];
   retentionEnabled: boolean;
   retentionDryRun: boolean;
 }): string {
@@ -574,6 +579,7 @@ export function formatVerboseExploreSummary(options: {
     `safeModeBlockedRoles: ${formatPatternList(options.safeModeBlockedRoles)}`,
     `safeModeBlockedUrls: ${formatPatternList(options.safeModeBlockedUrls)}`,
     `safeModeBlockedSelectors: ${formatPatternList(options.safeModeBlockedSelectors)}`,
+    `safeModeBlockedRequests: ${formatPatternList(options.safeModeBlockedRequests)}`,
     `retention: ${retention}`
   ].join("\n");
 }
