@@ -105,6 +105,7 @@ Delta: fixed 2, new 1, remaining 4, total delta -1
 Duration: 842ms
 Reports: reports/watch/a11y-comment.md
 Affected route hints: http://localhost:5173/account
+Visual report follow-up: npx a11y-shiftleft-cli audit --url http://localhost:5173/account --out reports/watch-visual --open
 ```
 
 Use `--verbose` to include a small changed-file sample and the number of
@@ -115,11 +116,17 @@ Route hints are conservative. `watch` can infer common route files such as
 `src/routes/account.svelte`. Shared components do not have one reliable URL, so
 keep representative smoke-test routes in `--url` for important flows.
 
+The visual report follow-up stays explicit on purpose. `watch` keeps the fast
+check loop small, then prints a ready-to-run `audit` command for the affected
+route hints or configured smoke URLs when you need screenshots and annotated
+visual evidence.
+
 ## Current Limits
 
 - `watch` reruns the configured check pipeline. Route hints help with triage,
   but they do not replace explicit `--url` coverage for shared components.
-- `watch` refreshes check reports, not the visual `exploration.html` report.
+- `watch` refreshes check reports and prints a follow-up visual `audit` command
+  for screenshots and annotated HTML evidence.
 - For CI, use `check` or a generated workflow instead of `watch`.
 - Browser overlay and DevTools-style highlighting are planned separately after
   the watch workflow is stable.

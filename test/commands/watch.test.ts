@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   diffWatchSnapshots,
   formatWatchRunSummary,
+  formatWatchVisualAuditCommand,
   inferWatchRouteHints,
   summarizeWatchDelta
 } from "../../dist/commands/watch.js";
@@ -94,6 +95,19 @@ test("formatWatchRunSummary renders concise developer feedback", () => {
   assert.match(output, /Reports: reports\/watch\/a11y-comment.md/);
   assert.match(output, /modified src\/pages\/account.tsx/);
   assert.match(output, /Unmapped changed files: 1/);
+  assert.match(output, /Visual report follow-up: npx a11y-shiftleft-cli audit --url http:\/\/localhost:5173\/account --out reports\/watch-visual --open/);
+});
+
+test("formatWatchVisualAuditCommand prefers route hints and falls back to configured URLs", () => {
+  assert.equal(
+    formatWatchVisualAuditCommand(["https://example.com/account"], ["https://example.com"], "reports/watch"),
+    "npx a11y-shiftleft-cli audit --url https://example.com/account --out reports/watch-visual --open"
+  );
+
+  assert.equal(
+    formatWatchVisualAuditCommand([], ["https://example.com/base"], "reports/watch"),
+    "npx a11y-shiftleft-cli audit --url https://example.com/base --out reports/watch-visual --open"
+  );
 });
 
 test("inferWatchRouteHints maps common route files to dynamic smoke URLs", () => {

@@ -353,6 +353,11 @@ export function formatWatchRunSummary(options: {
     }
   }
 
+  const visualCommand = formatWatchVisualAuditCommand(routeHints.routes, options.urls, options.outputDir);
+  if (visualCommand) {
+    lines.push(`Visual report follow-up: ${visualCommand}`);
+  }
+
   if (options.verbose && changes > 0) {
     lines.push("Changed file sample:");
     lines.push(...formatChangedFileSample(options.changes).map((file) => `  - ${file}`));
@@ -362,6 +367,28 @@ export function formatWatchRunSummary(options: {
   }
 
   return lines.join("\n");
+}
+
+export function formatWatchVisualAuditCommand(
+  routeHints: string[],
+  urls: string[] | undefined,
+  outputDir: string,
+  limit = 3
+): string | undefined {
+  const targets = (routeHints.length > 0 ? routeHints : urls || [])
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .slice(0, limit);
+  if (targets.length === 0) return undefined;
+
+  const visualOut = outputDir.replace(/\/$/u, "") || DEFAULT_WATCH_OUT;
+  return [
+    "npx a11y-shiftleft-cli audit",
+    ...targets.flatMap((url) => ["--url", shellQuote(url)]),
+    "--out",
+    shellQuote(`${visualOut}-visual`),
+    "--open"
+  ].join(" ");
 }
 
 export function inferWatchRouteHints(changes: WatchChangeSummary, urls: string[] | undefined, limit = 6): WatchRouteHintSummary {
@@ -597,6 +624,12 @@ function formatSignedNumber(value: number): string {
 function joinOutputPath(outputDir: string, fileName: string): string {
   if (outputDir.endsWith("/")) return `${outputDir}${fileName}`;
   return `${outputDir}/${fileName}`;
+}
+
+function shellQuote(value: string): string {
+  return /^[A-Za-z0-9_./:@-]+$/u.test(value)
+    ? value
+    : `'${value.replaceAll("'", "'\\''")}'`;
 }
 
 function formatWatchError(error: unknown): string {

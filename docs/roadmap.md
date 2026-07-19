@@ -191,8 +191,10 @@ Section 508 certification.
   baseline, Lighthouse, PDF, Excel, and dashboard paths should stay discoverable
   without crowding the beginner path.
 - Continue hardening `watch` after the initial run-to-run deltas,
-  changed-file grouping, and affected-route hints: next steps are visual report
-  refresh support and more explicit changed-component to smoke-route guidance.
+  changed-file grouping, affected-route hints, and visual audit follow-up
+  commands: next steps are validating changed-component to smoke-route guidance
+  in real projects and deciding whether an opt-in visual refresh loop is useful
+  without making every save too slow.
 - Continue the local `agent` workflow after the initial deterministic
   `agent review`, `agent run`, local report-history comparison, and
   `agent refresh-html`. Current agent guidance can refresh visual reports and
