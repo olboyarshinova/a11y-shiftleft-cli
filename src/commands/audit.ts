@@ -27,7 +27,7 @@ import { writeReports } from "../reporters/writeReports.js";
 import type { ComplianceStandard, Framework, Issue, KeyboardAuditResult, LighthouseAuditResult, Severity } from "../types.js";
 import { filterByWcagConformance, shouldFail } from "./check.js";
 
-interface AuditOptions {
+export interface AuditOptions {
   cwd?: string;
   config?: string;
   framework?: string;

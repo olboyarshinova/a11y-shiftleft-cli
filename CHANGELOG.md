@@ -44,6 +44,8 @@
 - Added `agent review`, a local deterministic report assistant that summarizes
   fix-first findings, compares against a previous report, and recommends the
   next CLI step without using external services.
+- Added `agent run` to execute an audit and immediately produce the same local
+  next-step review from the generated report.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

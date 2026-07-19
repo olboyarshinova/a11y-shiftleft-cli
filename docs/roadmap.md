@@ -194,9 +194,9 @@ Section 508 certification.
   changed-file grouping, and affected-route hints: next steps are visual report
   refresh support and more explicit changed-component to smoke-route guidance.
 - Continue the local `agent` workflow after the initial deterministic
-  `agent review` command. Next steps: optionally run an audit before review,
-  compare with the previous report, and refresh the visual report in one local
-  workflow.
+  `agent review` and `agent run` commands. Next steps: refresh the visual
+  report from existing JSON, surface more specific next commands, and connect
+  agent summaries to optional dashboard history.
 - Evaluate a dedicated Jenkinsfile preset only if teams need more than the
   generated portable shell CI script. Keep any future preset focused on
   installing the package, starting the app, running `audit` or `check`, and

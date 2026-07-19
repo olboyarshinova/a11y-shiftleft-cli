@@ -20,6 +20,22 @@ test("agent review exposes local report comparison options", () => {
   assert.match(reviewCommand.description(), /compare progress/);
 });
 
+test("agent run exposes audit plus review workflow options", () => {
+  const agent = createProgram().commands.find((item) => item.name() === "agent");
+  const runCommand = agent?.commands.find((item) => item.name() === "run");
+
+  assert.ok(runCommand);
+  const flags = runCommand.options.map((option) => option.long);
+  assert.equal(flags.includes("--url"), true);
+  assert.equal(flags.includes("--previous"), true);
+  assert.equal(flags.includes("--out"), true);
+  assert.equal(flags.includes("--review-out"), true);
+  assert.equal(flags.includes("--profile"), true);
+  assert.equal(flags.includes("--with-lighthouse"), true);
+  assert.equal(flags.includes("--open"), true);
+  assert.match(runCommand.description(), /Run an audit/);
+});
+
 test("agent review writes a deterministic progress summary", async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-agent-review-"));
   const currentDir = path.join(root, "current");

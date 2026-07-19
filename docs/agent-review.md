@@ -1,9 +1,37 @@
 # Agent Review
 
-`agent review` is a local deterministic helper for the moment after an audit
-finishes. It does not use an LLM and does not upload report data. It reads
-`a11y-report.json`, summarizes the highest-priority findings, optionally
-compares against a previous report, and suggests the next CLI command.
+`agent` is a local deterministic helper for the moment after an audit finishes.
+It does not use an LLM and does not upload report data.
+
+Use `agent run` when you want one command to run the audit and then summarize
+the generated report:
+
+```bash
+npx a11y-shiftleft-cli agent run --url $APP_URL --out reports --open
+```
+
+Compare with a previous run:
+
+```bash
+npx a11y-shiftleft-cli agent run \
+  --url $APP_URL \
+  --out reports/current \
+  --previous reports/previous \
+  --open
+```
+
+Write the review next to the visual report:
+
+```bash
+npx a11y-shiftleft-cli agent run \
+  --url $APP_URL \
+  --out reports \
+  --review-out reports/agent-review.md
+```
+
+Use `agent review` when the audit already exists. It reads `a11y-report.json`,
+summarizes the highest-priority findings, optionally compares against a previous
+report, and suggests the next CLI command.
 
 ```bash
 npx a11y-shiftleft-cli agent review --report reports
