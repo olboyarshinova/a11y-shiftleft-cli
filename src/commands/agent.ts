@@ -199,6 +199,7 @@ async function createAgentReviewOutput(options: {
     previousReportPath: options.previousReportPath,
     previousReportSource: options.previousReportSource,
     history,
+    historyRoot: options.history,
     maxItems: toPositiveInteger(options.maxItems)
   });
 

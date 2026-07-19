@@ -78,6 +78,17 @@ test("createAgentReview recommends focused follow-up from report evidence", () =
   assert.equal(review.nextCommands.some((command) => /--with-lighthouse/.test(command)), true);
 });
 
+test("createAgentReview recommends continuing history workflow when available", () => {
+  const review = createAgentReview({
+    report: report([issue("warning", "color-contrast", "warning")]),
+    reportPath: "reports/history/run-2/a11y-report.json",
+    historyRoot: "reports/history"
+  });
+
+  assert.equal(review.nextCommands.some((command) => /--history reports\/history/.test(command)), true);
+  assert.equal(review.nextCommands.some((command) => /--previous <previous-report-dir>/.test(command)), false);
+});
+
 test("createAgentReview summarizes practical risk focus areas", () => {
   const reportWithRisk = {
     ...report([

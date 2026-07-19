@@ -60,6 +60,9 @@
 - Added a compact `Review focus` block to `agent` output that prioritizes
   critical findings, keyboard/focus evidence, manual-review items, third-party
   embeds, human-verification blockers, and Lighthouse follow-up.
+- Improved `agent` next-step guidance for report-history workflows so runs
+  started with `--history` suggest continuing local history instead of switching
+  back to manual `--previous` comparisons.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

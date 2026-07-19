@@ -8,6 +8,7 @@ export interface AgentReviewOptions {
   previousReportPath?: string;
   previousReportSource?: "explicit" | "history";
   history?: AgentHistorySummary;
+  historyRoot?: string;
   maxItems?: number;
 }
 
@@ -36,6 +37,7 @@ export interface AgentReview {
   previousReportPath?: string;
   previousReportSource?: "explicit" | "history";
   history?: AgentHistorySummary;
+  historyRoot?: string;
   summary: {
     total: number;
     critical: number;
@@ -67,6 +69,7 @@ export function createAgentReview(options: AgentReviewOptions): AgentReview {
     previousReportPath: options.previousReportPath,
     previousReportSource: options.previousReportPath ? options.previousReportSource || "explicit" : undefined,
     history: options.history,
+    historyRoot: options.historyRoot,
     summary: {
       total: options.report.summary.total,
       critical: options.report.summary.critical,
@@ -76,7 +79,7 @@ export function createAgentReview(options: AgentReviewOptions): AgentReview {
     changes,
     riskFocus: createRiskFocus(options.report, changes),
     focus,
-    nextCommands: recommendAgentNextCommands(options.report, Boolean(options.previousReport))
+    nextCommands: recommendAgentNextCommands(options.report, Boolean(options.previousReport), options.historyRoot)
   };
 }
 
@@ -273,7 +276,7 @@ function summarizeAgentChanges(previousReport: A11yReport | undefined, currentRe
   };
 }
 
-function recommendAgentNextCommands(report: A11yReport, hasPreviousReport: boolean): string[] {
+function recommendAgentNextCommands(report: A11yReport, hasPreviousReport: boolean, historyRoot: string | undefined): string[] {
   const commands: string[] = [];
   const hasCritical = report.summary.critical > 0;
   const hasWarnings = report.summary.warning > 0;
@@ -304,7 +307,9 @@ function recommendAgentNextCommands(report: A11yReport, hasPreviousReport: boole
     commands.push("Optional comparison: npx a11y-shiftleft-cli audit --url <app-url> --out reports --with-lighthouse --open");
   }
 
-  if (!hasPreviousReport) {
+  if (historyRoot) {
+    commands.push(`Continue local history: npx a11y-shiftleft-cli agent run --url <app-url> --out ${historyRoot}/run-<date> --history ${historyRoot} --open`);
+  } else if (!hasPreviousReport) {
     commands.push("Next time, compare progress with: npx a11y-shiftleft-cli agent review --report reports/a11y-report.json --previous <previous-report-dir>");
   }
 
