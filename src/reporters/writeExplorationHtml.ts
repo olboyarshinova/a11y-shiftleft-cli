@@ -2035,8 +2035,6 @@ export function renderExplorationHtml(
       ${metric("Best practices", findingTypes["best-practice"], "best-practice")}
     </section>
 
-    ${renderSafeExplorationGuardrails(graph)}
-
     ${renderLighthouseComparison(options.lighthouse, reportIssues)}
 
     ${renderCoverageMatrix(graph, options, reportIssues)}
@@ -2060,6 +2058,8 @@ export function renderExplorationHtml(
     ${options.manualChecklist ? renderManualChecklist(options.manualChecklist) : ""}
 
     ${renderShareReview()}
+
+    ${renderSafeExplorationGuardrails(graph)}
 
     <section class="panel panel-full-width coverage-note" aria-label="Manual review note">
       <h2>Coverage Note</h2>
@@ -3828,7 +3828,6 @@ function renderFindingOccurrenceGroup(
       ${totalRuleIssues > 1 && issue.colorScheme ? `<div class="badges"><span class="badge">${escapeHtml(issue.colorScheme)} color scheme</span></div>` : ""}
       <div>${escapeHtml(normalizeIssueMessageForDisplay(issue.message))}</div>
       ${grouped ? renderFindingTargets(group.issues, annotationNumberByIssueKey) : renderFindingTarget(group.issues[0], annotationNumberByIssueKey)}
-      ${renderUserImpact(issue)}
       ${renderRemediationTracking(issue)}
       ${renderOwnership(issue)}
       ${renderHumanVerificationContext(issue)}
@@ -3924,29 +3923,6 @@ function renderOwnership(issue: DedupedIssue): string {
     ${source}
     ${note}
   </aside>`;
-}
-
-function renderUserImpact(issue: DedupedIssue): string {
-  if (!issue.userImpact) return "";
-  const affectedUsers = compactAffectedUsers(issue.userImpact.affectedUsers);
-  const users = affectedUsers ? `<span>Affected users: ${escapeHtml(affectedUsers)}</span>` : "";
-  return `<aside class="finding-context finding-context-impact" aria-label="User impact">
-    <strong>User impact: ${escapeHtml(formatUserImpactLevel(issue.userImpact.level))}</strong>
-    ${users}
-    <span>${escapeHtml(issue.userImpact.reason)}</span>
-  </aside>`;
-}
-
-function compactAffectedUsers(users: string[]): string {
-  if (users.length <= 4) return users.join(", ");
-  return `${users.slice(0, 4).join(", ")}, +${users.length - 4} more`;
-}
-
-function formatUserImpactLevel(level: NonNullable<DedupedIssue["userImpact"]>["level"]): string {
-  if (level === "blocker") return "Blocker";
-  if (level === "significant") return "Significant";
-  if (level === "workaround") return "Workaround available";
-  return "Minor";
 }
 
 function renderRemediationTracking(issue: DedupedIssue): string {

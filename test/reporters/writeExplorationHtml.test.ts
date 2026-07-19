@@ -285,6 +285,8 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /UI states explored/);
   assert.match(html, /Rendered states/);
   assert.match(html, /Safe Exploration Guardrails/);
+  assert.ok(html.indexOf("Safe Exploration Guardrails") > html.indexOf("Share Review Copy"));
+  assert.ok(html.indexOf("Safe Exploration Guardrails") < html.indexOf("Coverage Note"));
   assert.match(html, /1 action was skipped/);
   assert.match(html, /Submit\/reset controls are blocked by safe mode unless explicitly allowed/);
   assert.match(html, /state-1<\/a>:[\s\S]*?Submit order[\s\S]*?button\[type=/);
@@ -1170,7 +1172,7 @@ test("renderExplorationHtml explains human verification blockers", () => {
   assert.match(html, /Use a staging, preview, or allowlisted URL/);
 });
 
-test("renderExplorationHtml shows compact user impact evidence", () => {
+test("renderExplorationHtml keeps user impact out of visual finding cards", () => {
   const html = renderExplorationHtml(graph, [{
     ...issues[0],
     userImpact: {
@@ -1186,10 +1188,10 @@ test("renderExplorationHtml shows compact user impact evidence", () => {
     }
   }]);
 
-  assert.match(html, /aria-label="User impact"/);
-  assert.match(html, /User impact: Significant/);
-  assert.match(html, /Affected users: Keyboard users, Screen reader users, Switch-control users, Voice-control users, \+1 more/);
-  assert.match(html, /This issue can make a core task difficult to complete/);
+  assert.doesNotMatch(html, /aria-label="User impact"/);
+  assert.doesNotMatch(html, /User impact: Significant/);
+  assert.doesNotMatch(html, /Affected users: Keyboard users/);
+  assert.doesNotMatch(html, /This issue can make a core task difficult to complete/);
 });
 
 test("renderExplorationHtml marks unavailable coverage evidence", () => {
