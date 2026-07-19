@@ -257,8 +257,9 @@ Section 508 certification.
   traffic.
 - Continue hardening report retention. Current visual reports can summarize the
   active retention policy and dry-run/cleanup counts without exposing local
-  paths; next, evaluate more detailed local-only preview output and clearer
-  history-management UX for timestamped report runs.
+  paths, and console output can show short local-only run labels for planned
+  cleanup. Next, evaluate clearer history-management UX for timestamped report
+  runs.
 
 ## Integrations And Sharing
 

@@ -339,4 +339,6 @@ npx a11y-shiftleft-cli explore \
 ```
 
 Retention only removes sibling directories that contain a11y-shiftleft report
-marker files and never removes the current output directory.
+marker files and never removes the current output directory. Dry-run and
+verbose output show short run-folder names such as `run-2026-06-01`, not full
+local filesystem paths.

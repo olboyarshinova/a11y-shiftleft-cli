@@ -422,6 +422,8 @@ export async function runCheck(options: CheckOptions = {}): Promise<CheckResult>
         retentionDryRun: retentionSummary.dryRun,
         retentionPlannedDeletedRuns: retentionSummary.plannedDeletedRuns,
         retentionDeletedRuns: retentionSummary.deletedRuns,
+        retentionPlannedDeletedRunLabels: retentionSummary.plannedDeletedRunLabels,
+        retentionKeptRunLabels: retentionSummary.keptRunLabels,
         lighthouseEnabled: Boolean(options.withLighthouse)
       }));
     }
@@ -545,6 +547,8 @@ export function formatVerboseCheckSummary(options: {
   retentionDryRun: boolean;
   retentionPlannedDeletedRuns: number;
   retentionDeletedRuns: number;
+  retentionPlannedDeletedRunLabels?: string[];
+  retentionKeptRunLabels?: string[];
   lighthouseEnabled?: boolean;
 }): string {
   const adapterLines = options.adapterRuns.map((run) => {
@@ -566,8 +570,8 @@ export function formatVerboseCheckSummary(options: {
     : "disabled";
   const retention = options.retentionEnabled
     ? options.retentionDryRun
-      ? `dry-run plannedDeletedRuns=${options.retentionPlannedDeletedRuns}`
-      : `enabled deletedRuns=${options.retentionDeletedRuns}`
+      ? `dry-run plannedDeletedRuns=${options.retentionPlannedDeletedRuns}${formatRetentionRunLabels(options.retentionPlannedDeletedRunLabels, " wouldDelete")}`
+      : `enabled deletedRuns=${options.retentionDeletedRuns}${formatRetentionRunLabels(options.retentionKeptRunLabels, " kept")}`
     : "disabled";
 
   return [
@@ -593,6 +597,13 @@ export function formatVerboseCheckSummary(options: {
     "adapters:",
     ...adapterLines
   ].join("\n");
+}
+
+function formatRetentionRunLabels(labels: string[] | undefined, prefix: string, limit = 5): string {
+  const visibleLabels = (labels || []).filter(Boolean).slice(0, limit);
+  if (visibleLabels.length === 0) return "";
+  const hiddenCount = Math.max(0, (labels?.length || 0) - visibleLabels.length);
+  return `${prefix}=${visibleLabels.join(",")}${hiddenCount > 0 ? `,+${hiddenCount} more` : ""}`;
 }
 
 function formatQualityGateEffect(profile: QualityGateProfile | undefined): string {

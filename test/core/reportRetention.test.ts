@@ -41,6 +41,8 @@ test("applyReportRetention previews deletions during dry-run", async () => {
   assert.equal(summary.plannedDeletedRuns, 1);
   assert.equal(summary.deletedRuns, 0);
   assert.deepEqual(summary.plannedDeletedRunDirs, [staleRun]);
+  assert.deepEqual(summary.plannedDeletedRunLabels, ["run-stale"]);
+  assert.deepEqual(summary.keptRunLabels, []);
   assert.equal(await exists(staleRun), true);
   assert.equal(await exists(current), true);
 });
@@ -86,6 +88,8 @@ test("applyReportRetention keeps maxRuns including the current output directory"
   });
 
   assert.equal(summary.deletedRuns, 2);
+  assert.deepEqual(summary.plannedDeletedRunLabels, ["run-middle", "run-oldest"]);
+  assert.deepEqual(summary.keptRunLabels, ["run-newest"]);
   assert.equal(await exists(current), true);
   assert.equal(await exists(newest), true);
   assert.equal(await exists(middle), false);

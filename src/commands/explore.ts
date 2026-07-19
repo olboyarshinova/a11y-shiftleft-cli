@@ -664,8 +664,8 @@ export function formatExploreConsoleSummary(
     .slice(0, 5);
   const retention = options.retention
     ? options.retention.dryRun
-      ? `dry-run planned delete ${options.retention.plannedDeletedRuns}, kept ${options.retention.keptRuns}`
-      : `deleted ${options.retention.deletedRuns}, kept ${options.retention.keptRuns}`
+      ? `dry-run planned delete ${options.retention.plannedDeletedRuns}${formatRetentionRunLabels(options.retention.plannedDeletedRunLabels, " wouldDelete")}, kept ${options.retention.keptRuns}`
+      : `deleted ${options.retention.deletedRuns}, kept ${options.retention.keptRuns}${formatRetentionRunLabels(options.retention.keptRunLabels, " kept")}`
     : "off";
   const colorSchemes = [...new Set(
     graph.states.map((state) => state.colorScheme).filter(Boolean)
@@ -701,6 +701,13 @@ export function formatExploreConsoleSummary(
     "  - Use --no-screenshots for sensitive pages or CI runs that must not store images.",
     "  - Use --json-summary when a script needs the stdout summary as JSON."
   ].join("\n");
+}
+
+function formatRetentionRunLabels(labels: string[] | undefined, prefix: string, limit = 5): string {
+  const visibleLabels = (labels || []).filter(Boolean).slice(0, limit);
+  if (visibleLabels.length === 0) return "";
+  const hiddenCount = Math.max(0, (labels?.length || 0) - visibleLabels.length);
+  return `${prefix}=${visibleLabels.join(",")}${hiddenCount > 0 ? `,+${hiddenCount} more` : ""}`;
 }
 
 function shouldPrintExploreProgress(options: Pick<ExploreOptions, "quiet">): boolean {

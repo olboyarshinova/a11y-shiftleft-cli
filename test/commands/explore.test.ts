@@ -257,12 +257,30 @@ test("formatExploreConsoleSummary renders a readable visual scan summary", () =>
     formats: ["json", "markdown"],
     html: true,
     pdf: true,
-    screenshots: true
+    screenshots: true,
+    retention: {
+      enabled: true,
+      dryRun: true,
+      maxRuns: 5,
+      maxAgeDays: 14,
+      candidateRuns: 3,
+      plannedDeletedRuns: 1,
+      deletedRuns: 0,
+      keptRuns: 2,
+      rootDir: "/private/reports",
+      currentOutputDir: "/private/reports/current",
+      plannedDeletedRunDirs: ["/private/reports/run-stale"],
+      keptRunDirs: ["/private/reports/run-fresh"],
+      plannedDeletedRunLabels: ["run-stale"],
+      keptRunLabels: ["run-fresh"]
+    }
   });
 
   assert.match(output, /Exploration: UI states 1\/20 \| rendered states 1 \| actions tried 0 \| skipped 0 \| unique screenshots 1 \| duplicate screenshots skipped 0/);
   assert.match(output, /Findings: total 2 \| CRITICAL 0 \| WARNING 2 \| INFO 0/);
   assert.match(output, /Color schemes: single\/default/);
+  assert.match(output, /Retention: dry-run planned delete 1 wouldDelete=run-stale, kept 2/);
+  assert.doesNotMatch(output, /private\/reports/);
   assert.match(output, /color-contrast: 1/);
   assert.match(output, /state-1: 2 findings/);
   assert.match(output, /reports\/exploration.html/);

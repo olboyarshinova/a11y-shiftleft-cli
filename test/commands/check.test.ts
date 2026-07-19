@@ -334,6 +334,7 @@ test("formatVerboseCheckSummary renders scan context without JSON parsing requir
     retentionDryRun: false,
     retentionPlannedDeletedRuns: 2,
     retentionDeletedRuns: 2,
+    retentionKeptRunLabels: ["run-newest"],
     lighthouseEnabled: true
   });
 
@@ -348,7 +349,7 @@ test("formatVerboseCheckSummary renders scan context without JSON parsing requir
   assert.match(output, /gate effect: fails only on new critical findings against the baseline/);
   assert.match(output, /baseline: enabled file=.a11y-baseline.json/);
   assert.match(output, /ignore: enabled file=a11y-ignore.json ignored=2/);
-  assert.match(output, /retention: enabled deletedRuns=2/);
+  assert.match(output, /retention: enabled deletedRuns=2 kept=run-newest/);
   assert.match(output, /static: enabled, findings=1, duration=25ms/);
   assert.match(output, /dynamic: enabled, findings=2, duration=150ms/);
 });
@@ -384,6 +385,14 @@ test("formatVerboseCheckSummary explains report-only and custom gates", () => {
   assert.match(formatVerboseCheckSummary({
     ...baseOptions
   }), /gate effect: uses the selected --fail-on severity/);
+  assert.match(formatVerboseCheckSummary({
+    ...baseOptions,
+    retentionEnabled: true,
+    retentionDryRun: true,
+    retentionPlannedDeletedRuns: 1,
+    retentionDeletedRuns: 0,
+    retentionPlannedDeletedRunLabels: ["run-stale"]
+  }), /retention: dry-run plannedDeletedRuns=1 wouldDelete=run-stale/);
 });
 
 test("formatCheckConsoleSummary renders a readable local summary", () => {

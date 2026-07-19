@@ -13,6 +13,8 @@ export interface ReportRetentionSummary extends ReportRetentionEvidence {
   currentOutputDir: string;
   plannedDeletedRunDirs: string[];
   keptRunDirs: string[];
+  plannedDeletedRunLabels: string[];
+  keptRunLabels: string[];
 }
 
 interface ApplyReportRetentionOptions {
@@ -62,7 +64,9 @@ export async function applyReportRetention(
       deletedRuns: 0,
       keptRuns: 0,
       plannedDeletedRunDirs: [],
-      keptRunDirs: []
+      keptRunDirs: [],
+      plannedDeletedRunLabels: [],
+      keptRunLabels: []
     };
   }
 
@@ -107,7 +111,9 @@ export async function applyReportRetention(
     deletedRuns: dryRun ? 0 : plannedDeletedRunDirs.length,
     keptRuns: keptRunDirs.length,
     plannedDeletedRunDirs,
-    keptRunDirs
+    keptRunDirs,
+    plannedDeletedRunLabels: plannedDeletedRunDirs.map(safeRunLabel),
+    keptRunLabels: keptRunDirs.map(safeRunLabel)
   };
 }
 
@@ -155,6 +161,10 @@ async function hasReportMarker(dir: string): Promise<boolean> {
 
 function positiveOrDefault(value: number | undefined, fallback: number): number {
   return Number.isInteger(value) && Number(value) > 0 ? Number(value) : fallback;
+}
+
+function safeRunLabel(dir: string): string {
+  return path.basename(dir) || "report-run";
 }
 
 function isNodeError(error: unknown): error is NodeJS.ErrnoException {
