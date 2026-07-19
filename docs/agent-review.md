@@ -88,6 +88,7 @@ The output focuses on:
 
 - total, critical, warning, and info findings;
 - fixed, new, and remaining findings when `--previous` is provided;
+- a short `Review focus` list for the most practical risk areas;
 - a short "Fix first" list sorted by severity;
 - practical next commands, such as rerunning `audit` or exporting ticket drafts.
 

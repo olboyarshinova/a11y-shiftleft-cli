@@ -57,6 +57,9 @@
 - Added compact page-level history deltas to `agent --history` when report
   page summaries are available, so teams can spot which routes improved or
   regressed from the first local history run.
+- Added a compact `Review focus` block to `agent` output that prioritizes
+  critical findings, keyboard/focus evidence, manual-review items, third-party
+  embeds, human-verification blockers, and Lighthouse follow-up.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

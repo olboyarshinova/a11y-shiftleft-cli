@@ -37,6 +37,7 @@ test("createAgentReview summarizes current findings and previous progress", () =
   assert.equal(review.changes.fixedIssues, 1);
   assert.equal(review.changes.newIssues, 2);
   assert.equal(review.changes.remainingIssues, 1);
+  assert.deepEqual(review.riskFocus.map((item) => item.id), ["critical"]);
   assert.deepEqual(review.focus.map((item) => item.ruleId), ["image-alt", "color-contrast"]);
 });
 
@@ -51,6 +52,8 @@ test("formatAgentReview renders concise next-step guidance", () => {
   assert.match(text, /Visual report: reports\/a11y-report\.html/);
   assert.match(text, /Findings: total 1 \| critical 1 \| warning 0 \| info 0/);
   assert.match(text, /Change: no previous report provided/);
+  assert.match(text, /Review focus:/);
+  assert.match(text, /Critical findings: 1/);
   assert.match(text, /Fix first:/);
   assert.match(text, /button-name/);
   assert.match(text, /Suggested next commands:/);
@@ -73,6 +76,56 @@ test("createAgentReview recommends focused follow-up from report evidence", () =
   assert.equal(review.nextCommands.some((command) => /Keyboard Audit/.test(command)), true);
   assert.equal(review.nextCommands.some((command) => /manual review checklist/.test(command)), true);
   assert.equal(review.nextCommands.some((command) => /--with-lighthouse/.test(command)), true);
+});
+
+test("createAgentReview summarizes practical risk focus areas", () => {
+  const reportWithRisk = {
+    ...report([
+      issue("new-critical", "button-name", "critical"),
+      issue("keyboard", "keyboard-focus-cycle", "warning", { source: "keyboard", category: "keyboard" }),
+      issue("needs-review", "layout-horizontal-overflow", "warning", { findingType: "needs-review" }),
+      issue("third-party", "aria-prohibited-attr", "warning", {
+        ownership: {
+          kind: "third-party-embed",
+          label: "Third-party embedded content"
+        }
+      })
+    ]),
+    summary: {
+      ...report([]).summary,
+      total: 4,
+      critical: 1,
+      warning: 3,
+      info: 0,
+      byOwnership: {
+        "third-party-embed": 1
+      },
+      blockedByHumanVerification: 1,
+      lighthouse: {
+        enabled: true,
+        pageCount: 1,
+        averageAccessibilityScore: 88,
+        minAccessibilityScore: 88,
+        failedAuditCount: 2,
+        manualAuditCount: 1,
+        pages: []
+      }
+    }
+  } as A11yReport;
+
+  const review = createAgentReview({
+    report: reportWithRisk,
+    reportPath: "reports/a11y-report.json"
+  });
+
+  assert.deepEqual(review.riskFocus.map((item) => item.id), [
+    "critical",
+    "keyboard-focus",
+    "needs-review",
+    "third-party",
+    "human-verification"
+  ]);
+  assert.equal(review.riskFocus.some((item) => item.id === "lighthouse"), false);
 });
 
 function report(issues: DedupedIssue[]): A11yReport {

@@ -23,6 +23,13 @@ export interface AgentReviewChangeSummary {
   newInfo: number;
 }
 
+export interface AgentRiskFocusItem {
+  id: string;
+  label: string;
+  count: number;
+  action: string;
+}
+
 export interface AgentReview {
   reportPath: string;
   visualReportPath: string;
@@ -36,6 +43,7 @@ export interface AgentReview {
     info: number;
   };
   changes: AgentReviewChangeSummary;
+  riskFocus: AgentRiskFocusItem[];
   focus: DedupedIssue[];
   nextCommands: string[];
 }
@@ -51,6 +59,7 @@ export function createAgentReview(options: AgentReviewOptions): AgentReview {
   const focus = [...options.report.issues]
     .sort(compareAgentFocusIssues)
     .slice(0, maxItems);
+  const changes = summarizeAgentChanges(options.previousReport, options.report);
 
   return {
     reportPath: options.reportPath,
@@ -64,7 +73,8 @@ export function createAgentReview(options: AgentReviewOptions): AgentReview {
       warning: options.report.summary.warning,
       info: options.report.summary.info
     },
-    changes: summarizeAgentChanges(options.previousReport, options.report),
+    changes,
+    riskFocus: createRiskFocus(options.report, changes),
     focus,
     nextCommands: recommendAgentNextCommands(options.report, Boolean(options.previousReport))
   };
@@ -94,6 +104,11 @@ export function formatAgentReview(review: AgentReview): string {
     lines.push(...formatHistoryPageChanges(review.history));
   }
 
+  if (review.riskFocus.length > 0) {
+    lines.push("", "Review focus:");
+    lines.push(...review.riskFocus.map((item) => `- ${item.label}: ${item.count} - ${item.action}`));
+  }
+
   if (review.focus.length > 0) {
     lines.push("", "Fix first:");
     lines.push(...review.focus.map((issue, index) => formatFocusIssue(issue, index + 1)));
@@ -105,6 +120,81 @@ export function formatAgentReview(review: AgentReview): string {
   lines.push(...review.nextCommands.map((command) => `- ${command}`));
 
   return `${lines.join("\n")}\n`;
+}
+
+function createRiskFocus(report: A11yReport, changes: AgentReviewChangeSummary): AgentRiskFocusItem[] {
+  const focus: AgentRiskFocusItem[] = [];
+  const criticalCount = changes.enabled ? changes.newCritical : report.summary.critical;
+  const keyboardCount = countKeyboardFindings(report);
+  const needsReviewCount = report.issues.filter((issue) => issue.findingType === "needs-review").length;
+  const thirdPartyCount = report.summary.byOwnership?.["third-party-embed"] ||
+    report.issues.filter((issue) => issue.ownership?.kind === "third-party-embed").length;
+  const humanVerificationCount = report.summary.blockedByHumanVerification || 0;
+  const lighthouseFailedCount = report.summary.lighthouse?.failedAuditCount || 0;
+
+  if (criticalCount > 0) {
+    focus.push({
+      id: "critical",
+      label: changes.enabled ? "New critical findings" : "Critical findings",
+      count: criticalCount,
+      action: "fix before tightening CI gates or sharing the report"
+    });
+  }
+
+  if (keyboardCount > 0) {
+    focus.push({
+      id: "keyboard-focus",
+      label: "Keyboard and focus evidence",
+      count: keyboardCount,
+      action: "review the visual Keyboard Audit section and rerun with --activation when needed"
+    });
+  }
+
+  if (needsReviewCount > 0) {
+    focus.push({
+      id: "needs-review",
+      label: "Needs manual review",
+      count: needsReviewCount,
+      action: "complete the manual checklist before claiming the flow is clear"
+    });
+  }
+
+  if (thirdPartyCount > 0) {
+    focus.push({
+      id: "third-party",
+      label: "Third-party embedded content",
+      count: thirdPartyCount,
+      action: "separate vendor-owned issues from first-party fixes"
+    });
+  }
+
+  if (humanVerificationCount > 0) {
+    focus.push({
+      id: "human-verification",
+      label: "Human verification blocked states",
+      count: humanVerificationCount,
+      action: "rerun with --pause-on-human-verification or use a test environment"
+    });
+  }
+
+  if (lighthouseFailedCount > 0) {
+    focus.push({
+      id: "lighthouse",
+      label: "Lighthouse failed audits",
+      count: lighthouseFailedCount,
+      action: "compare Lighthouse suggestions with visual findings"
+    });
+  }
+
+  return focus.slice(0, 5);
+}
+
+function countKeyboardFindings(report: A11yReport): number {
+  return report.issues.filter((issue) => (
+    issue.source === "keyboard" ||
+    issue.category === "keyboard" ||
+    issue.category === "focus"
+  )).length;
 }
 
 function formatHistorySummary(history: AgentHistorySummary): string {
