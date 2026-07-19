@@ -31,6 +31,7 @@ test("createAgentReview summarizes current findings and previous progress", () =
     warning: 1,
     info: 1
   });
+  assert.equal(review.visualReportPath, "reports/current/a11y-report.html");
   assert.equal(review.changes.fixedIssues, 1);
   assert.equal(review.changes.newIssues, 2);
   assert.equal(review.changes.remainingIssues, 1);
@@ -45,12 +46,31 @@ test("formatAgentReview renders concise next-step guidance", () => {
   const text = formatAgentReview(review);
 
   assert.match(text, /a11y-shiftleft agent review/);
+  assert.match(text, /Visual report: reports\/a11y-report\.html/);
   assert.match(text, /Findings: total 1 \| critical 1 \| warning 0 \| info 0/);
   assert.match(text, /Change: no previous report provided/);
   assert.match(text, /Fix first:/);
   assert.match(text, /button-name/);
   assert.match(text, /Suggested next commands:/);
   assert.match(text, /ticket export/);
+});
+
+test("createAgentReview recommends focused follow-up from report evidence", () => {
+  const review = createAgentReview({
+    report: {
+      ...report([
+        issue("keyboard", "keyboard-focus-cycle", "warning", { category: "keyboard" }),
+        issue("needs-review", "layout-horizontal-overflow", "warning", { findingType: "needs-review" })
+      ]),
+      keyboard: { steps: [], issues: [], summary: { forwardSteps: 0, reverseSteps: 0, activationChecks: 0 } }
+    } as A11yReport,
+    previousReport: report([]),
+    reportPath: "/tmp/reports/a11y-report.json"
+  });
+
+  assert.equal(review.nextCommands.some((command) => /Keyboard Audit/.test(command)), true);
+  assert.equal(review.nextCommands.some((command) => /manual review checklist/.test(command)), true);
+  assert.equal(review.nextCommands.some((command) => /--with-lighthouse/.test(command)), true);
 });
 
 function report(issues: DedupedIssue[]): A11yReport {
@@ -66,7 +86,12 @@ function report(issues: DedupedIssue[]): A11yReport {
   } as A11yReport;
 }
 
-function issue(fingerprint: string, ruleId: string, severity: Severity): DedupedIssue {
+function issue(
+  fingerprint: string,
+  ruleId: string,
+  severity: Severity,
+  overrides: Partial<DedupedIssue> = {}
+): DedupedIssue {
   return {
     fingerprint,
     ruleId,
@@ -89,6 +114,7 @@ function issue(fingerprint: string, ruleId: string, severity: Severity): Deduped
     findingType: "wcag",
     category: "semantics",
     selector: ".target",
-    duplicateCount: 0
+    duplicateCount: 0,
+    ...overrides
   } as DedupedIssue;
 }
