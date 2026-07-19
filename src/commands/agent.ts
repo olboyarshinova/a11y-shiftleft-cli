@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { Command } from "commander";
 import { createAgentReview, formatAgentReview } from "../core/agentReview.js";
-import { findPreviousReportInHistory } from "../core/agentHistory.js";
+import { findPreviousReportInHistory, summarizeAgentHistory } from "../core/agentHistory.js";
 import { readA11yReport } from "../core/evidenceExport.js";
 import { runAudit, type AuditOptions } from "./audit.js";
 
@@ -72,6 +72,8 @@ export function registerAgentCommand(program: Command): void {
         reportPath,
         previousReportPath,
         previousReportSource: previousReportPath ? previousSourceFromOptions(options) : undefined,
+        history: options.history,
+        historyMaxDepth: options.historyMaxDepth,
         maxItems: options.maxItems,
         json: options.json
       });
@@ -134,6 +136,8 @@ export function registerAgentCommand(program: Command): void {
         reportPath,
         previousReportPath,
         previousReportSource: previousReportPath ? previousSourceFromOptions(options) : undefined,
+        history: options.history,
+        historyMaxDepth: options.historyMaxDepth,
         maxItems: options.maxItems,
         json: false
       });
@@ -173,17 +177,28 @@ async function createAgentReviewOutput(options: {
   reportPath: string;
   previousReportPath?: string;
   previousReportSource?: "explicit" | "history";
+  history?: string;
+  historyMaxDepth?: string;
   maxItems?: string;
   json?: boolean;
 }): Promise<string> {
   const report = await readA11yReport(options.reportPath);
   const previousReport = options.previousReportPath ? await readA11yReport(options.previousReportPath) : undefined;
+  const history = options.history
+    ? await summarizeAgentHistory({
+      currentReportPath: options.reportPath,
+      currentReport: report,
+      historyRoot: options.history,
+      maxDepth: toPositiveInteger(options.historyMaxDepth)
+    })
+    : undefined;
   const review = createAgentReview({
     report,
     previousReport,
     reportPath: options.reportPath,
     previousReportPath: options.previousReportPath,
     previousReportSource: options.previousReportSource,
+    history,
     maxItems: toPositiveInteger(options.maxItems)
   });
 

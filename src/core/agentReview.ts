@@ -1,4 +1,5 @@
 import type { A11yReport, DedupedIssue, Severity } from "../types.js";
+import type { AgentHistorySummary } from "./agentHistory.js";
 
 export interface AgentReviewOptions {
   report: A11yReport;
@@ -6,6 +7,7 @@ export interface AgentReviewOptions {
   reportPath: string;
   previousReportPath?: string;
   previousReportSource?: "explicit" | "history";
+  history?: AgentHistorySummary;
   maxItems?: number;
 }
 
@@ -26,6 +28,7 @@ export interface AgentReview {
   visualReportPath: string;
   previousReportPath?: string;
   previousReportSource?: "explicit" | "history";
+  history?: AgentHistorySummary;
   summary: {
     total: number;
     critical: number;
@@ -54,6 +57,7 @@ export function createAgentReview(options: AgentReviewOptions): AgentReview {
     visualReportPath: visualReportPathFor(options.reportPath),
     previousReportPath: options.previousReportPath,
     previousReportSource: options.previousReportPath ? options.previousReportSource || "explicit" : undefined,
+    history: options.history,
     summary: {
       total: options.report.summary.total,
       critical: options.report.summary.critical,
@@ -84,6 +88,10 @@ export function formatAgentReview(review: AgentReview): string {
     lines.push("Change: no previous report provided");
   }
 
+  if (review.history) {
+    lines.push(formatHistorySummary(review.history));
+  }
+
   if (review.focus.length > 0) {
     lines.push("", "Fix first:");
     lines.push(...review.focus.map((issue, index) => formatFocusIssue(issue, index + 1)));
@@ -95,6 +103,16 @@ export function formatAgentReview(review: AgentReview): string {
   lines.push(...review.nextCommands.map((command) => `- ${command}`));
 
   return `${lines.join("\n")}\n`;
+}
+
+function formatHistorySummary(history: AgentHistorySummary): string {
+  return [
+    `History: ${history.totalRuns} runs indexed`,
+    `total ${formatSignedNumber(history.totalDeltaFromFirst)}`,
+    `critical ${formatSignedNumber(history.criticalDeltaFromFirst)}`,
+    `warning ${formatSignedNumber(history.warningDeltaFromFirst)}`,
+    `info ${formatSignedNumber(history.infoDeltaFromFirst)}`
+  ].join(" | ");
 }
 
 function summarizeAgentChanges(previousReport: A11yReport | undefined, currentReport: A11yReport): AgentReviewChangeSummary {
@@ -171,6 +189,10 @@ function visualReportPathFor(reportPath: string): string {
   return reportPath.endsWith("a11y-report.json")
     ? reportPath.replace(/a11y-report\.json$/u, "a11y-report.html")
     : "a11y-report.html";
+}
+
+function formatSignedNumber(value: number): string {
+  return value > 0 ? `+${value}` : String(value);
 }
 
 function formatFocusIssue(issue: DedupedIssue, index: number): string {

@@ -49,6 +49,8 @@
 - Added `agent --history` support so `agent review` and `agent run` can find
   the previous local report automatically from timestamped report-history
   folders when `--previous` is not provided.
+- Added compact history context to `agent` output, showing indexed run count
+  and total/critical/warning/info deltas from the first local history run.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

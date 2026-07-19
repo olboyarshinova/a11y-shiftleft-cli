@@ -5,7 +5,8 @@ import os from "node:os";
 import path from "node:path";
 import {
   findHistoryReportFiles,
-  findPreviousReportInHistory
+  findPreviousReportInHistory,
+  summarizeAgentHistory
 } from "../../dist/core/agentHistory.js";
 import type { A11yReport } from "../../dist/types.js";
 
@@ -24,6 +25,23 @@ test("findPreviousReportInHistory selects the latest older report", async () => 
       historyRoot: root
     }),
     previousPath
+  );
+  assert.deepEqual(
+    await summarizeAgentHistory({
+      currentReportPath: currentPath,
+      currentReport,
+      historyRoot: root
+    }),
+    {
+      totalRuns: 3,
+      firstRunId: "run-1/a11y-report.json",
+      currentRunId: "run-3/a11y-report.json",
+      previousRunId: "run-2/a11y-report.json",
+      totalDeltaFromFirst: -3,
+      criticalDeltaFromFirst: 0,
+      warningDeltaFromFirst: -3,
+      infoDeltaFromFirst: 0
+    }
   );
 });
 

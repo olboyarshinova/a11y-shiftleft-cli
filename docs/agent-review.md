@@ -64,6 +64,10 @@ npx a11y-shiftleft-cli agent review \
   --history reports/history
 ```
 
+With `--history`, the text and JSON output include a compact history context:
+how many local runs were indexed and how total, critical, warning, and info
+counts changed from the first run in that folder.
+
 Write the review to a file:
 
 ```bash
