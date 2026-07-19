@@ -101,6 +101,9 @@
   explicit `ignore cleanup-plan` follow-up.
 - Added `agent run` and `agent review` to the README common-command table so
   users can discover the local next-step helper from the beginner workflow.
+- Added `npm run build --if-present` to generated GitHub Actions PR and
+  full-site workflows, matching the GitLab, CircleCI, and shell presets so
+  projects with a build step are prepared before the accessibility scan starts.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

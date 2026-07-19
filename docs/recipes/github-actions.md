@@ -39,6 +39,9 @@ The default workflow runs on `pull_request`. It runs static accessibility rules
 only for frontend files changed since the pull request base branch, and also
 runs a bounded browser crawl (`--crawl-depth 1`, `--crawl-limit 10`) so feedback
 usually stays in the 30-90 second range for small and medium frontend apps.
+Before scanning, the workflow runs `npm ci`, `npm run build --if-present`,
+installs Chromium for Playwright, starts your configured app command, and waits
+for the first URL to respond.
 
 The workflow uploads the generated `reports/` folder as a GitHub Actions
 artifact. Pull request comments include a direct artifact link when GitHub

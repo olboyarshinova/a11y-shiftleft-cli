@@ -76,6 +76,8 @@ test("workflowTemplate includes compliance standard and multiple URLs", () => {
 
   assert.match(workflow, /curl -fsS http:\/\/localhost:4200/);
   assert.match(workflow, /fetch-depth: 0/);
+  assert.match(workflow, /Build app if needed/);
+  assert.match(workflow, /npm run build --if-present/);
   assert.match(
     workflow,
     /npx a11y-shiftleft-cli check --static --dynamic --changed-since origin\/\$\{\{ github\.base_ref \}\} --url http:\/\/localhost:4200 http:\/\/localhost:4200\/favorites --crawl --crawl-depth 1 --crawl-limit 10 --out reports --fail-on warning --standard section508 --verbose/
@@ -98,6 +100,8 @@ test("workflowTemplate supports bounded fast PR crawls", () => {
   assert.match(workflow, /fetch-depth: 0/);
   assert.match(workflow, /actions\/setup-node@v6/);
   assert.match(workflow, /node-version: 22/);
+  assert.match(workflow, /Build app if needed/);
+  assert.match(workflow, /npm run build --if-present/);
   assert.match(workflow, /--crawl --crawl-depth 1 --crawl-limit 5/);
   assert.match(workflow, /--changed-since origin\/\$\{\{ github\.base_ref \}\}/);
   assert.match(workflow, /--standard wcag22-aa --verbose/);
@@ -274,6 +278,8 @@ test("fullWorkflowTemplate creates scheduled full-site crawl workflow", () => {
   assert.match(workflow, /actions\/checkout@v6/);
   assert.match(workflow, /actions\/setup-node@v6/);
   assert.match(workflow, /node-version: 22/);
+  assert.match(workflow, /Build app if needed/);
+  assert.match(workflow, /npm run build --if-present/);
   assert.match(workflow, /cron: "0 7 \* \* 1"/);
   assert.match(workflow, /--crawl --crawl-depth 3 --crawl-limit 100 --semi-auto/);
   assert.match(workflow, /--fail-on none/);

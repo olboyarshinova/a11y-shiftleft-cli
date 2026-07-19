@@ -188,6 +188,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Build app if needed
+        run: npm run build --if-present
+
       - name: Install Playwright
         run: npx playwright install --with-deps chromium
 
@@ -275,6 +278,9 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      - name: Build app if needed
+        run: npm run build --if-present
 
       - name: Install Playwright
         run: npx playwright install --with-deps chromium
