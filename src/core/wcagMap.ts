@@ -25,6 +25,7 @@ const RULE_TO_WCAG: Record<string, string[]> = {
   "forced-colors-hard-coded-svg-color": ["1.4.11"],
   "html-has-lang": ["3.1.1"],
   "html-lang-valid": ["3.1.1"],
+  "help-mechanism-inconsistent": ["3.2.6"],
   "image-alt": ["1.1.1"],
   "image-alt-filename": ["1.1.1"],
   "image-alt-generic": ["1.1.1"],
@@ -66,6 +67,7 @@ const RULE_TO_WCAG: Record<string, string[]> = {
   "modal-initial-focus-outside": ["2.4.3"],
   "modal-focus-not-restored": ["2.4.3"],
   "modal-focus-escapes": ["2.4.3"],
+  "navigation-order-inconsistent": ["3.2.3"],
   "no-autoplay-audio": ["1.4.2"],
   "keyboard": ["2.1.1"],
   "keyboard-focus-not-reached": ["2.1.1"],
@@ -296,6 +298,14 @@ const WCAG_CRITERIA: Record<string, WcagCriterion> = {
     introducedIn: "2.0",
     url: "https://www.w3.org/WAI/WCAG22/Understanding/language-of-parts.html"
   },
+  "3.2.3": {
+    id: "3.2.3",
+    title: "Consistent Navigation",
+    level: "AA",
+    principle: "understandable",
+    introducedIn: "2.0",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/consistent-navigation.html"
+  },
   "3.2.4": {
     id: "3.2.4",
     title: "Consistent Identification",
@@ -303,6 +313,14 @@ const WCAG_CRITERIA: Record<string, WcagCriterion> = {
     principle: "understandable",
     introducedIn: "2.0",
     url: "https://www.w3.org/WAI/WCAG22/Understanding/consistent-identification.html"
+  },
+  "3.2.6": {
+    id: "3.2.6",
+    title: "Consistent Help",
+    level: "A",
+    principle: "understandable",
+    introducedIn: "2.2",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/consistent-help.html"
   },
   "3.3.1": {
     id: "3.3.1",

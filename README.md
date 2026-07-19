@@ -235,7 +235,7 @@ adapter later when you want static source findings in the same report.
 - WCAG A/AA labels, severity, confidence, and user-impact hints.
 - Fix guidance, including contrast ratios and color suggestions.
 - Cross-page hints for repeated page titles and potentially inconsistent
-  same-purpose control names.
+  navigation, help mechanisms, and same-purpose control names.
 - Separate `needs review` findings when axe cannot prove a result automatically,
   such as text over images, gradients, video, or complex overlays.
 - Keyboard evidence and manual-review tasks for things automation cannot prove.

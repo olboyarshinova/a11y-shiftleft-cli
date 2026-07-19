@@ -276,6 +276,24 @@ test("getRemediationHint explains cross-page control naming findings", () => {
   assert.equal(hint.docs.some((url) => url.includes("consistent-identification")), true);
 });
 
+test("getRemediationHint explains navigation and help consistency findings", () => {
+  const navigation = getRemediationHint(
+    "navigation-order-inconsistent",
+    getWcagCriteria(["3.2.3"]),
+    "unknown"
+  );
+  const help = getRemediationHint(
+    "help-mechanism-inconsistent",
+    getWcagCriteria(["3.2.6"]),
+    "unknown"
+  );
+
+  assert.match(navigation.summary, /navigation/);
+  assert.match(navigation.howToFix[0], /repeated navigation/);
+  assert.match(help.summary, /help mechanisms/);
+  assert.equal(help.docs.some((url) => url.includes("consistent-help")), true);
+});
+
 test("getRemediationHint explains ARIA validation findings", () => {
   const hint = getRemediationHint("aria-valid-attr-value", getWcagCriteria(["4.1.2"]), "unknown");
 

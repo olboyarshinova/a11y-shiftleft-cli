@@ -885,9 +885,12 @@ export interface AccessibilityTreeNodeEvidence {
 export interface InteractiveControlEvidence {
   selector: string;
   role: string;
+  order?: number;
   name?: string;
   text?: string;
   href?: string;
+  inNavigation?: boolean;
+  helpCandidate?: boolean;
 }
 
 export interface AccessibilityTreeEvidence {

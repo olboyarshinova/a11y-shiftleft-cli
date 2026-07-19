@@ -9,7 +9,11 @@ import { launchBrowserRuntime } from "../core/browserRuntime.js";
 import { hidePageElements, normalizeHideElementSelectors } from "../core/hideElements.js";
 import { applyColorScheme, detectPageColorSchemes, getPageAppearanceSignature, normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig } from "../core/pageScroll.js";
 import { createHumanVerificationIssue, detectHumanVerification, waitForHumanVerificationToClear } from "../core/humanVerification.js";
-import { analyzeControlNameConsistency } from "../core/crossPageConsistency.js";
+import {
+  analyzeControlNameConsistency,
+  analyzeHelpMechanismConsistency,
+  analyzeNavigationOrderConsistency
+} from "../core/crossPageConsistency.js";
 import { analyzePageTitles } from "../core/pageTitles.js";
 import type {
   A11yConfig,
@@ -602,7 +606,9 @@ export async function runExplorePlaywrightAdapter(
         url: state.url,
         title: state.title
       })), config.framework),
-      ...analyzeControlNameConsistency(states, config.framework)
+      ...analyzeControlNameConsistency(states, config.framework),
+      ...analyzeNavigationOrderConsistency(states, config.framework),
+      ...analyzeHelpMechanismConsistency(states, config.framework)
     ].map((issue) => {
       const state = states.find((candidate) => candidate.url === issue.url);
       return {
@@ -1232,6 +1238,7 @@ async function captureInteractiveControls(page: Page): Promise<InteractiveContro
       "[role='textbox']",
       "[tabindex]"
     ].join(", ");
+    const helpPattern = /\b(help|support|contact|faq|chat|assistance|feedback)\b/i;
 
     function clean(value: string | null | undefined): string {
       return (value || "").replace(/\s+/g, " ").trim();
@@ -1307,16 +1314,20 @@ async function captureInteractiveControls(page: Page): Promise<InteractiveContro
     return Array.from(document.querySelectorAll(selector))
       .filter((element) => isVisible(element))
       .slice(0, 80)
-      .map((element) => {
+      .map((element, index) => {
         const href = element instanceof HTMLAnchorElement ? element.href : undefined;
         const name = accessibleNameFor(element);
         const text = clean(element.textContent);
+        const helpCandidate = helpPattern.test([name, text, href || ""].join(" "));
         return {
           selector: selectorFor(element),
           role: roleFor(element),
+          order: index + 1,
           ...(name ? { name } : {}),
           ...(text ? { text } : {}),
-          ...(href ? { href } : {})
+          ...(href ? { href } : {}),
+          ...(element.closest("nav, [role='navigation']") ? { inNavigation: true } : {}),
+          ...(helpCandidate ? { helpCandidate: true } : {})
         };
       });
   });

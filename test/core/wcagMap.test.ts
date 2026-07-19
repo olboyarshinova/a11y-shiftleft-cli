@@ -30,6 +30,8 @@ test("mapRuleToWcag maps exact known rules", () => {
   assert.deepEqual(mapRuleToWcag("page-title-duplicate"), ["2.4.2"]);
   assert.deepEqual(mapRuleToWcag("page-title-placeholder"), ["2.4.2"]);
   assert.deepEqual(mapRuleToWcag("control-name-inconsistent"), ["3.2.4"]);
+  assert.deepEqual(mapRuleToWcag("navigation-order-inconsistent"), ["3.2.3"]);
+  assert.deepEqual(mapRuleToWcag("help-mechanism-inconsistent"), ["3.2.6"]);
   assert.deepEqual(mapRuleToWcag("html-has-lang"), ["3.1.1"]);
   assert.deepEqual(mapRuleToWcag("aria-valid-attr-value"), ["4.1.2"]);
   assert.deepEqual(mapRuleToWcag("autocomplete-valid"), ["1.3.5"]);
@@ -130,6 +132,16 @@ test("getWcagCriteria includes WCAG 2.1 reflow criteria", () => {
   assert.equal(criterion.title, "Reflow");
   assert.equal(criterion.level, "AA");
   assert.equal(criterion.introducedIn, "2.1");
+});
+
+test("getWcagCriteria includes consistent navigation and help criteria", () => {
+  const [navigation, identification, help] = getWcagCriteria(["3.2.3", "3.2.4", "3.2.6"]);
+
+  assert.equal(navigation.title, "Consistent Navigation");
+  assert.equal(navigation.level, "AA");
+  assert.equal(identification.title, "Consistent Identification");
+  assert.equal(help.title, "Consistent Help");
+  assert.equal(help.introducedIn, "2.2");
 });
 
 test("normalizeWcagReferences converts axe wcag tags to success criteria", () => {

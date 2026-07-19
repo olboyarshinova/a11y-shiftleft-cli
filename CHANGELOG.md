@@ -31,6 +31,9 @@
 - Added a conservative cross-page consistency heuristic that flags repeated
   links or stable controls with different accessible names as manual-review
   evidence for WCAG 3.2.4.
+- Added manual-review evidence for potentially inconsistent repeated navigation
+  order and help mechanisms across scanned pages, mapped to WCAG 3.2.3 and
+  3.2.6.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

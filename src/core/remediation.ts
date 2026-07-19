@@ -343,6 +343,24 @@ const RULE_HINTS: Record<string, RemediationHint> = {
       "https://www.w3.org/WAI/WCAG22/Understanding/label-in-name.html"
     ]
   },
+  "navigation-order-inconsistent": {
+    summary: "Keep repeated navigation mechanisms in a consistent relative order.",
+    howToFix: [
+      "Compare the repeated navigation links listed in the finding across the affected pages.",
+      "If the navigation is the same mechanism, keep shared links in the same relative order.",
+      "If the difference is intentional for a distinct workflow, document that during manual review."
+    ],
+    docs: ["https://www.w3.org/WAI/WCAG22/Understanding/consistent-navigation.html"]
+  },
+  "help-mechanism-inconsistent": {
+    summary: "Keep repeated help mechanisms available in a consistent location or order.",
+    howToFix: [
+      "Review whether help, contact, support, chat, FAQ, or feedback links are expected across this page set.",
+      "If they are part of a repeated help mechanism, keep them available consistently across the scanned pages.",
+      "If a page intentionally omits help because the context differs, document the exception during manual review."
+    ],
+    docs: ["https://www.w3.org/WAI/WCAG22/Understanding/consistent-help.html"]
+  },
   "html-has-lang": {
     summary: "Declare the primary language of the page on the html element.",
     howToFix: [
