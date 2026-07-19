@@ -288,8 +288,9 @@ Section 508 certification.
   active, expired, invalid, expiring-soon, and owner-grouped ignore rules, and
   visual reports include cleanup guidance plus copyable ignore-entry templates.
   The `ignore audit` command provides a read-only stale-ignore review, and
-  `ignore cleanup-plan` proposes safe review/remove/renew/fix actions without
-  automatic deletion. Next, evaluate whether teams need a guarded apply mode.
+  `ignore cleanup-plan` proposes safe review/remove/renew/fix actions with
+  action-count summaries and without automatic deletion. Next, evaluate whether
+  teams need a guarded apply mode.
 - Evaluate an optional public-link publisher only after sanitized export is
   stable. Require explicit confirmation, unguessable URLs, expiration,
   revocation, and deletion.

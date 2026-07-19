@@ -130,10 +130,16 @@ test("createIgnoreCleanupPlan converts stale entries into proposed actions", () 
     "remove-or-renew",
     "fix-entry"
   ]);
+  assert.deepEqual(plan.summary, {
+    "review-before-expiry": 1,
+    "remove-or-renew": 1,
+    "fix-entry": 1
+  });
 
   const output = formatIgnoreCleanupPlan(plan);
   assert.match(output, /a11y-shiftleft ignore cleanup-plan/);
   assert.match(output, /Items: 3/);
+  assert.match(output, /Actions: review-before-expiry 1 \| remove-or-renew 1 \| fix-entry 1/);
   assert.match(output, /\[1\] review-before-expiry/);
   assert.match(output, /\[2\] remove-or-renew/);
   assert.match(output, /\[3\] fix-entry/);
@@ -145,6 +151,11 @@ test("formatIgnoreCleanupPlan handles missing and clean files", () => {
     file: "a11y-ignore.json",
     exists: false,
     generatedAt: "2026-07-14T00:00:00.000Z",
+    summary: {
+      "review-before-expiry": 0,
+      "remove-or-renew": 0,
+      "fix-entry": 0
+    },
     items: []
   }), /no scoped ignore file found/);
 
@@ -152,6 +163,11 @@ test("formatIgnoreCleanupPlan handles missing and clean files", () => {
     file: "a11y-ignore.json",
     exists: true,
     generatedAt: "2026-07-14T00:00:00.000Z",
+    summary: {
+      "review-before-expiry": 0,
+      "remove-or-renew": 0,
+      "fix-entry": 0
+    },
     items: []
   }), /no stale ignore cleanup is needed/);
 });

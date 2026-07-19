@@ -89,6 +89,9 @@
 - Expanded read-only PR label suggestions with `a11y-third-party` and
   `a11y-human-verification` when reports include embedded-content ownership or
   CAPTCHA/human-verification blockers.
+- Added action-count summaries to `ignore cleanup-plan` so stale exception
+  reviews show how many entries need review, remove-or-renew, or fix-entry
+  actions.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

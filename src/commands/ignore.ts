@@ -29,6 +29,7 @@ interface IgnoreCleanupPlan {
   file: string;
   exists: boolean;
   generatedAt: string;
+  summary: Record<IgnoreCleanupAction, number>;
   items: IgnoreCleanupPlanItem[];
 }
 
@@ -134,13 +135,16 @@ function formatIgnoreCleanupEntry(entry: IgnoreAuditEntry): string {
 }
 
 export function createIgnoreCleanupPlan(result: IgnoreAuditResult): IgnoreCleanupPlan {
+  const items = result.entries
+    .map(toCleanupPlanItem)
+    .filter((item): item is IgnoreCleanupPlanItem => Boolean(item));
+
   return {
     file: result.file,
     exists: result.exists,
     generatedAt: new Date().toISOString(),
-    items: result.entries
-      .map(toCleanupPlanItem)
-      .filter((item): item is IgnoreCleanupPlanItem => Boolean(item))
+    summary: summarizeCleanupPlanActions(items),
+    items
   };
 }
 
@@ -167,11 +171,20 @@ export function formatIgnoreCleanupPlan(plan: IgnoreCleanupPlan): string {
     "a11y-shiftleft ignore cleanup-plan",
     `File: ${plan.file}`,
     `Items: ${plan.items.length}`,
+    `Actions: review-before-expiry ${plan.summary["review-before-expiry"]} | remove-or-renew ${plan.summary["remove-or-renew"]} | fix-entry ${plan.summary["fix-entry"]}`,
     "",
     ...plan.items.map(formatCleanupPlanItem),
     "",
     "This is a read-only plan. Review the proposed changes before editing a11y-ignore.json."
   ].join("\n");
+}
+
+function summarizeCleanupPlanActions(items: IgnoreCleanupPlanItem[]): Record<IgnoreCleanupAction, number> {
+  return {
+    "review-before-expiry": items.filter((item) => item.action === "review-before-expiry").length,
+    "remove-or-renew": items.filter((item) => item.action === "remove-or-renew").length,
+    "fix-entry": items.filter((item) => item.action === "fix-entry").length
+  };
 }
 
 function toCleanupPlanItem(entry: IgnoreAuditEntry): IgnoreCleanupPlanItem | null {
