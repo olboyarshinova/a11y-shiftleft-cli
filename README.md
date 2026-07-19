@@ -270,6 +270,8 @@ The commands below assume `APP_URL` is set to your local, staging, or preview UR
 | Command type | Need | Command |
 |---|---|---|
 | `audit` | First local review | `npx a11y-shiftleft-cli audit --url $APP_URL --out reports --open` |
+| `agent` | Run audit and get local next-step guidance | `npx a11y-shiftleft-cli agent run --url $APP_URL --out reports --open` |
+| `agent` | Summarize an existing report | `npx a11y-shiftleft-cli agent review --report reports` |
 | `audit` | Quick risk triage | `npx a11y-shiftleft-cli audit --url $APP_URL --profile risk --out reports` |
 | `audit` | Broader local scan | `npx a11y-shiftleft-cli audit --url $APP_URL --max-depth 3 --limit 50 --out reports` |
 | `audit` | Check one component or page area | `npx a11y-shiftleft-cli audit --url $APP_URL --scope '#main' --out reports` |

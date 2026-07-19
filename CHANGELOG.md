@@ -99,6 +99,8 @@
 - Improved `agent review` next commands so ticket drafts are written to an
   `a11y-tickets.md` file by default and stale scoped ignores trigger an
   explicit `ignore cleanup-plan` follow-up.
+- Added `agent run` and `agent review` to the README common-command table so
+  users can discover the local next-step helper from the beginner workflow.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,
