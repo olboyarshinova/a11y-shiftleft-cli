@@ -20,6 +20,16 @@ npx a11y-shiftleft-cli agent run \
   --open
 ```
 
+Or let the agent find the previous report inside a local report-history folder:
+
+```bash
+npx a11y-shiftleft-cli agent run \
+  --url $APP_URL \
+  --out reports/history/run-2026-07-19 \
+  --history reports/history \
+  --open
+```
+
 Write the review next to the visual report:
 
 ```bash
@@ -43,6 +53,15 @@ Compare with a previous run:
 npx a11y-shiftleft-cli agent review \
   --report reports/current \
   --previous reports/previous
+```
+
+When reports are stored as timestamped run folders, use `--history` instead of
+passing the previous run by hand:
+
+```bash
+npx a11y-shiftleft-cli agent review \
+  --report reports/history/run-2026-07-19 \
+  --history reports/history
 ```
 
 Write the review to a file:

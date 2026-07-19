@@ -14,6 +14,8 @@ test("agent review exposes local report comparison options", () => {
   const flags = reviewCommand.options.map((option) => option.long);
   assert.equal(flags.includes("--report"), true);
   assert.equal(flags.includes("--previous"), true);
+  assert.equal(flags.includes("--history"), true);
+  assert.equal(flags.includes("--history-max-depth"), true);
   assert.equal(flags.includes("--max-items"), true);
   assert.equal(flags.includes("--out"), true);
   assert.equal(flags.includes("--json"), true);
@@ -28,12 +30,49 @@ test("agent run exposes audit plus review workflow options", () => {
   const flags = runCommand.options.map((option) => option.long);
   assert.equal(flags.includes("--url"), true);
   assert.equal(flags.includes("--previous"), true);
+  assert.equal(flags.includes("--history"), true);
   assert.equal(flags.includes("--out"), true);
   assert.equal(flags.includes("--review-out"), true);
   assert.equal(flags.includes("--profile"), true);
   assert.equal(flags.includes("--with-lighthouse"), true);
   assert.equal(flags.includes("--open"), true);
   assert.match(runCommand.description(), /Run an audit/);
+});
+
+test("agent review can compare with the previous report from history", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-agent-review-history-"));
+  const historyDir = path.join(root, "history");
+  const currentDir = path.join(historyDir, "run-2");
+  const previousDir = path.join(historyDir, "run-1");
+  const outputPath = path.join(root, "agent-review.md");
+  await fs.mkdir(currentDir, { recursive: true });
+  await fs.mkdir(previousDir, { recursive: true });
+  await fs.writeFile(path.join(previousDir, "a11y-report.json"), JSON.stringify({
+    ...report([issue("fixed", "button-name", "critical")]),
+    generatedAt: "2026-07-18T00:00:00.000Z"
+  }));
+  await fs.writeFile(path.join(currentDir, "a11y-report.json"), JSON.stringify({
+    ...report([issue("new", "image-alt", "critical")]),
+    generatedAt: "2026-07-19T00:00:00.000Z"
+  }));
+
+  await createProgram().parseAsync([
+    "node",
+    "a11y-shiftleft",
+    "agent",
+    "review",
+    "--report",
+    currentDir,
+    "--history",
+    historyDir,
+    "--out",
+    outputPath
+  ]);
+
+  const output = await fs.readFile(outputPath, "utf8");
+  assert.match(output, /Compared with:/);
+  assert.match(output, /run-1\/a11y-report\.json/);
+  assert.match(output, /Change: fixed 1, new 1, remaining 0/);
 });
 
 test("agent review writes a deterministic progress summary", async () => {

@@ -2,12 +2,15 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { Command } from "commander";
 import { createAgentReview, formatAgentReview } from "../core/agentReview.js";
+import { findPreviousReportInHistory } from "../core/agentHistory.js";
 import { readA11yReport } from "../core/evidenceExport.js";
 import { runAudit, type AuditOptions } from "./audit.js";
 
 interface AgentReviewOptions {
   report?: string;
   previous?: string;
+  history?: string;
+  historyMaxDepth?: string;
   maxItems?: string;
   out?: string;
   json?: boolean;
@@ -52,12 +55,19 @@ export function registerAgentCommand(program: Command): void {
     .description("Summarize an accessibility report, compare progress, and suggest the next CLI step.")
     .option("--report <file-or-dir>", "Current a11y-report.json file or report directory", "reports/a11y-report.json")
     .option("--previous <file-or-dir>", "Previous a11y-report.json file or report directory for comparison")
+    .option("--history <dir>", "Find the previous report automatically inside a report-history directory")
+    .option("--history-max-depth <depth>", "Maximum directory depth when searching --history", "6")
     .option("--max-items <count>", "Maximum fix-first findings to show", "5")
     .option("--out <file>", "Write the review to a file instead of stdout")
     .option("--json", "Write JSON instead of text")
     .action(async (options: AgentReviewOptions) => {
       const reportPath = await resolveReportPath(options.report || "reports/a11y-report.json");
-      const previousReportPath = options.previous ? await resolveReportPath(options.previous) : undefined;
+      const previousReportPath = await resolveAgentPreviousReportPath({
+        reportPath,
+        previous: options.previous,
+        history: options.history,
+        historyMaxDepth: options.historyMaxDepth
+      });
       const output = await createAgentReviewOutput({
         reportPath,
         previousReportPath,
@@ -81,6 +91,8 @@ export function registerAgentCommand(program: Command): void {
     .description("Run an audit, then summarize the generated report with local next-step guidance.")
     .requiredOption("--url <url>", "Start URL for the running application")
     .option("--previous <file-or-dir>", "Previous a11y-report.json file or report directory for comparison")
+    .option("--history <dir>", "Find the previous report automatically inside a report-history directory")
+    .option("--history-max-depth <depth>", "Maximum directory depth when searching --history", "6")
     .option("--out <dir>", "Audit output directory", "reports")
     .option("--review-out <file>", "Write the agent review to a file after the audit")
     .option("--max-items <count>", "Maximum fix-first findings to show", "5")
@@ -111,7 +123,12 @@ export function registerAgentCommand(program: Command): void {
     .action(async (options: AgentRunOptions) => {
       const result = await runAudit(toAgentAuditOptions(options));
       const reportPath = path.join(result.outputDir, "a11y-report.json");
-      const previousReportPath = options.previous ? await resolveReportPath(options.previous) : undefined;
+      const previousReportPath = await resolveAgentPreviousReportPath({
+        reportPath,
+        previous: options.previous,
+        history: options.history,
+        historyMaxDepth: options.historyMaxDepth
+      });
       const output = await createAgentReviewOutput({
         reportPath,
         previousReportPath,
@@ -130,6 +147,24 @@ export function registerAgentCommand(program: Command): void {
 
       if (result.failed) process.exitCode = 1;
     });
+}
+
+async function resolveAgentPreviousReportPath(options: {
+  reportPath: string;
+  previous?: string;
+  history?: string;
+  historyMaxDepth?: string;
+}): Promise<string | undefined> {
+  if (options.previous) return resolveReportPath(options.previous);
+  if (!options.history) return undefined;
+
+  const currentReport = await readA11yReport(options.reportPath);
+  return findPreviousReportInHistory({
+    currentReportPath: options.reportPath,
+    currentReport,
+    historyRoot: options.history,
+    maxDepth: toPositiveInteger(options.historyMaxDepth)
+  });
 }
 
 async function createAgentReviewOutput(options: {
