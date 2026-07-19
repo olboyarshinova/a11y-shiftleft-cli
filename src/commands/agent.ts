@@ -177,12 +177,18 @@ export function registerAgentCommand(program: Command): void {
       const outputDir = path.resolve(options.out || path.dirname(reportPath));
       const fileName = options.fileName || "a11y-report.html";
 
-      await refreshVisualHtmlReport({
+      const refreshSummary = await refreshVisualHtmlReport({
         report,
         reportPath,
         outputDir,
         fileName
       });
+      if (refreshSummary.copiedAssetDirs > 0) {
+        console.log(`Copied visual asset directories: ${refreshSummary.copiedAssetDirs}`);
+      }
+      if (refreshSummary.missingAssetDirs > 0) {
+        console.warn(`Referenced visual asset directories not found: ${refreshSummary.missingAssetDirs}`);
+      }
 
       const htmlPath = path.join(outputDir, fileName);
       console.log(`Refreshed visual HTML report: ${htmlPath}`);
@@ -204,12 +210,12 @@ async function refreshVisualHtmlReport(options: {
   reportPath: string;
   outputDir: string;
   fileName: string;
-}): Promise<void> {
+}): Promise<{ copiedAssetDirs: number; missingAssetDirs: number }> {
   if (!options.report.exploration) {
     throw new Error("Cannot refresh visual HTML because this report does not include exploration evidence. Run audit or explore to create a visual report first.");
   }
 
-  await copyReferencedVisualAssets(path.dirname(options.reportPath), options.outputDir, options.report);
+  const assetSummary = await copyReferencedVisualAssets(path.dirname(options.reportPath), options.outputDir, options.report);
   await writeExplorationHtml(options.outputDir, options.report.exploration, options.report.issues, {
     fileName: options.fileName,
     title: "Accessibility Audit Report",
@@ -219,12 +225,26 @@ async function refreshVisualHtmlReport(options: {
     ignore: options.report.summary.ignore,
     retention: options.report.summary.retention
   });
+
+  return assetSummary;
 }
 
-async function copyReferencedVisualAssets(sourceDir: string, outputDir: string, report: A11yReport): Promise<void> {
+async function copyReferencedVisualAssets(
+  sourceDir: string,
+  outputDir: string,
+  report: A11yReport
+): Promise<{ copiedAssetDirs: number; missingAssetDirs: number }> {
   const from = path.resolve(sourceDir);
   const to = path.resolve(outputDir);
-  if (from === to) return;
+  if (from === to) {
+    return {
+      copiedAssetDirs: 0,
+      missingAssetDirs: 0
+    };
+  }
+
+  let copiedAssetDirs = 0;
+  let missingAssetDirs = 0;
 
   for (const relativeDir of referencedRelativeAssetDirs(report)) {
     const sourceAssetDir = path.join(from, relativeDir);
@@ -232,11 +252,20 @@ async function copyReferencedVisualAssets(sourceDir: string, outputDir: string, 
 
     try {
       await fs.cp(sourceAssetDir, outputAssetDir, { recursive: true, force: true });
+      copiedAssetDirs += 1;
     } catch (error) {
-      if (isNodeError(error) && error.code === "ENOENT") continue;
+      if (isNodeError(error) && error.code === "ENOENT") {
+        missingAssetDirs += 1;
+        continue;
+      }
       throw error;
     }
   }
+
+  return {
+    copiedAssetDirs,
+    missingAssetDirs
+  };
 }
 
 function referencedRelativeAssetDirs(report: A11yReport): string[] {
