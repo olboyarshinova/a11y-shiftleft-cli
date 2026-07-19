@@ -99,18 +99,26 @@ After each scan, `watch` prints:
 a11y-shiftleft watch run 2
 Reason: file changes
 Changed files: 1
+Changed groups: added 0, modified 1, deleted 0
 Findings: total 4 | critical 0 | warning 3 | info 1
 Delta: fixed 2, new 1, remaining 4, total delta -1
 Duration: 842ms
 Reports: reports/watch/a11y-comment.md
+Affected route hints: http://localhost:5173/account
 ```
 
-Use `--verbose` to include a small changed-file sample.
+Use `--verbose` to include a small changed-file sample and the number of
+changed files that could not be mapped to a route hint.
+
+Route hints are conservative. `watch` can infer common route files such as
+`src/pages/account.tsx`, `src/app/account/page.tsx`, and
+`src/routes/account.svelte`. Shared components do not have one reliable URL, so
+keep representative smoke-test routes in `--url` for important flows.
 
 ## Current Limits
 
-- `watch` reruns the configured check pipeline; it does not yet map changed
-  files to affected routes automatically.
+- `watch` reruns the configured check pipeline. Route hints help with triage,
+  but they do not replace explicit `--url` coverage for shared components.
 - `watch` refreshes check reports, not the visual `exploration.html` report.
 - For CI, use `check` or a generated workflow instead of `watch`.
 - Browser overlay and DevTools-style highlighting are planned separately after

@@ -190,9 +190,9 @@ Section 508 certification.
   `a11y-shiftleft-cli audit --url <app-url> --out reports --open`. Advanced CI,
   baseline, Lighthouse, PDF, Excel, and dashboard paths should stay discoverable
   without crowding the beginner path.
-- Harden `watch` with clearer run-to-run deltas, better changed-file grouping,
-  affected-route hints, and guidance for mapping changed files to dynamic
-  smoke-test URLs.
+- Continue hardening `watch` after the initial run-to-run deltas,
+  changed-file grouping, and affected-route hints: next steps are visual report
+  refresh support and more explicit changed-component to smoke-route guidance.
 - Add a local `agent` workflow after `watch` and retest are stable. Keep it
   deterministic at first: run the audit, compare with the previous report,
   summarize fixed/new/remaining findings, recommend the next CLI command, and

@@ -20,6 +20,7 @@ const WATCH_EXTENSIONS = new Set([
   ".mjs",
   ".scss",
   ".sass",
+  ".svelte",
   ".ts",
   ".tsx",
   ".vue"
@@ -68,6 +69,11 @@ export interface WatchDeltaSummary {
   criticalDelta: number;
   warningDelta: number;
   infoDelta: number;
+}
+
+export interface WatchRouteHintSummary {
+  routes: string[];
+  unmappedChangedFiles: number;
 }
 
 export function registerWatchCommand(program: Command): void {
@@ -157,6 +163,7 @@ export async function runWatch(options: WatchOptions): Promise<void> {
           report: result.report,
           delta,
           changes,
+          urls: options.url,
           outputDir: options.out || DEFAULT_WATCH_OUT,
           durationMs,
           verbose: Boolean(options.verbose)
@@ -315,12 +322,14 @@ export function formatWatchRunSummary(options: {
   report: A11yReport;
   delta: WatchDeltaSummary;
   changes: WatchChangeSummary;
+  urls?: string[];
   outputDir: string;
   durationMs: number;
   verbose?: boolean;
 }): string {
   const summary = options.report.summary;
   const changes = watchChangeCount(options.changes);
+  const routeHints = inferWatchRouteHints(options.changes, options.urls);
   const delta = options.delta.firstRun
     ? `first run, tracking ${summary.total} current findings`
     : `fixed ${options.delta.fixedFindings}, new ${options.delta.newFindings}, remaining ${options.delta.remainingFindings}, total delta ${formatSignedNumber(options.delta.totalDelta)}`;
@@ -329,18 +338,41 @@ export function formatWatchRunSummary(options: {
     `a11y-shiftleft watch run ${options.runCount}`,
     `Reason: ${options.reason}`,
     `Changed files: ${changes}`,
+    `Changed groups: added ${options.changes.added.length}, modified ${options.changes.modified.length}, deleted ${options.changes.deleted.length}`,
     `Findings: total ${summary.total} | critical ${summary.critical} | warning ${summary.warning} | info ${summary.info}`,
     `Delta: ${delta}`,
     `Duration: ${options.durationMs}ms`,
     `Reports: ${joinOutputPath(options.outputDir, "a11y-comment.md")}`
   ];
 
+  if (changes > 0) {
+    if (routeHints.routes.length > 0) {
+      lines.push(`Affected route hints: ${routeHints.routes.join(", ")}`);
+    } else {
+      lines.push("Affected route hints: none inferred; keep representative --url smoke routes configured.");
+    }
+  }
+
   if (options.verbose && changes > 0) {
     lines.push("Changed file sample:");
     lines.push(...formatChangedFileSample(options.changes).map((file) => `  - ${file}`));
+    if (routeHints.unmappedChangedFiles > 0) {
+      lines.push(`Unmapped changed files: ${routeHints.unmappedChangedFiles}`);
+    }
   }
 
   return lines.join("\n");
+}
+
+export function inferWatchRouteHints(changes: WatchChangeSummary, urls: string[] | undefined, limit = 6): WatchRouteHintSummary {
+  const files = [...changes.added, ...changes.modified].map((file) => file.replaceAll("\\", "/"));
+  const routePaths = uniqueSorted(files.flatMap((file) => inferRoutePathsFromFile(file)));
+  const routes = routePaths.slice(0, limit).map((routePath) => formatRouteHint(routePath, urls));
+
+  return {
+    routes,
+    unmappedChangedFiles: files.length - files.filter((file) => inferRoutePathsFromFile(file).length > 0).length
+  };
 }
 
 export function formatWatchStart(options: {
@@ -483,6 +515,67 @@ function formatChangedFileSample(changes: WatchChangeSummary, limit = 8): string
     ...changes.modified.map((file) => `modified ${file}`),
     ...changes.deleted.map((file) => `deleted ${file}`)
   ].slice(0, limit);
+}
+
+function inferRoutePathsFromFile(filePath: string): string[] {
+  const segments = filePath.split("/").filter(Boolean);
+  const extension = path.extname(filePath);
+  if (!extension || !WATCH_EXTENSIONS.has(extension.toLowerCase())) return [];
+
+  const routeRootIndex = firstRouteRootIndex(segments);
+  if (routeRootIndex === -1) return [];
+
+  const routeRoot = segments[routeRootIndex];
+  const routeSegments = segments.slice(routeRootIndex + 1);
+  if (routeSegments.length === 0) return [];
+
+  const last = stripKnownRouteExtension(routeSegments.at(-1) || "");
+  const withoutFileName = routeSegments.slice(0, -1);
+
+  if (routeRoot === "app") {
+    if (["page", "layout", "template", "loading", "error", "not-found"].includes(last)) {
+      return [segmentsToRoutePath(withoutFileName)];
+    }
+
+    return [];
+  }
+
+  if (["index", "_app", "_document", "_error"].includes(last)) {
+    return [segmentsToRoutePath(withoutFileName)];
+  }
+
+  return [segmentsToRoutePath([...withoutFileName, last])];
+}
+
+function firstRouteRootIndex(segments: string[]): number {
+  const routeRoots = new Set(["app", "pages", "routes"]);
+  return segments.findIndex((segment) => routeRoots.has(segment));
+}
+
+function stripKnownRouteExtension(fileName: string): string {
+  return fileName
+    .replace(/\.d\.ts$/u, "")
+    .replace(/\.(astro|html|htm|js|jsx|mjs|ts|tsx|vue|svelte)$/u, "")
+    .replace(/\.(page|route|server|client)$/u, "");
+}
+
+function segmentsToRoutePath(segments: string[]): string {
+  const routeSegments = segments
+    .filter((segment) => !segment.startsWith("_") && !segment.startsWith("(") && !segment.endsWith(")"))
+    .map((segment) => segment.replace(/^\[(\.\.\.)?(.+)\]$/u, ":$2"));
+
+  return `/${routeSegments.join("/")}`.replace(/\/+/gu, "/");
+}
+
+function formatRouteHint(routePath: string, urls: string[] | undefined): string {
+  const baseUrl = urls?.find((url) => /^https?:\/\//iu.test(url.trim()));
+  if (!baseUrl) return routePath;
+
+  try {
+    return new URL(routePath, baseUrl).toString();
+  } catch {
+    return routePath;
+  }
 }
 
 function uniqueSorted(values: string[]): string[] {

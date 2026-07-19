@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   diffWatchSnapshots,
   formatWatchRunSummary,
+  inferWatchRouteHints,
   summarizeWatchDelta
 } from "../../dist/commands/watch.js";
 
@@ -74,9 +75,10 @@ test("formatWatchRunSummary renders concise developer feedback", () => {
     },
     changes: {
       added: ["src/new.html"],
-      modified: ["src/app.tsx"],
+      modified: ["src/pages/account.tsx"],
       deleted: []
     },
+    urls: ["http://localhost:5173"],
     outputDir: "reports/watch",
     durationMs: 25,
     verbose: true
@@ -85,10 +87,47 @@ test("formatWatchRunSummary renders concise developer feedback", () => {
   assert.match(output, /a11y-shiftleft watch run 2/);
   assert.match(output, /Reason: file changes/);
   assert.match(output, /Changed files: 2/);
+  assert.match(output, /Changed groups: added 1, modified 1, deleted 0/);
   assert.match(output, /Findings: total 4 \| critical 1 \| warning 2 \| info 1/);
   assert.match(output, /Delta: fixed 1, new 2, remaining 4, total delta \+1/);
+  assert.match(output, /Affected route hints: http:\/\/localhost:5173\/account/);
   assert.match(output, /Reports: reports\/watch\/a11y-comment.md/);
-  assert.match(output, /modified src\/app.tsx/);
+  assert.match(output, /modified src\/pages\/account.tsx/);
+  assert.match(output, /Unmapped changed files: 1/);
+});
+
+test("inferWatchRouteHints maps common route files to dynamic smoke URLs", () => {
+  assert.deepEqual(
+    inferWatchRouteHints(
+      {
+        added: ["src/app/blog/[slug]/page.tsx", "src/routes/contact.svelte"],
+        modified: ["src/pages/about.tsx", "src/components/Button.tsx"],
+        deleted: ["src/pages/old.tsx"]
+      },
+      ["https://example.com/base"]
+    ),
+    {
+      routes: ["https://example.com/about", "https://example.com/blog/:slug", "https://example.com/contact"],
+      unmappedChangedFiles: 1
+    }
+  );
+});
+
+test("inferWatchRouteHints keeps path hints when no base URL is available", () => {
+  assert.deepEqual(
+    inferWatchRouteHints(
+      {
+        added: ["pages/index.tsx"],
+        modified: ["app/(marketing)/pricing/page.tsx"],
+        deleted: []
+      },
+      undefined
+    ),
+    {
+      routes: ["/", "/pricing"],
+      unmappedChangedFiles: 0
+    }
+  );
 });
 
 function report(fingerprints, counts) {
