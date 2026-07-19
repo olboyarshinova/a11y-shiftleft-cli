@@ -80,7 +80,39 @@ npx a11y-shiftleft-cli audit \
   --out reports
 ```
 
-## 4. Manual Human Verification
+## 4. Scripted Test-Account Login For CI
+
+For CI, use a dedicated test account with the smallest permissions needed for
+the audit. Store credentials in CI secrets or local environment variables, not
+in config files or Git history.
+
+```bash
+export A11Y_USERNAME=test-user@example.com
+export A11Y_PASSWORD=your-test-account-password
+
+npx a11y-shiftleft-cli auth scripted-login \
+  --url https://example.com/login \
+  --username-selector 'input[name="email"]' \
+  --password-selector 'input[name="password"]' \
+  --submit-selector 'button[type="submit"]' \
+  --wait-for-url "**/dashboard" \
+  --out .a11y-auth/state.json
+```
+
+Then reuse the generated state:
+
+```bash
+npx a11y-shiftleft-cli audit \
+  --url https://example.com/dashboard \
+  --auth-state .a11y-auth/state.json \
+  --out reports
+```
+
+The command prints the environment variable names, but never prints the
+credential values. Use `auth login` instead when the flow requires SSO,
+CAPTCHA, hardware keys, or human 2FA.
+
+## 5. Manual Human Verification
 
 Some public websites show CAPTCHA or "verify you are human" screens to
 automation. The CLI does not bypass these challenges. For local visual audits,
@@ -99,7 +131,7 @@ npx a11y-shiftleft-cli audit \
 Use this for local review only. In CI, prefer an allowlisted preview or staging
 URL where bot protection does not replace the page.
 
-## 5. Keep Secrets Out Of Git
+## 6. Keep Secrets Out Of Git
 
 `auth login` adds the common auth folder to `.gitignore` by default. If your
 team uses a custom path, add it manually:

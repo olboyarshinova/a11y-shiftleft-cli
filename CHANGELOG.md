@@ -16,6 +16,9 @@
   `generate-ci --provider shell` for Jenkins and other generic runners.
 - Improved `generate-ci --profile split` next steps so generated PR and
   full-site workflows have clearer rollout guidance.
+- Added `auth scripted-login` for CI-safe test-account flows that read
+  credentials from environment variables, fill configured login selectors, and
+  save local Playwright auth state without printing secret values.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

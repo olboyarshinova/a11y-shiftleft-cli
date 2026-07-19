@@ -116,7 +116,7 @@ commit auth-state files because they may contain session cookies.
 
 See the [authenticated pages recipe](docs/recipes/authenticated-pages.md) for
 post-login redirects, existing Playwright `storageState` files, keyboard checks,
-and privacy settings.
+CI-safe scripted test-account login, and privacy settings.
 
 If a public site shows a CAPTCHA or "verify you are human" page, run a visual
 audit in manual verification mode. The CLI opens a visible browser, waits while

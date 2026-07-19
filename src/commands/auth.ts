@@ -22,6 +22,15 @@ interface AuthLoginOptions {
   quiet?: boolean;
 }
 
+interface AuthScriptedLoginOptions extends AuthLoginOptions {
+  usernameSelector: string;
+  passwordSelector: string;
+  submitSelector: string;
+  usernameEnv: string;
+  passwordEnv: string;
+  headed?: boolean;
+}
+
 interface AuthLoginResult {
   storageStatePath: string;
   gitignorePath?: string;
@@ -50,6 +59,34 @@ export function registerAuthCommand(program: Command): void {
     .option("--quiet", "Suppress login instructions")
     .action(async (options: AuthLoginOptions) => {
       const result = await runAuthLogin(options);
+      if (!options.quiet) {
+        console.log(formatAuthLoginSummary(result));
+      }
+    });
+
+  auth
+    .command("scripted-login")
+    .description("Create auth state from CI-safe username/password environment variables.")
+    .option("--cwd <dir>", "Target project directory")
+    .requiredOption("--url <url>", "Login URL")
+    .requiredOption("--username-selector <selector>", "Selector for the username or email field")
+    .requiredOption("--password-selector <selector>", "Selector for the password field")
+    .requiredOption("--submit-selector <selector>", "Selector for the login submit control")
+    .option("--username-env <name>", "Environment variable that contains the username", "A11Y_USERNAME")
+    .option("--password-env <name>", "Environment variable that contains the password", "A11Y_PASSWORD")
+    .option("--out <file>", "Storage state output file", DEFAULT_AUTH_STATE_FILE)
+    .option("--browser <engine>", "Browser engine: chromium, firefox, or webkit")
+    .option("--device <name>", "Playwright device preset, for example \"iPhone 13\" or \"Pixel 5\"")
+    .option("--mobile", "Use the default mobile browser profile (iPhone 13)")
+    .option("--tablet", "Use the default tablet browser profile (iPad gen 7)")
+    .option("--wait-for-url <pattern>", "Save after the page URL matches this Playwright URL pattern")
+    .option("--wait-for-selector <selector>", "Save after this selector appears")
+    .option("--timeout-ms <ms>", "Maximum time to wait for login completion", "120000")
+    .option("--headed", "Show the browser window while running the scripted login")
+    .option("--no-gitignore", "Do not add auth-state paths to .gitignore")
+    .option("--quiet", "Suppress login instructions")
+    .action(async (options: AuthScriptedLoginOptions) => {
+      const result = await runAuthScriptedLogin(options);
       if (!options.quiet) {
         console.log(formatAuthLoginSummary(result));
       }
@@ -115,6 +152,71 @@ export async function runAuthLogin(options: AuthLoginOptions): Promise<AuthLogin
   }
 }
 
+export async function runAuthScriptedLogin(options: AuthScriptedLoginOptions): Promise<AuthLoginResult> {
+  const cwd = path.resolve(options.cwd || process.cwd());
+  const loginUrl = normalizeAuthUrl(options.url);
+  const storageStatePath = resolveAuthStatePath(options.out || DEFAULT_AUTH_STATE_FILE, cwd);
+  if (!storageStatePath) throw new Error("Storage state output path is required.");
+  if (!options.waitForUrl && !options.waitForSelector) {
+    throw new Error("Scripted login requires --wait-for-url or --wait-for-selector so the CLI can verify that login completed.");
+  }
+
+  const username = readRequiredEnvSecret(options.usernameEnv, "username");
+  const password = readRequiredEnvSecret(options.passwordEnv, "password");
+  const browser = toBrowserEngine(options.browser) || "chromium";
+  const device = resolveDevicePreset(options);
+  const timeoutMs = parseAuthTimeoutMs(options.timeoutMs);
+  const runtime = await launchBrowserRuntime({
+    browser,
+    device,
+    headless: !options.headed,
+    source: "auth"
+  });
+
+  const context = await runtime.browser.newContext(runtime.contextOptions);
+  const page = await context.newPage();
+
+  try {
+    if (!options.quiet) {
+      console.log([
+        "a11y-shiftleft auth scripted-login",
+        `Browser: ${browserEvidenceName(browser, device)}`,
+        `Login URL: ${loginUrl}`,
+        `Username source: ${options.usernameEnv}`,
+        `Password source: ${options.passwordEnv}`,
+        "Credentials are read from environment variables and are not printed."
+      ].join("\n"));
+    }
+
+    await page.goto(loginUrl, { waitUntil: "domcontentloaded" });
+    await page.locator(options.usernameSelector).fill(username, { timeout: timeoutMs });
+    await page.locator(options.passwordSelector).fill(password, { timeout: timeoutMs });
+    await page.locator(options.submitSelector).click({ timeout: timeoutMs });
+    await waitForLoginCompletion({
+      page,
+      waitForUrl: options.waitForUrl,
+      waitForSelector: options.waitForSelector,
+      timeoutMs
+    });
+
+    await fs.mkdir(path.dirname(storageStatePath), { recursive: true });
+    await context.storageState({ path: storageStatePath });
+
+    const gitignore = options.gitignore === false
+      ? undefined
+      : await addReportEntriesToGitignore(cwd);
+
+    return {
+      storageStatePath,
+      gitignorePath: gitignore?.path,
+      gitignoreAdded: gitignore?.added || []
+    };
+  } finally {
+    await context.close().catch(() => undefined);
+    await runtime.browser.close().catch(() => undefined);
+  }
+}
+
 async function waitForLoginCompletion(options: {
   page: {
     waitForURL: (url: string, options: { timeout: number }) => Promise<unknown>;
@@ -150,6 +252,18 @@ async function waitForLoginCompletion(options: {
   } finally {
     input.close();
   }
+}
+
+export function readRequiredEnvSecret(name: string | undefined, label: "username" | "password"): string {
+  const envName = name?.trim();
+  if (!envName) throw new Error(`A ${label} environment variable name is required.`);
+
+  const value = process.env[envName];
+  if (!value) {
+    throw new Error(`Missing ${label} environment variable: ${envName}. Set it in your shell or CI secrets before running scripted login.`);
+  }
+
+  return value;
 }
 
 function formatAuthLoginSummary(result: AuthLoginResult): string {
