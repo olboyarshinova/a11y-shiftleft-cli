@@ -75,6 +75,8 @@
   including latest deltas, rule regressions, and resolved rule counts.
 - Added a visual report follow-up command to `watch` output so changed route
   hints can be audited with screenshots and annotated HTML evidence on demand.
+- Clarified `watch` feedback for shared component changes that cannot be mapped
+  to a single route, including smoke-route guidance.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

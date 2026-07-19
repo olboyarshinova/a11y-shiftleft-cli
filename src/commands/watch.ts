@@ -351,6 +351,10 @@ export function formatWatchRunSummary(options: {
     } else {
       lines.push("Affected route hints: none inferred; keep representative --url smoke routes configured.");
     }
+
+    if (routeHints.unmappedChangedFiles > 0) {
+      lines.push(formatUnmappedWatchGuidance(routeHints.unmappedChangedFiles, options.urls));
+    }
   }
 
   const visualCommand = formatWatchVisualAuditCommand(routeHints.routes, options.urls, options.outputDir);
@@ -400,6 +404,13 @@ export function inferWatchRouteHints(changes: WatchChangeSummary, urls: string[]
     routes,
     unmappedChangedFiles: files.length - files.filter((file) => inferRoutePathsFromFile(file).length > 0).length
   };
+}
+
+export function formatUnmappedWatchGuidance(unmappedChangedFiles: number, urls: string[] | undefined): string {
+  const suffix = urls && urls.length > 0
+    ? "visual follow-up will use configured --url smoke routes."
+    : "add representative --url smoke routes for shared components.";
+  return `Shared/component changes: ${unmappedChangedFiles} file${unmappedChangedFiles === 1 ? "" : "s"} without a direct route hint; ${suffix}`;
 }
 
 export function formatWatchStart(options: {
