@@ -5,6 +5,7 @@ import { createAgentReview, formatAgentReview } from "../core/agentReview.js";
 import { findPreviousReportInHistory, summarizeAgentHistory } from "../core/agentHistory.js";
 import { readA11yReport } from "../core/evidenceExport.js";
 import { openReportFile } from "../core/openReport.js";
+import { prepareShareReport } from "../core/sharePrepare.js";
 import { writeExplorationHtml } from "../reporters/writeExplorationHtml.js";
 import type { A11yReport } from "../types.js";
 import { runAudit, type AuditOptions } from "./audit.js";
@@ -23,6 +24,8 @@ interface AgentRefreshHtmlOptions {
   report?: string;
   out?: string;
   fileName?: string;
+  shareOut?: string;
+  shareIncludeHtml?: boolean;
   open?: boolean;
 }
 
@@ -170,6 +173,8 @@ export function registerAgentCommand(program: Command): void {
     .option("--report <file-or-dir>", "Source a11y-report.json file or report directory", "reports/a11y-report.json")
     .option("--out <dir>", "Output directory; defaults to the source report directory")
     .option("--file-name <name>", "HTML file name to write", "a11y-report.html")
+    .option("--share-out <dir>", "Also create a sanitized local share package after refreshing the HTML report")
+    .option("--share-include-html", "Include a self-contained visual HTML copy in --share-out; review screenshots before sharing")
     .option("--open", "Open the refreshed visual HTML report")
     .action(async (options: AgentRefreshHtmlOptions) => {
       const reportPath = await resolveReportPath(options.report || "reports/a11y-report.json");
@@ -189,9 +194,22 @@ export function registerAgentCommand(program: Command): void {
       if (refreshSummary.missingAssetDirs > 0) {
         console.warn(`Referenced visual asset directories not found: ${refreshSummary.missingAssetDirs}`);
       }
+      if (refreshSummary.copiedReportJson) {
+        console.log("Copied a11y-report.json for refreshed output.");
+      }
 
       const htmlPath = path.join(outputDir, fileName);
       console.log(`Refreshed visual HTML report: ${htmlPath}`);
+
+      if (options.shareOut) {
+        const shareManifest = await prepareShareReport({
+          reportPath: outputDir,
+          outputDir: path.resolve(options.shareOut),
+          includeHtml: Boolean(options.shareIncludeHtml)
+        });
+        console.log(`Created sanitized local share package with ${shareManifest.outputs.length} file${shareManifest.outputs.length === 1 ? "" : "s"}: ${path.resolve(options.shareOut)}`);
+        console.log(`Review privacy summary: ${path.join(path.resolve(options.shareOut), "privacy-summary.json")}`);
+      }
 
       if (options.open) {
         try {
@@ -210,12 +228,13 @@ async function refreshVisualHtmlReport(options: {
   reportPath: string;
   outputDir: string;
   fileName: string;
-}): Promise<{ copiedAssetDirs: number; missingAssetDirs: number }> {
+}): Promise<{ copiedAssetDirs: number; missingAssetDirs: number; copiedReportJson: boolean }> {
   if (!options.report.exploration) {
     throw new Error("Cannot refresh visual HTML because this report does not include exploration evidence. Run audit or explore to create a visual report first.");
   }
 
   const assetSummary = await copyReferencedVisualAssets(path.dirname(options.reportPath), options.outputDir, options.report);
+  const copiedReportJson = await copyReportJsonIfNeeded(options.reportPath, options.outputDir);
   await writeExplorationHtml(options.outputDir, options.report.exploration, options.report.issues, {
     fileName: options.fileName,
     title: "Accessibility Audit Report",
@@ -226,7 +245,20 @@ async function refreshVisualHtmlReport(options: {
     retention: options.report.summary.retention
   });
 
-  return assetSummary;
+  return {
+    ...assetSummary,
+    copiedReportJson
+  };
+}
+
+async function copyReportJsonIfNeeded(reportPath: string, outputDir: string): Promise<boolean> {
+  const sourcePath = path.resolve(reportPath);
+  const outputPath = path.resolve(outputDir, "a11y-report.json");
+  if (sourcePath === outputPath) return false;
+
+  await fs.mkdir(outputDir, { recursive: true });
+  await fs.copyFile(sourcePath, outputPath);
+  return true;
 }
 
 async function copyReferencedVisualAssets(

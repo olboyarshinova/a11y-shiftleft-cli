@@ -66,6 +66,9 @@
 - Added `agent refresh-html` to rebuild the visual `a11y-report.html` from an
   existing `a11y-report.json` without rerunning browser automation, including
   copying referenced screenshot directories when writing to a new output folder.
+- Extended `agent refresh-html` with `--share-out` and `--share-include-html`
+  so teams can refresh the visual report and create a sanitized local share
+  package in one command.
 - Added a quality-gates recipe for existing projects that need report-only
   rollout, baseline mode, and staged CI tightening.
 - Added a CI/CD without SaaS recipe that explains local-first execution,

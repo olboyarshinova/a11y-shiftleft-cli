@@ -90,6 +90,17 @@ Use this when `a11y-report.json` already exists and you want to rebuild
 restoring a deleted HTML file. The command does not rerun Playwright or
 Lighthouse.
 
+Refresh and prepare a sanitized local share package in one step:
+
+```bash
+npx a11y-shiftleft-cli agent refresh-html \
+  --report reports \
+  --share-out a11y-share \
+  --share-include-html
+```
+
+Use `--share-include-html` only when screenshots are approved for sharing.
+
 Use JSON when another local script needs the summary:
 
 ```bash
