@@ -187,6 +187,22 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
     ]
   },
   {
+    id: "hover-focus-content",
+    title: "Hover and focus-triggered content",
+    principle: "operable",
+    wcag: ["1.4.13", "2.1.1", "2.4.7"],
+    whyManual: "Automated scans can find some focus problems, but they cannot fully verify tooltip, menu, and disclosure behavior while the user hovers or tabs through a task.",
+    steps: [
+      "Open tooltips, menus, popovers, disclosures, and custom help content with both pointer hover and keyboard focus.",
+      "Confirm the extra content can be dismissed without moving pointer or keyboard focus to an unrelated control.",
+      "Confirm the content stays visible while the pointer is over it or keyboard focus remains inside it, and does not disappear before users can read or interact with it."
+    ],
+    evidence: [
+      "List of hover/focus-triggered components reviewed",
+      "Screenshots or notes showing dismissible, hoverable, and persistent behavior"
+    ]
+  },
+  {
     id: "landmarks-bypass",
     title: "Landmarks and repeated-content bypass",
     principle: "operable",

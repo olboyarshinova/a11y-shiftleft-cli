@@ -15,6 +15,9 @@
 - Added safer overlay preparation before scans: cookie consent iframes can be
   dismissed through reject/close controls, and obvious cookie or survey overlays
   are hidden in the isolated browser context when no safe close action exists.
+- Added hover/focus-triggered content to Audit Coverage and the manual checklist
+  so tooltips, menus, popovers, and disclosures are reviewed against WCAG 1.4.13
+  without pretending the behavior can be fully proven automatically.
 - Fixed root-cause occurrence counts for findings that do not include duplicate
   metadata.
 - Added a guided `setup` command that creates the starter config, report/auth

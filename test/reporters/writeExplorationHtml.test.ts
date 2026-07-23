@@ -357,6 +357,8 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /\.metric-info strong,[\s\S]*?\.metric-best-practice strong \{[\s\S]*?color: var\(--info\)/);
   assert.match(html, /\.metric-zero strong \{[\s\S]*?color: var\(--ok\)/);
   assert.doesNotMatch(html, /\.metric-wcag \{[\s\S]*?background:/);
+  assert.match(html, /Hover\/focus content/);
+  assert.match(html, /Review tooltips, menus, popovers, and disclosures/);
   assert.match(html, /Copy all ticket drafts \(1\)/);
   assert.match(html, /Copy local Markdown drafts grouped by issue type/);
   assert.match(html, /title="Copy Markdown drafts grouped by issue type"/);

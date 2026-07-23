@@ -35,10 +35,6 @@ Section 508 certification.
   prints the generated or updated files that should be reviewed before commit.
   Standalone `generate-ci` now prints the created workflow files and next steps
   for pull-request verification or shell-runner integration.
-- Extend authenticated testing beyond manual `auth login` with CI-safe custom
-  flows: a scripted auth module that reads usernames, passwords, and tokens from
-  environment variables or CI secrets, then saves a temporary Playwright
-  `storageState` file without logging credentials.
 - Validate structured manual-review records in real keyboard-only, screen
   reader, zoom, reflow, reduced-motion, cognitive, and task-flow reviews.
 - Validate remediation ownership and temporary-acceptance review dates in real
@@ -114,8 +110,10 @@ Section 508 certification.
 - Add safe diagnostics for unexpected context changes on focus or input while
   blocking navigation, submission, downloads, and other destructive effects by
   default.
-- Add assisted checks for hover/focus content: whether it can be dismissed,
-  remains available while hovered, and persists long enough to inspect.
+- Extend hover/focus content support beyond the current manual checklist row:
+  collect bounded visual evidence for whether triggered content can be
+  dismissed, remains available while hovered or focused, and persists long
+  enough to inspect.
 - Extend media evidence with isolated reduced-motion behavior comparison.
   Caption quality, audio description, and flashing risk remain manual-review
   work.
