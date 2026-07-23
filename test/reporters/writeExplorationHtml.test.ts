@@ -877,6 +877,8 @@ test("renderExplorationHtml surfaces cross-page consistency in audit coverage", 
   assert.match(html, /Cross-page consistency/);
   assert.match(html, /Automated evidence/);
   assert.match(html, /3 states and 1 page compared for titles, same-purpose control names, navigation order, and help mechanisms/);
+  assert.match(html, /Voice and switch control readiness/);
+  assert.match(html, /1 label-in-name or same-purpose naming signal/);
   assert.match(html, /class="coverage-findings">1<\/td>/);
 });
 
@@ -2003,6 +2005,7 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /Embedded content and complex graphics/);
   assert.match(html, /Automated evidence \+ owner review/);
   assert.match(html, /1 third-party finding needs owner follow-up/);
+  assert.match(html, /Voice and switch control readiness/);
   assert.match(html, /Iframe and canvas evidence/);
   assert.match(html, /#sales-chart/);
   assert.match(html, /Modern axe scans accessible frame documents recursively/);

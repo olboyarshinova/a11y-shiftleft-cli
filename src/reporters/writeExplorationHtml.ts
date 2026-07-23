@@ -2690,7 +2690,12 @@ function renderCoverageMatrix(
     "navigation-order-inconsistent",
     "help-mechanism-inconsistent"
   ]);
+  const voiceControlRuleIds = new Set([
+    "label-content-name-mismatch",
+    "control-name-inconsistent"
+  ]);
   const crossPageFindingCount = countIssues((issue) => crossPageRuleIds.has(issue.ruleId));
+  const voiceControlFindingCount = countIssues((issue) => voiceControlRuleIds.has(issue.ruleId));
   const comparedPageCount = new Set(graph.states.map((state) => state.url)).size;
   const comparedStateCount = graph.states.length;
   const crossPageCompared = comparedStateCount > 1 || comparedPageCount > 1;
@@ -2713,6 +2718,7 @@ function renderCoverageMatrix(
     coverageRow("media-motion", "Media and motion", mediaStates.length > 0 ? evidenceState(countIssues((issue) => issue.category === "media")) : "needs-review", mediaStates.length > 0 ? "Automated evidence + manual review" : "Review if applicable", mediaStates.length > 0 ? `${mediaElements} audio/video element${mediaElements === 1 ? "" : "s"}; ${autoplayRisks} autoplay control risk${autoplayRisks === 1 ? "" : "s"}; ${activeAnimations} active animation${activeAnimations === 1 ? "" : "s"}; reduced-motion CSS in ${reducedMotionStates}/${mediaStates.length} state${mediaStates.length === 1 ? "" : "s"}` : "Review captions, transcripts, autoplay, flashing, and reduced-motion behavior when media or animation is present", mediaStates.length > 0, mediaStates.length > 0 ? countIssues((issue) => issue.category === "media") : undefined),
     coverageRow("hover-focus-content", "Hover/focus content", "needs-review", options.manualChecklist ? "Checklist ready" : "Human review required", "Review tooltips, menus, popovers, and disclosures for dismissible, hoverable, and persistent behavior"),
     coverageRow("pointer-dragging", "Pointer and dragging alternatives", "needs-review", options.manualChecklist ? "Checklist ready" : "Human review required", "Review sliders, maps, carousels, drag-and-drop, swipe, and pointer-heavy controls for cancellation and non-drag alternatives"),
+    coverageRow("voice-switch-readiness", "Voice and switch control readiness", evidenceState(voiceControlFindingCount), "Automated signals + human review", `${voiceControlFindingCount} label-in-name or same-purpose naming signal${voiceControlFindingCount === 1 ? "" : "s"}; confirm representative voice or switch-control tasks manually`, true, voiceControlFindingCount),
     coverageRow("embedded-content", "Embedded content and complex graphics", inaccessibleFrames > 0 ? "unavailable" : evidenceState(embeddedCoverageFindingCount), embeddedStates.length > 0 ? "Automated evidence + owner review" : "No embeds observed", embeddedStates.length > 0 ? `${iframeCount} iframe${iframeCount === 1 ? "" : "s"}; ${inaccessibleFrames} unavailable document${inaccessibleFrames === 1 ? "" : "s"}; ${canvasGaps} canvas alternative gap${canvasGaps === 1 ? "" : "s"}; ${thirdPartyEmbeddedFindingCount} third-party finding${thirdPartyEmbeddedFindingCount === 1 ? "" : "s"} ${thirdPartyEmbeddedFindingCount === 1 ? "needs" : "need"} owner follow-up` : "No iframe, canvas, or complex embedded graphic evidence collected", true, embeddedCoverageFindingCount),
     coverageRow("screen-reader", "Screen reader", "needs-review", "Human review required", "Test representative tasks with NVDA, JAWS, or VoiceOver"),
     coverageRow("content-usability", "Content and task usability", "needs-review", options.manualChecklist ? "Checklist ready" : "Human review required", "Record tester, environment, evidence, and outcome")

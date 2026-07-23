@@ -1037,6 +1037,10 @@ function formatCoverageMatrix(report: A11yReport): string {
   const iframeCount = embeddedStates.reduce((total, state) => total + (state.embeddedContent?.iframeCount || 0), 0);
   const inaccessibleFrames = embeddedStates.reduce((total, state) => total + (state.embeddedContent?.inaccessibleIframeCount || 0), 0);
   const canvasGaps = embeddedStates.reduce((total, state) => total + (state.embeddedContent?.canvasWithoutAlternativeCount || 0), 0);
+  const voiceControlSignals = report.issues.filter((issue) => (
+    issue.ruleId === "label-content-name-mismatch" ||
+    issue.ruleId === "control-name-inconsistent"
+  )).length;
   return `## Audit Coverage
 
 | Area | Status | Evidence or next step |
@@ -1051,6 +1055,7 @@ function formatCoverageMatrix(report: A11yReport): string {
 | Form error states | ${formStates.length > 0 ? "Rendered-state evidence collected" : "No forms observed"} | ${invalidFields} explicit invalid field${invalidFields === 1 ? "" : "s"}; ${unassociatedInvalidFields} without an exposed associated error |
 | Image alternatives | ${imageStates.length > 0 ? "Quality heuristics collected" : "No images observed"} | ${suspiciousImages} alternative${suspiciousImages === 1 ? "" : "s"} flagged for contextual human review |
 | Media and motion | ${mediaStates.length > 0 ? "Rendered-state evidence collected" : "No media or active motion observed"} | ${mediaElements} audio/video element${mediaElements === 1 ? "" : "s"}; ${autoplayRisks} autoplay control risk${autoplayRisks === 1 ? "" : "s"} |
+| Voice and switch control readiness | Automated signals plus human review | ${voiceControlSignals} label-in-name or same-purpose naming signal${voiceControlSignals === 1 ? "" : "s"}; confirm representative tasks manually |
 | Embedded content and complex graphics | ${embeddedStates.length > 0 ? "Evidence collected; owner review may be needed" : "No iframe or canvas observed"} | ${iframeCount} iframe${iframeCount === 1 ? "" : "s"}; ${inaccessibleFrames} unavailable; ${canvasGaps} canvas alternative gap${canvasGaps === 1 ? "" : "s"} |
 | Screen reader | Human review required | Test representative tasks with NVDA, JAWS, or VoiceOver |
 | Content and task usability | ${report.manualChecklist ? "Checklist ready" : "Not included"} | Record human evidence and outcome |`;

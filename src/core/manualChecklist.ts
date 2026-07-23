@@ -301,6 +301,24 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
     ]
   },
   {
+    id: "voice-switch-readiness",
+    title: "Voice and switch control readiness",
+    principle: "operable",
+    wcag: ["2.1.1", "2.4.4", "2.5.3", "4.1.2"],
+    whyManual: "Automated checks can flag accessible-name and label-in-name risks, but real voice and switch-control tasks depend on platform behavior and user commands.",
+    steps: [
+      "Review visible labels for buttons, links, menu items, tabs, and form controls; confirm the visible label is included in the accessible name.",
+      "Confirm same-purpose controls use consistent names across repeated navigation, cards, tables, and dialogs.",
+      "Try one representative task with voice control or switch-style sequential navigation when the product audience or procurement context justifies it.",
+      "Confirm users can identify, activate, and recover from controls without relying on pointer precision or hidden command names."
+    ],
+    evidence: [
+      "Visible-label and accessible-name spot-check notes",
+      "Voice or switch-control task result when tested",
+      "List of controls with inconsistent or hidden command names"
+    ]
+  },
+  {
     id: "landmarks-bypass",
     title: "Landmarks and repeated-content bypass",
     principle: "operable",

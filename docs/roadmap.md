@@ -133,9 +133,10 @@ Section 508 certification.
 - Extend embedded-content and canvas evidence beyond the current manual
   checklist targets and owner-review wording with richer third-party follow-up
   workflows, source-level retests, and contextual complex-graphic review.
-- Approximate voice-control readiness with visible-label-in-accessible-name and
-  unique control-name checks while keeping real voice and switch-control tasks
-  in manual review.
+- Extend voice and switch-control readiness beyond the current label-in-name,
+  same-purpose naming signals, and manual checklist row with better
+  representative-task evidence while keeping real voice and switch-control
+  tasks in manual review.
 - Add an optional usability-test worksheet that records task completion,
   assistive technology and browser context, blockers, and remediation owners
   without collecting unnecessary personal information.
