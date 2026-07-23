@@ -329,6 +329,7 @@ test("toManualChecklistMarkdown renders actionable Markdown checkboxes", () => {
   assert.match(markdown, /Voice and switch control readiness/);
   assert.match(markdown, /visible label is included in the accessible name/);
   assert.match(markdown, /Task completion evidence worksheet/);
+  assert.match(markdown, /without sound, without precise pointer movement, keyboard only, 200% zoom, reduced motion, or elevated cognitive load/);
   assert.match(markdown, /completed with assistance, blocked, abandoned, or not applicable/);
   assert.match(markdown, /Logo purpose and accessible name/);
   assert.match(markdown, /NVDA with Chrome or Firefox/);

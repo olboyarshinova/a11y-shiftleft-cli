@@ -1060,7 +1060,7 @@ function formatCoverageMatrix(report: A11yReport): string {
 | Voice and switch control readiness | Automated signals plus human review | ${voiceControlSignals} label-in-name or same-purpose naming signal${voiceControlSignals === 1 ? "" : "s"}; confirm representative tasks manually |
 | Embedded content and complex graphics | ${embeddedStates.length > 0 ? "Evidence collected; owner review may be needed" : "No iframe or canvas observed"} | ${iframeCount} iframe${iframeCount === 1 ? "" : "s"}; ${inaccessibleFrames} unavailable; ${canvasGaps} canvas alternative gap${canvasGaps === 1 ? "" : "s"} |
 | Screen reader | Human review required | Test representative tasks with NVDA, JAWS, or VoiceOver |
-| Task completion worksheet | Human review required | Record task, environment, input method, outcome, blocker, owner, and retest date without unnecessary personal data |
+| Task completion worksheet | Human review required | Record task, environment, input method, inclusive constraint, outcome, blocker, owner, and retest date without unnecessary personal data |
 | Content and task usability | ${report.manualChecklist ? "Checklist ready" : "Not included"} | Record human evidence and outcome |`;
 }
 

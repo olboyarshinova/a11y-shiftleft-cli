@@ -395,12 +395,14 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
     steps: [
       "Choose one critical task such as search, sign-up, checkout, account update, content submission, or support contact.",
       "Record the tester role or scenario, browser, assistive technology or input method, viewport or zoom, and starting URL without collecting unnecessary personal data.",
+      "Repeat or review the task under at least one relevant constraint: without sound, without precise pointer movement, keyboard only, 200% zoom, reduced motion, or elevated cognitive load.",
       "Mark the outcome as completed, completed with assistance, blocked, abandoned, or not applicable.",
       "Record the first blocker, recovery path, evidence link, remediation owner, and retest date."
     ],
     evidence: [
       "Task name and starting URL",
       "Environment and input method",
+      "Inclusive constraint used for the review",
       "Outcome, blocker, owner, and retest date"
     ]
   }

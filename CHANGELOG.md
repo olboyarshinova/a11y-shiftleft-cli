@@ -52,6 +52,9 @@
 - Added a task-completion worksheet review area for recording task, environment,
   input method, outcome, blocker, owner, and retest evidence without collecting
   unnecessary personal data.
+- Added inclusive review prompts to the task-completion worksheet for no-sound,
+  no-precise-pointer, keyboard-only, zoom, reduced-motion, and cognitive-load
+  task checks.
 - Fixed root-cause occurrence counts for findings that do not include duplicate
   metadata.
 - Added a guided `setup` command that creates the starter config, report/auth

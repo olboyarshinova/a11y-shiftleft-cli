@@ -140,9 +140,9 @@ Section 508 certification.
 - Extend the current task-completion worksheet beyond manual checklist and
   Audit Coverage prompts with richer planned-journey confirmation, missing-state
   notes, blocker severity, and retest evidence.
-- Add inclusive review prompts inspired by human-centered design practices:
-  whether a task works without sound, without precise pointer movement, under
-  zoom, with keyboard only, with reduced motion, and under cognitive load.
+- Extend inclusive review prompts beyond the current task-completion worksheet
+  constraints for no-sound, no-precise-pointer, keyboard-only, zoom,
+  reduced-motion, and cognitive-load task checks.
 - Add cognitive-load and neurodiversity review prompts beyond the current
   plain-language, predictable-action, calm-error, recovery-path, and time-limit
   checklist rows. Next, validate that wording in real checkout, account,
