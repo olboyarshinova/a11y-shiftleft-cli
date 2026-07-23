@@ -25,6 +25,7 @@ test("createManualChecklist generates human-review checklist items", () => {
   assert.equal(checklist.items.some((item) => item.id === "sensory-color-instructions"), true);
   assert.equal(checklist.items.some((item) => item.id === "text-spacing-resilience"), true);
   assert.equal(checklist.items.some((item) => item.id === "account-authentication-flow"), true);
+  assert.equal(checklist.items.some((item) => item.id === "status-messages-live-updates"), true);
   assert.equal(checklist.items.some((item) => item.id === "media-motion"), true);
   assert.equal(checklist.items.some((item) => item.id === "hover-focus-content"), true);
   assert.equal(checklist.items.some((item) => item.id === "pointer-dragging-alternatives"), true);
@@ -116,13 +117,62 @@ test("createManualChecklist creates an assisted queue from exploration evidence"
   });
 
   const formReview = checklist.items.find((item) => item.id === "form-label-quality");
+  const statusReview = checklist.items.find((item) => item.id === "status-messages-live-updates");
   const imageReview = checklist.items.find((item) => item.id === "alternative-text-quality");
   assert.equal(formReview?.targets?.[0].selector, "#email");
+  assert.equal(statusReview?.targets?.[0].selector, "#email");
   assert.equal(formReview?.targets?.[0].stateId, "state-2");
   assert.equal(imageReview?.targets?.[0].kind, "image");
   assert.equal(checklist.items[0].id, "form-label-quality");
   assert.match(toManualChecklistMarkdown(checklist), /Observed targets:\n- \[ \] form: Email address/);
   assert.match(toManualChecklistMarkdown(checklist), /state-2, #email/);
+});
+
+test("createManualChecklist maps observed live-region updates to status-message review", () => {
+  const checklist = createManualChecklist({
+    framework: "react",
+    exploration: {
+      generatedAt: "2026-07-23T00:00:00.000Z",
+      startUrl: "http://localhost:3000",
+      states: [{
+        id: "state-3",
+        url: "http://localhost:3000/search",
+        depth: 1,
+        fingerprint: "search-results",
+        actionLabel: "Search",
+        issueCount: 0,
+        actionCount: 0,
+        dynamicAnnouncements: {
+          actionLabel: "Search products",
+          meaningfulUpdates: 1,
+          updates: [{
+            selector: "[role='status']",
+            text: "12 results loaded",
+            role: "status",
+            politeness: "polite"
+          }]
+        }
+      }],
+      edges: [],
+      skippedActions: [],
+      summary: {
+        statesVisited: 1,
+        actionsTried: 0,
+        skippedActions: 0,
+        screenshots: 0,
+        duplicateScreenshots: 0,
+        maxDepth: 1,
+        maxStates: 10
+      }
+    },
+    generatedAt: "2026-07-23T00:00:00.000Z"
+  });
+
+  const statusReview = checklist.items.find((item) => item.id === "status-messages-live-updates");
+  assert.equal(statusReview?.targets?.[0].kind, "live-region");
+  assert.equal(statusReview?.targets?.[0].selector, "[role='status']");
+  assert.equal(statusReview?.targets?.[0].stateId, "state-3");
+  assert.match(toManualChecklistMarkdown(checklist), /live-region: 12 results loaded/);
 });
 
 test("toManualChecklistMarkdown renders actionable Markdown checkboxes", () => {
@@ -152,12 +202,14 @@ test("toManualChecklistMarkdown renders actionable Markdown checkboxes", () => {
   assert.match(markdown, /Logo purpose and accessible name/);
   assert.match(markdown, /NVDA with Chrome or Firefox/);
   assert.match(markdown, /Screen reader forms, dialogs, and dynamic updates/);
+  assert.match(markdown, /Status messages and live updates/);
+  assert.match(markdown, /Trigger loading, success, error, cart, search-result, filter, save, and validation updates/);
   assert.match(markdown, /logo links to the home page/);
   assert.match(markdown, /Activate the skip link/);
   assert.match(markdown, /Automated accessibility tools do not prove full WCAG conformance/);
   assert.match(markdown, /Status: `not-reviewed`/);
   assert.match(markdown, /## Review Status/);
-  assert.match(markdown, /Not reviewed \| 18/);
+  assert.match(markdown, /Not reviewed \| 19/);
   assert.match(markdown, /Environment summary:/);
   assert.match(markdown, /Operating system:/);
   assert.match(markdown, /Assistive technology and version:/);

@@ -74,9 +74,9 @@ Section 508 certification.
   `needs review` rather than false pass/fail claims: meaningful sequence
   (`1.3.2`), focus appearance (`2.4.13`, tracked as advisory before AAA
   reporting),
-  consistent navigation/identification/help (`3.2.3`, `3.2.4`, `3.2.6`) and
-  status messages (`4.1.3`). Each check must include visual evidence, WCAG
-  mapping, confidence, and a clear manual confirmation step.
+  consistent navigation/identification/help (`3.2.3`, `3.2.4`, `3.2.6`).
+  Each check must include visual evidence, WCAG mapping, confidence, and a
+  clear manual confirmation step.
 - Track competitor coverage as evidence, not marketing claims. Current local
   comparison baseline: Oobee `0.10.95` exposes 26 WCAG-linked criteria in its
   report catalog, including 20 WCAG A/AA criteria and 6 AAA criteria. The
@@ -100,8 +100,9 @@ Section 508 certification.
   iOS or Android app auditing.
 - Extend modal checks with additional close, cancel, successful-completion, and
   non-modal dialog paths.
-- Extend live-region evidence with validation-error and loading-state
-  correlation while continuing to require screen-reader confirmation.
+- Extend live-region evidence beyond the current manual checklist row and
+  mutation summary with deeper validation-error and loading-state correlation
+  while continuing to require screen-reader confirmation.
 - Extend alternative-text quality evidence with contextual figure/caption and
   complex-image review.
 - Extend rendered form evidence with safe validation-state correlation and

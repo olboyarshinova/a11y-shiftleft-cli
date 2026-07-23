@@ -169,6 +169,22 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
     ]
   },
   {
+    id: "status-messages-live-updates",
+    title: "Status messages and live updates",
+    principle: "robust",
+    wcag: ["4.1.3", "3.3.1", "3.3.2"],
+    whyManual: "Mutation evidence can show that live regions changed, but a real assistive-technology pass is needed to confirm timing, wording, priority, and usefulness.",
+    steps: [
+      "Trigger loading, success, error, cart, search-result, filter, save, and validation updates that do not move focus.",
+      "Confirm important updates are announced with useful wording and the right urgency without interrupting the user unnecessarily.",
+      "Confirm repeated updates are not noisy, stale messages are cleared, and validation errors remain associated with the affected fields."
+    ],
+    evidence: [
+      "Live-region or status-message scenarios tested",
+      "Screen reader announcement notes for loading, success, error, and validation states"
+    ]
+  },
+  {
     id: "zoom-reflow",
     title: "Zoom, reflow, and responsive layout",
     principle: "perceivable",
@@ -479,6 +495,7 @@ function addFormTargets(targets: Map<string, ManualReviewTarget[]>, state: Explo
       `${evidence.formCount} form(s), ${evidence.invalidFieldCount} invalid field(s), ${evidence.unassociatedInvalidCount} without an exposed associated error`);
     addTarget(targets, "form-label-quality", target);
     addTarget(targets, "screen-reader-dynamic-content", target);
+    addTarget(targets, "status-messages-live-updates", target);
   }
 }
 
@@ -495,9 +512,11 @@ function addAnnouncementTargets(targets: Map<string, ManualReviewTarget[]>, stat
   const evidence = state.dynamicAnnouncements;
   if (!evidence || evidence.updates.length === 0) return;
   for (const update of evidence.updates) {
-    addTarget(targets, "screen-reader-dynamic-content", targetFor(state, "live-region",
+    const target = targetFor(state, "live-region",
       update.text || `${update.role || "live"} region`, update.selector,
-      `${update.politeness} update after ${evidence.actionLabel}`));
+      `${update.politeness} update after ${evidence.actionLabel}`);
+    addTarget(targets, "screen-reader-dynamic-content", target);
+    addTarget(targets, "status-messages-live-updates", target);
   }
 }
 
