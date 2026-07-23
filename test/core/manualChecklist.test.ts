@@ -27,6 +27,7 @@ test("createManualChecklist generates human-review checklist items", () => {
   assert.equal(checklist.items.some((item) => item.id === "account-authentication-flow"), true);
   assert.equal(checklist.items.some((item) => item.id === "status-messages-live-updates"), true);
   assert.equal(checklist.items.some((item) => item.id === "media-motion"), true);
+  assert.equal(checklist.items.some((item) => item.id === "embedded-content-complex-graphics"), true);
   assert.equal(checklist.items.some((item) => item.id === "hover-focus-content"), true);
   assert.equal(checklist.items.some((item) => item.id === "pointer-dragging-alternatives"), true);
   assert.equal(checklist.items.some((item) => item.id === "representative-user-test"), true);
@@ -182,6 +183,68 @@ test("createManualChecklist keeps motion review targets when media elements also
   assert.equal(mediaReview?.targets?.some((target) => target.label === "Animated content"), true);
 });
 
+test("createManualChecklist maps iframe and canvas evidence to embedded-content review", () => {
+  const checklist = createManualChecklist({
+    framework: "react",
+    exploration: {
+      generatedAt: "2026-07-23T00:00:00.000Z",
+      startUrl: "http://localhost:3000",
+      states: [{
+        id: "state-5",
+        url: "http://localhost:3000/chart",
+        depth: 1,
+        fingerprint: "chart",
+        actionLabel: "Chart page",
+        issueCount: 0,
+        actionCount: 0,
+        embeddedContent: {
+          iframeCount: 1,
+          sameOriginIframeCount: 0,
+          crossOriginIframeCount: 1,
+          inaccessibleIframeCount: 1,
+          canvasCount: 1,
+          canvasWithAlternativeCount: 0,
+          canvasWithoutAlternativeCount: 1,
+          iframes: [{
+            selector: "#video-frame",
+            url: "https://www.youtube.com/embed/demo",
+            sameOrigin: false,
+            title: "Product video",
+            browserAccessible: false
+          }],
+          canvases: [{
+            selector: "#sales-chart",
+            width: 640,
+            height: 320,
+            decorative: false,
+            hasAccessibleAlternative: false
+          }]
+        }
+      }],
+      edges: [],
+      skippedActions: [],
+      summary: {
+        statesVisited: 1,
+        actionsTried: 0,
+        skippedActions: 0,
+        screenshots: 0,
+        duplicateScreenshots: 0,
+        maxDepth: 1,
+        maxStates: 10
+      }
+    },
+    generatedAt: "2026-07-23T00:00:00.000Z"
+  });
+
+  const embeddedReview = checklist.items.find((item) => item.id === "embedded-content-complex-graphics");
+  assert.equal(embeddedReview?.targets?.[0].kind, "embedded-content");
+  assert.equal(embeddedReview?.targets?.some((target) => target.selector === "#video-frame"), true);
+  assert.equal(embeddedReview?.targets?.some((target) => target.selector === "#sales-chart"), true);
+  assert.match(toManualChecklistMarkdown(checklist), /embedded-content: Product video/);
+  assert.match(toManualChecklistMarkdown(checklist), /cross-origin iframe; DOM unavailable/);
+  assert.match(toManualChecklistMarkdown(checklist), /Canvas or complex graphic/);
+});
+
 test("createManualChecklist maps observed live-region updates to status-message review", () => {
   const checklist = createManualChecklist({
     framework: "react",
@@ -253,6 +316,8 @@ test("toManualChecklistMarkdown renders actionable Markdown checkboxes", () => {
   assert.match(markdown, /dismissed without moving pointer or keyboard focus/);
   assert.match(markdown, /Pointer cancellation and dragging alternatives/);
   assert.match(markdown, /single-pointer alternative/);
+  assert.match(markdown, /Embedded content and complex graphics/);
+  assert.match(markdown, /document ownership and test the embedded source directly/);
   assert.match(markdown, /Logo purpose and accessible name/);
   assert.match(markdown, /NVDA with Chrome or Firefox/);
   assert.match(markdown, /Screen reader forms, dialogs, and dynamic updates/);
@@ -263,7 +328,7 @@ test("toManualChecklistMarkdown renders actionable Markdown checkboxes", () => {
   assert.match(markdown, /Automated accessibility tools do not prove full WCAG conformance/);
   assert.match(markdown, /Status: `not-reviewed`/);
   assert.match(markdown, /## Review Status/);
-  assert.match(markdown, /Not reviewed \| 19/);
+  assert.match(markdown, /Not reviewed \| 20/);
   assert.match(markdown, /Environment summary:/);
   assert.match(markdown, /Operating system:/);
   assert.match(markdown, /Assistive technology and version:/);

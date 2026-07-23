@@ -130,8 +130,9 @@ Section 508 certification.
   active-animation, and reduced-motion CSS summary with isolated reduced-motion
   behavior comparison. Caption quality, audio description, and flashing risk
   remain manual-review work.
-- Extend embedded-content and canvas evidence with contextual complex-graphic
-  review and clearer third-party owner follow-up workflows.
+- Extend embedded-content and canvas evidence beyond the current manual
+  checklist targets and owner-review wording with richer third-party follow-up
+  workflows, source-level retests, and contextual complex-graphic review.
 - Approximate voice-control readiness with visible-label-in-accessible-name and
   unique control-name checks while keeping real voice and switch-control tasks
   in manual review.

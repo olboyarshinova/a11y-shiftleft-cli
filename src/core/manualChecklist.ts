@@ -283,6 +283,24 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
     ]
   },
   {
+    id: "embedded-content-complex-graphics",
+    title: "Embedded content and complex graphics",
+    principle: "robust",
+    wcag: ["1.1.1", "2.1.1", "2.4.4", "4.1.2"],
+    whyManual: "Automated scans can detect iframe and canvas evidence, but they cannot always inspect third-party documents or decide whether a complex visual has an equivalent task path.",
+    steps: [
+      "Inventory iframes, maps, videos, code embeds, payment widgets, charts, canvas drawings, and other embedded or rendered graphics.",
+      "Confirm each iframe has a useful title and can be reached, operated, and exited with keyboard and assistive technology.",
+      "When content is third-party, document ownership and test the embedded source directly when possible before assigning the fix to the host site.",
+      "For canvas, maps, charts, and complex graphics, confirm an equivalent text, data table, semantic fallback, or non-visual task path is available."
+    ],
+    evidence: [
+      "Embedded-content owner and source notes",
+      "Iframe keyboard/screen-reader test result",
+      "Canvas or complex-graphic alternative evidence"
+    ]
+  },
+  {
     id: "landmarks-bypass",
     title: "Landmarks and repeated-content bypass",
     principle: "operable",
@@ -477,6 +495,7 @@ function collectManualReviewTargets(graph?: ExplorationGraph): Map<string, Manua
     addAnnouncementTargets(targets, state);
     addImageTargets(targets, state);
     addMediaTargets(targets, state);
+    addEmbeddedTargets(targets, state);
     addLandmarkTargets(targets, state);
     addReflowTargets(targets, state);
   }
@@ -537,6 +556,20 @@ function addMediaTargets(targets: Map<string, ManualReviewTarget[]>, state: Expl
   if (evidence.activeAnimationCount > 0) {
     addTarget(targets, "media-motion", targetFor(state, "media", "Animated content", undefined,
       `${evidence.activeAnimationCount} active animation(s); reduced-motion query ${evidence.reducedMotionQueryDetected ? "detected" : "not detected"}`));
+  }
+}
+
+function addEmbeddedTargets(targets: Map<string, ManualReviewTarget[]>, state: ExplorationState): void {
+  const evidence = state.embeddedContent;
+  if (!evidence) return;
+  for (const frame of evidence.iframes) {
+    const label = frame.title || frame.url || "Embedded frame";
+    addTarget(targets, "embedded-content-complex-graphics", targetFor(state, "embedded-content", label, frame.selector,
+      `${frame.sameOrigin ? "same-origin" : "cross-origin"} iframe; DOM ${frame.browserAccessible ? "available" : "unavailable"}; source ${frame.url || "unknown"}`));
+  }
+  for (const canvas of evidence.canvases) {
+    addTarget(targets, "embedded-content-complex-graphics", targetFor(state, "embedded-content", "Canvas or complex graphic", canvas.selector,
+      `${canvas.width}x${canvas.height}; decorative ${canvas.decorative ? "yes" : "no"}; accessible alternative ${canvas.hasAccessibleAlternative ? "detected" : "not detected"}`));
   }
 }
 

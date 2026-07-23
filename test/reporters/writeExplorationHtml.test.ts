@@ -2000,6 +2000,9 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /2 active animations/);
   assert.match(html, /reduced-motion CSS in 1\/1 state/);
   assert.match(html, /Reduced-motion CSS query detected: yes/);
+  assert.match(html, /Embedded content and complex graphics/);
+  assert.match(html, /Automated evidence \+ owner review/);
+  assert.match(html, /1 third-party finding needs owner follow-up/);
   assert.match(html, /Iframe and canvas evidence/);
   assert.match(html, /#sales-chart/);
   assert.match(html, /Modern axe scans accessible frame documents recursively/);

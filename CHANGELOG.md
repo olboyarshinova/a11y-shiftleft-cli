@@ -38,6 +38,9 @@
 - Added a Cross-page consistency row to Audit Coverage for duplicate or
   placeholder titles, same-purpose control names, navigation order, and help
   mechanism evidence.
+- Added embedded-content and complex-graphics manual review coverage, including
+  observed iframe and canvas targets plus clearer owner-review wording in
+  visual and Markdown reports.
 - Fixed root-cause occurrence counts for findings that do not include duplicate
   metadata.
 - Added a guided `setup` command that creates the starter config, report/auth
