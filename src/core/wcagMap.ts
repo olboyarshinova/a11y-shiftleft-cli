@@ -355,6 +355,14 @@ const WCAG_CRITERIA: Record<string, WcagCriterion> = {
     introducedIn: "2.0",
     url: "https://www.w3.org/WAI/WCAG22/Understanding/error-suggestion.html"
   },
+  "3.3.7": {
+    id: "3.3.7",
+    title: "Redundant Entry",
+    level: "A",
+    principle: "understandable",
+    introducedIn: "2.2",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/redundant-entry.html"
+  },
   "4.1.2": {
     id: "4.1.2",
     title: "Name, Role, Value",

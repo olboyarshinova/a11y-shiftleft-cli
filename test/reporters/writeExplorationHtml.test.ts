@@ -361,6 +361,8 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /Review instructions, legends, charts, filters/);
   assert.match(html, /Text spacing resilience/);
   assert.match(html, /Apply text-spacing overrides/);
+  assert.match(html, /Account and authentication flow/);
+  assert.match(html, /Review login, checkout, account recovery/);
   assert.match(html, /Hover\/focus content/);
   assert.match(html, /Review tooltips, menus, popovers, and disclosures/);
   assert.match(html, /Pointer and dragging alternatives/);

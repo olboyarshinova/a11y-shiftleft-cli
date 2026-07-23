@@ -136,6 +136,15 @@ test("getWcagCriteria includes sensory characteristics", () => {
   assert.equal(criterion.introducedIn, "2.0");
 });
 
+test("getWcagCriteria includes WCAG 2.2 redundant entry criteria", () => {
+  const [criterion] = getWcagCriteria(["3.3.7"]);
+
+  assert.equal(criterion.id, "3.3.7");
+  assert.equal(criterion.title, "Redundant Entry");
+  assert.equal(criterion.level, "A");
+  assert.equal(criterion.introducedIn, "2.2");
+});
+
 test("getWcagCriteria includes form error identification", () => {
   const [criterion] = getWcagCriteria(["3.3.1"]);
 

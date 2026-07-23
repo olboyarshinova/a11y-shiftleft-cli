@@ -98,6 +98,22 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
     ]
   },
   {
+    id: "account-authentication-flow",
+    title: "Account, checkout, and authentication flow",
+    principle: "understandable",
+    wcag: ["3.3.7", "3.3.8", "3.3.2"],
+    whyManual: "Automated scans cannot reliably complete real login, checkout, or account tasks or judge whether authentication creates unnecessary cognitive barriers.",
+    steps: [
+      "Review login, sign-up, checkout, account recovery, profile, and multi-step form flows using a least-privilege test account.",
+      "Confirm users are not asked to re-enter information already provided unless there is a clear security or data-integrity reason.",
+      "Confirm authentication does not require memorization, transcription, puzzle solving, or cognitive tests unless an accessible alternative is available."
+    ],
+    evidence: [
+      "Test-account flow notes without credentials or personal data",
+      "Examples of repeated-entry or authentication barriers and their alternatives"
+    ]
+  },
+  {
     id: "screen-reader-smoke",
     title: "Screen reader navigation and task smoke test",
     principle: "robust",

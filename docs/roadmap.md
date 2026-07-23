@@ -74,10 +74,9 @@ Section 508 certification.
   `needs review` rather than false pass/fail claims: meaningful sequence
   (`1.3.2`), focus appearance (`2.4.13`, tracked as advisory before AAA
   reporting),
-  consistent navigation/identification/help (`3.2.3`, `3.2.4`, `3.2.6`),
-  redundant entry (`3.3.7`), accessible authentication (`3.3.8`), and status
-  messages (`4.1.3`). Each check must include visual evidence, WCAG mapping,
-  confidence, and a clear manual confirmation step.
+  consistent navigation/identification/help (`3.2.3`, `3.2.4`, `3.2.6`) and
+  status messages (`4.1.3`). Each check must include visual evidence, WCAG
+  mapping, confidence, and a clear manual confirmation step.
 - Track competitor coverage as evidence, not marketing claims. Current local
   comparison baseline: Oobee `0.10.95` exposes 26 WCAG-linked criteria in its
   report catalog, including 20 WCAG A/AA criteria and 6 AAA criteria. The
@@ -122,6 +121,10 @@ Section 508 certification.
   current manual checklist rows: collect bounded visual evidence for
   instruction copy, legends, charts, validation text, and user text-spacing
   overrides without creating noisy content false positives.
+- Extend account/authentication support beyond the current manual checklist row:
+  collect bounded evidence for redundant entry and accessible authentication in
+  dedicated test accounts without recording credentials, personal data, orders,
+  payments, or account-changing side effects.
 - Extend media evidence with isolated reduced-motion behavior comparison.
   Caption quality, audio description, and flashing risk remain manual-review
   work.
