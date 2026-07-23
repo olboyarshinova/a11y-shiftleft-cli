@@ -1084,7 +1084,7 @@ Automation cannot complete these checks. Record the full status, evidence, and n
 | Fail | ${summary.fail} |
 | Not applicable | ${summary.notApplicable} |
 
-Structured fields available per item: tester, tested date, environment, notes, evidence links, and remediation owner.
+Structured fields available per item: tester, tested date, environment, task outcome, first blocker, blocker severity, missing states, retest date, notes, evidence links, and remediation owner.
 
 ${items}`;
 }
