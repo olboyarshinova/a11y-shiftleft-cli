@@ -149,7 +149,8 @@ Section 508 certification.
   session-expiry, long-form, and multi-step flows.
 - Expand remediation hint coverage for additional axe, keyboard, layout, media,
   voice/switch, and ESLint rules. Current voice/switch coverage includes
-  targeted `label-content-name-mismatch` guidance.
+  targeted `label-content-name-mismatch` guidance, and current pointer coverage
+  includes target-size, pointer-cancellation, and dragging-movement guidance.
 - Improve Vue and Angular static coverage while continuing to rely on
   established ESLint plugins rather than custom parsers.
 

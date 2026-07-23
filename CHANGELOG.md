@@ -58,6 +58,8 @@
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.
+- Added targeted remediation guidance for target size, pointer cancellation,
+  and dragging-movement findings.
 - Fixed root-cause occurrence counts for findings that do not include duplicate
   metadata.
 - Added a guided `setup` command that creates the starter config, report/auth

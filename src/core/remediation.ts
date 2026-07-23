@@ -210,6 +210,33 @@ const RULE_HINTS: Record<string, RemediationHint> = {
       "https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/"
     ]
   },
+  "target-size": {
+    summary: "Increase small pointer targets or provide enough spacing around them.",
+    howToFix: [
+      "Make the clickable area at least 24 by 24 CSS pixels, not only the visible icon.",
+      "Add spacing between adjacent targets when the target itself cannot be enlarged.",
+      "Retest touch, mouse, zoom, and mobile viewport behavior for dense controls such as icons, pagination, chips, and toolbar buttons."
+    ],
+    docs: ["https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html"]
+  },
+  "pointer-cancellation": {
+    summary: "Avoid completing pointer actions on the down-event unless users can cancel or undo them.",
+    howToFix: [
+      "Trigger actions on pointerup/click rather than pointerdown when possible.",
+      "Provide a clear cancel, undo, or confirmation path for destructive or account-changing actions.",
+      "Test tap, drag, mouse, stylus, and touch interactions without relying on precise movement."
+    ],
+    docs: ["https://www.w3.org/WAI/WCAG22/Understanding/pointer-cancellation.html"]
+  },
+  "dragging-movements": {
+    summary: "Provide a simple non-drag alternative for controls that require dragging or path-based movement.",
+    howToFix: [
+      "Add buttons, steppers, list controls, text inputs, or keyboard commands that perform the same task without dragging.",
+      "For sliders, maps, sortable lists, and carousels, make the alternative visible or easy to discover.",
+      "Verify the task with keyboard, touch, and reduced pointer precision."
+    ],
+    docs: ["https://www.w3.org/WAI/WCAG22/Understanding/dragging-movements.html"]
+  },
   "layout-horizontal-overflow": {
     summary: "Allow content to reflow at a 320 CSS pixel viewport without requiring two-dimensional scrolling.",
     howToFix: [

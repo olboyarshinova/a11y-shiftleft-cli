@@ -236,6 +236,19 @@ test("getRemediationHint explains stateful keyboard activation failures", () => 
   assert.equal(hint.docs.some((url) => url.includes("ARIA/apg")), true);
 });
 
+test("getRemediationHint explains pointer and target-size findings", () => {
+  const target = getRemediationHint("target-size", getWcagCriteria(["2.5.8"]), "unknown");
+  const pointer = getRemediationHint("pointer-cancellation", getWcagCriteria(["2.5.2"]), "unknown");
+  const dragging = getRemediationHint("dragging-movements", getWcagCriteria(["2.5.7"]), "unknown");
+
+  assert.match(target.summary, /pointer targets/);
+  assert.equal(target.howToFix.some((step) => step.includes("24 by 24")), true);
+  assert.match(pointer.summary, /down-event/);
+  assert.equal(pointer.howToFix.some((step) => step.includes("undo")), true);
+  assert.match(dragging.summary, /non-drag alternative/);
+  assert.equal(dragging.docs.some((url) => url.includes("dragging-movements")), true);
+});
+
 test("getRemediationHint explains document metadata findings", () => {
   const titleHint = getRemediationHint("document-title", getWcagCriteria(["2.4.2"]), "react");
   const langHint = getRemediationHint("html-has-lang", getWcagCriteria(["3.1.1"]), "react");
