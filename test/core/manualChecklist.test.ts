@@ -34,6 +34,7 @@ test("createManualChecklist generates human-review checklist items", () => {
   assert.equal(checklist.items.some((item) => item.id === "hover-focus-content"), true);
   assert.equal(checklist.items.some((item) => item.id === "pointer-dragging-alternatives"), true);
   assert.equal(checklist.items.some((item) => item.id === "representative-user-test"), true);
+  assert.equal(checklist.items.some((item) => item.id === "task-completion-worksheet"), true);
   assert.equal(checklist.items.some((item) => item.id === "screen-reader-dynamic-content"), true);
   assert.equal(checklist.items.every((item) => item.review.status === "not-reviewed"), true);
   assert.deepEqual(checklist.items[0].review.environmentDetails, {
@@ -327,6 +328,8 @@ test("toManualChecklistMarkdown renders actionable Markdown checkboxes", () => {
   assert.match(markdown, /document ownership and test the embedded source directly/);
   assert.match(markdown, /Voice and switch control readiness/);
   assert.match(markdown, /visible label is included in the accessible name/);
+  assert.match(markdown, /Task completion evidence worksheet/);
+  assert.match(markdown, /completed with assistance, blocked, abandoned, or not applicable/);
   assert.match(markdown, /Logo purpose and accessible name/);
   assert.match(markdown, /NVDA with Chrome or Firefox/);
   assert.match(markdown, /Screen reader forms, dialogs, and dynamic updates/);
@@ -337,7 +340,7 @@ test("toManualChecklistMarkdown renders actionable Markdown checkboxes", () => {
   assert.match(markdown, /Automated accessibility tools do not prove full WCAG conformance/);
   assert.match(markdown, /Status: `not-reviewed`/);
   assert.match(markdown, /## Review Status/);
-  assert.match(markdown, /Not reviewed \| 23/);
+  assert.match(markdown, /Not reviewed \| 24/);
   assert.match(markdown, /Environment summary:/);
   assert.match(markdown, /Operating system:/);
   assert.match(markdown, /Assistive technology and version:/);

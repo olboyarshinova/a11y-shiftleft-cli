@@ -385,6 +385,24 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
       "Consented session notes without unnecessary personal data",
       "Task completion, blocker, and follow-up issue summary"
     ]
+  },
+  {
+    id: "task-completion-worksheet",
+    title: "Task completion evidence worksheet",
+    principle: "understandable",
+    wcag: ["2.1.1", "2.4.3", "3.3.1", "3.3.3"],
+    whyManual: "Automated findings show likely defects, but product teams still need a concise record of whether a real task could be completed in context.",
+    steps: [
+      "Choose one critical task such as search, sign-up, checkout, account update, content submission, or support contact.",
+      "Record the tester role or scenario, browser, assistive technology or input method, viewport or zoom, and starting URL without collecting unnecessary personal data.",
+      "Mark the outcome as completed, completed with assistance, blocked, abandoned, or not applicable.",
+      "Record the first blocker, recovery path, evidence link, remediation owner, and retest date."
+    ],
+    evidence: [
+      "Task name and starting URL",
+      "Environment and input method",
+      "Outcome, blocker, owner, and retest date"
+    ]
   }
 ];
 

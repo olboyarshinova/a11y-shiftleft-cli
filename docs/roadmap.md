@@ -137,9 +137,9 @@ Section 508 certification.
   same-purpose naming signals, and manual checklist row with better
   representative-task evidence while keeping real voice and switch-control
   tasks in manual review.
-- Add an optional usability-test worksheet that records task completion,
-  assistive technology and browser context, blockers, and remediation owners
-  without collecting unnecessary personal information.
+- Extend the current task-completion worksheet beyond manual checklist and
+  Audit Coverage prompts with richer planned-journey confirmation, missing-state
+  notes, blocker severity, and retest evidence.
 - Add inclusive review prompts inspired by human-centered design practices:
   whether a task works without sound, without precise pointer movement, under
   zoom, with keyboard only, with reduced motion, and under cognitive load.

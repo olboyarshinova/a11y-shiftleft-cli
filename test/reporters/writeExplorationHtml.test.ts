@@ -2010,6 +2010,8 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /Automated evidence \+ owner review/);
   assert.match(html, /1 third-party finding needs owner follow-up/);
   assert.match(html, /Voice and switch control readiness/);
+  assert.match(html, /Task completion worksheet/);
+  assert.match(html, /outcome, blocker, owner, and retest date/);
   assert.match(html, /Iframe and canvas evidence/);
   assert.match(html, /#sales-chart/);
   assert.match(html, /Modern axe scans accessible frame documents recursively/);

@@ -49,6 +49,9 @@
   changes.
 - Added cognitive-clarity review coverage for predictable next actions, calm
   error recovery, help access, and multi-step form clarity.
+- Added a task-completion worksheet review area for recording task, environment,
+  input method, outcome, blocker, owner, and retest evidence without collecting
+  unnecessary personal data.
 - Fixed root-cause occurrence counts for findings that do not include duplicate
   metadata.
 - Added a guided `setup` command that creates the starter config, report/auth
