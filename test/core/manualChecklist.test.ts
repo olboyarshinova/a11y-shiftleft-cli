@@ -24,6 +24,7 @@ test("createManualChecklist generates human-review checklist items", () => {
   assert.equal(checklist.items.some((item) => item.id === "brand-logo-accessibility"), true);
   assert.equal(checklist.items.some((item) => item.id === "media-motion"), true);
   assert.equal(checklist.items.some((item) => item.id === "hover-focus-content"), true);
+  assert.equal(checklist.items.some((item) => item.id === "pointer-dragging-alternatives"), true);
   assert.equal(checklist.items.some((item) => item.id === "representative-user-test"), true);
   assert.equal(checklist.items.some((item) => item.id === "screen-reader-dynamic-content"), true);
   assert.equal(checklist.items.every((item) => item.review.status === "not-reviewed"), true);
@@ -137,6 +138,8 @@ test("toManualChecklistMarkdown renders actionable Markdown checkboxes", () => {
   assert.match(markdown, /accurate synchronized captions/);
   assert.match(markdown, /Hover and focus-triggered content/);
   assert.match(markdown, /dismissed without moving pointer or keyboard focus/);
+  assert.match(markdown, /Pointer cancellation and dragging alternatives/);
+  assert.match(markdown, /single-pointer alternative/);
   assert.match(markdown, /Logo purpose and accessible name/);
   assert.match(markdown, /NVDA with Chrome or Firefox/);
   assert.match(markdown, /Screen reader forms, dialogs, and dynamic updates/);
@@ -145,7 +148,7 @@ test("toManualChecklistMarkdown renders actionable Markdown checkboxes", () => {
   assert.match(markdown, /Automated accessibility tools do not prove full WCAG conformance/);
   assert.match(markdown, /Status: `not-reviewed`/);
   assert.match(markdown, /## Review Status/);
-  assert.match(markdown, /Not reviewed \| 14/);
+  assert.match(markdown, /Not reviewed \| 15/);
   assert.match(markdown, /Environment summary:/);
   assert.match(markdown, /Operating system:/);
   assert.match(markdown, /Assistive technology and version:/);

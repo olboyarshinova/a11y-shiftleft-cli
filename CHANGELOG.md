@@ -22,6 +22,9 @@
   `evaluation-scope.json`, with clearer EN 301 549 boundaries for documents,
   software outside the browser, hardware, support services, procurement, and
   product documentation.
+- Added Pointer Cancellation (`2.5.2`) to the WCAG catalog and added pointer
+  cancellation, dragging, swipe, slider, and pointer-heavy controls to Audit
+  Coverage and the manual checklist.
 - Fixed root-cause occurrence counts for findings that do not include duplicate
   metadata.
 - Added a guided `setup` command that creates the starter config, report/auth

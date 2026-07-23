@@ -84,6 +84,7 @@ const RULE_TO_WCAG: Record<string, string[]> = {
   "keyboard-focus-obscured": ["2.4.11"],
   "focus-order-semantics": ["2.4.3"],
   "target-size": ["2.5.8"],
+  "pointer-cancellation": ["2.5.2"],
   "dragging-movements": ["2.5.7"],
   "accessible-authentication": ["3.3.8"],
   "video-caption": ["1.2.2"]
@@ -369,6 +370,14 @@ const WCAG_CRITERIA: Record<string, WcagCriterion> = {
     principle: "operable",
     introducedIn: "2.2",
     url: "https://www.w3.org/WAI/WCAG22/Understanding/dragging-movements.html"
+  },
+  "2.5.2": {
+    id: "2.5.2",
+    title: "Pointer Cancellation",
+    level: "A",
+    principle: "operable",
+    introducedIn: "2.1",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/pointer-cancellation.html"
   },
   "2.5.8": {
     id: "2.5.8",

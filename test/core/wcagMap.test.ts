@@ -109,6 +109,15 @@ test("getWcagCriteria includes WCAG 2.2-only criteria", () => {
   assert.equal(criterion.introducedIn, "2.2");
 });
 
+test("getWcagCriteria includes WCAG 2.1 pointer cancellation criteria", () => {
+  const [criterion] = getWcagCriteria(["2.5.2"]);
+
+  assert.equal(criterion.id, "2.5.2");
+  assert.equal(criterion.title, "Pointer Cancellation");
+  assert.equal(criterion.level, "A");
+  assert.equal(criterion.introducedIn, "2.1");
+});
+
 test("getWcagCriteria includes WCAG 2.1 input purpose criteria", () => {
   const [criterion] = getWcagCriteria(["1.3.5"]);
 

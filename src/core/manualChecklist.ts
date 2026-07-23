@@ -203,6 +203,22 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
     ]
   },
   {
+    id: "pointer-dragging-alternatives",
+    title: "Pointer cancellation and dragging alternatives",
+    principle: "operable",
+    wcag: ["2.5.2", "2.5.7", "2.5.8"],
+    whyManual: "Automated scans can measure some target-size risks, but they cannot reliably prove whether pointer actions can be cancelled or whether drag gestures have simple alternatives.",
+    steps: [
+      "Review sliders, carousels, maps, sortable lists, drag-and-drop upload areas, drawing canvases, and swipe-only controls.",
+      "Confirm pointer actions do not complete on the down-event alone unless the action can be aborted or reversed.",
+      "Confirm any dragging or path-based gesture has a single-pointer alternative such as buttons, list controls, keyboard controls, or a standard file picker."
+    ],
+    evidence: [
+      "Inventory of drag, swipe, slider, and pointer-heavy controls",
+      "Notes showing cancellation behavior and non-drag alternatives"
+    ]
+  },
+  {
     id: "landmarks-bypass",
     title: "Landmarks and repeated-content bypass",
     principle: "operable",
