@@ -1,4 +1,4 @@
-import type { DedupedIssue, ExplorationGraph, ExplorationState, Framework, ManualCheckItem, ManualChecklist, ManualChecklistEntry, ManualReviewEnvironment, ManualReviewTarget, PlannedEvaluationScope } from "../types.js";
+import type { DedupedIssue, ExplorationGraph, ExplorationState, Framework, ManualCheckItem, ManualChecklist, ManualChecklistEntry, ManualReviewEnvironment, ManualReviewStepRecord, ManualReviewTarget, PlannedEvaluationScope } from "../types.js";
 
 const MANUAL_CHECKS: ManualCheckItem[] = [
   {
@@ -438,6 +438,9 @@ export function toManualChecklistMarkdown(checklist: ManualChecklist): string {
 Steps:
 ${item.steps.map((step) => `- [ ] ${step}`).join("\n")}
 
+Step review records:
+${formatStepReviewRecords(item.review.stepReviews)}
+
 Evidence to capture:
 ${item.evidence.map((evidence) => `- [ ] ${evidence}`).join("\n")}
 
@@ -519,6 +522,13 @@ function toChecklistEntry(item: ManualCheckItem, targets: ManualReviewTarget[]):
       firstBlocker: "",
       blockerSeverity: "",
       missingStates: [],
+      stepReviews: item.steps.map((step, index) => ({
+        index: index + 1,
+        step,
+        status: "not-reviewed",
+        notes: "",
+        evidenceLinks: []
+      })),
       retestDate: "",
       retestResult: "",
       notes: "",
@@ -549,6 +559,15 @@ function formatEnvironmentDetailsMarkdown(environment: ManualReviewEnvironment |
     `  - Viewport or zoom level: ${details.viewportOrZoom}`,
     `  - Color mode: ${details.colorMode}`
   ].join("\n");
+}
+
+function formatStepReviewRecords(stepReviews: ManualReviewStepRecord[] | undefined): string {
+  if (!stepReviews?.length) return "- No step records generated.";
+  return stepReviews.map((record) => [
+    `- Step ${record.index}: \`${record.status}\` — ${record.step}`,
+    "  - Notes:",
+    "  - Evidence links:"
+  ].join("\n")).join("\n");
 }
 
 function prioritizeManualChecks(

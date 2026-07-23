@@ -137,8 +137,8 @@ Section 508 certification.
   same-purpose naming signals, and manual checklist row with better
   representative-task evidence while keeping real voice and switch-control
   tasks in manual review.
-- Extend the current task-completion worksheet beyond planned journey targets
-  and structured review fields with richer per-step confirmation and attached
+- Extend the current task-completion worksheet beyond planned journey targets,
+  structured review fields, and per-step review records with attached
   task-completion evidence.
 - Extend inclusive review prompts beyond the current task-completion worksheet
   constraints for no-sound, no-precise-pointer, keyboard-only, zoom,

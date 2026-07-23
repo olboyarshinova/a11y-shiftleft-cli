@@ -841,7 +841,7 @@ test("writeReports supports a compact audit profile without legacy or duplicate 
   assert.match(markdown, /## Keyboard Evidence/);
   assert.match(markdown, /## Manual Review Checklist/);
   assert.match(markdown, /Not reviewed \| 1/);
-  assert.match(markdown, /Structured fields available per item: tester, tested date, environment, task outcome, first blocker, blocker severity, missing states, retest date, notes, evidence links, and remediation owner\./);
+  assert.match(markdown, /Structured fields available per item: tester, tested date, environment, per-step status, task outcome, first blocker, blocker severity, missing states, retest date, notes, evidence links, and remediation owner\./);
   assert.match(markdown, /## Audit Coverage/);
   assert.match(markdown, /Screen reader \| Human review required/);
   assert.match(markdown, /Dynamic announcements/);

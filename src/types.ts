@@ -689,6 +689,14 @@ export type ManualTaskOutcome =
 
 export type ManualBlockerSeverity = "" | "critical" | "warning" | "info";
 
+export interface ManualReviewStepRecord {
+  index: number;
+  step: string;
+  status: ManualReviewStatus;
+  notes: string;
+  evidenceLinks: string[];
+}
+
 export interface ManualReviewEnvironment {
   operatingSystem: string;
   browser: string;
@@ -708,6 +716,7 @@ export interface ManualReviewRecord {
   firstBlocker?: string;
   blockerSeverity?: ManualBlockerSeverity;
   missingStates?: string[];
+  stepReviews?: ManualReviewStepRecord[];
   retestDate?: string;
   retestResult?: string;
   notes: string;

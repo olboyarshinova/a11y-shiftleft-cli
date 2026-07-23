@@ -49,6 +49,10 @@ test("createManualChecklist generates human-review checklist items", () => {
   assert.equal(checklist.items[0].review.firstBlocker, "");
   assert.equal(checklist.items[0].review.blockerSeverity, "");
   assert.deepEqual(checklist.items[0].review.missingStates, []);
+  assert.equal(checklist.items[0].review.stepReviews?.length, checklist.items[0].steps.length);
+  assert.equal(checklist.items[0].review.stepReviews?.[0].index, 1);
+  assert.equal(checklist.items[0].review.stepReviews?.[0].status, "not-reviewed");
+  assert.equal(checklist.items[0].review.stepReviews?.[0].step, checklist.items[0].steps[0]);
   assert.equal(checklist.items[0].review.retestDate, "");
   assert.equal(checklist.items[0].review.retestResult, "");
 });
@@ -397,6 +401,9 @@ test("toManualChecklistMarkdown renders actionable Markdown checkboxes", () => {
   assert.match(markdown, /Color mode:/);
   assert.match(markdown, /Remediation owner:/);
   assert.match(markdown, /Task outcome: ``/);
+  assert.match(markdown, /Step review records:/);
+  assert.match(markdown, /Step 1: `not-reviewed`/);
+  assert.match(markdown, /Evidence links:/);
   assert.match(markdown, /First blocker:/);
   assert.match(markdown, /Blocker severity: ``/);
   assert.match(markdown, /Missing states:/);

@@ -59,6 +59,8 @@
   task-completion worksheet and representative user-test checklist rows.
 - Added structured manual review record fields for task outcome, first blocker,
   blocker severity, missing states, retest date, and retest result.
+- Added per-step manual review records so each checklist step can carry its own
+  status, notes, and evidence links in JSON and Markdown artifacts.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.
