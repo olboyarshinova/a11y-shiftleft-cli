@@ -1973,6 +1973,8 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /hero-banner\.png/);
   assert.match(html, /Media and motion evidence/);
   assert.match(html, /#demo-video/);
+  assert.match(html, /2 active animations/);
+  assert.match(html, /reduced-motion CSS in 1\/1 state/);
   assert.match(html, /Reduced-motion CSS query detected: yes/);
   assert.match(html, /Iframe and canvas evidence/);
   assert.match(html, /#sales-chart/);

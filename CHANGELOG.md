@@ -32,6 +32,9 @@
   manual checklist.
 - Added a dedicated status-message/live-update manual review area for WCAG
   `4.1.3`, including observed live-region targets from exploration evidence.
+- Added Three Flashes or Below Threshold (`2.3.1`) to the WCAG catalog and made
+  media/motion coverage summarize active animation and reduced-motion CSS
+  evidence more explicitly.
 - Fixed root-cause occurrence counts for findings that do not include duplicate
   metadata.
 - Added a guided `setup` command that creates the starter config, report/auth

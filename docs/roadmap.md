@@ -126,9 +126,10 @@ Section 508 certification.
   collect bounded evidence for redundant entry and accessible authentication in
   dedicated test accounts without recording credentials, personal data, orders,
   payments, or account-changing side effects.
-- Extend media evidence with isolated reduced-motion behavior comparison.
-  Caption quality, audio description, and flashing risk remain manual-review
-  work.
+- Extend media evidence beyond the current audio/video, autoplay,
+  active-animation, and reduced-motion CSS summary with isolated reduced-motion
+  behavior comparison. Caption quality, audio description, and flashing risk
+  remain manual-review work.
 - Extend embedded-content and canvas evidence with contextual complex-graphic
   review and clearer third-party owner follow-up workflows.
 - Approximate voice-control readiness with visible-label-in-accessible-name and

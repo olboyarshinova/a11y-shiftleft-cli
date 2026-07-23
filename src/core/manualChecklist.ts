@@ -534,7 +534,7 @@ function addMediaTargets(targets: Map<string, ManualReviewTarget[]>, state: Expl
     addTarget(targets, "media-motion", targetFor(state, "media", `${media.kind} element`, media.selector,
       `${media.captionTrackCount} caption track(s); controls ${media.controls ? "present" : "missing"}; autoplay ${media.autoplay ? "enabled" : "disabled"}`));
   }
-  if (evidence.activeAnimationCount > 0 && evidence.elements.length === 0) {
+  if (evidence.activeAnimationCount > 0) {
     addTarget(targets, "media-motion", targetFor(state, "media", "Animated content", undefined,
       `${evidence.activeAnimationCount} active animation(s); reduced-motion query ${evidence.reducedMotionQueryDetected ? "detected" : "not detected"}`));
   }

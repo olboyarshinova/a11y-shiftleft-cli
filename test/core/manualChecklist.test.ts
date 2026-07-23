@@ -128,6 +128,60 @@ test("createManualChecklist creates an assisted queue from exploration evidence"
   assert.match(toManualChecklistMarkdown(checklist), /state-2, #email/);
 });
 
+test("createManualChecklist keeps motion review targets when media elements also exist", () => {
+  const checklist = createManualChecklist({
+    framework: "react",
+    exploration: {
+      generatedAt: "2026-07-23T00:00:00.000Z",
+      startUrl: "http://localhost:3000",
+      states: [{
+        id: "state-4",
+        url: "http://localhost:3000/media",
+        depth: 1,
+        fingerprint: "media",
+        actionLabel: "Media page",
+        issueCount: 0,
+        actionCount: 0,
+        media: {
+          audioCount: 0,
+          videoCount: 1,
+          videosWithCaptions: 0,
+          audioWithTranscriptCandidate: 0,
+          autoplayRiskCount: 0,
+          activeAnimationCount: 2,
+          reducedMotionQueryDetected: false,
+          unreadableStylesheetCount: 0,
+          elements: [{
+            selector: "#promo-video",
+            kind: "video",
+            autoplay: false,
+            muted: false,
+            controls: true,
+            captionTrackCount: 0,
+            transcriptCandidate: false
+          }]
+        }
+      }],
+      edges: [],
+      skippedActions: [],
+      summary: {
+        statesVisited: 1,
+        actionsTried: 0,
+        skippedActions: 0,
+        screenshots: 0,
+        duplicateScreenshots: 0,
+        maxDepth: 1,
+        maxStates: 10
+      }
+    },
+    generatedAt: "2026-07-23T00:00:00.000Z"
+  });
+
+  const mediaReview = checklist.items.find((item) => item.id === "media-motion");
+  assert.equal(mediaReview?.targets?.some((target) => target.selector === "#promo-video"), true);
+  assert.equal(mediaReview?.targets?.some((target) => target.label === "Animated content"), true);
+});
+
 test("createManualChecklist maps observed live-region updates to status-message review", () => {
   const checklist = createManualChecklist({
     framework: "react",

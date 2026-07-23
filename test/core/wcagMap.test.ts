@@ -118,6 +118,15 @@ test("getWcagCriteria includes WCAG 2.1 pointer cancellation criteria", () => {
   assert.equal(criterion.introducedIn, "2.1");
 });
 
+test("getWcagCriteria includes flashing threshold criteria", () => {
+  const [criterion] = getWcagCriteria(["2.3.1"]);
+
+  assert.equal(criterion.id, "2.3.1");
+  assert.equal(criterion.title, "Three Flashes or Below Threshold");
+  assert.equal(criterion.level, "A");
+  assert.equal(criterion.introducedIn, "2.0");
+});
+
 test("getWcagCriteria includes WCAG 2.1 input purpose criteria", () => {
   const [criterion] = getWcagCriteria(["1.3.5"]);
 

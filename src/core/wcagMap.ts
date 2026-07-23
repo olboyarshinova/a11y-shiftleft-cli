@@ -235,6 +235,14 @@ const WCAG_CRITERIA: Record<string, WcagCriterion> = {
     introducedIn: "2.0",
     url: "https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide.html"
   },
+  "2.3.1": {
+    id: "2.3.1",
+    title: "Three Flashes or Below Threshold",
+    level: "A",
+    principle: "operable",
+    introducedIn: "2.0",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/three-flashes-or-below-threshold.html"
+  },
   "2.4.1": {
     id: "2.4.1",
     title: "Bypass Blocks",
