@@ -61,6 +61,8 @@
   blocker severity, missing states, retest date, and retest result.
 - Added per-step manual review records so each checklist step can carry its own
   status, notes, and evidence links in JSON and Markdown artifacts.
+- Added structured task-evidence attachment slots for manual screenshots,
+  recordings, tickets, notes, and retest reports with redaction tracking.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.

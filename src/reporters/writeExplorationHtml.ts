@@ -2829,7 +2829,7 @@ function renderManualChecklist(checklist: ManualChecklist): string {
         ${renderManualTargets(item.targets)}
         <ol>${item.steps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}</ol>
         <p class="muted">Suggested evidence: ${escapeHtml(item.evidence.join("; "))}</p>
-        <p class="muted">Review record fields: per-step status, task outcome, first blocker, blocker severity, missing states, remediation owner, retest date, and evidence links.</p>
+        <p class="muted">Review record fields: per-step status, task outcome, first blocker, blocker severity, missing states, task evidence attachments, remediation owner, retest date, and evidence links.</p>
       </details>
     </article>`).join("")}
   </section>`;

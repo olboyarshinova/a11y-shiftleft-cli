@@ -138,8 +138,8 @@ Section 508 certification.
   representative-task evidence while keeping real voice and switch-control
   tasks in manual review.
 - Extend the current task-completion worksheet beyond planned journey targets,
-  structured review fields, and per-step review records with attached
-  task-completion evidence.
+  structured review fields, per-step review records, and task-evidence
+  attachment slots with a clearer visual editing workflow.
 - Extend inclusive review prompts beyond the current task-completion worksheet
   constraints for no-sound, no-precise-pointer, keyboard-only, zoom,
   reduced-motion, and cognitive-load task checks.

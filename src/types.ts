@@ -697,6 +697,16 @@ export interface ManualReviewStepRecord {
   evidenceLinks: string[];
 }
 
+export type ManualTaskEvidenceKind = "screenshot" | "recording" | "ticket" | "note" | "report" | "other";
+
+export interface ManualTaskEvidence {
+  kind: ManualTaskEvidenceKind;
+  label: string;
+  url: string;
+  notes: string;
+  redacted: boolean;
+}
+
 export interface ManualReviewEnvironment {
   operatingSystem: string;
   browser: string;
@@ -717,6 +727,7 @@ export interface ManualReviewRecord {
   blockerSeverity?: ManualBlockerSeverity;
   missingStates?: string[];
   stepReviews?: ManualReviewStepRecord[];
+  taskEvidence?: ManualTaskEvidence[];
   retestDate?: string;
   retestResult?: string;
   notes: string;

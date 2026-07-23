@@ -1,4 +1,4 @@
-import type { DedupedIssue, ExplorationGraph, ExplorationState, Framework, ManualCheckItem, ManualChecklist, ManualChecklistEntry, ManualReviewEnvironment, ManualReviewStepRecord, ManualReviewTarget, PlannedEvaluationScope } from "../types.js";
+import type { DedupedIssue, ExplorationGraph, ExplorationState, Framework, ManualCheckItem, ManualChecklist, ManualChecklistEntry, ManualReviewEnvironment, ManualReviewStepRecord, ManualReviewTarget, ManualTaskEvidence, PlannedEvaluationScope } from "../types.js";
 
 const MANUAL_CHECKS: ManualCheckItem[] = [
   {
@@ -457,6 +457,8 @@ ${formatEnvironmentDetailsMarkdown(item.review.environmentDetails)}
 - First blocker:
 - Blocker severity: \`${item.review.blockerSeverity || ""}\` (critical, warning, or info)
 - Missing states:
+- Task evidence attachments:
+${formatTaskEvidenceAttachments(item.review.taskEvidence)}
 - Retest date:
 - Retest result:
 - Notes:
@@ -529,6 +531,7 @@ function toChecklistEntry(item: ManualCheckItem, targets: ManualReviewTarget[]):
         notes: "",
         evidenceLinks: []
       })),
+      taskEvidence: [],
       retestDate: "",
       retestResult: "",
       notes: "",
@@ -568,6 +571,15 @@ function formatStepReviewRecords(stepReviews: ManualReviewStepRecord[] | undefin
     "  - Notes:",
     "  - Evidence links:"
   ].join("\n")).join("\n");
+}
+
+function formatTaskEvidenceAttachments(evidence: ManualTaskEvidence[] | undefined): string {
+  if (!evidence?.length) {
+    return "- [ ] Add approved local links to screenshots, recordings, tickets, notes, or retest reports; redact sensitive data before sharing.";
+  }
+  return evidence.map((item) => (
+    `- ${item.kind}: ${item.label}${item.url ? ` — ${item.url}` : ""}${item.redacted ? " (redacted)" : ""}${item.notes ? `; ${item.notes}` : ""}`
+  )).join("\n");
 }
 
 function prioritizeManualChecks(
