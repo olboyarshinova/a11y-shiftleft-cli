@@ -132,6 +132,24 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
     ]
   },
   {
+    id: "cognitive-clarity",
+    title: "Predictable next actions and calm error recovery",
+    principle: "understandable",
+    wcag: ["3.2.4", "3.2.6", "3.3.2", "3.3.3"],
+    whyManual: "Automated tools cannot reliably judge whether users understand what will happen next, why an error occurred, or how to recover from it.",
+    steps: [
+      "Review primary tasks, empty states, validation errors, destructive actions, and multi-step forms for clear next actions.",
+      "Confirm button/link labels describe the result of the action rather than vague commands such as 'continue' when the destination or effect is unclear.",
+      "Confirm error messages explain what happened, how to fix it, and what data was preserved without blaming or alarming the user.",
+      "Confirm help, contact, or recovery options are easy to find when a user is blocked."
+    ],
+    evidence: [
+      "Examples of reviewed task copy and error messages",
+      "Screenshots or notes showing predictable next actions",
+      "Recovery or help-path notes for blocked tasks"
+    ]
+  },
+  {
     id: "screen-reader-smoke",
     title: "Screen reader navigation and task smoke test",
     principle: "robust",

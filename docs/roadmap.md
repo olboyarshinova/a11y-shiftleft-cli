@@ -143,11 +143,10 @@ Section 508 certification.
 - Add inclusive review prompts inspired by human-centered design practices:
   whether a task works without sound, without precise pointer movement, under
   zoom, with keyboard only, with reduced motion, and under cognitive load.
-- Add cognitive-load and neurodiversity review prompts for plain language,
-  predictable next actions, calm error messages, and understandable multi-step
-  forms. Time limits and interruption recovery now have a dedicated manual
-  checklist and Audit Coverage row; next, validate that wording in real
-  checkout, account, session-expiry, and long-form flows.
+- Add cognitive-load and neurodiversity review prompts beyond the current
+  plain-language, predictable-action, calm-error, recovery-path, and time-limit
+  checklist rows. Next, validate that wording in real checkout, account,
+  session-expiry, long-form, and multi-step flows.
 - Expand remediation hint coverage for additional axe, keyboard, layout, media,
   and ESLint rules.
 - Improve Vue and Angular static coverage while continuing to rely on
