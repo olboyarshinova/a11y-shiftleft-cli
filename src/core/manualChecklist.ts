@@ -483,6 +483,10 @@ and assistive technology checks.
 | Pass | ${summary.pass} |
 | Fail | ${summary.fail} |
 | Not applicable | ${summary.notApplicable} |
+| Step records | ${summary.stepRecords} |
+| Reviewed steps | ${summary.reviewedSteps} |
+| Task evidence attachments | ${summary.taskEvidenceAttachments} |
+| Redacted task evidence | ${summary.redactedTaskEvidence} |
 
 ${items}`;
 }
@@ -493,6 +497,10 @@ export function summarizeManualReviewRecords(checklist: ManualChecklist): {
   pass: number;
   fail: number;
   notApplicable: number;
+  stepRecords: number;
+  reviewedSteps: number;
+  taskEvidenceAttachments: number;
+  redactedTaskEvidence: number;
 } {
   return checklist.items.reduce((summary, item) => {
     summary.total += 1;
@@ -500,13 +508,23 @@ export function summarizeManualReviewRecords(checklist: ManualChecklist): {
     else if (item.review.status === "fail") summary.fail += 1;
     else if (item.review.status === "not-applicable") summary.notApplicable += 1;
     else summary.notReviewed += 1;
+    const stepReviews = item.review.stepReviews || [];
+    summary.stepRecords += stepReviews.length;
+    summary.reviewedSteps += stepReviews.filter((step) => step.status !== "not-reviewed").length;
+    const evidence = item.review.taskEvidence || [];
+    summary.taskEvidenceAttachments += evidence.length;
+    summary.redactedTaskEvidence += evidence.filter((item) => item.redacted).length;
     return summary;
   }, {
     total: 0,
     notReviewed: 0,
     pass: 0,
     fail: 0,
-    notApplicable: 0
+    notApplicable: 0,
+    stepRecords: 0,
+    reviewedSteps: 0,
+    taskEvidenceAttachments: 0,
+    redactedTaskEvidence: 0
   });
 }
 

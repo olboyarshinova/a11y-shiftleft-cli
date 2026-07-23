@@ -395,6 +395,8 @@ test("toManualChecklistMarkdown renders actionable Markdown checkboxes", () => {
   assert.match(markdown, /Status: `not-reviewed`/);
   assert.match(markdown, /## Review Status/);
   assert.match(markdown, /Not reviewed \| 24/);
+  assert.match(markdown, /Step records \| \d+/);
+  assert.match(markdown, /Task evidence attachments \| 0/);
   assert.match(markdown, /Environment summary:/);
   assert.match(markdown, /Operating system:/);
   assert.match(markdown, /Assistive technology and version:/);
@@ -422,6 +424,16 @@ test("summarizeManualReviewRecords counts review outcomes", () => {
   });
 
   checklist.items[0].review.status = "pass";
+  if (checklist.items[0].review.stepReviews?.[0]) {
+    checklist.items[0].review.stepReviews[0].status = "pass";
+  }
+  checklist.items[0].review.taskEvidence = [{
+    kind: "screenshot",
+    label: "Keyboard checkout evidence",
+    url: "reports/manual/checkout.png",
+    notes: "Sensitive values redacted.",
+    redacted: true
+  }];
   checklist.items[1].review.status = "fail";
   checklist.items[2].review.status = "not-applicable";
 
@@ -430,6 +442,10 @@ test("summarizeManualReviewRecords counts review outcomes", () => {
     notReviewed: checklist.items.length - 3,
     pass: 1,
     fail: 1,
-    notApplicable: 1
+    notApplicable: 1,
+    stepRecords: checklist.items.reduce((sum, item) => sum + (item.review.stepReviews?.length || 0), 0),
+    reviewedSteps: 1,
+    taskEvidenceAttachments: 1,
+    redactedTaskEvidence: 1
   });
 });
