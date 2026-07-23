@@ -288,9 +288,9 @@ can clean up temporary exceptions before they become permanent accessibility
 debt.
 
 Visual audit reports include an **Ignore Cleanup** section when scoped ignores
-are active. Each finding group also has a **Copy ignore entry** button that
-copies a reviewed `a11y-ignore.json` template with the rule, fingerprint, target
-metadata, owner placeholder, reason placeholder, and expiry placeholder.
+are active. Keep new ignore entries deliberate and reviewed: add them directly
+to `a11y-ignore.json` with a clear reason, owner, expiry date, and the narrowest
+matching metadata that explains the temporary exception.
 
 Audit the ignore file without scanning a website:
 

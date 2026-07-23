@@ -10,6 +10,8 @@
   or source markup.
 - Moved visual-report Safe Exploration Guardrails near the bottom of the report
   and removed user-impact side notes from finding cards to reduce triage noise.
+- Removed the visual-report `Copy ignore entry` action so finding cards focus on
+  ticketing and remediation instead of one-click suppression.
 - Fixed root-cause occurrence counts for findings that do not include duplicate
   metadata.
 - Added a guided `setup` command that creates the starter config, report/auth

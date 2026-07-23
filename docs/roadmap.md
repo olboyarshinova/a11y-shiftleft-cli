@@ -153,11 +153,11 @@ Section 508 certification.
 - Add a clearer scan progress experience in the visual report and future watch
   mode: pending, running, completed, skipped, current URL/state, and completion
   percentage for each selected check.
-- Add UI-friendly ignore support in HTML reports: copy an `a11y-ignore.json`
-  entry, record an expiry/reason/owner, and keep dismissals explicit instead of
-  silently hiding findings. Current visual reports include cleanup summaries,
-  owner rollups, copyable ignore-entry templates, and a local `ignore audit`
-  next-step command.
+- Add UI-friendly ignore support in HTML reports without encouraging teams to
+  hide findings too quickly. Current visual reports include cleanup summaries,
+  owner rollups, and a local `ignore audit` next-step command; new ignore
+  entries should stay explicit in `a11y-ignore.json` with reason, owner, and
+  expiry metadata.
 - Add report audience views without duplicating data: developer view for
   selectors and remediation, QA view for screenshots and reproduction steps,
   manager view for risk, trends, coverage, and ownership. Use these views to
@@ -290,7 +290,8 @@ Section 508 certification.
   issues automatically by default.
 - Continue hardening scoped `a11y-ignore.json` support. Current reports count
   active, expired, invalid, expiring-soon, and owner-grouped ignore rules, and
-  visual reports include cleanup guidance plus copyable ignore-entry templates.
+  visual reports include cleanup guidance without adding one-click ignore
+  shortcuts to finding cards.
   The `ignore audit` command provides a read-only stale-ignore review, and
   `ignore cleanup-plan` proposes safe review/remove/renew/fix actions with
   action-count summaries and without automatic deletion. Next, evaluate whether

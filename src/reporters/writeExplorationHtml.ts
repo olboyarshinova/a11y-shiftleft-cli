@@ -1729,10 +1729,6 @@ export function renderExplorationHtml(
       width: 72px;
     }
 
-    .copy-ignore-entry {
-      width: auto;
-    }
-
     .copy-issue-ticket span {
       display: block;
     }
@@ -3981,33 +3977,10 @@ function renderHumanVerificationBanner(issues: DedupedIssue[], graph: Exploratio
 
 function renderCopyIssueAction(ruleId: string, issues: DedupedIssue[]): string {
   const markdown = buildIssueMarkdown(ruleId, issues);
-  const ignoreEntry = buildIgnoreEntryJson(issues[0]);
   return `<div class="issue-actions">
     <button class="copy-issue copy-issue-ticket" type="button" title="Copy a GitHub/Jira-ready Markdown summary" data-copy-issue="${escapeAttribute(encodeURIComponent(markdown))}" data-copy-success="Copied ticket draft"><span>Copy for</span><span>ticket</span></button>
-    <button class="copy-issue copy-ignore-entry" type="button" title="Copy a reviewed a11y-ignore.json entry template" data-copy-issue="${escapeAttribute(encodeURIComponent(ignoreEntry))}" data-copy-success="Copied ignore entry">Copy ignore entry</button>
     <span class="copy-issue-status" data-copy-issue-status aria-live="polite"></span>
   </div>`;
-}
-
-function buildIgnoreEntryJson(issue: DedupedIssue): string {
-  const entry: Record<string, string | string[]> = {
-    fingerprint: issue.fingerprint,
-    ruleId: issue.ruleId,
-    reason: "TODO: explain why this temporary exception is accepted.",
-    owner: "@team",
-    expires: "YYYY-MM-DD"
-  };
-
-  if (issue.selector) entry.selector = issue.selector;
-  if (issue.url) entry.url = issue.url;
-  if (issue.file) entry.file = issue.file;
-  if (issue.wcagCriteria.length > 0) {
-    entry.wcag = issue.wcagCriteria.map((criterion) => criterion.id);
-  } else if (issue.wcag.length > 0) {
-    entry.wcag = issue.wcag;
-  }
-
-  return JSON.stringify(entry, null, 2);
 }
 
 function collectTicketDraftGroups(issues: DedupedIssue[]): Array<{ key: string; ruleId: string; issues: DedupedIssue[] }> {

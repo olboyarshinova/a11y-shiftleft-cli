@@ -319,9 +319,9 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /class="copy-issue copy-issue-ticket"/);
   assert.match(html, /title="Copy a GitHub\/Jira-ready Markdown summary"/);
   assert.match(html, /<span>Copy for<\/span><span>ticket<\/span><\/button>/);
-  assert.match(html, /title="Copy a reviewed a11y-ignore\.json entry template"/);
-  assert.match(html, />Copy ignore entry<\/button>/);
-  assert.match(html, /data-copy-success="Copied ignore entry"/);
+  assert.doesNotMatch(html, /Copy ignore entry/);
+  assert.doesNotMatch(html, /copy-ignore-entry/);
+  assert.doesNotMatch(html, /Copied ignore entry/);
   assert.match(html, /data-copy-issue-status aria-live="polite"/);
   assert.match(html, /navigator\.clipboard/);
   assert.match(html, /button\.dataset\.copySuccess \|\| 'Copied'/);
