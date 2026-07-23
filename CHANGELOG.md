@@ -12,6 +12,9 @@
   and removed user-impact side notes from finding cards to reduce triage noise.
 - Removed the visual-report `Copy ignore entry` action so finding cards focus on
   ticketing and remediation instead of one-click suppression.
+- Added safer overlay preparation before scans: cookie consent iframes can be
+  dismissed through reject/close controls, and obvious cookie or survey overlays
+  are hidden in the isolated browser context when no safe close action exists.
 - Fixed root-cause occurrence counts for findings that do not include duplicate
   metadata.
 - Added a guided `setup` command that creates the starter config, report/auth

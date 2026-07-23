@@ -14,7 +14,9 @@ import {
   exploreActionKey,
   getExploreActionSafety,
   isAdvertisingActionContext,
+  isCookieConsentAcceptLabel,
   isCookieConsentContext,
+  isCookieConsentDismissLabel,
   matchesWaitUntilPath,
   matchesWaitUntilUrl,
   isSafeExploreAction,
@@ -282,6 +284,18 @@ test("isCookieConsentContext recognizes consent surfaces with short action label
   assert.equal(isCookieConsentContext("Privacy choices OK"), true);
   assert.equal(isCookieConsentContext("Настройки конфиденциальности Принять"), true);
   assert.equal(isCookieConsentContext("Open navigation menu"), false);
+});
+
+test("cookie consent dismissal labels avoid accepting cookies", () => {
+  assert.equal(isCookieConsentDismissLabel("Reject all cookies"), true);
+  assert.equal(isCookieConsentDismissLabel("I do not agree"), true);
+  assert.equal(isCookieConsentDismissLabel("Continue without accepting"), true);
+  assert.equal(isCookieConsentDismissLabel("Close cookie banner"), true);
+  assert.equal(isCookieConsentDismissLabel("Accept all cookies"), false);
+  assert.equal(isCookieConsentDismissLabel("Allow all"), false);
+  assert.equal(isCookieConsentAcceptLabel("Accept all cookies"), true);
+  assert.equal(isCookieConsentAcceptLabel("I do not agree"), false);
+  assert.equal(isCookieConsentAcceptLabel("Reject all cookies"), false);
 });
 
 test("isSafeExploreActionWithConfig applies custom safe-mode patterns", () => {

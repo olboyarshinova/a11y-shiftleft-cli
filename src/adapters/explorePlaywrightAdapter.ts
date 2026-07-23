@@ -4,7 +4,7 @@ import path from "node:path";
 import { AxeBuilder } from "@axe-core/playwright";
 import { getAxeRunOptions } from "../core/axeOptions.js";
 import { createIssuesFromAxeResults } from "../core/axeResults.js";
-import { type Browser, type BrowserContext, type BrowserContextOptions, type Page } from "playwright";
+import { type Browser, type BrowserContext, type BrowserContextOptions, type Frame, type Page } from "playwright";
 import { launchBrowserRuntime } from "../core/browserRuntime.js";
 import { hidePageElements, normalizeHideElementSelectors } from "../core/hideElements.js";
 import { applyColorScheme, detectPageColorSchemes, getPageAppearanceSignature, normalizePageScrollConfig, scrollPageForLazyContent, type PageScrollConfig } from "../core/pageScroll.js";
@@ -75,6 +75,57 @@ const COOKIE_CONSENT_CONTEXT_PATTERNS = [
   /(куки|файлы\s*cookie|согласие|конфиденциальност)/i,
   /(preferencias\s*de\s*privacidad|consentimiento|confidentialit[eé]|datenschutz|zustimmung)/i,
   /(隐私|同意|쿠키|동의|プライバシー|同意|ملفات\s*تعريف\s*الارتباط)/i
+];
+
+const COOKIE_CONSENT_DISMISS_PATTERNS = [
+  /\b(i\s*)?(do\s*not|don't|dont)\s*agree\b/i,
+  /\b(reject|decline|deny|refuse)\s*(all|optional|non[-\s]?essential|additional)?\s*(cookies?)?\b/i,
+  /\b(continue|use|browse)\s*(without|with only necessary|with necessary|without accepting)/i,
+  /\b(necessary|essential)\s*(cookies?)?\s*(only)\b/i,
+  /\b(close|dismiss|not now|no thanks)\b/i,
+  /^(×|x)$/i,
+  /(отклонить|отказаться|только\s*необходим|продолжить\s*без|закрыть|не\s*сейчас)/i,
+  /(rechazar|denegar|solo\s*necesarias|continuar\s*sin|cerrar|ahora\s*no)/i,
+  /(refuser|rejeter|nécessaires\s*uniquement|continuer\s*sans|fermer|pas\s*maintenant)/i,
+  /(ablehnen|nur\s*notwendige|ohne\s*akzeptieren|schließen|nicht\s*jetzt)/i,
+  /(rifiuta|solo\s*necessari|continua\s*senza|chiudi|non\s*ora)/i,
+  /(rejeitar|recusar|apenas\s*necessários|continuar\s*sem|fechar|agora\s*não)/i,
+  /(odrzuć|odrzuc|tylko\s*niezbędne|kontynuuj\s*bez|zamknij|nie\s*teraz)/i,
+  /(відхилити|відмовитись|лише\s*необхідні|продовжити\s*без|закрити|не\s*зараз)/i,
+  /(拒绝|僅必要|仅必要|关闭|關閉|稍后|必要なもののみ|拒否|閉じる|닫기|거부|필수만)/i
+];
+
+const COOKIE_CONSENT_ACCEPT_PATTERNS = [
+  /\b(accept|allow|agree|consent|approve|enable)\b\s*(all|optional|cookies?|tracking|ads|advertising)?\b/i,
+  /\b(ok|okay|got it|i understand)\b/i,
+  /(принять|согласен|согласиться|разрешить|включить)/i,
+  /(aceptar|permitir|de acuerdo|acepto)/i,
+  /(accepter|autoriser|d'accord|j'accepte)/i,
+  /(akzeptieren|zustimmen|erlauben|einverstanden)/i,
+  /(accetta|consenti|d'accordo)/i,
+  /(aceitar|permitir|concordo)/i,
+  /(zaakceptuj|zgadzam|zezwól|zezwol)/i,
+  /(прийняти|погоджуюсь|дозволити)/i,
+  /(同意|接受|允許|允许|承諾|承诺|同意する|許可|허용|동의)/i
+];
+
+const NUISANCE_OVERLAY_CONTEXT_PATTERNS = [
+  /\b(survey|feedback|help\s*us\s*improve|newsletter|subscribe\s*to|sign\s*up\s*for\s*(our\s*)?(newsletter|emails?)|download\s*(the\s*)?(app|application)|install\s*(the\s*)?(app|application))\b/i,
+  /(опрос|отзыв|помогите\s*улучшить|рассылка|подписаться\s*на|скачать\s*приложение|установить\s*приложение)/i,
+  /(encuesta|comentarios|ay[uú]danos\s*a\s*mejorar|bolet[ií]n|descargar\s*la\s*aplicaci[oó]n)/i,
+  /(sondage|commentaires|aidez-nous\s*[àa]\s*am[eé]liorer|lettre\s*d'information|t[eé]l[eé]charger\s*l'application)/i,
+  /(umfrage|feedback|hilf\s*uns|newsletter|app\s*herunterladen)/i
+];
+
+const NUISANCE_OVERLAY_DISMISS_PATTERNS = [
+  /\b(close|dismiss|not now|no thanks|maybe later)\b/i,
+  /^(×|x)$/i,
+  /(закрыть|не\s*сейчас|нет\s*спасибо|позже)/i,
+  /(cerrar|ahora\s*no|no\s*gracias|m[aá]s\s*tarde)/i,
+  /(fermer|pas\s*maintenant|non\s*merci|plus\s*tard)/i,
+  /(schließen|nicht\s*jetzt|nein\s*danke|sp[aä]ter)/i,
+  /(chiudi|non\s*ora|no\s*grazie|pi[uù]\s*tardi)/i,
+  /(fechar|agora\s*não|não\s*obrigado|mais\s*tarde)/i
 ];
 
 const ADVERTISING_CONTEXT_PATTERNS = [
@@ -391,6 +442,8 @@ export async function runExplorePlaywrightAdapter(
           waitUntilUrl,
           waitUntilPath
         });
+        await dismissCookieConsentOverlay(page, safeMode);
+        await dismissNuisanceOverlay(page, safeMode);
         await hidePageElements(page, hideElements);
         await scrollPageForLazyContent(page, scroll);
       } catch (error) {
@@ -425,6 +478,8 @@ export async function runExplorePlaywrightAdapter(
 
       for (const colorScheme of colorSchemes) {
         await applyColorScheme(page, colorScheme);
+        await dismissCookieConsentOverlay(page, safeMode);
+        await dismissNuisanceOverlay(page, safeMode);
         await hidePageElements(page, hideElements);
         await scrollPageForLazyContent(page, scroll);
         const pageState = await fingerprintPage(page);
@@ -701,6 +756,428 @@ async function clearContextCookies(context: BrowserContext): Promise<void> {
   await context.clearCookies().catch(() => undefined);
 }
 
+async function dismissCookieConsentOverlay(page: Page, safeMode: ExploreSafeModeConfig): Promise<void> {
+  if (!safeMode.enabled) return;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    let clicked = false;
+    const targets: Array<Page | Frame> = [
+      page,
+      ...page.frames().filter((frame) => frame !== page.mainFrame())
+    ];
+
+    for (const target of targets) {
+      const candidates = await findCookieConsentDismissCandidates(target);
+
+      for (const candidate of candidates.slice(0, 3)) {
+        try {
+          await target.locator(candidate.selector).first().click({
+            timeout: 1000,
+            trial: false
+          });
+          await page.waitForTimeout(300);
+          clicked = true;
+          break;
+        } catch {
+          // Try the next safe dismiss candidate; cookie overlays vary heavily.
+        }
+      }
+
+      if (clicked) break;
+    }
+
+    if (!clicked) break;
+  }
+
+  await hideCookieConsentSurfaces(page);
+}
+
+async function findCookieConsentDismissCandidates(target: Page | Frame): Promise<Array<{
+  selector: string;
+  label: string;
+  rank: number;
+}>> {
+  return target.$$eval(INTERACTIVE_SELECTOR, (elements, input): Array<{
+    selector: string;
+    label: string;
+    rank: number;
+  }> => {
+    const {
+      cookieConsentPatternSources,
+      dismissPatternSources,
+      acceptPatternSources
+    } = input;
+
+    function textOf(element: Element): string {
+      return [
+        element.getAttribute("aria-label"),
+        element.getAttribute("title"),
+        element.textContent,
+        element.getAttribute("value")
+      ].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+    }
+
+    function isVisible(element: Element): boolean {
+      const htmlElement = element as HTMLElement;
+      const rect = htmlElement.getBoundingClientRect();
+      const style = window.getComputedStyle(htmlElement);
+
+      return rect.width > 0 &&
+        rect.height > 0 &&
+        style.visibility !== "hidden" &&
+        style.display !== "none" &&
+        style.pointerEvents !== "none";
+    }
+
+    function attrSelector(name: string, value: string): string {
+      return `[${name}="${value.replace(/\\/g, "\\\\").replace(/"/g, "\\\"")}"]`;
+    }
+
+    function selectorFor(element: Element): string {
+      const testId = element.getAttribute("data-testid");
+      if (testId) return attrSelector("data-testid", testId);
+
+      const test = element.getAttribute("data-test");
+      if (test) return attrSelector("data-test", test);
+
+      const id = element.getAttribute("id");
+      if (id) return attrSelector("id", id);
+
+      const parts: string[] = [];
+      let current: Element | null = element;
+
+      while (current && current !== document.body && parts.length < 5) {
+        const tag = current.tagName.toLowerCase();
+        const parent: Element | null = current.parentElement;
+        if (!parent) {
+          parts.unshift(tag);
+          break;
+        }
+
+        const currentTag = current.tagName;
+        const siblings = (Array.from(parent.children) as Element[])
+          .filter((sibling) => sibling.tagName === currentTag);
+        const index = siblings.indexOf(current) + 1;
+        parts.unshift(siblings.length > 1 ? `${tag}:nth-of-type(${index})` : tag);
+        current = parent;
+      }
+
+      return parts.join(" > ");
+    }
+
+    function matchesAny(sources: string[], value: string): boolean {
+      return sources.some((source) => new RegExp(source, "i").test(value));
+    }
+
+    function cookieSurfaceFor(element: Element): Element | null {
+      const directContainer = element.closest([
+        "[id*='cookie' i]",
+        "[class*='cookie' i]",
+        "[data-testid*='cookie' i]",
+        "[data-test*='cookie' i]",
+        "[id*='consent' i]",
+        "[class*='consent' i]",
+        "[data-testid*='consent' i]",
+        "[data-test*='consent' i]",
+        "[aria-label*='cookie' i]",
+        "[aria-label*='consent' i]"
+      ].join(", "));
+      if (directContainer) return directContainer;
+
+      let current = element.parentElement;
+      let depth = 0;
+
+      while (current && current !== document.body && depth < 6) {
+        const role = current.getAttribute("role")?.toLowerCase();
+        const isConsentSurface = role === "dialog" ||
+          role === "alertdialog" ||
+          role === "region" ||
+          current.tagName.toLowerCase() === "aside";
+
+        if (isConsentSurface) {
+          const context = [
+            current.getAttribute("aria-label"),
+            current.getAttribute("title"),
+            current.textContent
+          ].filter(Boolean).join(" ").replace(/\s+/g, " ").slice(0, 2000);
+
+          if (matchesAny(cookieConsentPatternSources, context)) {
+            return current;
+          }
+        }
+
+        current = current.parentElement;
+        depth += 1;
+      }
+
+      return null;
+    }
+
+    const pageCookieContext = matchesAny(
+      cookieConsentPatternSources,
+      [
+        document.body?.innerText,
+        document.body?.getAttribute("aria-label"),
+        document.title
+      ].filter(Boolean).join(" ").replace(/\s+/g, " ").slice(0, 4000)
+    );
+    const candidates: Array<{ selector: string; label: string; rank: number }> = [];
+
+    for (const element of elements) {
+      if (!isVisible(element)) continue;
+      const label = textOf(element);
+      if (!label) continue;
+      if (!matchesAny(dismissPatternSources, label)) continue;
+      if (!cookieSurfaceFor(element) && !pageCookieContext) continue;
+      if (matchesAny(acceptPatternSources, label) && !matchesAny(dismissPatternSources, label)) continue;
+
+      const rank = /\b(do\s*not|don't|dont)\s*agree\b|\b(reject|decline|deny|refuse)\b|отклонить|rechazar|refuser|ablehnen|rifiuta|rejeitar|odrzu|відхилити|拒绝|拒否|거부/i.test(label)
+        ? 0
+        : /without|necessary|essential|необходим|sin|sans|notwendig|necessar|niezbęd|необхід|必要|필수/i.test(label)
+          ? 1
+          : 2;
+      candidates.push({ selector: selectorFor(element), label, rank });
+    }
+
+    return candidates.sort((left, right) => left.rank - right.rank);
+  }, {
+    cookieConsentPatternSources: COOKIE_CONSENT_CONTEXT_PATTERNS.map((pattern) => pattern.source),
+    dismissPatternSources: COOKIE_CONSENT_DISMISS_PATTERNS.map((pattern) => pattern.source),
+    acceptPatternSources: COOKIE_CONSENT_ACCEPT_PATTERNS.map((pattern) => pattern.source)
+  }).catch(() => []);
+}
+
+async function hideCookieConsentSurfaces(page: Page): Promise<void> {
+  const targets: Array<Page | Frame> = [
+    page,
+    ...page.frames().filter((frame) => frame !== page.mainFrame())
+  ];
+
+  await Promise.all(targets.map((target) => target.$$eval("body *", (elements, input): number => {
+    const { cookieConsentPatternSources } = input;
+
+    function matchesAny(sources: string[], value: string): boolean {
+      return sources.some((source) => new RegExp(source, "i").test(value));
+    }
+
+    function isVisible(element: Element): boolean {
+      const htmlElement = element as HTMLElement;
+      const rect = htmlElement.getBoundingClientRect();
+      const style = window.getComputedStyle(htmlElement);
+
+      return rect.width > 0 &&
+        rect.height > 0 &&
+        style.visibility !== "hidden" &&
+        style.display !== "none";
+    }
+
+    function isExplicitConsentSurface(element: Element): boolean {
+      return element.matches([
+        "[id*='cookie' i]",
+        "[class*='cookie' i]",
+        "[data-testid*='cookie' i]",
+        "[data-test*='cookie' i]",
+        "[id*='consent' i]",
+        "[class*='consent' i]",
+        "[data-testid*='consent' i]",
+        "[data-test*='consent' i]",
+        "[aria-label*='cookie' i]",
+        "[aria-label*='consent' i]",
+        "[id*='sp_message' i]",
+        "[class*='sp_message' i]",
+        "[id*='sourcepoint' i]",
+        "[class*='sourcepoint' i]",
+        "[class*='qc-cmp' i]",
+        "[id*='qc-cmp' i]"
+      ].join(", "));
+    }
+
+    function isOverlayLike(element: Element): boolean {
+      const htmlElement = element as HTMLElement;
+      const rect = htmlElement.getBoundingClientRect();
+      const style = window.getComputedStyle(htmlElement);
+      const role = element.getAttribute("role")?.toLowerCase();
+      const zIndex = Number.parseInt(style.zIndex || "0", 10);
+      const nearViewportEdge = rect.top <= 20 ||
+        rect.bottom >= window.innerHeight - 20 ||
+        rect.left <= 20 ||
+        rect.right >= window.innerWidth - 20;
+
+      return role === "dialog" ||
+        role === "alertdialog" ||
+        style.position === "fixed" ||
+        style.position === "sticky" ||
+        (nearViewportEdge && Number.isFinite(zIndex) && zIndex > 0);
+    }
+
+    function consentContext(element: Element): string {
+      return [
+        element.getAttribute("aria-label"),
+        element.getAttribute("title"),
+        element.getAttribute("id"),
+        element.getAttribute("class"),
+        element.textContent
+      ].filter(Boolean).join(" ").replace(/\s+/g, " ").slice(0, 3000);
+    }
+
+    let hidden = 0;
+    for (const element of elements) {
+      if (!isVisible(element)) continue;
+      if (element === document.body || element === document.documentElement) continue;
+
+      const context = consentContext(element);
+      const consentLike = isExplicitConsentSurface(element) ||
+        matchesAny(cookieConsentPatternSources, context);
+      if (!consentLike || !isOverlayLike(element)) continue;
+
+      (element as HTMLElement).style.setProperty("display", "none", "important");
+      (element as HTMLElement).style.setProperty("visibility", "hidden", "important");
+      hidden += 1;
+    }
+
+    return hidden;
+  }, {
+    cookieConsentPatternSources: COOKIE_CONSENT_CONTEXT_PATTERNS.map((pattern) => pattern.source)
+  }).catch(() => 0)));
+}
+
+async function dismissNuisanceOverlay(page: Page, safeMode: ExploreSafeModeConfig): Promise<void> {
+  if (!safeMode.enabled) return;
+
+  const targets: Array<Page | Frame> = [
+    page,
+    ...page.frames().filter((frame) => frame !== page.mainFrame())
+  ];
+
+  for (const target of targets) {
+    const candidates = await target.$$eval(INTERACTIVE_SELECTOR, (elements, input): Array<{
+      selector: string;
+      label: string;
+    }> => {
+      const { contextPatternSources, dismissPatternSources } = input;
+
+      function textOf(element: Element): string {
+        return [
+          element.getAttribute("aria-label"),
+          element.getAttribute("title"),
+          element.textContent,
+          element.getAttribute("value")
+        ].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+      }
+
+      function isVisible(element: Element): boolean {
+        const htmlElement = element as HTMLElement;
+        const rect = htmlElement.getBoundingClientRect();
+        const style = window.getComputedStyle(htmlElement);
+
+        return rect.width > 0 &&
+          rect.height > 0 &&
+          style.visibility !== "hidden" &&
+          style.display !== "none" &&
+          style.pointerEvents !== "none";
+      }
+
+      function attrSelector(name: string, value: string): string {
+        return `[${name}="${value.replace(/\\/g, "\\\\").replace(/"/g, "\\\"")}"]`;
+      }
+
+      function selectorFor(element: Element): string {
+        const testId = element.getAttribute("data-testid");
+        if (testId) return attrSelector("data-testid", testId);
+
+        const test = element.getAttribute("data-test");
+        if (test) return attrSelector("data-test", test);
+
+        const id = element.getAttribute("id");
+        if (id) return attrSelector("id", id);
+
+        const parts: string[] = [];
+        let current: Element | null = element;
+
+        while (current && current !== document.body && parts.length < 5) {
+          const tag = current.tagName.toLowerCase();
+          const parent: Element | null = current.parentElement;
+          if (!parent) {
+            parts.unshift(tag);
+            break;
+          }
+
+          const currentTag = current.tagName;
+          const siblings = (Array.from(parent.children) as Element[])
+            .filter((sibling) => sibling.tagName === currentTag);
+          const index = siblings.indexOf(current) + 1;
+          parts.unshift(siblings.length > 1 ? `${tag}:nth-of-type(${index})` : tag);
+          current = parent;
+        }
+
+        return parts.join(" > ");
+      }
+
+      function matchesAny(sources: string[], value: string): boolean {
+        return sources.some((source) => new RegExp(source, "i").test(value));
+      }
+
+      function overlayContextFor(element: Element): string {
+        let current: Element | null = element;
+        let depth = 0;
+
+        while (current && current !== document.body && depth < 6) {
+          const style = window.getComputedStyle(current as HTMLElement);
+          const role = current.getAttribute("role")?.toLowerCase();
+          const overlayLike = role === "dialog" ||
+            role === "alertdialog" ||
+            style.position === "fixed" ||
+            style.position === "sticky";
+
+          if (overlayLike) {
+            return [
+              current.getAttribute("aria-label"),
+              current.getAttribute("title"),
+              current.getAttribute("id"),
+              current.getAttribute("class"),
+              current.textContent
+            ].filter(Boolean).join(" ").replace(/\s+/g, " ").slice(0, 3000);
+          }
+
+          current = current.parentElement;
+          depth += 1;
+        }
+
+        return "";
+      }
+
+      const candidates: Array<{ selector: string; label: string }> = [];
+      for (const element of elements) {
+        if (!isVisible(element)) continue;
+        const label = textOf(element);
+        if (!label || !matchesAny(dismissPatternSources, label)) continue;
+
+        const context = overlayContextFor(element);
+        if (!context || !matchesAny(contextPatternSources, context)) continue;
+        candidates.push({ selector: selectorFor(element), label });
+      }
+
+      return candidates;
+    }, {
+      contextPatternSources: NUISANCE_OVERLAY_CONTEXT_PATTERNS.map((pattern) => pattern.source),
+      dismissPatternSources: NUISANCE_OVERLAY_DISMISS_PATTERNS.map((pattern) => pattern.source)
+    }).catch(() => []);
+
+    for (const candidate of candidates.slice(0, 3)) {
+      try {
+        await target.locator(candidate.selector).first().click({
+          timeout: 1000,
+          trial: false
+        });
+        await page.waitForTimeout(250);
+        return;
+      } catch {
+        // Try the next safe close control.
+      }
+    }
+  }
+}
+
 export async function writeExplorationGraph(
   outputDir: string,
   graph: ExplorationGraph
@@ -750,6 +1227,15 @@ export function isSafeExploreActionWithConfig(
 
 export function isCookieConsentContext(value: string): boolean {
   return COOKIE_CONSENT_CONTEXT_PATTERNS.some((pattern) => pattern.test(value));
+}
+
+export function isCookieConsentDismissLabel(value: string): boolean {
+  return COOKIE_CONSENT_DISMISS_PATTERNS.some((pattern) => pattern.test(value));
+}
+
+export function isCookieConsentAcceptLabel(value: string): boolean {
+  return COOKIE_CONSENT_ACCEPT_PATTERNS.some((pattern) => pattern.test(value)) &&
+    !isCookieConsentDismissLabel(value);
 }
 
 export function isAdvertisingActionContext(value: string): boolean {
@@ -3346,7 +3832,7 @@ async function discoverSafeActions(
       if (isCookieConsentControl(element)) {
         skipped.push(skippedAction(
           element,
-          "Cookie consent controls are never clicked during automatic exploration."
+          "Cookie consent accept/settings controls are not explored; safe reject/close controls may be used only to remove overlays before scanning."
         ));
         continue;
       }
