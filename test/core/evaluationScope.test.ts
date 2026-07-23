@@ -11,12 +11,16 @@ test("createEvaluationScopeManifest records WCAG-EM-inspired browser exploration
       urls: ["https://example.com"],
       bySource: { axe: 2, keyboard: 1 },
       standard: {
-        id: "section508",
-        label: "Section 508 web accessibility support mode",
-        wcagVersion: "2.0",
+        id: "en301549",
+        label: "EN 301 549 web support mode",
+        wcagVersion: "2.1",
         wcagLevel: "AA",
         automatedCoverage: "partial",
         requiresManualReview: true,
+        evidenceGaps: [
+          "PDF, office document, and non-HTML document accessibility evidence",
+          "Software outside the browser, native app, and platform accessibility evidence"
+        ],
         disclaimer: "Manual review is required."
       },
       plannedScope: {
@@ -93,7 +97,11 @@ test("createEvaluationScopeManifest records WCAG-EM-inspired browser exploration
   const manifest = createEvaluationScopeManifest(report);
 
   assert.equal(manifest.methodology.conformanceClaim, false);
-  assert.equal(manifest.target.standard?.id, "section508");
+  assert.equal(manifest.target.standard?.id, "en301549");
+  assert.deepEqual(manifest.target.standard?.evidenceGaps, [
+    "PDF, office document, and non-HTML document accessibility evidence",
+    "Software outside the browser, native app, and platform accessibility evidence"
+  ]);
   assert.equal(manifest.plannedScope?.criticalJourneys[0].name, "Search");
   assert.equal(manifest.sample.strategy, "browser-exploration");
   assert.deepEqual(manifest.sample.discoveredUrls, ["https://example.com", "https://example.com/menu"]);

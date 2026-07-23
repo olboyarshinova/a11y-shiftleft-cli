@@ -20,7 +20,7 @@ export interface EvaluationScopeManifest {
     nodeVersion: string;
   };
   target: {
-    standard?: Pick<ComplianceStandardMetadata, "id" | "label" | "wcagVersion" | "wcagLevel" | "automatedCoverage" | "requiresManualReview">;
+    standard?: Pick<ComplianceStandardMetadata, "id" | "label" | "wcagVersion" | "wcagLevel" | "automatedCoverage" | "requiresManualReview" | "evidenceGaps">;
     framework: Framework | string;
     urlsRequested: string[];
   };
@@ -131,7 +131,8 @@ function toStandardScope(standard: ComplianceStandardMetadata): EvaluationScopeM
     wcagVersion: standard.wcagVersion,
     wcagLevel: standard.wcagLevel,
     automatedCoverage: standard.automatedCoverage,
-    requiresManualReview: standard.requiresManualReview
+    requiresManualReview: standard.requiresManualReview,
+    ...(standard.evidenceGaps?.length ? { evidenceGaps: standard.evidenceGaps } : {})
   };
 }
 

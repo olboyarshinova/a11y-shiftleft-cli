@@ -23,5 +23,8 @@ test("resolveStandard labels EN 301 549 as web support mode", () => {
 
   assert.equal(standard.label, "EN 301 549 web support mode");
   assert.equal(standard.wcagLevel, "AA");
+  assert.match(standard.evidenceGaps?.join("\n") || "", /PDF, office document, and non-HTML document/);
+  assert.match(standard.evidenceGaps?.join("\n") || "", /Software outside the browser/);
+  assert.match(standard.evidenceGaps?.join("\n") || "", /Support service, help desk, procurement/);
   assert.match(standard.disclaimer, /EN 301 549/);
 });

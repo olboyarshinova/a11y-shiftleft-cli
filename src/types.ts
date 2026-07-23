@@ -48,6 +48,7 @@ export interface ComplianceStandardMetadata {
   wcagLevel: "AA";
   automatedCoverage: "partial";
   requiresManualReview: boolean;
+  evidenceGaps?: string[];
   disclaimer: string;
 }
 

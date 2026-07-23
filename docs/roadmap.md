@@ -60,9 +60,11 @@ Section 508 certification.
   country flags. Keep `wcag22-aa`, `section508`, `ada-title-ii`, and
   `en301549` explicit. Presets may adjust labels, evidence guidance, and report
   context, but must not claim legal certification.
-- Expand the current `en301549` web-support preset with clearer evidence gaps
-  for non-web EN 301 549 areas such as PDF/documents, software outside the
-  browser, hardware, support services, procurement evidence, and documentation.
+- Validate the current `en301549` web-support preset evidence gaps in real
+  review workflows. The preset now records non-web gaps in `evaluation-scope.json`
+  for PDF/documents, software outside the browser, hardware, support services,
+  procurement evidence, and documentation; next, confirm the wording with teams
+  that need EN 301 549-oriented evidence.
 - Increase automated and assisted WCAG evidence coverage in this order:
   keyboard/focus traversal, form validation states, 400% reflow and zoom,
   target-size and pointer heuristics, media/motion review signals, and screen
