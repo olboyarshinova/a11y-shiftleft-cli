@@ -848,6 +848,7 @@ test("writeReports supports a compact audit profile without legacy or duplicate 
   assert.match(markdown, /Form error states/);
   assert.match(markdown, /Image alternatives/);
   assert.match(markdown, /Media and motion/);
+  assert.match(markdown, /Time limits and recovery/);
   assert.match(markdown, /Voice and switch control readiness/);
   assert.match(markdown, /Embedded content/);
   assert.match(markdown, /Complete the primary task with a keyboard/);

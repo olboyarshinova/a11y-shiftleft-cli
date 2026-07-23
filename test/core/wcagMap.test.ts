@@ -154,6 +154,15 @@ test("getWcagCriteria includes WCAG 2.2 redundant entry criteria", () => {
   assert.equal(criterion.introducedIn, "2.2");
 });
 
+test("getWcagCriteria includes error prevention for legal financial data criteria", () => {
+  const [criterion] = getWcagCriteria(["3.3.4"]);
+
+  assert.equal(criterion.id, "3.3.4");
+  assert.equal(criterion.title, "Error Prevention (Legal, Financial, Data)");
+  assert.equal(criterion.level, "AA");
+  assert.equal(criterion.introducedIn, "2.0");
+});
+
 test("getWcagCriteria includes form error identification", () => {
   const [criterion] = getWcagCriteria(["3.3.1"]);
 

@@ -44,6 +44,9 @@
 - Added voice and switch-control readiness coverage based on label-in-name and
   same-purpose naming signals, with manual confirmation guidance in visual,
   Markdown, and checklist reports.
+- Added time-limit, interruption-recovery, and data-loss-prevention review
+  coverage with WCAG `3.3.4` metadata for legal, financial, and user-data
+  changes.
 - Fixed root-cause occurrence counts for findings that do not include duplicate
   metadata.
 - Added a guided `setup` command that creates the starter config, report/auth

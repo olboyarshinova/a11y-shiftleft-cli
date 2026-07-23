@@ -144,8 +144,10 @@ Section 508 certification.
   whether a task works without sound, without precise pointer movement, under
   zoom, with keyboard only, with reduced motion, and under cognitive load.
 - Add cognitive-load and neurodiversity review prompts for plain language,
-  predictable next actions, calm error messages, time limits, interruption
-  recovery, and understandable multi-step forms.
+  predictable next actions, calm error messages, and understandable multi-step
+  forms. Time limits and interruption recovery now have a dedicated manual
+  checklist and Audit Coverage row; next, validate that wording in real
+  checkout, account, session-expiry, and long-form flows.
 - Expand remediation hint coverage for additional axe, keyboard, layout, media,
   and ESLint rules.
 - Improve Vue and Angular static coverage while continuing to rely on

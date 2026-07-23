@@ -114,6 +114,24 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
     ]
   },
   {
+    id: "time-limits-recovery",
+    title: "Time limits, interruption recovery, and data loss prevention",
+    principle: "operable",
+    wcag: ["2.2.1", "3.3.4", "3.3.7"],
+    whyManual: "Automated scans cannot safely wait for session expiry, trigger real checkout/data-change flows, or judge whether users can recover without losing work.",
+    steps: [
+      "Review login, checkout, payment, profile-editing, long-form, quiz, and session-expiry flows where time limits or interruption can occur.",
+      "Confirm users are warned before time expires and can extend, pause, or recover the session when allowed by the product context.",
+      "Confirm entered data is preserved after validation errors, navigation mistakes, refresh, expired sessions, or interrupted multi-step tasks.",
+      "For legal, financial, or user-data changes, confirm submissions can be reviewed, corrected, confirmed, or reversed before final completion."
+    ],
+    evidence: [
+      "Timeout/session behavior notes",
+      "Screenshots or recordings showing warning, extension, recovery, or review steps",
+      "Examples of preserved or safely recoverable form data"
+    ]
+  },
+  {
     id: "screen-reader-smoke",
     title: "Screen reader navigation and task smoke test",
     principle: "robust",

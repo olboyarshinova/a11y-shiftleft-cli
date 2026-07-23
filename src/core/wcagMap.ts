@@ -363,6 +363,14 @@ const WCAG_CRITERIA: Record<string, WcagCriterion> = {
     introducedIn: "2.0",
     url: "https://www.w3.org/WAI/WCAG22/Understanding/error-suggestion.html"
   },
+  "3.3.4": {
+    id: "3.3.4",
+    title: "Error Prevention (Legal, Financial, Data)",
+    level: "AA",
+    principle: "understandable",
+    introducedIn: "2.0",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/error-prevention-legal-financial-data.html"
+  },
   "3.3.7": {
     id: "3.3.7",
     title: "Redundant Entry",

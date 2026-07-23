@@ -1995,6 +1995,8 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /Form error evidence/);
   assert.match(html, /Email address/);
   assert.match(html, /Enter a valid email address/);
+  assert.match(html, /Time limits and recovery/);
+  assert.match(html, /legal\/financial\/data-change confirmation/);
   assert.match(html, /Image alternative-text evidence/);
   assert.match(html, /hero-banner\.png/);
   assert.match(html, /Media and motion evidence/);
