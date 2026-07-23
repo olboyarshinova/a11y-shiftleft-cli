@@ -10,9 +10,9 @@ Section 508 certification.
 
 ## Near Term
 
-- Promote planned journey matches into a richer journey-review workflow where a
-  reviewer can confirm every step, record missing states, and attach manual
-  task-completion evidence.
+- Promote planned journey targets beyond checklist evidence into a richer
+  journey-review workflow where a reviewer can confirm every step, record
+  missing states, and attach manual task-completion evidence.
 - Continue validating the current cross-page consistency evidence for duplicate
   page titles, placeholder titles, same-purpose control names, repeated
   navigation order, and help mechanisms in real multi-page projects. Surface
@@ -137,9 +137,9 @@ Section 508 certification.
   same-purpose naming signals, and manual checklist row with better
   representative-task evidence while keeping real voice and switch-control
   tasks in manual review.
-- Extend the current task-completion worksheet beyond manual checklist and
-  Audit Coverage prompts with richer planned-journey confirmation, missing-state
-  notes, blocker severity, and retest evidence.
+- Extend the current task-completion worksheet beyond planned journey targets,
+  manual checklist, and Audit Coverage prompts with richer step confirmation,
+  missing-state notes, blocker severity, and retest evidence.
 - Extend inclusive review prompts beyond the current task-completion worksheet
   constraints for no-sound, no-precise-pointer, keyboard-only, zoom,
   reduced-motion, and cognitive-load task checks.

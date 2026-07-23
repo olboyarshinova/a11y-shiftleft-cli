@@ -55,6 +55,8 @@
 - Added inclusive review prompts to the task-completion worksheet for no-sound,
   no-precise-pointer, keyboard-only, zoom, reduced-motion, and cognitive-load
   task checks.
+- Added planned-scope critical journeys as manual review targets in the
+  task-completion worksheet and representative user-test checklist rows.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.

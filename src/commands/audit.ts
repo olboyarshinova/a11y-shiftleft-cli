@@ -302,7 +302,8 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
       framework,
       urls,
       issues: remediationResult.issues,
-      exploration: exploration.graph
+      exploration: exploration.graph,
+      plannedScope
     });
   const formats = options.excel ? ["json", "markdown", "csv"] as const : ["json", "markdown"] as const;
   const report = await writeReports(effectiveConfig.outputDir, remediationResult.issues, {

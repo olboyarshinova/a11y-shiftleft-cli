@@ -1,4 +1,4 @@
-import type { DedupedIssue, ExplorationGraph, ExplorationState, Framework, ManualCheckItem, ManualChecklist, ManualChecklistEntry, ManualReviewEnvironment, ManualReviewTarget } from "../types.js";
+import type { DedupedIssue, ExplorationGraph, ExplorationState, Framework, ManualCheckItem, ManualChecklist, ManualChecklistEntry, ManualReviewEnvironment, ManualReviewTarget, PlannedEvaluationScope } from "../types.js";
 
 const MANUAL_CHECKS: ManualCheckItem[] = [
   {
@@ -413,9 +413,10 @@ export function createManualChecklist(options: {
   urls?: string[];
   issues?: DedupedIssue[];
   exploration?: ExplorationGraph;
+  plannedScope?: PlannedEvaluationScope;
   generatedAt?: string;
 }): ManualChecklist {
-  const targets = collectManualReviewTargets(options.exploration);
+  const targets = collectManualReviewTargets(options.exploration, options.plannedScope);
   return {
     generatedAt: options.generatedAt || new Date().toISOString(),
     framework: options.framework,
@@ -559,8 +560,12 @@ function score(item: ManualCheckItem, hasForms: boolean, hasKeyboard: boolean, t
   return result;
 }
 
-function collectManualReviewTargets(graph?: ExplorationGraph): Map<string, ManualReviewTarget[]> {
+function collectManualReviewTargets(
+  graph?: ExplorationGraph,
+  plannedScope?: PlannedEvaluationScope
+): Map<string, ManualReviewTarget[]> {
   const targets = new Map<string, ManualReviewTarget[]>();
+  addJourneyTargets(targets, plannedScope);
   if (!graph) return targets;
 
   for (const state of graph.states) {
@@ -575,6 +580,31 @@ function collectManualReviewTargets(graph?: ExplorationGraph): Map<string, Manua
   }
 
   return targets;
+}
+
+function addJourneyTargets(
+  targets: Map<string, ManualReviewTarget[]>,
+  plannedScope: PlannedEvaluationScope | undefined
+): void {
+  if (!plannedScope?.criticalJourneys.length) return;
+  for (const journey of plannedScope.criticalJourneys) {
+    const urls = journey.urls.filter(Boolean);
+    const evidence = [
+      urls.length > 0 ? `${urls.length} planned URL(s): ${urls.join(", ")}` : "No planned URLs recorded",
+      journey.description,
+      journey.notes
+    ].filter(Boolean).join("; ");
+    const target: ManualReviewTarget = {
+      id: `journey:${journey.name}`,
+      kind: "journey",
+      label: journey.name,
+      url: urls[0] || plannedScope.target.urls[0] || "planned-scope",
+      stateId: "planned-scope",
+      evidence
+    };
+    addTarget(targets, "task-completion-worksheet", target);
+    addTarget(targets, "representative-user-test", target);
+  }
 }
 
 function addFormTargets(targets: Map<string, ManualReviewTarget[]>, state: ExplorationState): void {

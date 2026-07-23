@@ -60,7 +60,8 @@ export async function writeReports(
     ? createManualChecklist({
       framework: metrics.framework || "unknown",
       urls: metrics.urls || [],
-      issues: reportIssues
+      issues: reportIssues,
+      plannedScope: metrics.plannedScope
     })
     : undefined);
   const generatedFiles = [

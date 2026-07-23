@@ -701,7 +701,7 @@ export interface ManualReviewRecord {
 
 export interface ManualReviewTarget {
   id: string;
-  kind: "dialog" | "form" | "image" | "live-region" | "media" | "embedded-content" | "landmark" | "reflow";
+  kind: "dialog" | "form" | "image" | "live-region" | "media" | "embedded-content" | "landmark" | "reflow" | "journey";
   label: string;
   url: string;
   stateId: string;

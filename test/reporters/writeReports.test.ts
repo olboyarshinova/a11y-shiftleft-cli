@@ -1346,7 +1346,30 @@ test("writeReports can generate a semi-automated manual checklist", async () => 
       urls: ["http://localhost:3000"],
       rawCount: 0,
       uniqueCount: 0,
-      duplicateCount: 0
+      duplicateCount: 0,
+      plannedScope: {
+        version: 1,
+        generatedAt: "2026-06-04T00:00:00.000Z",
+        product: {
+          type: "content",
+          languages: ["en"]
+        },
+        target: {
+          standard: "wcag-2.2-aa",
+          urls: ["http://localhost:3000"]
+        },
+        supportedPlatforms: ["Desktop Chrome"],
+        assistiveTechnologies: ["Keyboard only"],
+        representativeSample: [],
+        randomSample: [],
+        criticalJourneys: [{
+          name: "Subscribe",
+          urls: ["http://localhost:3000/newsletter"]
+        }],
+        thirdPartyContent: [],
+        exclusions: [],
+        notes: []
+      }
     },
     {
       formats: ["json"],
@@ -1370,7 +1393,14 @@ test("writeReports can generate a semi-automated manual checklist", async () => 
   assert.match(checklist, /Environment summary:/);
   assert.match(checklist, /Operating system:/);
   assert.match(checklist, /Assistive technology and version:/);
+  assert.match(checklist, /journey: Subscribe/);
   assert.equal(checklistJson.items[0].review.status, "not-reviewed");
+  assert.equal(
+    checklistJson.items.some((item: { targets?: Array<{ kind: string; label: string }> }) => (
+      item.targets?.some((target) => target.kind === "journey" && target.label === "Subscribe")
+    )),
+    true
+  );
   assert.equal(checklistJson.items[0].review.environment, "");
   assert.equal(checklistJson.items[0].review.environmentDetails.viewportOrZoom, "");
   assert.equal(checklistJson.items[0].review.environmentDetails.colorMode, "");

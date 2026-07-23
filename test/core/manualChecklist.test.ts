@@ -69,6 +69,48 @@ test("createManualChecklist prioritizes form review when form issues exist", () 
   assert.equal(checklist.items[0].id, "form-label-quality");
 });
 
+test("createManualChecklist turns planned journeys into manual review targets", () => {
+  const checklist = createManualChecklist({
+    framework: "react",
+    urls: ["http://localhost:3000"],
+    generatedAt: "2026-06-04T00:00:00.000Z",
+    plannedScope: {
+      version: 1,
+      generatedAt: "2026-06-04T00:00:00.000Z",
+      product: {
+        type: "ecommerce",
+        languages: ["en"]
+      },
+      target: {
+        standard: "wcag-2.2-aa",
+        urls: ["http://localhost:3000"]
+      },
+      supportedPlatforms: ["Desktop Chrome"],
+      assistiveTechnologies: ["Keyboard only"],
+      representativeSample: [],
+      randomSample: [],
+      criticalJourneys: [{
+        name: "Checkout",
+        urls: ["http://localhost:3000/cart", "http://localhost:3000/checkout"],
+        description: "Review checkout completion without mouse input.",
+        notes: "Use a test account only."
+      }],
+      thirdPartyContent: [],
+      exclusions: [],
+      notes: []
+    }
+  });
+
+  const taskWorksheet = checklist.items.find((item) => item.id === "task-completion-worksheet");
+  const userTest = checklist.items.find((item) => item.id === "representative-user-test");
+
+  assert.equal(taskWorksheet?.targets?.[0].kind, "journey");
+  assert.equal(taskWorksheet?.targets?.[0].label, "Checkout");
+  assert.match(taskWorksheet?.targets?.[0].evidence || "", /2 planned URL/);
+  assert.match(taskWorksheet?.targets?.[0].evidence || "", /test account/);
+  assert.equal(userTest?.targets?.[0].label, "Checkout");
+});
+
 test("createManualChecklist creates an assisted queue from exploration evidence", () => {
   const checklist = createManualChecklist({
     framework: "react",
