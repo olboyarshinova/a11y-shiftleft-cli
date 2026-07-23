@@ -357,6 +357,10 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /\.metric-info strong,[\s\S]*?\.metric-best-practice strong \{[\s\S]*?color: var\(--info\)/);
   assert.match(html, /\.metric-zero strong \{[\s\S]*?color: var\(--ok\)/);
   assert.doesNotMatch(html, /\.metric-wcag \{[\s\S]*?background:/);
+  assert.match(html, /Sensory and color-only instructions/);
+  assert.match(html, /Review instructions, legends, charts, filters/);
+  assert.match(html, /Text spacing resilience/);
+  assert.match(html, /Apply text-spacing overrides/);
   assert.match(html, /Hover\/focus content/);
   assert.match(html, /Review tooltips, menus, popovers, and disclosures/);
   assert.match(html, /Pointer and dragging alternatives/);

@@ -127,6 +127,15 @@ test("getWcagCriteria includes WCAG 2.1 input purpose criteria", () => {
   assert.equal(criterion.introducedIn, "2.1");
 });
 
+test("getWcagCriteria includes sensory characteristics", () => {
+  const [criterion] = getWcagCriteria(["1.3.3"]);
+
+  assert.equal(criterion.id, "1.3.3");
+  assert.equal(criterion.title, "Sensory Characteristics");
+  assert.equal(criterion.level, "A");
+  assert.equal(criterion.introducedIn, "2.0");
+});
+
 test("getWcagCriteria includes form error identification", () => {
   const [criterion] = getWcagCriteria(["3.3.1"]);
 

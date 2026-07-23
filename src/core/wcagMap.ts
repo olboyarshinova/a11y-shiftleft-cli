@@ -123,6 +123,14 @@ const WCAG_CRITERIA: Record<string, WcagCriterion> = {
     introducedIn: "2.0",
     url: "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
   },
+  "1.3.3": {
+    id: "1.3.3",
+    title: "Sensory Characteristics",
+    level: "A",
+    principle: "perceivable",
+    introducedIn: "2.0",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/sensory-characteristics.html"
+  },
   "1.3.4": {
     id: "1.3.4",
     title: "Orientation",

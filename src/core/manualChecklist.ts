@@ -50,6 +50,38 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
     ]
   },
   {
+    id: "sensory-color-instructions",
+    title: "Instructions do not rely only on color, shape, or position",
+    principle: "perceivable",
+    wcag: ["1.3.3", "1.4.1", "3.3.2"],
+    whyManual: "Automated tools can detect some color-only link patterns, but they cannot reliably understand instructions such as 'click the red button' or 'use the field on the right' in product context.",
+    steps: [
+      "Review onboarding copy, form instructions, validation messages, legends, charts, filters, and empty states.",
+      "Confirm instructions do not rely only on color, size, shape, sound, location, or visual orientation.",
+      "Add text labels, icons with text, pattern keys, or programmatic relationships when color or position is used as a cue."
+    ],
+    evidence: [
+      "Examples of instructions reviewed",
+      "Screenshots or notes showing non-color and non-position cues"
+    ]
+  },
+  {
+    id: "text-spacing-resilience",
+    title: "Text spacing resilience",
+    principle: "perceivable",
+    wcag: ["1.4.12"],
+    whyManual: "A rendered scan can find some clipping, but teams still need to confirm content remains readable when users override line height, letter spacing, word spacing, and paragraph spacing.",
+    steps: [
+      "Apply WCAG text-spacing overrides or a browser bookmarklet/user stylesheet to representative content-heavy pages and forms.",
+      "Confirm text is not clipped, overlapped, hidden, or made unusable by fixed-height containers.",
+      "Check buttons, cards, navigation, accordions, validation errors, and translated or long labels."
+    ],
+    evidence: [
+      "Screenshots with text-spacing overrides enabled",
+      "List of clipped or overlapping text containers"
+    ]
+  },
+  {
     id: "complex-widget-focus",
     title: "Focus behavior for complex widgets",
     principle: "operable",

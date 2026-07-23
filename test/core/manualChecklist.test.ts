@@ -22,6 +22,8 @@ test("createManualChecklist generates human-review checklist items", () => {
   assert.equal(checklist.items.some((item) => item.id === "zoom-reflow"), true);
   assert.equal(checklist.items.some((item) => item.id === "alternative-text-quality"), true);
   assert.equal(checklist.items.some((item) => item.id === "brand-logo-accessibility"), true);
+  assert.equal(checklist.items.some((item) => item.id === "sensory-color-instructions"), true);
+  assert.equal(checklist.items.some((item) => item.id === "text-spacing-resilience"), true);
   assert.equal(checklist.items.some((item) => item.id === "media-motion"), true);
   assert.equal(checklist.items.some((item) => item.id === "hover-focus-content"), true);
   assert.equal(checklist.items.some((item) => item.id === "pointer-dragging-alternatives"), true);
@@ -134,6 +136,10 @@ test("toManualChecklistMarkdown renders actionable Markdown checkboxes", () => {
   assert.match(markdown, /Semi-Automated Accessibility Review Checklist/);
   assert.match(markdown, /Framework: vue/);
   assert.match(markdown, /- \[ \] Navigate the page using only the keyboard\./);
+  assert.match(markdown, /Instructions do not rely only on color, shape, or position/);
+  assert.match(markdown, /do not rely only on color, size, shape, sound, location, or visual orientation/);
+  assert.match(markdown, /Text spacing resilience/);
+  assert.match(markdown, /WCAG text-spacing overrides/);
   assert.match(markdown, /Zoom the browser to 200%/);
   assert.match(markdown, /accurate synchronized captions/);
   assert.match(markdown, /Hover and focus-triggered content/);
@@ -148,7 +154,7 @@ test("toManualChecklistMarkdown renders actionable Markdown checkboxes", () => {
   assert.match(markdown, /Automated accessibility tools do not prove full WCAG conformance/);
   assert.match(markdown, /Status: `not-reviewed`/);
   assert.match(markdown, /## Review Status/);
-  assert.match(markdown, /Not reviewed \| 15/);
+  assert.match(markdown, /Not reviewed \| 17/);
   assert.match(markdown, /Environment summary:/);
   assert.match(markdown, /Operating system:/);
   assert.match(markdown, /Assistive technology and version:/);

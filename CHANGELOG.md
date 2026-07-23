@@ -25,6 +25,8 @@
 - Added Pointer Cancellation (`2.5.2`) to the WCAG catalog and added pointer
   cancellation, dragging, swipe, slider, and pointer-heavy controls to Audit
   Coverage and the manual checklist.
+- Added Sensory Characteristics (`1.3.3`), sensory/color-only instructions, and
+  text-spacing resilience to Audit Coverage and the manual checklist.
 - Fixed root-cause occurrence counts for findings that do not include duplicate
   metadata.
 - Added a guided `setup` command that creates the starter config, report/auth

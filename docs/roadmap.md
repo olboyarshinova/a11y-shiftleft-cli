@@ -72,9 +72,8 @@ Section 508 certification.
 - Grow custom assisted checks for WCAG criteria that ordinary axe/Lighthouse
   scans cannot fully prove. Prioritize evidence-based checks that produce
   `needs review` rather than false pass/fail claims: meaningful sequence
-  (`1.3.2`), sensory-only instructions (`1.3.3`), use-of-color context
-  (`1.4.1`), text spacing (`1.4.12`), focus appearance (`2.4.13`, tracked
-  as advisory before AAA reporting),
+  (`1.3.2`), focus appearance (`2.4.13`, tracked as advisory before AAA
+  reporting),
   consistent navigation/identification/help (`3.2.3`, `3.2.4`, `3.2.6`),
   redundant entry (`3.3.7`), accessible authentication (`3.3.8`), and status
   messages (`4.1.3`). Each check must include visual evidence, WCAG mapping,
@@ -119,6 +118,10 @@ Section 508 certification.
   collect bounded visual evidence for pointer cancellation, drag alternatives,
   swipe-only controls, sliders, maps, and pointer-heavy widgets without
   triggering destructive or account-changing actions.
+- Extend sensory/color-only instructions and text-spacing support beyond the
+  current manual checklist rows: collect bounded visual evidence for
+  instruction copy, legends, charts, validation text, and user text-spacing
+  overrides without creating noisy content false positives.
 - Extend media evidence with isolated reduced-motion behavior comparison.
   Caption quality, audio description, and flashing risk remain manual-review
   work.
