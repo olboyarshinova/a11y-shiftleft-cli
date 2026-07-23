@@ -343,6 +343,23 @@ const RULE_HINTS: Record<string, RemediationHint> = {
       "https://www.w3.org/WAI/WCAG22/Understanding/label-in-name.html"
     ]
   },
+  "label-content-name-mismatch": {
+    summary: "Make the visible control label part of the accessible name.",
+    howToFix: [
+      "Compare the visible label with the computed accessible name for the same control.",
+      "Keep the visible words at the start of aria-label, aria-labelledby, or the button/link text so voice-control users can say what they see.",
+      "Avoid replacing visible text with a different hidden command name unless the visible label is also included."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/label-in-name.html",
+      "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
+    ],
+    frameworkExamples: {
+      react: "<button aria-label=\"Save draft\">Save</button>",
+      vue: "<button aria-label=\"Save draft\">Save</button>",
+      angular: "<button aria-label=\"Save draft\">Save</button>"
+    }
+  },
   "navigation-order-inconsistent": {
     summary: "Keep repeated navigation mechanisms in a consistent relative order.",
     howToFix: [

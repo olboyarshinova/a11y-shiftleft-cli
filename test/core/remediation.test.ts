@@ -276,6 +276,19 @@ test("getRemediationHint explains cross-page control naming findings", () => {
   assert.equal(hint.docs.some((url) => url.includes("consistent-identification")), true);
 });
 
+test("getRemediationHint explains label in name mismatches for voice control", () => {
+  const hint = getRemediationHint(
+    "label-content-name-mismatch",
+    getWcagCriteria(["2.5.3"]),
+    "react"
+  );
+
+  assert.match(hint.summary, /visible control label/);
+  assert.equal(hint.howToFix.some((step) => step.includes("voice-control users")), true);
+  assert.equal(hint.docs.some((url) => url.includes("label-in-name")), true);
+  assert.match(hint.frameworkExamples?.react || "", /aria-label/);
+});
+
 test("getRemediationHint explains navigation and help consistency findings", () => {
   const navigation = getRemediationHint(
     "navigation-order-inconsistent",

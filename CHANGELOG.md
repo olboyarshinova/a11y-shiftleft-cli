@@ -55,6 +55,9 @@
 - Added inclusive review prompts to the task-completion worksheet for no-sound,
   no-precise-pointer, keyboard-only, zoom, reduced-motion, and cognitive-load
   task checks.
+- Added targeted remediation guidance for `label-content-name-mismatch` so
+  voice-control related findings explain how to align visible labels and
+  accessible names.
 - Fixed root-cause occurrence counts for findings that do not include duplicate
   metadata.
 - Added a guided `setup` command that creates the starter config, report/auth

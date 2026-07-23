@@ -148,7 +148,8 @@ Section 508 certification.
   checklist rows. Next, validate that wording in real checkout, account,
   session-expiry, long-form, and multi-step flows.
 - Expand remediation hint coverage for additional axe, keyboard, layout, media,
-  and ESLint rules.
+  voice/switch, and ESLint rules. Current voice/switch coverage includes
+  targeted `label-content-name-mismatch` guidance.
 - Improve Vue and Angular static coverage while continuing to rely on
   established ESLint plugins rather than custom parsers.
 
