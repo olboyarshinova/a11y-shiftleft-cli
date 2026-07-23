@@ -2681,9 +2681,21 @@ function renderCoverageMatrix(
   const lighthouseCommand = `npx a11y-shiftleft-cli audit --url ${shellQuote(graph.startUrl)} --with-lighthouse --out reports`;
   const embeddedFindingCount = countIssues((issue) => issue.source === "embedded-content");
   const appearanceFindingCount = countIssues((issue) => issue.category === "contrast" && issue.source !== "forced-colors");
+  const crossPageRuleIds = new Set([
+    "page-title-duplicate",
+    "page-title-placeholder",
+    "control-name-inconsistent",
+    "navigation-order-inconsistent",
+    "help-mechanism-inconsistent"
+  ]);
+  const crossPageFindingCount = countIssues((issue) => crossPageRuleIds.has(issue.ruleId));
+  const comparedPageCount = new Set(graph.states.map((state) => state.url)).size;
+  const comparedStateCount = graph.states.length;
+  const crossPageCompared = comparedStateCount > 1 || comparedPageCount > 1;
   const rows = [
     coverageRow("browser-automation", "Browser automation", evidenceState(dynamicFindingCount), "Automated", `${graph.summary.statesVisited} rendered state${graph.summary.statesVisited === 1 ? "" : "s"} scanned with axe`, true, dynamicFindingCount),
     coverageRow("static-source", "Static source analysis", staticAdapterFailed ? "unavailable" : evidenceState(staticFindingCount), staticAdapterFailed ? "Setup required" : "Automated", staticAdapterFailed ? "Install or configure the detected framework adapter, then run the audit again" : "Project source files checked with the configured accessibility lint adapter", !staticAdapterFailed, staticFindingCount),
+    coverageRow("cross-page-consistency", "Cross-page consistency", crossPageCompared ? evidenceState(crossPageFindingCount) : "needs-review", crossPageCompared ? "Automated evidence" : "Needs more states", crossPageCompared ? `${comparedStateCount} state${comparedStateCount === 1 ? "" : "s"} and ${comparedPageCount} page${comparedPageCount === 1 ? "" : "s"} compared for titles, same-purpose control names, navigation order, and help mechanisms` : "Only one state was discovered; add URLs or increase depth to compare repeated patterns", crossPageCompared, crossPageCompared ? crossPageFindingCount : undefined),
     coverageRow("keyboard", "Keyboard traversal", options.keyboard ? evidenceState(keyboardFindingCount) : "not-tested", options.keyboard ? "Automated evidence" : "Run keyboard audit", options.keyboard ? `${options.keyboard.steps.length} forward focus steps recorded; complete task testing may still be required` : `Run <code>${escapeHtml(keyboardCommand)}</code>`, Boolean(options.keyboard), options.keyboard ? keyboardFindingCount : undefined),
     coverageRow("lighthouse", "Lighthouse score", options.lighthouse ? evidenceState(lighthouseFailedAudits) : "not-tested", options.lighthouse ? "Comparison evidence" : "Optional comparison", options.lighthouse ? `${options.lighthouse.length} page score${options.lighthouse.length === 1 ? "" : "s"} captured` : `Install <code>lighthouse</code>, then run <code>${escapeHtml(lighthouseCommand)}</code>`, Boolean(options.lighthouse), options.lighthouse ? lighthouseFailedAudits : undefined),
     coverageRow("appearance", "Light and dark appearance", evidenceState(appearanceFindingCount), "Automated evidence", themes.length > 0 ? escapeHtml(themes.join(", ")) : "No distinct system color-scheme state detected", true, appearanceFindingCount),

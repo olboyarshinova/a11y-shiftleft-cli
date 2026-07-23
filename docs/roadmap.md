@@ -16,8 +16,8 @@ Section 508 certification.
 - Continue validating the current cross-page consistency evidence for duplicate
   page titles, placeholder titles, same-purpose control names, repeated
   navigation order, and help mechanisms in real multi-page projects. Surface
-  differences for review rather than asserting that every difference is a WCAG
-  failure.
+  differences for review in the current Audit Coverage row rather than
+  asserting that every difference is a WCAG failure.
 - Continue improving report grouping controls. Current visual reports include a
   compact `Group Findings` control for rule, WCAG criterion, page/state,
   affected element, and POUR principle while preserving the main triage,

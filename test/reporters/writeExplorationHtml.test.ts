@@ -856,6 +856,30 @@ test("renderExplorationHtml summarizes cross-page rule impact in triage", () => 
   assert.match(topRules, /likely shared component or template/);
 });
 
+test("renderExplorationHtml surfaces cross-page consistency in audit coverage", () => {
+  const html = renderExplorationHtml(graph, [{
+    ...issues[0],
+    ruleId: "control-name-inconsistent",
+    severity: "warning",
+    message: "Same-purpose controls use inconsistent names across pages.",
+    fingerprint: "control-name-inconsistent::export-action",
+    wcag: ["3.2.4"],
+    wcagCriteria: [{
+      id: "3.2.4",
+      title: "Consistent Identification",
+      level: "AA",
+      principle: "understandable",
+      introducedIn: "2.0",
+      url: "https://www.w3.org/WAI/WCAG22/Understanding/consistent-identification.html"
+    }]
+  }]);
+
+  assert.match(html, /Cross-page consistency/);
+  assert.match(html, /Automated evidence/);
+  assert.match(html, /3 states and 1 page compared for titles, same-purpose control names, navigation order, and help mechanisms/);
+  assert.match(html, /class="coverage-findings">1<\/td>/);
+});
+
 test("renderExplorationHtml includes compact finding grouping controls", () => {
   const html = renderExplorationHtml(graph, [
     issues[0],

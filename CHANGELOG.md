@@ -35,6 +35,9 @@
 - Added Three Flashes or Below Threshold (`2.3.1`) to the WCAG catalog and made
   media/motion coverage summarize active animation and reduced-motion CSS
   evidence more explicitly.
+- Added a Cross-page consistency row to Audit Coverage for duplicate or
+  placeholder titles, same-purpose control names, navigation order, and help
+  mechanism evidence.
 - Fixed root-cause occurrence counts for findings that do not include duplicate
   metadata.
 - Added a guided `setup` command that creates the starter config, report/auth
