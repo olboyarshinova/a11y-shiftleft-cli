@@ -450,6 +450,12 @@ Review record:
 - Environment summary:
 ${formatEnvironmentDetailsMarkdown(item.review.environmentDetails)}
 - Remediation owner:
+- Task outcome: \`${item.review.taskOutcome || ""}\` (completed, completed-with-assistance, blocked, abandoned, or not-applicable)
+- First blocker:
+- Blocker severity: \`${item.review.blockerSeverity || ""}\` (critical, warning, or info)
+- Missing states:
+- Retest date:
+- Retest result:
 - Notes:
 - Evidence links:
 `).join("\n");
@@ -509,6 +515,12 @@ function toChecklistEntry(item: ManualCheckItem, targets: ManualReviewTarget[]):
       testedAt: "",
       environment: "",
       environmentDetails: createEmptyManualReviewEnvironment(),
+      taskOutcome: "",
+      firstBlocker: "",
+      blockerSeverity: "",
+      missingStates: [],
+      retestDate: "",
+      retestResult: "",
       notes: "",
       evidenceLinks: [],
       remediationOwner: ""

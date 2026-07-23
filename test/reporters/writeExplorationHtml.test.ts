@@ -1925,6 +1925,7 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /Assistive technology/);
   assert.match(html, /Viewport or zoom/);
   assert.match(html, /Color mode/);
+  assert.match(html, /Review record fields: task outcome, first blocker, blocker severity, missing states, remediation owner, retest date, and evidence links\./);
   assert.match(html, /Observed review targets/);
   assert.match(html, /form: Email address/);
   assert.match(html, /href="#state-1">Open state-1/);

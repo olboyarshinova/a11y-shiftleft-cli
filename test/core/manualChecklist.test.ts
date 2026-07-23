@@ -45,6 +45,12 @@ test("createManualChecklist generates human-review checklist items", () => {
     viewportOrZoom: "",
     colorMode: ""
   });
+  assert.equal(checklist.items[0].review.taskOutcome, "");
+  assert.equal(checklist.items[0].review.firstBlocker, "");
+  assert.equal(checklist.items[0].review.blockerSeverity, "");
+  assert.deepEqual(checklist.items[0].review.missingStates, []);
+  assert.equal(checklist.items[0].review.retestDate, "");
+  assert.equal(checklist.items[0].review.retestResult, "");
 });
 
 test("createManualChecklist prioritizes form review when form issues exist", () => {
@@ -390,6 +396,12 @@ test("toManualChecklistMarkdown renders actionable Markdown checkboxes", () => {
   assert.match(markdown, /Viewport or zoom level:/);
   assert.match(markdown, /Color mode:/);
   assert.match(markdown, /Remediation owner:/);
+  assert.match(markdown, /Task outcome: ``/);
+  assert.match(markdown, /First blocker:/);
+  assert.match(markdown, /Blocker severity: ``/);
+  assert.match(markdown, /Missing states:/);
+  assert.match(markdown, /Retest date:/);
+  assert.match(markdown, /Retest result:/);
 });
 
 test("summarizeManualReviewRecords counts review outcomes", () => {

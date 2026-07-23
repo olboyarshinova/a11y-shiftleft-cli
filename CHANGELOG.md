@@ -57,6 +57,8 @@
   task checks.
 - Added planned-scope critical journeys as manual review targets in the
   task-completion worksheet and representative user-test checklist rows.
+- Added structured manual review record fields for task outcome, first blocker,
+  blocker severity, missing states, retest date, and retest result.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.

@@ -679,6 +679,16 @@ export interface ManualCheckItem {
 
 export type ManualReviewStatus = "not-reviewed" | "pass" | "fail" | "not-applicable";
 
+export type ManualTaskOutcome =
+  | ""
+  | "completed"
+  | "completed-with-assistance"
+  | "blocked"
+  | "abandoned"
+  | "not-applicable";
+
+export type ManualBlockerSeverity = "" | "critical" | "warning" | "info";
+
 export interface ManualReviewEnvironment {
   operatingSystem: string;
   browser: string;
@@ -694,6 +704,12 @@ export interface ManualReviewRecord {
   testedAt: string;
   environment: string;
   environmentDetails?: ManualReviewEnvironment;
+  taskOutcome?: ManualTaskOutcome;
+  firstBlocker?: string;
+  blockerSeverity?: ManualBlockerSeverity;
+  missingStates?: string[];
+  retestDate?: string;
+  retestResult?: string;
   notes: string;
   evidenceLinks: string[];
   remediationOwner: string;
