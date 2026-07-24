@@ -103,6 +103,8 @@
 - Added compact provenance metadata to machine-readable evidence exports,
   including command profile, URL scope, automation flags, browser evidence, scan
   limits, and standards preset.
+- Added evidence export scope details to the console summary so CI logs show the
+  command profile, standards preset, URL count, and browser evidence.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.

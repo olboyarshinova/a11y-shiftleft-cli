@@ -92,11 +92,28 @@ export function formatEvidenceExportOutput(evidence: EvidenceExport, outputPath:
 
   return [
     `Wrote ${evidence.records.length} evidence record${evidence.records.length === 1 ? "" : "s"} to ${outputPath}`,
+    `Scope: ${formatEvidenceScope(evidence)}`,
     `Summary: ${evidence.summary.critical} critical, ${evidence.summary.warning} warning, ${evidence.summary.info} info`,
     `Evidence types: ${evidence.summary.wcagMapped} WCAG-mapped, ${evidence.summary.needsReview} needs review, ${evidence.summary.bestPractice} best practice`,
     topUrl ? `Top URL: ${topUrl[0]} (${topUrl[1]})` : "Top URL: none",
     topCriterion ? `Top WCAG criterion: ${topCriterion[0]} (${topCriterion[1]})` : "Top WCAG criterion: none"
   ].join("\n");
+}
+
+function formatEvidenceScope(evidence: EvidenceExport): string {
+  const command = evidence.provenance.command
+    ? `${evidence.provenance.command.name}/${evidence.provenance.command.profile}`
+    : "unknown command";
+  const standard = evidence.provenance.standard?.id || "no standard preset";
+  const urls = evidence.provenance.includedUrls.length || evidence.provenance.requestedUrls.length;
+  const browser = evidence.provenance.browsers?.[0]?.name;
+
+  return [
+    command,
+    standard,
+    `${urls} URL${urls === 1 ? "" : "s"}`,
+    browser
+  ].filter(Boolean).join(" | ");
 }
 
 function toEvidenceExportFormat(value: string | undefined): EvidenceExportFormat {

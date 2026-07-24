@@ -50,6 +50,7 @@ test("formatEvidenceExportOutput summarizes the exported evidence dataset", () =
   const output = formatEvidenceExportOutput(createEvidenceExport(reportFixture()), "/tmp/evidence.json");
 
   assert.match(output, /Wrote 1 evidence record to \/tmp\/evidence\.json/);
+  assert.match(output, /Scope: audit\/validation \| wcag22-aa \| 1 URL \| Chromium/);
   assert.match(output, /Summary: 1 critical, 0 warning, 0 info/);
   assert.match(output, /Evidence types: 1 WCAG-mapped, 0 needs review, 0 best practice/);
   assert.match(output, /Top URL: https:\/\/example\.test \(1\)/);
@@ -103,7 +104,39 @@ test("evidence export writes JSONL records from an accessibility report", async 
 function reportFixture() {
   return {
     generatedAt: "2026-07-13T00:00:00.000Z",
-    summary: {},
+    summary: {
+      urls: ["https://example.test"],
+      auditTrail: {
+        command: {
+          name: "audit",
+          profile: "validation"
+        },
+        requestedUrls: ["https://example.test"],
+        includedUrls: ["https://example.test"],
+        outputFormats: ["json"],
+        browsers: [{
+          engine: "chromium",
+          name: "Chromium",
+          version: "141.0.0.0",
+          source: "exploration"
+        }],
+        automation: {
+          staticAnalysis: false,
+          browserAutomation: true,
+          keyboardTraversal: false,
+          lighthouseComparison: false,
+          manualChecklist: false
+        }
+      },
+      standard: {
+        id: "wcag22-aa",
+        label: "WCAG 2.2 AA support mode",
+        wcagVersion: "2.2",
+        wcagLevel: "AA",
+        automatedCoverage: "partial",
+        requiresManualReview: true
+      }
+    },
     issues: [{
       source: "axe",
       framework: "react",
