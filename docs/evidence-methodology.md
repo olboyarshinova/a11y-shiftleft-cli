@@ -34,6 +34,10 @@ rule, severity, WCAG metadata, URL, selector or source location, ownership,
 confidence, and remediation guidance. It does not include screenshots or
 rendered HTML.
 
+When writing to `--out`, the command prints a compact run summary with severity
+counts, finding types, the most affected URL, and the most common WCAG criterion.
+This keeps CI logs and validation runs readable without opening the full export.
+
 Each exported finding also has a stable `id` derived from the finding
 fingerprint. Use this shorter identifier when joining JSON, JSONL, JSON-LD,
 spreadsheets, ticket drafts, or validation-study rows without exposing the full

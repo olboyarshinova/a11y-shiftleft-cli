@@ -4,7 +4,8 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { createProgram } from "../../dist/cli.js";
-import { formatEvidencePackOutput } from "../../dist/commands/evidence.js";
+import { formatEvidenceExportOutput, formatEvidencePackOutput } from "../../dist/commands/evidence.js";
+import { createEvidenceExport } from "../../dist/core/evidenceExport.js";
 import type { EvidencePackageManifest } from "../../dist/core/evidencePackage.js";
 
 test("evidence export exposes machine-readable evidence options", () => {
@@ -43,6 +44,16 @@ test("formatEvidencePackOutput shows when no review hints remain", () => {
   const output = formatEvidencePackOutput(evidenceManifest({ reviewHints: [] }), "/tmp/a11y-evidence");
 
   assert.match(output, /Review hints: none/);
+});
+
+test("formatEvidenceExportOutput summarizes the exported evidence dataset", () => {
+  const output = formatEvidenceExportOutput(createEvidenceExport(reportFixture()), "/tmp/evidence.json");
+
+  assert.match(output, /Wrote 1 evidence record to \/tmp\/evidence\.json/);
+  assert.match(output, /Summary: 1 critical, 0 warning, 0 info/);
+  assert.match(output, /Evidence types: 1 WCAG-mapped, 0 needs review, 0 best practice/);
+  assert.match(output, /Top URL: https:\/\/example\.test \(1\)/);
+  assert.match(output, /Top WCAG criterion: 4\.1\.2 \(1\)/);
 });
 
 test("evidence export writes JSONL records from an accessibility report", async () => {
@@ -88,6 +99,39 @@ test("evidence export writes JSONL records from an accessibility report", async 
   assert.equal(lines.length, 1);
   assert.equal(JSON.parse(lines[0]).ruleId, "button-name");
 });
+
+function reportFixture() {
+  return {
+    generatedAt: "2026-07-13T00:00:00.000Z",
+    summary: {},
+    issues: [{
+      source: "axe",
+      framework: "react",
+      ruleId: "button-name",
+      wcag: ["4.1.2"],
+      wcagCriteria: [{
+        id: "4.1.2",
+        title: "Name, Role, Value",
+        level: "A",
+        principle: "Robust",
+        introducedIn: "2.0",
+        url: "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
+      }],
+      tags: [],
+      severity: "critical",
+      confidence: "high",
+      confidenceScore: 95,
+      confidenceReason: "Rendered DOM evidence.",
+      findingType: "wcag",
+      category: "semantics",
+      message: "Buttons must have discernible text",
+      selector: ".icon-button",
+      url: "https://example.test",
+      fingerprint: "button-name::test",
+      duplicateCount: 1
+    }]
+  } as const;
+}
 
 function evidenceManifest(overrides: Partial<EvidencePackageManifest> = {}): EvidencePackageManifest {
   return {

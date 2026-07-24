@@ -5,6 +5,7 @@ import {
   createEvidenceExport,
   readA11yReport,
   serializeEvidenceExport,
+  type EvidenceExport,
   type EvidenceExportFormat
 } from "../core/evidenceExport.js";
 import { createEvidencePackage, type EvidencePackageManifest } from "../core/evidencePackage.js";
@@ -61,7 +62,7 @@ export function registerEvidenceCommand(program: Command): void {
         const outputPath = path.resolve(options.out);
         await fs.mkdir(path.dirname(outputPath), { recursive: true });
         await fs.writeFile(outputPath, output);
-        console.log(`Wrote ${evidence.records.length} evidence record${evidence.records.length === 1 ? "" : "s"} to ${outputPath}`);
+        console.log(formatEvidenceExportOutput(evidence, outputPath));
         return;
       }
 
@@ -85,9 +86,26 @@ export function formatEvidencePackOutput(manifest: EvidencePackageManifest, outp
   ].join("\n");
 }
 
+export function formatEvidenceExportOutput(evidence: EvidenceExport, outputPath: string): string {
+  const topUrl = topEntry(evidence.summary.byUrl);
+  const topCriterion = topEntry(evidence.summary.byWcagCriterion);
+
+  return [
+    `Wrote ${evidence.records.length} evidence record${evidence.records.length === 1 ? "" : "s"} to ${outputPath}`,
+    `Summary: ${evidence.summary.critical} critical, ${evidence.summary.warning} warning, ${evidence.summary.info} info`,
+    `Evidence types: ${evidence.summary.wcagMapped} WCAG-mapped, ${evidence.summary.needsReview} needs review, ${evidence.summary.bestPractice} best practice`,
+    topUrl ? `Top URL: ${topUrl[0]} (${topUrl[1]})` : "Top URL: none",
+    topCriterion ? `Top WCAG criterion: ${topCriterion[0]} (${topCriterion[1]})` : "Top WCAG criterion: none"
+  ].join("\n");
+}
+
 function toEvidenceExportFormat(value: string | undefined): EvidenceExportFormat {
   if (value === "json" || value === undefined) return "json";
   if (value === "jsonl") return "jsonl";
   if (value === "jsonld") return "jsonld";
   throw new Error("Unsupported evidence export format. Use json, jsonl, or jsonld.");
+}
+
+function topEntry(counts: Record<string, number>): [string, number] | undefined {
+  return Object.entries(counts).sort((first, second) => second[1] - first[1] || first[0].localeCompare(second[0]))[0];
 }

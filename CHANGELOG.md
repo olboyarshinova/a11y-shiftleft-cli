@@ -98,6 +98,8 @@
   machine-readable evidence export summaries.
 - Added URL, WCAG criterion, and WCAG level distributions to machine-readable
   evidence export summaries.
+- Added compact console summaries for `evidence export --out` with severity,
+  finding-type, URL, and WCAG criterion highlights.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.
