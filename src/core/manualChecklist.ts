@@ -1,4 +1,4 @@
-import type { DedupedIssue, ExplorationGraph, ExplorationState, Framework, ManualCheckItem, ManualChecklist, ManualChecklistEntry, ManualReviewEnvironment, ManualReviewStepRecord, ManualReviewTarget, ManualTaskEvidence, PlannedEvaluationScope } from "../types.js";
+import type { DedupedIssue, ExplorationGraph, ExplorationState, Framework, ManualCheckItem, ManualChecklist, ManualChecklistEntry, ManualReviewEnvironment, ManualReviewStepRecord, ManualReviewTarget, ManualTaskEvidence, ManualTemporaryAcceptance, PlannedEvaluationScope } from "../types.js";
 
 const MANUAL_CHECKS: ManualCheckItem[] = [
   {
@@ -459,6 +459,8 @@ ${formatEnvironmentDetailsMarkdown(item.review.environmentDetails)}
 - Missing states:
 - Task evidence attachments:
 ${formatTaskEvidenceAttachments(item.review.taskEvidence)}
+- Temporary acceptance:
+${formatTemporaryAcceptance(item.review.temporaryAcceptance)}
 - Retest date:
 - Retest result:
 - Notes:
@@ -487,6 +489,8 @@ and assistive technology checks.
 | Reviewed steps | ${summary.reviewedSteps} |
 | Task evidence attachments | ${summary.taskEvidenceAttachments} |
 | Redacted task evidence | ${summary.redactedTaskEvidence} |
+| Temporary acceptances | ${summary.temporaryAcceptances} |
+| Temporary acceptances expiring within 14 days | ${summary.temporaryAcceptanceExpiring} |
 
 ${items}`;
 }
@@ -501,7 +505,10 @@ export function summarizeManualReviewRecords(checklist: ManualChecklist): {
   reviewedSteps: number;
   taskEvidenceAttachments: number;
   redactedTaskEvidence: number;
+  temporaryAcceptances: number;
+  temporaryAcceptanceExpiring: number;
 } {
+  const now = new Date();
   return checklist.items.reduce((summary, item) => {
     summary.total += 1;
     if (item.review.status === "pass") summary.pass += 1;
@@ -514,6 +521,13 @@ export function summarizeManualReviewRecords(checklist: ManualChecklist): {
     const evidence = item.review.taskEvidence || [];
     summary.taskEvidenceAttachments += evidence.length;
     summary.redactedTaskEvidence += evidence.filter((item) => item.redacted).length;
+    const acceptance = item.review.temporaryAcceptance;
+    if (acceptance?.accepted) {
+      summary.temporaryAcceptances += 1;
+      if (isExpiringWithinDays(acceptance.acceptedUntil, now, 14)) {
+        summary.temporaryAcceptanceExpiring += 1;
+      }
+    }
     return summary;
   }, {
     total: 0,
@@ -524,7 +538,9 @@ export function summarizeManualReviewRecords(checklist: ManualChecklist): {
     stepRecords: 0,
     reviewedSteps: 0,
     taskEvidenceAttachments: 0,
-    redactedTaskEvidence: 0
+    redactedTaskEvidence: 0,
+    temporaryAcceptances: 0,
+    temporaryAcceptanceExpiring: 0
   });
 }
 
@@ -550,6 +566,13 @@ function toChecklistEntry(item: ManualCheckItem, targets: ManualReviewTarget[]):
         evidenceLinks: []
       })),
       taskEvidence: [],
+      temporaryAcceptance: {
+        accepted: false,
+        acceptedBy: "",
+        acceptedUntil: "",
+        reason: "",
+        followUp: ""
+      },
       retestDate: "",
       retestResult: "",
       notes: "",
@@ -598,6 +621,31 @@ function formatTaskEvidenceAttachments(evidence: ManualTaskEvidence[] | undefine
   return evidence.map((item) => (
     `- ${item.kind}: ${item.label}${item.url ? ` — ${item.url}` : ""}${item.redacted ? " (redacted)" : ""}${item.notes ? `; ${item.notes}` : ""}`
   )).join("\n");
+}
+
+function formatTemporaryAcceptance(acceptance: ManualTemporaryAcceptance | undefined): string {
+  const value = acceptance || {
+    accepted: false,
+    acceptedBy: "",
+    acceptedUntil: "",
+    reason: "",
+    followUp: ""
+  };
+  return [
+    `  - Accepted: ${value.accepted ? "yes" : "no"}`,
+    `  - Accepted by: ${value.acceptedBy}`,
+    `  - Accepted until: ${value.acceptedUntil}`,
+    `  - Reason: ${value.reason}`,
+    `  - Follow-up: ${value.followUp}`
+  ].join("\n");
+}
+
+function isExpiringWithinDays(value: string, now: Date, days: number): boolean {
+  if (!value) return false;
+  const expires = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(expires.getTime())) return false;
+  const msUntilExpiry = expires.getTime() - now.getTime();
+  return msUntilExpiry >= 0 && msUntilExpiry <= days * 24 * 60 * 60 * 1000;
 }
 
 function prioritizeManualChecks(

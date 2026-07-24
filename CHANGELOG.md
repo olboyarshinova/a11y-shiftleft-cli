@@ -68,6 +68,8 @@
 - Added manual-review completion, step, and task-evidence counters to
   `evaluation-scope.json` for stronger reproducibility evidence.
 - Added compact manual-review evidence counters to the visual HTML report.
+- Added temporary-acceptance fields and counters to manual review records so
+  accepted risks can include owner, expiry, reason, and follow-up evidence.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.

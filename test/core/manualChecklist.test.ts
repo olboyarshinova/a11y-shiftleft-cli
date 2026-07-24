@@ -54,6 +54,13 @@ test("createManualChecklist generates human-review checklist items", () => {
   assert.equal(checklist.items[0].review.stepReviews?.[0].status, "not-reviewed");
   assert.equal(checklist.items[0].review.stepReviews?.[0].step, checklist.items[0].steps[0]);
   assert.deepEqual(checklist.items[0].review.taskEvidence, []);
+  assert.deepEqual(checklist.items[0].review.temporaryAcceptance, {
+    accepted: false,
+    acceptedBy: "",
+    acceptedUntil: "",
+    reason: "",
+    followUp: ""
+  });
   assert.equal(checklist.items[0].review.retestDate, "");
   assert.equal(checklist.items[0].review.retestResult, "");
 });
@@ -412,6 +419,9 @@ test("toManualChecklistMarkdown renders actionable Markdown checkboxes", () => {
   assert.match(markdown, /Missing states:/);
   assert.match(markdown, /Task evidence attachments:/);
   assert.match(markdown, /redact sensitive data before sharing/);
+  assert.match(markdown, /Temporary acceptance:/);
+  assert.match(markdown, /Accepted: no/);
+  assert.match(markdown, /Accepted until:/);
   assert.match(markdown, /Retest date:/);
   assert.match(markdown, /Retest result:/);
 });
@@ -434,6 +444,13 @@ test("summarizeManualReviewRecords counts review outcomes", () => {
     notes: "Sensitive values redacted.",
     redacted: true
   }];
+  checklist.items[0].review.temporaryAcceptance = {
+    accepted: true,
+    acceptedBy: "QA owner",
+    acceptedUntil: "2099-01-01",
+    reason: "Third-party content fix is scheduled.",
+    followUp: "Retest after vendor update."
+  };
   checklist.items[1].review.status = "fail";
   checklist.items[2].review.status = "not-applicable";
 
@@ -446,6 +463,8 @@ test("summarizeManualReviewRecords counts review outcomes", () => {
     stepRecords: checklist.items.reduce((sum, item) => sum + (item.review.stepReviews?.length || 0), 0),
     reviewedSteps: 1,
     taskEvidenceAttachments: 1,
-    redactedTaskEvidence: 1
+    redactedTaskEvidence: 1,
+    temporaryAcceptances: 1,
+    temporaryAcceptanceExpiring: 0
   });
 });

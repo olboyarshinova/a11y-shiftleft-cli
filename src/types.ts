@@ -707,6 +707,14 @@ export interface ManualTaskEvidence {
   redacted: boolean;
 }
 
+export interface ManualTemporaryAcceptance {
+  accepted: boolean;
+  acceptedBy: string;
+  acceptedUntil: string;
+  reason: string;
+  followUp: string;
+}
+
 export interface ManualReviewEnvironment {
   operatingSystem: string;
   browser: string;
@@ -728,6 +736,7 @@ export interface ManualReviewRecord {
   missingStates?: string[];
   stepReviews?: ManualReviewStepRecord[];
   taskEvidence?: ManualTaskEvidence[];
+  temporaryAcceptance?: ManualTemporaryAcceptance;
   retestDate?: string;
   retestResult?: string;
   notes: string;
