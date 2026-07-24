@@ -18,6 +18,9 @@ export interface EvidenceExportRecord {
   line?: number;
   column?: number;
   message: string;
+  duplicateCount: number;
+  baselineStatus?: "new" | "existing";
+  retestStatus?: "new" | "remaining";
   wcag: Array<{
     id: string;
     title?: string;
@@ -155,6 +158,9 @@ function toJsonLdEvidenceExport(evidence: EvidenceExport) {
         "earl:outcome": jsonLdOutcome(record),
         "a11y:severity": record.severity,
         "a11y:findingType": record.findingType,
+        "a11y:duplicateCount": record.duplicateCount,
+        "a11y:baselineStatus": record.baselineStatus,
+        "a11y:retestStatus": record.retestStatus,
         "a11y:confidence": record.confidence,
         "schema:description": record.message
       },
@@ -184,6 +190,9 @@ function toEvidenceRecord(issue: DedupedIssue): EvidenceExportRecord {
     line: issue.line,
     column: issue.column,
     message: issue.message,
+    duplicateCount: issue.duplicateCount,
+    baselineStatus: issue.baselineStatus,
+    retestStatus: issue.retestStatus,
     wcag: issue.wcagCriteria.length > 0
       ? issue.wcagCriteria.map(toWcagEvidence)
       : issue.wcag.map((id) => ({ id })),

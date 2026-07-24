@@ -39,6 +39,12 @@ fingerprint. Use this shorter identifier when joining JSON, JSONL, JSON-LD,
 spreadsheets, ticket drafts, or validation-study rows without exposing the full
 fingerprint in every downstream artifact.
 
+Lifecycle fields such as `duplicateCount`, `baselineStatus`, and `retestStatus`
+are included when available. These are useful for longitudinal studies and CI
+rollouts because they show whether a finding is new, already accepted in the
+baseline, still remaining after a retest, or representative of repeated
+occurrences.
+
 The JSON-LD export is intentionally described as EARL-inspired evidence, not a
 formal conformance certificate. `needs-review` findings are represented as
 `earl:cantTell`; automated findings are represented as `earl:failed` evidence

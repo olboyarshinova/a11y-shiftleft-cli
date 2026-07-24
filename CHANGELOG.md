@@ -90,6 +90,8 @@
   missing evidence is visible before opening generated files.
 - Added stable finding record IDs to JSON, JSONL, and EARL-inspired JSON-LD
   evidence exports for easier downstream joins and validation scripts.
+- Added duplicate, baseline, and retest lifecycle metadata to machine-readable
+  evidence exports.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.

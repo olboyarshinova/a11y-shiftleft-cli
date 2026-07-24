@@ -20,6 +20,9 @@ test("createEvidenceExport normalizes findings into portable evidence records", 
   assert.equal(evidence.records[0]?.wcag[0]?.id, "4.1.2");
   assert.equal(evidence.records[0]?.ownership?.kind, "first-party");
   assert.equal(evidence.records[0]?.confidence?.score, 95);
+  assert.equal(evidence.records[0]?.duplicateCount, 2);
+  assert.equal(evidence.records[0]?.baselineStatus, "new");
+  assert.equal(evidence.records[0]?.retestStatus, "remaining");
   assert.deepEqual(evidence.records[0]?.remediation?.howToFix, ["Add accessible text."]);
 });
 
@@ -35,12 +38,18 @@ test("serializeEvidenceExport supports JSON, JSONL, and JSON-LD", () => {
   assert.equal(JSON.parse(lines[0]).generatedAt, "2026-07-14T00:00:00.000Z");
   assert.match(JSON.parse(lines[0]).id, /^finding-[a-f0-9]{16}$/);
   assert.equal(JSON.parse(lines[0]).ruleId, "button-name");
+  assert.equal(JSON.parse(lines[0]).duplicateCount, 2);
+  assert.equal(JSON.parse(lines[0]).baselineStatus, "new");
+  assert.equal(JSON.parse(lines[0]).retestStatus, "remaining");
   const linkedData = JSON.parse(jsonld);
   assert.equal(linkedData["@type"], "schema:Dataset");
   assert.equal(linkedData["schema:identifier"], "a11y-shiftleft-evidence-v1");
   assert.equal(linkedData["earl:assertions"].length, 2);
   assert.equal(linkedData["earl:assertions"][0]["@id"], `a11y:${evidence.records[0]?.id}`);
   assert.equal(linkedData["earl:assertions"][0]["earl:result"]["earl:outcome"], "earl:failed");
+  assert.equal(linkedData["earl:assertions"][0]["earl:result"]["a11y:duplicateCount"], 2);
+  assert.equal(linkedData["earl:assertions"][0]["earl:result"]["a11y:baselineStatus"], "new");
+  assert.equal(linkedData["earl:assertions"][0]["earl:result"]["a11y:retestStatus"], "remaining");
   assert.equal(linkedData["earl:assertions"][1]["earl:result"]["earl:outcome"], "earl:cantTell");
 });
 
@@ -137,7 +146,9 @@ function report(): A11yReport {
           docs: ["https://example.test/docs"]
         },
         fingerprint: "button-name::.icon-button",
-        duplicateCount: 1
+        duplicateCount: 2,
+        baselineStatus: "new",
+        retestStatus: "remaining"
       },
       {
         source: "axe",
