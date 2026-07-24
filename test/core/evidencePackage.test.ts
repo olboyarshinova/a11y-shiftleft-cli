@@ -32,7 +32,18 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   }, null, 2));
   await fs.writeFile(path.join(reportsDir, "a11y-comment.md"), "# Report\n");
   await fs.writeFile(path.join(reportsDir, "a11y-manual-checklist.md"), "# Manual\n");
-  await fs.writeFile(path.join(reportsDir, "evaluation-scope.json"), "{}\n");
+  await fs.writeFile(path.join(reportsDir, "evaluation-scope.json"), JSON.stringify({
+    reviewStatus: {
+      manualReviewItems: 5,
+      manualReviewCompleted: 3,
+      manualStepRecords: 8,
+      manualStepsCompleted: 4,
+      manualTaskEvidenceAttachments: 2,
+      manualRedactedTaskEvidence: 1,
+      manualTemporaryAcceptances: 1,
+      manualTemporaryAcceptancesExpiringSoon: 0
+    }
+  }, null, 2));
   await fs.writeFile(path.join(reportsDir, "keyboard-report.json"), "{}\n");
   await fs.writeFile(path.join(reportsDir, "exploration.html"), "<h1>Visual</h1>");
   await fs.writeFile(path.join(reportsDir, "screenshots", "state-1.jpg"), "image-data");
@@ -62,6 +73,16 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
       fixedIssues: 2,
       remainingIssues: 2
     }
+  });
+  assert.deepEqual(manifest.reviewSummary, {
+    manualReviewItems: 5,
+    manualReviewCompleted: 3,
+    manualStepRecords: 8,
+    manualStepsCompleted: 4,
+    manualTaskEvidenceAttachments: 2,
+    manualRedactedTaskEvidence: 1,
+    manualTemporaryAcceptances: 1,
+    manualTemporaryAcceptancesExpiringSoon: 0
   });
   assert.deepEqual(manifest.files.map((file) => file.path), [
     "a11y-comment.md",
@@ -94,6 +115,10 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   assert.match(summary, /Critical \| 1/);
   assert.match(summary, /Baseline new findings \| 1/);
   assert.match(summary, /Retest fixed findings \| 2/);
+  assert.match(summary, /Manual Review Summary/);
+  assert.match(summary, /Manual review completed \| 3/);
+  assert.match(summary, /Manual task evidence attachments \| 2/);
+  assert.match(summary, /Temporary acceptances \| 1/);
   assert.match(summary, /Automated report files \| 2/);
   assert.match(summary, /Manual-review files \| 1/);
   assert.match(summary, /Keyboard evidence files \| 1/);

@@ -51,6 +51,17 @@ export interface EvidencePackageReportSummary {
   };
 }
 
+export interface EvidencePackageReviewSummary {
+  manualReviewItems: number;
+  manualReviewCompleted: number;
+  manualStepRecords: number;
+  manualStepsCompleted: number;
+  manualTaskEvidenceAttachments: number;
+  manualRedactedTaskEvidence: number;
+  manualTemporaryAcceptances: number;
+  manualTemporaryAcceptancesExpiringSoon: number;
+}
+
 export interface EvidencePackageManifest {
   version: 1;
   generatedAt: string;
@@ -58,6 +69,7 @@ export interface EvidencePackageManifest {
   localOnly: true;
   includeVisual: boolean;
   reportSummary?: EvidencePackageReportSummary;
+  reviewSummary?: EvidencePackageReviewSummary;
   contentSummary: {
     automatedReports: number;
     manualReviewFiles: number;
@@ -107,6 +119,7 @@ export async function createEvidencePackage(options: {
   files.sort((left, right) => left.path.localeCompare(right.path));
   const screenshotsIncluded = files.some((file) => file.path.startsWith("screenshots/"));
   const reportSummary = await readReportSummary(reportsDir);
+  const reviewSummary = await readReviewSummary(reportsDir);
   const manifest: EvidencePackageManifest = {
     version: 1,
     generatedAt: options.generatedAt || new Date().toISOString(),
@@ -114,6 +127,7 @@ export async function createEvidencePackage(options: {
     localOnly: true,
     includeVisual: Boolean(options.includeVisual),
     ...(reportSummary ? { reportSummary } : {}),
+    ...(reviewSummary ? { reviewSummary } : {}),
     contentSummary: summarizeEvidenceContents(files),
     files,
     privacy: {
@@ -255,6 +269,39 @@ function toNumber(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
+async function readReviewSummary(reportsDir: string): Promise<EvidencePackageReviewSummary | undefined> {
+  const scopePath = path.join(reportsDir, "evaluation-scope.json");
+  try {
+    const parsed = JSON.parse(await fs.readFile(scopePath, "utf8")) as {
+      reviewStatus?: {
+        manualReviewItems?: unknown;
+        manualReviewCompleted?: unknown;
+        manualStepRecords?: unknown;
+        manualStepsCompleted?: unknown;
+        manualTaskEvidenceAttachments?: unknown;
+        manualRedactedTaskEvidence?: unknown;
+        manualTemporaryAcceptances?: unknown;
+        manualTemporaryAcceptancesExpiringSoon?: unknown;
+      };
+    };
+    const status = parsed.reviewStatus;
+    if (!status) return undefined;
+    return {
+      manualReviewItems: toNumber(status.manualReviewItems) || 0,
+      manualReviewCompleted: toNumber(status.manualReviewCompleted) || 0,
+      manualStepRecords: toNumber(status.manualStepRecords) || 0,
+      manualStepsCompleted: toNumber(status.manualStepsCompleted) || 0,
+      manualTaskEvidenceAttachments: toNumber(status.manualTaskEvidenceAttachments) || 0,
+      manualRedactedTaskEvidence: toNumber(status.manualRedactedTaskEvidence) || 0,
+      manualTemporaryAcceptances: toNumber(status.manualTemporaryAcceptances) || 0,
+      manualTemporaryAcceptancesExpiringSoon: toNumber(status.manualTemporaryAcceptancesExpiringSoon) || 0
+    };
+  } catch (error) {
+    if (isNodeError(error) && error.code === "ENOENT") return undefined;
+    throw error;
+  }
+}
+
 async function ensureDirectory(dirPath: string, label: string): Promise<void> {
   try {
     const stats = await fs.stat(dirPath);
@@ -352,6 +399,7 @@ the project team.
 | Files copied | ${manifest.files.length} |
 
 ${formatReportSummaryMarkdown(manifest.reportSummary)}
+${formatReviewSummaryMarkdown(manifest.reviewSummary)}
 
 ## Evidence Contents
 
@@ -393,6 +441,23 @@ ${summary.baseline ? `| Baseline new findings | ${summary.baseline.newIssues} |
 | Retest fixed findings | ${summary.retest.fixedIssues} |
 | Retest remaining findings | ${summary.retest.remainingIssues} |
 ` : ""}`;
+}
+
+function formatReviewSummaryMarkdown(summary: EvidencePackageReviewSummary | undefined): string {
+  if (!summary) return "";
+  return `## Manual Review Summary
+
+| Metric | Value |
+|---|---:|
+| Manual review items | ${summary.manualReviewItems} |
+| Manual review completed | ${summary.manualReviewCompleted} |
+| Manual step records | ${summary.manualStepRecords} |
+| Manual steps completed | ${summary.manualStepsCompleted} |
+| Manual task evidence attachments | ${summary.manualTaskEvidenceAttachments} |
+| Redacted manual task evidence | ${summary.manualRedactedTaskEvidence} |
+| Temporary acceptances | ${summary.manualTemporaryAcceptances} |
+| Temporary acceptances expiring soon | ${summary.manualTemporaryAcceptancesExpiringSoon} |
+`;
 }
 
 function markdownCell(value: string): string {

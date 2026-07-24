@@ -81,6 +81,8 @@
   screenshots, and raw exploration graphs.
 - Added sanitized audit, baseline, and retest count summaries to local evidence
   package manifests and Markdown summaries.
+- Added manual-review completion and temporary-acceptance summaries to local
+  evidence packages when `evaluation-scope.json` is present.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.
