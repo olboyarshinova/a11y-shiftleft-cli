@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
+import { summarizeManualReviewRecords } from "./manualChecklist.js";
 import type { A11yReport, ComplianceStandardMetadata, ExplorationGraph, Framework, PlannedEvaluationScope } from "../types.js";
 
 const require = createRequire(import.meta.url);
@@ -52,6 +53,10 @@ export interface EvaluationScopeManifest {
     automatedFindings: number;
     manualReviewItems: number;
     manualReviewCompleted: number;
+    manualStepRecords: number;
+    manualStepsCompleted: number;
+    manualTaskEvidenceAttachments: number;
+    manualRedactedTaskEvidence: number;
     needsHumanEvaluation: true;
   };
   limitations: string[];
@@ -64,6 +69,9 @@ export function createEvaluationScopeManifest(report: A11yReport): EvaluationSco
     ? unique(graph.states.map((state) => state.url))
     : requestedUrls;
   const manualItems = report.manualChecklist?.items || [];
+  const manualSummary = report.manualChecklist
+    ? summarizeManualReviewRecords(report.manualChecklist)
+    : undefined;
   const standard = report.summary.standard;
 
   return {
@@ -107,6 +115,10 @@ export function createEvaluationScopeManifest(report: A11yReport): EvaluationSco
       automatedFindings: report.issues.length,
       manualReviewItems: manualItems.length,
       manualReviewCompleted: manualItems.filter((item) => item.review.status === "pass" || item.review.status === "fail" || item.review.status === "not-applicable").length,
+      manualStepRecords: manualSummary?.stepRecords || 0,
+      manualStepsCompleted: manualSummary?.reviewedSteps || 0,
+      manualTaskEvidenceAttachments: manualSummary?.taskEvidenceAttachments || 0,
+      manualRedactedTaskEvidence: manualSummary?.redactedTaskEvidence || 0,
       needsHumanEvaluation: true
     },
     limitations: [

@@ -90,7 +90,43 @@ test("createEvaluationScopeManifest records WCAG-EM-inspired browser exploration
       }
     },
     keyboard: { steps: [] },
-    manualChecklist: { items: [] },
+    manualChecklist: {
+      generatedAt: "2026-06-25T00:00:00.000Z",
+      framework: "react",
+      urls: ["https://example.com"],
+      items: [{
+        id: "task-completion-worksheet",
+        title: "Task completion evidence worksheet",
+        principle: "understandable",
+        wcag: ["2.1.1"],
+        whyManual: "Task completion requires human review.",
+        steps: ["Complete search with keyboard."],
+        evidence: ["Task notes"],
+        review: {
+          status: "pass",
+          tester: "",
+          testedAt: "",
+          environment: "",
+          notes: "",
+          evidenceLinks: [],
+          remediationOwner: "",
+          stepReviews: [{
+            index: 1,
+            step: "Complete search with keyboard.",
+            status: "pass",
+            notes: "Completed.",
+            evidenceLinks: ["reports/manual/search.png"]
+          }],
+          taskEvidence: [{
+            kind: "screenshot",
+            label: "Search task evidence",
+            url: "reports/manual/search.png",
+            notes: "No personal data.",
+            redacted: true
+          }]
+        }
+      }]
+    },
     lighthouse: [{}]
   } as unknown as A11yReport;
 
@@ -112,5 +148,11 @@ test("createEvaluationScopeManifest records WCAG-EM-inspired browser exploration
   assert.equal(manifest.evidence.visualExploration, true);
   assert.equal(manifest.evidence.keyboardTraversal, true);
   assert.equal(manifest.evidence.lighthouseComparison, true);
+  assert.equal(manifest.reviewStatus.manualReviewItems, 1);
+  assert.equal(manifest.reviewStatus.manualReviewCompleted, 1);
+  assert.equal(manifest.reviewStatus.manualStepRecords, 1);
+  assert.equal(manifest.reviewStatus.manualStepsCompleted, 1);
+  assert.equal(manifest.reviewStatus.manualTaskEvidenceAttachments, 1);
+  assert.equal(manifest.reviewStatus.manualRedactedTaskEvidence, 1);
   assert.equal(manifest.reviewStatus.needsHumanEvaluation, true);
 });

@@ -65,6 +65,8 @@
   recordings, tickets, notes, and retest reports with redaction tracking.
 - Added manual-review summary counters for step records, reviewed steps, task
   evidence attachments, and redacted task evidence.
+- Added manual-review completion, step, and task-evidence counters to
+  `evaluation-scope.json` for stronger reproducibility evidence.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.
