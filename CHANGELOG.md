@@ -86,6 +86,8 @@
 - Added local evidence-package review hints for missing audit summaries,
   evaluation scope, manual-review summaries, keyboard evidence, and visual
   evidence choices.
+- Added evidence-package review hints to the `evidence pack` terminal output so
+  missing evidence is visible before opening generated files.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.

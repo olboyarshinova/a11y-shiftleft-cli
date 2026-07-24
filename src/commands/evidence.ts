@@ -7,7 +7,7 @@ import {
   serializeEvidenceExport,
   type EvidenceExportFormat
 } from "../core/evidenceExport.js";
-import { createEvidencePackage } from "../core/evidencePackage.js";
+import { createEvidencePackage, type EvidencePackageManifest } from "../core/evidencePackage.js";
 
 interface EvidencePackOptions {
   reports?: string;
@@ -41,9 +41,7 @@ export function registerEvidenceCommand(program: Command): void {
         includeVisual: Boolean(options.includeVisual)
       });
 
-      console.log(`Created local evidence package with ${manifest.files.length} file${manifest.files.length === 1 ? "" : "s"}: ${outputDir}`);
-      console.log(`Review before sharing: ${path.join(outputDir, "evidence-summary.md")}`);
-      console.log(`Machine-readable manifest: ${path.join(outputDir, "evidence-manifest.json")}`);
+      console.log(formatEvidencePackOutput(manifest, outputDir));
     });
 
   evidence
@@ -69,6 +67,22 @@ export function registerEvidenceCommand(program: Command): void {
 
       console.log(output);
     });
+}
+
+export function formatEvidencePackOutput(manifest: EvidencePackageManifest, outputDir: string): string {
+  const hints = manifest.reviewHints.length > 0
+    ? [
+      `Review hints: ${manifest.reviewHints.length}`,
+      ...manifest.reviewHints.slice(0, 3).map((hint) => `  - ${hint}`),
+      ...(manifest.reviewHints.length > 3 ? [`  - ${manifest.reviewHints.length - 3} more hint${manifest.reviewHints.length - 3 === 1 ? "" : "s"} in evidence-summary.md`] : [])
+    ]
+    : ["Review hints: none"];
+  return [
+    `Created local evidence package with ${manifest.files.length} file${manifest.files.length === 1 ? "" : "s"}: ${outputDir}`,
+    `Review before sharing: ${path.join(outputDir, "evidence-summary.md")}`,
+    `Machine-readable manifest: ${path.join(outputDir, "evidence-manifest.json")}`,
+    ...hints
+  ].join("\n");
 }
 
 function toEvidenceExportFormat(value: string | undefined): EvidenceExportFormat {
