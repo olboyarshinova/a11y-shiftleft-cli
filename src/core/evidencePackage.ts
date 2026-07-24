@@ -39,6 +39,15 @@ export interface EvidencePackageManifest {
   source: string;
   localOnly: true;
   includeVisual: boolean;
+  contentSummary: {
+    automatedReports: number;
+    manualReviewFiles: number;
+    evaluationScope: boolean;
+    keyboardEvidenceFiles: number;
+    visualReports: number;
+    screenshots: number;
+    rawExplorationGraph: boolean;
+  };
   files: EvidencePackageFile[];
   privacy: {
     screenshotsIncluded: boolean;
@@ -84,6 +93,7 @@ export async function createEvidencePackage(options: {
     source: path.basename(reportsDir),
     localOnly: true,
     includeVisual: Boolean(options.includeVisual),
+    contentSummary: summarizeEvidenceContents(files),
     files,
     privacy: {
       screenshotsIncluded,
@@ -202,6 +212,42 @@ function privacyWarnings(includeVisual: boolean, screenshotsIncluded: boolean): 
   return warnings;
 }
 
+function summarizeEvidenceContents(files: EvidencePackageFile[]): EvidencePackageManifest["contentSummary"] {
+  const paths = new Set(files.map((file) => file.path));
+  return {
+    automatedReports: countMatching(paths, [
+      "a11y-report.json",
+      "a11y-comment.md",
+      "a11y-summary.csv",
+      "a11y-pages.csv",
+      "a11y-rules.csv",
+      "a11y-findings.csv",
+      "a11y-metrics.csv"
+    ]),
+    manualReviewFiles: countMatching(paths, [
+      "a11y-manual-checklist.md",
+      "a11y-manual-checklist.json"
+    ]),
+    evaluationScope: paths.has("evaluation-scope.json"),
+    keyboardEvidenceFiles: countMatching(paths, [
+      "keyboard-report.json",
+      "keyboard-path.md"
+    ]),
+    visualReports: countMatching(paths, [
+      "a11y-report.html",
+      "a11y-report.pdf",
+      "exploration.html",
+      "exploration.pdf"
+    ]),
+    screenshots: files.filter((file) => file.path.startsWith("screenshots/")).length,
+    rawExplorationGraph: paths.has("exploration-graph.json")
+  };
+}
+
+function countMatching(paths: Set<string>, candidates: string[]): number {
+  return candidates.filter((candidate) => paths.has(candidate)).length;
+}
+
 function toEvidenceSummaryMarkdown(manifest: EvidencePackageManifest): string {
   const rows = manifest.files.map((file) =>
     `| \`${file.path}\` | ${file.bytes} | \`${file.sha256}\` |`
@@ -221,6 +267,18 @@ the project team.
 | Include visual evidence | ${manifest.includeVisual ? "yes" : "no"} |
 | Screenshots included | ${manifest.privacy.screenshotsIncluded ? "yes" : "no"} |
 | Files copied | ${manifest.files.length} |
+
+## Evidence Contents
+
+| Evidence type | Count |
+|---|---:|
+| Automated report files | ${manifest.contentSummary.automatedReports} |
+| Manual-review files | ${manifest.contentSummary.manualReviewFiles} |
+| Evaluation scope | ${manifest.contentSummary.evaluationScope ? 1 : 0} |
+| Keyboard evidence files | ${manifest.contentSummary.keyboardEvidenceFiles} |
+| Visual reports | ${manifest.contentSummary.visualReports} |
+| Screenshots | ${manifest.contentSummary.screenshots} |
+| Raw exploration graph | ${manifest.contentSummary.rawExplorationGraph ? 1 : 0} |
 
 ## Files
 

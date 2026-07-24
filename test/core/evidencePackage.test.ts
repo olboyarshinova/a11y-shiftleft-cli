@@ -12,7 +12,9 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   await fs.mkdir(path.join(reportsDir, "screenshots"), { recursive: true });
   await fs.writeFile(path.join(reportsDir, "a11y-report.json"), "{\"issues\":[]}\n");
   await fs.writeFile(path.join(reportsDir, "a11y-comment.md"), "# Report\n");
+  await fs.writeFile(path.join(reportsDir, "a11y-manual-checklist.md"), "# Manual\n");
   await fs.writeFile(path.join(reportsDir, "evaluation-scope.json"), "{}\n");
+  await fs.writeFile(path.join(reportsDir, "keyboard-report.json"), "{}\n");
   await fs.writeFile(path.join(reportsDir, "exploration.html"), "<h1>Visual</h1>");
   await fs.writeFile(path.join(reportsDir, "screenshots", "state-1.jpg"), "image-data");
 
@@ -25,7 +27,22 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   assert.equal(manifest.generatedAt, "2026-06-20T00:00:00.000Z");
   assert.equal(manifest.source, "reports-run-1");
   assert.equal(manifest.includeVisual, false);
-  assert.deepEqual(manifest.files.map((file) => file.path), ["a11y-comment.md", "a11y-report.json", "evaluation-scope.json"]);
+  assert.deepEqual(manifest.files.map((file) => file.path), [
+    "a11y-comment.md",
+    "a11y-manual-checklist.md",
+    "a11y-report.json",
+    "evaluation-scope.json",
+    "keyboard-report.json"
+  ]);
+  assert.deepEqual(manifest.contentSummary, {
+    automatedReports: 2,
+    manualReviewFiles: 1,
+    evaluationScope: true,
+    keyboardEvidenceFiles: 1,
+    visualReports: 0,
+    screenshots: 0,
+    rawExplorationGraph: false
+  });
   assert.match(manifest.files[0].sha256, /^[a-f0-9]{64}$/);
   assert.equal(await exists(path.join(outputDir, "exploration.html")), false);
   assert.equal(await exists(path.join(outputDir, "screenshots", "state-1.jpg")), false);
@@ -36,6 +53,9 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   assert.match(summary, /Accessibility Evidence Package/);
   assert.match(summary, /It does not upload reports anywhere/);
   assert.match(summary, /Screenshots included \| no/);
+  assert.match(summary, /Automated report files \| 2/);
+  assert.match(summary, /Manual-review files \| 1/);
+  assert.match(summary, /Keyboard evidence files \| 1/);
   assert.match(summary, /`a11y-report\.json`/);
   assert.match(summary, /`evaluation-scope\.json`/);
   assert.match(summary, /[a-f0-9]{64}/);
@@ -63,10 +83,14 @@ test("createEvidencePackage includes visual evidence only when requested", async
   assert.equal(manifest.privacy.screenshotsIncluded, true);
   assert.equal(manifest.privacy.reviewRequiredBeforeSharing, true);
   assert.equal(manifest.privacy.warnings.length, 3);
+  assert.equal(manifest.contentSummary.visualReports, 2);
+  assert.equal(manifest.contentSummary.screenshots, 1);
 
   const summary = await fs.readFile(path.join(outputDir, "evidence-summary.md"), "utf8");
   assert.match(summary, /Include visual evidence \| yes/);
   assert.match(summary, /Screenshots included \| yes/);
+  assert.match(summary, /Visual reports \| 2/);
+  assert.match(summary, /Screenshots \| 1/);
   assert.match(summary, /Visual reports may contain rendered page content/);
   assert.match(summary, /Screenshots may contain personal/);
 });

@@ -88,8 +88,8 @@ npx a11y-shiftleft-cli evidence pack --reports reports --out a11y-evidence
 ```
 
 Open `a11y-evidence/evidence-summary.md` first. It lists copied files,
-checksums, and privacy warnings. Add `--include-visual` only when screenshots
-and visual reports are approved for sharing.
+checksums, evidence categories, and privacy warnings. Add `--include-visual`
+only when screenshots and visual reports are approved for sharing.
 
 ## Running Through Npm Scripts
 

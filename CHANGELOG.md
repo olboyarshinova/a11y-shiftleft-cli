@@ -76,6 +76,9 @@
   `share-summary.md` exports.
 - Added `evidence-summary.md` to local evidence packages so reviewers can see
   copied files, checksums, and privacy warnings without opening JSON first.
+- Added evidence content summaries to local evidence packages, covering
+  automated reports, manual-review files, keyboard evidence, visual reports,
+  screenshots, and raw exploration graphs.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.
