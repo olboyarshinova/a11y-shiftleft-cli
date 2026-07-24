@@ -20,6 +20,10 @@ test("createEvidenceExport normalizes findings into portable evidence records", 
   assert.equal(evidence.summary.baselineExisting, 1);
   assert.equal(evidence.summary.retestNew, 1);
   assert.equal(evidence.summary.retestRemaining, 1);
+  assert.deepEqual(evidence.summary.bySource, { axe: 2 });
+  assert.deepEqual(evidence.summary.byCategory, { semantics: 1, contrast: 1 });
+  assert.deepEqual(evidence.summary.byConfidence, { high: 1, medium: 1 });
+  assert.deepEqual(evidence.summary.byFindingType, { wcag: 1, "needs-review": 1 });
   assert.match(evidence.records[0]?.id || "", /^finding-[a-f0-9]{16}$/);
   assert.equal(evidence.records[0]?.id, createEvidenceExport(report(), "2026-07-15T00:00:00.000Z").records[0]?.id);
   assert.equal(evidence.records[0]?.wcag[0]?.id, "4.1.2");
@@ -51,6 +55,7 @@ test("serializeEvidenceExport supports JSON, JSONL, and JSON-LD", () => {
   assert.equal(linkedData["schema:identifier"], "a11y-shiftleft-evidence-v1");
   assert.equal(linkedData["a11y:summary"].baselineNew, 1);
   assert.equal(linkedData["a11y:summary"].retestRemaining, 1);
+  assert.deepEqual(linkedData["a11y:summary"].byCategory, { semantics: 1, contrast: 1 });
   assert.equal(linkedData["earl:assertions"].length, 2);
   assert.equal(linkedData["earl:assertions"][0]["@id"], `a11y:${evidence.records[0]?.id}`);
   assert.equal(linkedData["earl:assertions"][0]["earl:result"]["earl:outcome"], "earl:failed");

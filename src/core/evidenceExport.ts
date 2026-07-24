@@ -10,6 +10,7 @@ export interface EvidenceExportRecord {
   ruleId: string;
   severity: string;
   findingType: string;
+  category: string;
   source: string;
   url?: string;
   stateId?: string;
@@ -63,6 +64,10 @@ export interface EvidenceExport {
     baselineExisting: number;
     retestNew: number;
     retestRemaining: number;
+    bySource: Record<string, number>;
+    byCategory: Record<string, number>;
+    byConfidence: Record<string, number>;
+    byFindingType: Record<string, number>;
   };
   records: EvidenceExportRecord[];
 }
@@ -95,7 +100,11 @@ export function createEvidenceExport(report: A11yReport, generatedAt = new Date(
       baselineNew: records.filter((record) => record.baselineStatus === "new").length,
       baselineExisting: records.filter((record) => record.baselineStatus === "existing").length,
       retestNew: records.filter((record) => record.retestStatus === "new").length,
-      retestRemaining: records.filter((record) => record.retestStatus === "remaining").length
+      retestRemaining: records.filter((record) => record.retestStatus === "remaining").length,
+      bySource: countBy(records, (record) => record.source),
+      byCategory: countBy(records, (record) => record.category),
+      byConfidence: countBy(records, (record) => record.confidence?.level),
+      byFindingType: countBy(records, (record) => record.findingType)
     },
     records
   };
@@ -192,6 +201,7 @@ function toEvidenceRecord(issue: DedupedIssue): EvidenceExportRecord {
     ruleId: issue.ruleId,
     severity: issue.severity,
     findingType: issue.findingType,
+    category: issue.category,
     source: issue.source,
     url: issue.url,
     stateId: issue.stateId,
@@ -228,6 +238,15 @@ function toEvidenceRecord(issue: DedupedIssue): EvidenceExportRecord {
 
 function stableEvidenceRecordId(issue: DedupedIssue): string {
   return `finding-${createHash("sha256").update(issue.fingerprint).digest("hex").slice(0, 16)}`;
+}
+
+function countBy(records: EvidenceExportRecord[], getKey: (record: EvidenceExportRecord) => string | undefined): Record<string, number> {
+  return records.reduce<Record<string, number>>((counts, record) => {
+    const key = getKey(record);
+    if (!key) return counts;
+    counts[key] = (counts[key] || 0) + 1;
+    return counts;
+  }, {});
 }
 
 function toWcagEvidence(criterion: WcagCriterion): EvidenceExportRecord["wcag"][number] {

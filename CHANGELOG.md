@@ -94,6 +94,8 @@
   evidence exports.
 - Added lifecycle aggregate counts to machine-readable evidence export
   summaries.
+- Added source, category, confidence, and finding-type distributions to
+  machine-readable evidence export summaries.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.

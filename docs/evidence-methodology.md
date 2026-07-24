@@ -50,6 +50,10 @@ occurrences, baseline-new/existing findings, and retest-new/remaining findings.
 This gives dashboards and validation scripts a quick run-level signal without
 requiring every consumer to recalculate the same aggregates.
 
+Run-level grouped counts are included for source, category, confidence, and
+finding type. These fields are intended for dashboards, spreadsheets, and
+validation scripts that need trends without parsing every record first.
+
 The JSON-LD export is intentionally described as EARL-inspired evidence, not a
 formal conformance certificate. `needs-review` findings are represented as
 `earl:cantTell`; automated findings are represented as `earl:failed` evidence
