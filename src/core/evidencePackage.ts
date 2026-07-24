@@ -33,12 +33,31 @@ export interface EvidencePackageFile {
   sha256: string;
 }
 
+export interface EvidencePackageReportSummary {
+  total: number;
+  critical: number;
+  warning: number;
+  info: number;
+  baseline?: {
+    enabled: boolean;
+    newIssues: number;
+    resolvedIssues: number;
+  };
+  retest?: {
+    enabled: boolean;
+    newIssues: number;
+    fixedIssues: number;
+    remainingIssues: number;
+  };
+}
+
 export interface EvidencePackageManifest {
   version: 1;
   generatedAt: string;
   source: string;
   localOnly: true;
   includeVisual: boolean;
+  reportSummary?: EvidencePackageReportSummary;
   contentSummary: {
     automatedReports: number;
     manualReviewFiles: number;
@@ -87,12 +106,14 @@ export async function createEvidencePackage(options: {
 
   files.sort((left, right) => left.path.localeCompare(right.path));
   const screenshotsIncluded = files.some((file) => file.path.startsWith("screenshots/"));
+  const reportSummary = await readReportSummary(reportsDir);
   const manifest: EvidencePackageManifest = {
     version: 1,
     generatedAt: options.generatedAt || new Date().toISOString(),
     source: path.basename(reportsDir),
     localOnly: true,
     includeVisual: Boolean(options.includeVisual),
+    ...(reportSummary ? { reportSummary } : {}),
     contentSummary: summarizeEvidenceContents(files),
     files,
     privacy: {
@@ -170,6 +191,68 @@ async function safeFileStats(filePath: string) {
     if (isNodeError(error) && error.code === "ENOENT") return null;
     throw error;
   }
+}
+
+async function readReportSummary(reportsDir: string): Promise<EvidencePackageReportSummary | undefined> {
+  const reportPath = path.join(reportsDir, "a11y-report.json");
+  try {
+    const parsed = JSON.parse(await fs.readFile(reportPath, "utf8")) as {
+      summary?: {
+        total?: unknown;
+        critical?: unknown;
+        warning?: unknown;
+        info?: unknown;
+        baseline?: {
+          enabled?: unknown;
+          newIssues?: unknown;
+          resolvedIssues?: unknown;
+        };
+        retest?: {
+          enabled?: unknown;
+          newIssues?: unknown;
+          fixedIssues?: unknown;
+          remainingIssues?: unknown;
+        };
+      };
+    };
+    const summary = parsed.summary;
+    if (!summary) return undefined;
+    const total = toNumber(summary.total);
+    const critical = toNumber(summary.critical);
+    const warning = toNumber(summary.warning);
+    const info = toNumber(summary.info);
+    if (total === undefined || critical === undefined || warning === undefined || info === undefined) {
+      return undefined;
+    }
+    return {
+      total,
+      critical,
+      warning,
+      info,
+      ...(summary.baseline ? {
+        baseline: {
+          enabled: summary.baseline.enabled === true,
+          newIssues: toNumber(summary.baseline.newIssues) || 0,
+          resolvedIssues: toNumber(summary.baseline.resolvedIssues) || 0
+        }
+      } : {}),
+      ...(summary.retest ? {
+        retest: {
+          enabled: summary.retest.enabled === true,
+          newIssues: toNumber(summary.retest.newIssues) || 0,
+          fixedIssues: toNumber(summary.retest.fixedIssues) || 0,
+          remainingIssues: toNumber(summary.retest.remainingIssues) || 0
+        }
+      } : {})
+    };
+  } catch (error) {
+    if (isNodeError(error) && error.code === "ENOENT") return undefined;
+    throw error;
+  }
+}
+
+function toNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
 async function ensureDirectory(dirPath: string, label: string): Promise<void> {
@@ -268,6 +351,8 @@ the project team.
 | Screenshots included | ${manifest.privacy.screenshotsIncluded ? "yes" : "no"} |
 | Files copied | ${manifest.files.length} |
 
+${formatReportSummaryMarkdown(manifest.reportSummary)}
+
 ## Evidence Contents
 
 | Evidence type | Count |
@@ -290,6 +375,24 @@ ${rows}
 
 ${warnings}
 `;
+}
+
+function formatReportSummaryMarkdown(summary: EvidencePackageReportSummary | undefined): string {
+  if (!summary) return "";
+  return `## Audit Summary
+
+| Metric | Value |
+|---|---:|
+| Total findings | ${summary.total} |
+| Critical | ${summary.critical} |
+| Warning | ${summary.warning} |
+| Info | ${summary.info} |
+${summary.baseline ? `| Baseline new findings | ${summary.baseline.newIssues} |
+| Baseline resolved findings | ${summary.baseline.resolvedIssues} |
+` : ""}${summary.retest ? `| Retest new findings | ${summary.retest.newIssues} |
+| Retest fixed findings | ${summary.retest.fixedIssues} |
+| Retest remaining findings | ${summary.retest.remainingIssues} |
+` : ""}`;
 }
 
 function markdownCell(value: string): string {

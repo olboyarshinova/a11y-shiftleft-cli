@@ -79,6 +79,8 @@
 - Added evidence content summaries to local evidence packages, covering
   automated reports, manual-review files, keyboard evidence, visual reports,
   screenshots, and raw exploration graphs.
+- Added sanitized audit, baseline, and retest count summaries to local evidence
+  package manifests and Markdown summaries.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.

@@ -10,7 +10,26 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   const reportsDir = path.join(root, "reports-run-1");
   const outputDir = path.join(root, "evidence");
   await fs.mkdir(path.join(reportsDir, "screenshots"), { recursive: true });
-  await fs.writeFile(path.join(reportsDir, "a11y-report.json"), "{\"issues\":[]}\n");
+  await fs.writeFile(path.join(reportsDir, "a11y-report.json"), JSON.stringify({
+    summary: {
+      total: 4,
+      critical: 1,
+      warning: 2,
+      info: 1,
+      baseline: {
+        enabled: true,
+        newIssues: 1,
+        resolvedIssues: 3
+      },
+      retest: {
+        enabled: true,
+        newIssues: 1,
+        fixedIssues: 2,
+        remainingIssues: 2
+      }
+    },
+    issues: []
+  }, null, 2));
   await fs.writeFile(path.join(reportsDir, "a11y-comment.md"), "# Report\n");
   await fs.writeFile(path.join(reportsDir, "a11y-manual-checklist.md"), "# Manual\n");
   await fs.writeFile(path.join(reportsDir, "evaluation-scope.json"), "{}\n");
@@ -27,6 +46,23 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   assert.equal(manifest.generatedAt, "2026-06-20T00:00:00.000Z");
   assert.equal(manifest.source, "reports-run-1");
   assert.equal(manifest.includeVisual, false);
+  assert.deepEqual(manifest.reportSummary, {
+    total: 4,
+    critical: 1,
+    warning: 2,
+    info: 1,
+    baseline: {
+      enabled: true,
+      newIssues: 1,
+      resolvedIssues: 3
+    },
+    retest: {
+      enabled: true,
+      newIssues: 1,
+      fixedIssues: 2,
+      remainingIssues: 2
+    }
+  });
   assert.deepEqual(manifest.files.map((file) => file.path), [
     "a11y-comment.md",
     "a11y-manual-checklist.md",
@@ -53,6 +89,11 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   assert.match(summary, /Accessibility Evidence Package/);
   assert.match(summary, /It does not upload reports anywhere/);
   assert.match(summary, /Screenshots included \| no/);
+  assert.match(summary, /Audit Summary/);
+  assert.match(summary, /Total findings \| 4/);
+  assert.match(summary, /Critical \| 1/);
+  assert.match(summary, /Baseline new findings \| 1/);
+  assert.match(summary, /Retest fixed findings \| 2/);
   assert.match(summary, /Automated report files \| 2/);
   assert.match(summary, /Manual-review files \| 1/);
   assert.match(summary, /Keyboard evidence files \| 1/);
@@ -74,6 +115,7 @@ test("createEvidencePackage includes visual evidence only when requested", async
 
   const manifest = await createEvidencePackage({ reportsDir, outputDir, includeVisual: true });
 
+  assert.equal(manifest.reportSummary, undefined);
   assert.deepEqual(manifest.files.map((file) => file.path), [
     "a11y-report.json",
     "exploration.html",
