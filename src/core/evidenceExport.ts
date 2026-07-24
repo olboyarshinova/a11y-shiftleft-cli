@@ -68,6 +68,9 @@ export interface EvidenceExport {
     byCategory: Record<string, number>;
     byConfidence: Record<string, number>;
     byFindingType: Record<string, number>;
+    byUrl: Record<string, number>;
+    byWcagCriterion: Record<string, number>;
+    byWcagLevel: Record<string, number>;
   };
   records: EvidenceExportRecord[];
 }
@@ -104,7 +107,10 @@ export function createEvidenceExport(report: A11yReport, generatedAt = new Date(
       bySource: countBy(records, (record) => record.source),
       byCategory: countBy(records, (record) => record.category),
       byConfidence: countBy(records, (record) => record.confidence?.level),
-      byFindingType: countBy(records, (record) => record.findingType)
+      byFindingType: countBy(records, (record) => record.findingType),
+      byUrl: countBy(records, (record) => record.url),
+      byWcagCriterion: countWcag(records, (criterion) => criterion.id),
+      byWcagLevel: countWcag(records, (criterion) => criterion.level)
     },
     records
   };
@@ -245,6 +251,17 @@ function countBy(records: EvidenceExportRecord[], getKey: (record: EvidenceExpor
     const key = getKey(record);
     if (!key) return counts;
     counts[key] = (counts[key] || 0) + 1;
+    return counts;
+  }, {});
+}
+
+function countWcag(records: EvidenceExportRecord[], getKey: (criterion: EvidenceExportRecord["wcag"][number]) => string | undefined): Record<string, number> {
+  return records.reduce<Record<string, number>>((counts, record) => {
+    for (const criterion of record.wcag) {
+      const key = getKey(criterion);
+      if (!key) continue;
+      counts[key] = (counts[key] || 0) + 1;
+    }
     return counts;
   }, {});
 }

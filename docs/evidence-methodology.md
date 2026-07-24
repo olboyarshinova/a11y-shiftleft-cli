@@ -53,6 +53,9 @@ requiring every consumer to recalculate the same aggregates.
 Run-level grouped counts are included for source, category, confidence, and
 finding type. These fields are intended for dashboards, spreadsheets, and
 validation scripts that need trends without parsing every record first.
+The export also includes grouped counts by URL, WCAG criterion, and WCAG level
+so downstream tools can summarize affected pages and standards coverage without
+recomputing those distributions.
 
 The JSON-LD export is intentionally described as EARL-inspired evidence, not a
 formal conformance certificate. `needs-review` findings are represented as
