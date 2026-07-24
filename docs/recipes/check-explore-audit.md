@@ -89,9 +89,9 @@ npx a11y-shiftleft-cli evidence pack --reports reports --out a11y-evidence
 
 Open `a11y-evidence/evidence-summary.md` first. It lists copied files,
 checksums, audit counts, baseline or retest counts when available, evidence
-categories, manual-review completion counts, and privacy warnings. Add
-`--include-visual` only when screenshots and visual reports are approved for
-sharing.
+categories, manual-review completion counts, review hints, and privacy
+warnings. Add `--include-visual` only when screenshots and visual reports are
+approved for sharing.
 
 ## Running Through Npm Scripts
 

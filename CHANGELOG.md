@@ -83,6 +83,9 @@
   package manifests and Markdown summaries.
 - Added manual-review completion and temporary-acceptance summaries to local
   evidence packages when `evaluation-scope.json` is present.
+- Added local evidence-package review hints for missing audit summaries,
+  evaluation scope, manual-review summaries, keyboard evidence, and visual
+  evidence choices.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.

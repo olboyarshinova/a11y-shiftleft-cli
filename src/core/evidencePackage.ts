@@ -70,6 +70,7 @@ export interface EvidencePackageManifest {
   includeVisual: boolean;
   reportSummary?: EvidencePackageReportSummary;
   reviewSummary?: EvidencePackageReviewSummary;
+  reviewHints: string[];
   contentSummary: {
     automatedReports: number;
     manualReviewFiles: number;
@@ -120,6 +121,7 @@ export async function createEvidencePackage(options: {
   const screenshotsIncluded = files.some((file) => file.path.startsWith("screenshots/"));
   const reportSummary = await readReportSummary(reportsDir);
   const reviewSummary = await readReviewSummary(reportsDir);
+  const contentSummary = summarizeEvidenceContents(files);
   const manifest: EvidencePackageManifest = {
     version: 1,
     generatedAt: options.generatedAt || new Date().toISOString(),
@@ -128,7 +130,8 @@ export async function createEvidencePackage(options: {
     includeVisual: Boolean(options.includeVisual),
     ...(reportSummary ? { reportSummary } : {}),
     ...(reviewSummary ? { reviewSummary } : {}),
-    contentSummary: summarizeEvidenceContents(files),
+    contentSummary,
+    reviewHints: reviewHints(contentSummary, reportSummary, reviewSummary, Boolean(options.includeVisual)),
     files,
     privacy: {
       screenshotsIncluded,
@@ -378,6 +381,35 @@ function countMatching(paths: Set<string>, candidates: string[]): number {
   return candidates.filter((candidate) => paths.has(candidate)).length;
 }
 
+function reviewHints(
+  content: EvidencePackageManifest["contentSummary"],
+  reportSummary: EvidencePackageReportSummary | undefined,
+  reviewSummary: EvidencePackageReviewSummary | undefined,
+  includeVisual: boolean
+): string[] {
+  const hints: string[] = [];
+  if (!reportSummary) {
+    hints.push("No audit count summary was found in a11y-report.json.");
+  }
+  if (!content.evaluationScope) {
+    hints.push("No evaluation-scope.json was included, so review scope and manual-review status are not documented in this package.");
+  }
+  if (!reviewSummary) {
+    hints.push("No manual-review completion summary was found.");
+  } else if (reviewSummary.manualReviewCompleted < reviewSummary.manualReviewItems) {
+    hints.push("Manual review is incomplete; review the remaining checklist items before treating this package as final evidence.");
+  }
+  if (content.keyboardEvidenceFiles === 0) {
+    hints.push("No keyboard evidence file was included.");
+  }
+  if (!includeVisual) {
+    hints.push("Visual reports and screenshots were excluded. Re-run with --include-visual only when visual evidence is approved for sharing.");
+  } else if (content.visualReports === 0 && content.screenshots === 0) {
+    hints.push("Visual evidence was requested but no visual report or screenshot files were found.");
+  }
+  return hints;
+}
+
 function toEvidenceSummaryMarkdown(manifest: EvidencePackageManifest): string {
   const rows = manifest.files.map((file) =>
     `| \`${file.path}\` | ${file.bytes} | \`${file.sha256}\` |`
@@ -400,6 +432,7 @@ the project team.
 
 ${formatReportSummaryMarkdown(manifest.reportSummary)}
 ${formatReviewSummaryMarkdown(manifest.reviewSummary)}
+${formatReviewHintsMarkdown(manifest.reviewHints)}
 
 ## Evidence Contents
 
@@ -457,6 +490,14 @@ function formatReviewSummaryMarkdown(summary: EvidencePackageReviewSummary | und
 | Redacted manual task evidence | ${summary.manualRedactedTaskEvidence} |
 | Temporary acceptances | ${summary.manualTemporaryAcceptances} |
 | Temporary acceptances expiring soon | ${summary.manualTemporaryAcceptancesExpiringSoon} |
+`;
+}
+
+function formatReviewHintsMarkdown(hints: string[]): string {
+  if (hints.length === 0) return "";
+  return `## Review Hints
+
+${hints.map((hint) => `- ${hint}`).join("\n")}
 `;
 }
 

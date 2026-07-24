@@ -100,6 +100,10 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
     screenshots: 0,
     rawExplorationGraph: false
   });
+  assert.deepEqual(manifest.reviewHints, [
+    "Manual review is incomplete; review the remaining checklist items before treating this package as final evidence.",
+    "Visual reports and screenshots were excluded. Re-run with --include-visual only when visual evidence is approved for sharing."
+  ]);
   assert.match(manifest.files[0].sha256, /^[a-f0-9]{64}$/);
   assert.equal(await exists(path.join(outputDir, "exploration.html")), false);
   assert.equal(await exists(path.join(outputDir, "screenshots", "state-1.jpg")), false);
@@ -119,6 +123,9 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   assert.match(summary, /Manual review completed \| 3/);
   assert.match(summary, /Manual task evidence attachments \| 2/);
   assert.match(summary, /Temporary acceptances \| 1/);
+  assert.match(summary, /Review Hints/);
+  assert.match(summary, /Manual review is incomplete/);
+  assert.match(summary, /Visual reports and screenshots were excluded/);
   assert.match(summary, /Automated report files \| 2/);
   assert.match(summary, /Manual-review files \| 1/);
   assert.match(summary, /Keyboard evidence files \| 1/);
@@ -152,12 +159,20 @@ test("createEvidencePackage includes visual evidence only when requested", async
   assert.equal(manifest.privacy.warnings.length, 3);
   assert.equal(manifest.contentSummary.visualReports, 2);
   assert.equal(manifest.contentSummary.screenshots, 1);
+  assert.deepEqual(manifest.reviewHints, [
+    "No audit count summary was found in a11y-report.json.",
+    "No evaluation-scope.json was included, so review scope and manual-review status are not documented in this package.",
+    "No manual-review completion summary was found.",
+    "No keyboard evidence file was included."
+  ]);
 
   const summary = await fs.readFile(path.join(outputDir, "evidence-summary.md"), "utf8");
   assert.match(summary, /Include visual evidence \| yes/);
   assert.match(summary, /Screenshots included \| yes/);
   assert.match(summary, /Visual reports \| 2/);
   assert.match(summary, /Screenshots \| 1/);
+  assert.match(summary, /No audit count summary was found/);
+  assert.match(summary, /No keyboard evidence file was included/);
   assert.match(summary, /Visual reports may contain rendered page content/);
   assert.match(summary, /Screenshots may contain personal/);
 });
