@@ -96,6 +96,10 @@ export async function createEvidencePackage(options: {
     path.join(outputDir, "evidence-manifest.json"),
     `${JSON.stringify(manifest, null, 2)}\n`
   );
+  await fs.writeFile(
+    path.join(outputDir, "evidence-summary.md"),
+    toEvidenceSummaryMarkdown(manifest)
+  );
 
   return manifest;
 }
@@ -196,6 +200,42 @@ function privacyWarnings(includeVisual: boolean, screenshotsIncluded: boolean): 
     warnings.push("Screenshots may contain personal, account, payment, or other sensitive information.");
   }
   return warnings;
+}
+
+function toEvidenceSummaryMarkdown(manifest: EvidencePackageManifest): string {
+  const rows = manifest.files.map((file) =>
+    `| \`${file.path}\` | ${file.bytes} | \`${file.sha256}\` |`
+  ).join("\n");
+  const warnings = manifest.privacy.warnings.map((warning) => `- ${warning}`).join("\n");
+
+  return `# Accessibility Evidence Package
+
+This local package contains copied accessibility report artifacts and checksums.
+It does not upload reports anywhere. Review every file before sharing it outside
+the project team.
+
+| Field | Value |
+|---|---|
+| Source | ${markdownCell(manifest.source)} |
+| Generated | ${manifest.generatedAt} |
+| Include visual evidence | ${manifest.includeVisual ? "yes" : "no"} |
+| Screenshots included | ${manifest.privacy.screenshotsIncluded ? "yes" : "no"} |
+| Files copied | ${manifest.files.length} |
+
+## Files
+
+| File | Bytes | SHA-256 |
+|---|---:|---|
+${rows}
+
+## Privacy Review
+
+${warnings}
+`;
+}
+
+function markdownCell(value: string): string {
+  return value.replace(/\|/g, "\\|").replace(/[\r\n]+/g, " ").trim();
 }
 
 function isNodeError(error: unknown): error is NodeJS.ErrnoException {

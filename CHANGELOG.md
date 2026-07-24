@@ -74,6 +74,8 @@
   visual manual-review summary.
 - Added aggregate manual-review and temporary-acceptance counters to sanitized
   `share-summary.md` exports.
+- Added `evidence-summary.md` to local evidence packages so reviewers can see
+  copied files, checksums, and privacy warnings without opening JSON first.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.

@@ -30,6 +30,15 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   assert.equal(await exists(path.join(outputDir, "exploration.html")), false);
   assert.equal(await exists(path.join(outputDir, "screenshots", "state-1.jpg")), false);
   assert.equal(await exists(path.join(outputDir, "evidence-manifest.json")), true);
+  assert.equal(await exists(path.join(outputDir, "evidence-summary.md")), true);
+
+  const summary = await fs.readFile(path.join(outputDir, "evidence-summary.md"), "utf8");
+  assert.match(summary, /Accessibility Evidence Package/);
+  assert.match(summary, /It does not upload reports anywhere/);
+  assert.match(summary, /Screenshots included \| no/);
+  assert.match(summary, /`a11y-report\.json`/);
+  assert.match(summary, /`evaluation-scope\.json`/);
+  assert.match(summary, /[a-f0-9]{64}/);
 });
 
 test("createEvidencePackage includes visual evidence only when requested", async () => {
@@ -54,6 +63,12 @@ test("createEvidencePackage includes visual evidence only when requested", async
   assert.equal(manifest.privacy.screenshotsIncluded, true);
   assert.equal(manifest.privacy.reviewRequiredBeforeSharing, true);
   assert.equal(manifest.privacy.warnings.length, 3);
+
+  const summary = await fs.readFile(path.join(outputDir, "evidence-summary.md"), "utf8");
+  assert.match(summary, /Include visual evidence \| yes/);
+  assert.match(summary, /Screenshots included \| yes/);
+  assert.match(summary, /Visual reports may contain rendered page content/);
+  assert.match(summary, /Screenshots may contain personal/);
 });
 
 test("createEvidencePackage refuses to mix with an existing output directory", async () => {

@@ -78,6 +78,19 @@ Report: reports/a11y-report.html
 Use `check` when CI only needs a pass/fail signal. Use `audit` when a person
 needs screenshots, keyboard evidence, and grouped fix guidance.
 
+## Packaging Evidence
+
+When you need a local handoff package after an audit, copy the report artifacts
+into a checksummed evidence folder:
+
+```bash
+npx a11y-shiftleft-cli evidence pack --reports reports --out a11y-evidence
+```
+
+Open `a11y-evidence/evidence-summary.md` first. It lists copied files,
+checksums, and privacy warnings. Add `--include-visual` only when screenshots
+and visual reports are approved for sharing.
+
 ## Running Through Npm Scripts
 
 When a project uses npm scripts, put command options after `--` so npm forwards

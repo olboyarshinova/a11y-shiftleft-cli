@@ -42,7 +42,8 @@ export function registerEvidenceCommand(program: Command): void {
       });
 
       console.log(`Created local evidence package with ${manifest.files.length} file${manifest.files.length === 1 ? "" : "s"}: ${outputDir}`);
-      console.log(`Review before sharing: ${path.join(outputDir, "evidence-manifest.json")}`);
+      console.log(`Review before sharing: ${path.join(outputDir, "evidence-summary.md")}`);
+      console.log(`Machine-readable manifest: ${path.join(outputDir, "evidence-manifest.json")}`);
     });
 
   evidence
