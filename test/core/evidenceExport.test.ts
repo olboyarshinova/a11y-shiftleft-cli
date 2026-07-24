@@ -15,6 +15,8 @@ test("createEvidenceExport normalizes findings into portable evidence records", 
   assert.equal(evidence.summary.critical, 1);
   assert.equal(evidence.summary.wcagMapped, 1);
   assert.equal(evidence.summary.needsReview, 1);
+  assert.match(evidence.records[0]?.id || "", /^finding-[a-f0-9]{16}$/);
+  assert.equal(evidence.records[0]?.id, createEvidenceExport(report(), "2026-07-15T00:00:00.000Z").records[0]?.id);
   assert.equal(evidence.records[0]?.wcag[0]?.id, "4.1.2");
   assert.equal(evidence.records[0]?.ownership?.kind, "first-party");
   assert.equal(evidence.records[0]?.confidence?.score, 95);
@@ -31,10 +33,13 @@ test("serializeEvidenceExport supports JSON, JSONL, and JSON-LD", () => {
   const lines = jsonl.trim().split("\n");
   assert.equal(lines.length, 2);
   assert.equal(JSON.parse(lines[0]).generatedAt, "2026-07-14T00:00:00.000Z");
+  assert.match(JSON.parse(lines[0]).id, /^finding-[a-f0-9]{16}$/);
   assert.equal(JSON.parse(lines[0]).ruleId, "button-name");
   const linkedData = JSON.parse(jsonld);
   assert.equal(linkedData["@type"], "schema:Dataset");
+  assert.equal(linkedData["schema:identifier"], "a11y-shiftleft-evidence-v1");
   assert.equal(linkedData["earl:assertions"].length, 2);
+  assert.equal(linkedData["earl:assertions"][0]["@id"], `a11y:${evidence.records[0]?.id}`);
   assert.equal(linkedData["earl:assertions"][0]["earl:result"]["earl:outcome"], "earl:failed");
   assert.equal(linkedData["earl:assertions"][1]["earl:result"]["earl:outcome"], "earl:cantTell");
 });

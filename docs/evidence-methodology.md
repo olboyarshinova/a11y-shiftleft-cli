@@ -34,6 +34,11 @@ rule, severity, WCAG metadata, URL, selector or source location, ownership,
 confidence, and remediation guidance. It does not include screenshots or
 rendered HTML.
 
+Each exported finding also has a stable `id` derived from the finding
+fingerprint. Use this shorter identifier when joining JSON, JSONL, JSON-LD,
+spreadsheets, ticket drafts, or validation-study rows without exposing the full
+fingerprint in every downstream artifact.
+
 The JSON-LD export is intentionally described as EARL-inspired evidence, not a
 formal conformance certificate. `needs-review` findings are represented as
 `earl:cantTell`; automated findings are represented as `earl:failed` evidence

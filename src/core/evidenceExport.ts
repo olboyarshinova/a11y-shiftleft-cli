@@ -1,9 +1,11 @@
+import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import type { A11yReport, DedupedIssue, WcagCriterion } from "../types.js";
 
 export type EvidenceExportFormat = "json" | "jsonl" | "jsonld";
 
 export interface EvidenceExportRecord {
+  id: string;
   fingerprint: string;
   ruleId: string;
   severity: string;
@@ -113,11 +115,13 @@ function toJsonLdEvidenceExport(evidence: EvidenceExport) {
     },
     "@type": "schema:Dataset",
     "schema:name": "a11y-shiftleft accessibility evidence export",
+    "schema:identifier": `a11y-shiftleft-evidence-v${evidence.version}`,
     "schema:dateCreated": evidence.generatedAt,
     "a11y:sourceReportGeneratedAt": evidence.sourceReportGeneratedAt,
     "a11y:localOnly": evidence.localOnly,
     "a11y:summary": evidence.summary,
     "earl:assertions": evidence.records.map((record) => ({
+      "@id": `a11y:${record.id}`,
       "@type": "earl:Assertion",
       "a11y:fingerprint": record.fingerprint,
       "earl:assertedBy": {
@@ -167,6 +171,7 @@ function jsonLdOutcome(record: EvidenceExportRecord): string {
 
 function toEvidenceRecord(issue: DedupedIssue): EvidenceExportRecord {
   return {
+    id: stableEvidenceRecordId(issue),
     fingerprint: issue.fingerprint,
     ruleId: issue.ruleId,
     severity: issue.severity,
@@ -200,6 +205,10 @@ function toEvidenceRecord(issue: DedupedIssue): EvidenceExportRecord {
       docs: issue.remediation.docs
     } : undefined
   };
+}
+
+function stableEvidenceRecordId(issue: DedupedIssue): string {
+  return `finding-${createHash("sha256").update(issue.fingerprint).digest("hex").slice(0, 16)}`;
 }
 
 function toWcagEvidence(criterion: WcagCriterion): EvidenceExportRecord["wcag"][number] {
