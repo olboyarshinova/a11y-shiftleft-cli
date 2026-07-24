@@ -1913,6 +1913,9 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /class="panel panel-full-width manual-review-checklist" id="manual-review-checklist"/);
   assert.match(html, /data-manual-checklist-progress/);
   assert.match(html, /Manual checks remaining: 1 of 1/);
+  assert.match(html, /Manual review evidence summary/);
+  assert.match(html, /0<\/strong> step records/);
+  assert.match(html, /0<\/strong> task evidence links/);
   assert.match(html, /data-manual-checklist-item="form-label-quality"/);
   assert.match(html, /data-manual-checklist-checkbox/);
   assert.match(html, /Mark Meaningful form labels and instructions as reviewed/);

@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { enrichIssueEvidence } from "../core/classification.js";
 import { compareLighthouseWithFindings } from "../core/lighthouseComparison.js";
+import { summarizeManualReviewRecords } from "../core/manualChecklist.js";
 import { formatReportDateUtc } from "../core/reportDate.js";
 import { getRemediationHint } from "../core/remediation.js";
 import type { DedupedIssue, ElementBounds, ExplorationGraph, ExplorationState, ExploreSkippedAction, IgnoreSummary, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, RemediationHint, ReportRetentionEvidence, Severity } from "../types.js";
@@ -681,6 +682,27 @@ export function renderExplorationHtml(
     .manual-checklist-progress-complete {
       color: var(--ok);
       font-weight: 700;
+    }
+
+    .manual-review-metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: -4px 0 12px;
+    }
+
+    .manual-review-metric {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      padding: 6px 8px;
+    }
+
+    .manual-review-metric strong {
+      color: var(--text);
+      font-size: 13px;
     }
 
     .manual-checklist-item {
@@ -2813,10 +2835,17 @@ function coverageRow(
 
 function renderManualChecklist(checklist: ManualChecklist): string {
   const targetedItems = checklist.items.filter((item) => item.targets?.length).length;
+  const summary = summarizeManualReviewRecords(checklist);
   return `<section class="panel panel-full-width manual-review-checklist" id="manual-review-checklist" aria-label="Manual review checklist">
     <h2>Manual Review Checklist</h2>
     <p class="muted">Automated checks cover only part of accessibility. ${targetedItems > 0 ? `${targetedItems} review area${targetedItems === 1 ? " has" : "s have"} observed targets from this audit.` : "Choose representative targets for the areas below."} Record human review evidence and outcomes.</p>
     <p class="manual-checklist-progress" data-manual-checklist-progress>Manual checks remaining: ${checklist.items.length} of ${checklist.items.length}.</p>
+    <div class="manual-review-metrics" aria-label="Manual review evidence summary">
+      <span class="manual-review-metric"><strong>${summary.stepRecords}</strong> step records</span>
+      <span class="manual-review-metric"><strong>${summary.reviewedSteps}</strong> reviewed steps</span>
+      <span class="manual-review-metric"><strong>${summary.taskEvidenceAttachments}</strong> task evidence links</span>
+      <span class="manual-review-metric"><strong>${summary.redactedTaskEvidence}</strong> redacted evidence</span>
+    </div>
     ${renderManualEnvironmentTemplate()}
     ${checklist.items.map((item) => `<article class="manual-checklist-item" data-manual-checklist-item="${escapeAttribute(item.id)}">
       <div class="manual-checklist-header">
