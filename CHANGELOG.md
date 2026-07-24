@@ -105,6 +105,10 @@
   limits, and standards preset.
 - Added evidence export scope details to the console summary so CI logs show the
   command profile, standards preset, URL count, and browser evidence.
+- Added manual-review and journey summaries to machine-readable evidence exports
+  without including screenshots or raw rendered HTML.
+- Added manual-review and journey counts to the `evidence export --out` console
+  summary when that evidence exists.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.

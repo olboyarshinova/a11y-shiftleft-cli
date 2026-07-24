@@ -57,6 +57,40 @@ test("formatEvidenceExportOutput summarizes the exported evidence dataset", () =
   assert.match(output, /Top WCAG criterion: 4\.1\.2 \(1\)/);
 });
 
+test("formatEvidenceExportOutput includes manual review and journey summaries when available", () => {
+  const evidence = createEvidenceExport(reportFixture());
+  evidence.review = {
+    manualChecklist: {
+      total: 3,
+      pass: 1,
+      fail: 1,
+      notReviewed: 1,
+      notApplicable: 0,
+      targetCount: 2,
+      journeyTargetCount: 1,
+      stepRecords: 4,
+      reviewedSteps: 2,
+      taskEvidenceAttachments: 1,
+      redactedTaskEvidence: 1,
+      temporaryAcceptances: 0,
+      temporaryAcceptanceExpiring: 0
+    },
+    journeys: [{
+      name: "Checkout",
+      urls: ["https://example.test"],
+      findingCount: 2,
+      critical: 1,
+      warning: 1,
+      info: 0
+    }]
+  };
+
+  const output = formatEvidenceExportOutput(evidence, "/tmp/evidence.json");
+
+  assert.match(output, /Manual review: 1 pass, 1 fail, 1 not reviewed, 2 targets/);
+  assert.match(output, /Journeys: 1 tracked, 2 findings/);
+});
+
 test("evidence export writes JSONL records from an accessibility report", async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-evidence-export-"));
   const reportPath = path.join(root, "a11y-report.json");

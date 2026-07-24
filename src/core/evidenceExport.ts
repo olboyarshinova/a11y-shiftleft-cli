@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import type { A11yReport, DedupedIssue, WcagCriterion } from "../types.js";
+import { summarizeManualReviewRecords } from "./manualChecklist.js";
 
 export type EvidenceExportFormat = "json" | "jsonl" | "jsonld";
 
@@ -87,12 +88,39 @@ export interface EvidenceExportProvenance {
   };
 }
 
+export interface EvidenceExportReviewSummary {
+  manualChecklist?: {
+    total: number;
+    notReviewed: number;
+    pass: number;
+    fail: number;
+    notApplicable: number;
+    targetCount: number;
+    journeyTargetCount: number;
+    stepRecords: number;
+    reviewedSteps: number;
+    taskEvidenceAttachments: number;
+    redactedTaskEvidence: number;
+    temporaryAcceptances: number;
+    temporaryAcceptanceExpiring: number;
+  };
+  journeys?: Array<{
+    name: string;
+    urls: string[];
+    findingCount: number;
+    critical: number;
+    warning: number;
+    info: number;
+  }>;
+}
+
 export interface EvidenceExport {
   version: 1;
   generatedAt: string;
   sourceReportGeneratedAt: string;
   localOnly: true;
   provenance: EvidenceExportProvenance;
+  review?: EvidenceExportReviewSummary;
   summary: {
     total: number;
     critical: number;
@@ -127,6 +155,7 @@ export async function readA11yReport(reportPath: string): Promise<A11yReport> {
 
 export function createEvidenceExport(report: A11yReport, generatedAt = new Date().toISOString()): EvidenceExport {
   const records = report.issues.map(toEvidenceRecord);
+  const review = toEvidenceReviewSummary(report);
 
   return {
     version: 1,
@@ -134,6 +163,7 @@ export function createEvidenceExport(report: A11yReport, generatedAt = new Date(
     sourceReportGeneratedAt: report.generatedAt,
     localOnly: true,
     provenance: toEvidenceProvenance(report),
+    ...(review ? { review } : {}),
     summary: {
       total: records.length,
       critical: records.filter((record) => record.severity === "critical").length,
@@ -192,6 +222,7 @@ function toJsonLdEvidenceExport(evidence: EvidenceExport) {
     "a11y:sourceReportGeneratedAt": evidence.sourceReportGeneratedAt,
     "a11y:localOnly": evidence.localOnly,
     "a11y:provenance": evidence.provenance,
+    "a11y:review": evidence.review,
     "a11y:summary": evidence.summary,
     "earl:assertions": evidence.records.map((record) => ({
       "@id": `a11y:${record.id}`,
@@ -237,6 +268,38 @@ function toJsonLdEvidenceExport(evidence: EvidenceExport) {
       "a11y:ownership": record.ownership,
       "a11y:remediation": record.remediation
     }))
+  };
+}
+
+function toEvidenceReviewSummary(report: A11yReport): EvidenceExportReviewSummary | undefined {
+  const manualChecklist = report.manualChecklist
+    ? toManualEvidenceSummary(report)
+    : undefined;
+  const journeys = report.summary.journeyImpact?.map((journey) => ({
+    name: journey.name,
+    urls: journey.urls,
+    findingCount: journey.findingCount,
+    critical: journey.critical,
+    warning: journey.warning,
+    info: journey.info
+  }));
+
+  if (!manualChecklist && !journeys?.length) return undefined;
+  return {
+    ...(manualChecklist ? { manualChecklist } : {}),
+    ...(journeys?.length ? { journeys } : {})
+  };
+}
+
+function toManualEvidenceSummary(report: A11yReport): NonNullable<EvidenceExportReviewSummary["manualChecklist"]> | undefined {
+  if (!report.manualChecklist) return undefined;
+  const summary = summarizeManualReviewRecords(report.manualChecklist);
+  const targets = report.manualChecklist.items.flatMap((item) => item.targets || []);
+
+  return {
+    ...summary,
+    targetCount: targets.length,
+    journeyTargetCount: targets.filter((target) => target.kind === "journey").length
   };
 }
 

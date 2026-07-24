@@ -40,6 +40,12 @@ automation flags, scan limits, and selected standards preset. This helps another
 script or reviewer understand how the evidence was produced without reopening
 the original report.
 
+When a report includes manual-review or journey evidence, the export includes a
+compact review summary with checklist status counts, target counts, task
+evidence counts, temporary acceptances, and journey impact totals. This keeps
+manual validation work visible next to automated findings without exporting
+screenshots or raw HTML.
+
 When writing to `--out`, the command prints a compact run summary with severity
 counts, finding types, the most affected URL, and the most common WCAG criterion.
 This keeps CI logs and validation runs readable without opening the full export.

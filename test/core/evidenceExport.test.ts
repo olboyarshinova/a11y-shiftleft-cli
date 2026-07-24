@@ -15,6 +15,12 @@ test("createEvidenceExport normalizes findings into portable evidence records", 
   assert.deepEqual(evidence.provenance.requestedUrls, ["https://example.test"]);
   assert.equal(evidence.provenance.automation?.browserAutomation, true);
   assert.equal(evidence.provenance.standard?.id, "wcag22-aa");
+  assert.equal(evidence.review?.manualChecklist?.total, 1);
+  assert.equal(evidence.review?.manualChecklist?.fail, 1);
+  assert.equal(evidence.review?.manualChecklist?.targetCount, 1);
+  assert.equal(evidence.review?.manualChecklist?.journeyTargetCount, 1);
+  assert.equal(evidence.review?.journeys?.[0]?.name, "Checkout");
+  assert.equal(evidence.review?.journeys?.[0]?.findingCount, 1);
   assert.equal(evidence.summary.total, 2);
   assert.equal(evidence.summary.critical, 1);
   assert.equal(evidence.summary.wcagMapped, 1);
@@ -64,6 +70,8 @@ test("serializeEvidenceExport supports JSON, JSONL, and JSON-LD", () => {
   assert.equal(linkedData["schema:identifier"], "a11y-shiftleft-evidence-v1");
   assert.equal(linkedData["a11y:provenance"].command.name, "audit");
   assert.equal(linkedData["a11y:provenance"].standard.id, "wcag22-aa");
+  assert.equal(linkedData["a11y:review"].manualChecklist.total, 1);
+  assert.equal(linkedData["a11y:review"].journeys[0].name, "Checkout");
   assert.equal(linkedData["a11y:summary"].baselineNew, 1);
   assert.equal(linkedData["a11y:summary"].retestRemaining, 1);
   assert.deepEqual(linkedData["a11y:summary"].byCategory, { semantics: 1, contrast: 1 });
@@ -125,6 +133,14 @@ function report(): A11yReport {
         requiresManualReview: true,
         disclaimer: "Automated evidence is not a conformance claim."
       },
+      journeyImpact: [{
+        name: "Checkout",
+        urls: ["https://example.test"],
+        findingCount: 1,
+        critical: 1,
+        warning: 0,
+        info: 0
+      }],
       complianceEvidence: {
         totalFindings: 2,
         wcagMappedFindings: 1,
@@ -143,6 +159,37 @@ function report(): A11yReport {
       byWcagVersion: {},
       byUnmappedRule: {},
       byPage: []
+    },
+    manualChecklist: {
+      generatedAt: "2026-07-13T00:00:00.000Z",
+      framework: "react",
+      urls: ["https://example.test"],
+      items: [{
+        id: "task-completion-worksheet",
+        title: "Task completion worksheet",
+        principle: "understandable",
+        wcag: ["3.3.2"],
+        whyManual: "Representative tasks require human confirmation.",
+        steps: ["Complete the checkout task with keyboard only."],
+        evidence: ["Task outcome and blocker notes."],
+        targets: [{
+          id: "journey:Checkout",
+          kind: "journey",
+          label: "Checkout",
+          url: "https://example.test",
+          stateId: "state-1",
+          evidence: "Planned critical journey"
+        }],
+        review: {
+          status: "fail",
+          tester: "QA",
+          testedAt: "2026-07-13",
+          environment: "Desktop browser",
+          notes: "Keyboard-only checkout blocked.",
+          evidenceLinks: [],
+          remediationOwner: "Frontend"
+        }
+      }]
     },
     issues: [
       {

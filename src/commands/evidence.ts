@@ -94,10 +94,27 @@ export function formatEvidenceExportOutput(evidence: EvidenceExport, outputPath:
     `Wrote ${evidence.records.length} evidence record${evidence.records.length === 1 ? "" : "s"} to ${outputPath}`,
     `Scope: ${formatEvidenceScope(evidence)}`,
     `Summary: ${evidence.summary.critical} critical, ${evidence.summary.warning} warning, ${evidence.summary.info} info`,
+    ...formatEvidenceReviewLines(evidence),
     `Evidence types: ${evidence.summary.wcagMapped} WCAG-mapped, ${evidence.summary.needsReview} needs review, ${evidence.summary.bestPractice} best practice`,
     topUrl ? `Top URL: ${topUrl[0]} (${topUrl[1]})` : "Top URL: none",
     topCriterion ? `Top WCAG criterion: ${topCriterion[0]} (${topCriterion[1]})` : "Top WCAG criterion: none"
   ].join("\n");
+}
+
+function formatEvidenceReviewLines(evidence: EvidenceExport): string[] {
+  const manual = evidence.review?.manualChecklist;
+  const journeys = evidence.review?.journeys || [];
+  const journeyFindings = journeys.reduce((sum, journey) => sum + journey.findingCount, 0);
+  if (!manual && journeys.length === 0) return [];
+
+  return [
+    manual
+      ? `Manual review: ${manual.pass} pass, ${manual.fail} fail, ${manual.notReviewed} not reviewed, ${manual.targetCount} target${manual.targetCount === 1 ? "" : "s"}`
+      : "Manual review: not included",
+    journeys.length > 0
+      ? `Journeys: ${journeys.length} tracked, ${journeyFindings} finding${journeyFindings === 1 ? "" : "s"}`
+      : "Journeys: none"
+  ];
 }
 
 function formatEvidenceScope(evidence: EvidenceExport): string {
