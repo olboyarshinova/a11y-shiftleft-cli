@@ -34,6 +34,12 @@ rule, severity, WCAG metadata, URL, selector or source location, ownership,
 confidence, and remediation guidance. It does not include screenshots or
 rendered HTML.
 
+The export includes compact provenance metadata from the source report: tool
+version, command profile, requested and included URLs, browser evidence,
+automation flags, scan limits, and selected standards preset. This helps another
+script or reviewer understand how the evidence was produced without reopening
+the original report.
+
 When writing to `--out`, the command prints a compact run summary with severity
 counts, finding types, the most affected URL, and the most common WCAG criterion.
 This keeps CI logs and validation runs readable without opening the full export.

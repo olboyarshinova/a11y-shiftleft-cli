@@ -46,11 +46,53 @@ export interface EvidenceExportRecord {
   };
 }
 
+export interface EvidenceExportProvenance {
+  tool?: {
+    name: string;
+    version: string;
+    nodeVersion: string;
+  };
+  command?: {
+    name: string;
+    profile: string;
+  };
+  requestedUrls: string[];
+  includedUrls: string[];
+  outputFormats: string[];
+  browsers?: Array<{
+    engine: string;
+    name: string;
+    version?: string;
+    source: string;
+  }>;
+  automation?: {
+    staticAnalysis: boolean;
+    browserAutomation: boolean;
+    keyboardTraversal: boolean;
+    lighthouseComparison: boolean;
+    manualChecklist: boolean;
+  };
+  limits?: {
+    maxDepth?: number;
+    maxStates?: number;
+    maxTabs?: number;
+  };
+  standard?: {
+    id: string;
+    label: string;
+    wcagVersion: string;
+    wcagLevel: string;
+    automatedCoverage: string;
+    requiresManualReview: boolean;
+  };
+}
+
 export interface EvidenceExport {
   version: 1;
   generatedAt: string;
   sourceReportGeneratedAt: string;
   localOnly: true;
+  provenance: EvidenceExportProvenance;
   summary: {
     total: number;
     critical: number;
@@ -91,6 +133,7 @@ export function createEvidenceExport(report: A11yReport, generatedAt = new Date(
     generatedAt,
     sourceReportGeneratedAt: report.generatedAt,
     localOnly: true,
+    provenance: toEvidenceProvenance(report),
     summary: {
       total: records.length,
       critical: records.filter((record) => record.severity === "critical").length,
@@ -122,6 +165,7 @@ export function serializeEvidenceExport(evidence: EvidenceExport, format: Eviden
       generatedAt: evidence.generatedAt,
       sourceReportGeneratedAt: evidence.sourceReportGeneratedAt,
       localOnly: evidence.localOnly,
+      provenance: evidence.provenance,
       ...record
     })).join("\n")}\n`;
   }
@@ -147,6 +191,7 @@ function toJsonLdEvidenceExport(evidence: EvidenceExport) {
     "schema:dateCreated": evidence.generatedAt,
     "a11y:sourceReportGeneratedAt": evidence.sourceReportGeneratedAt,
     "a11y:localOnly": evidence.localOnly,
+    "a11y:provenance": evidence.provenance,
     "a11y:summary": evidence.summary,
     "earl:assertions": evidence.records.map((record) => ({
       "@id": `a11y:${record.id}`,
@@ -192,6 +237,30 @@ function toJsonLdEvidenceExport(evidence: EvidenceExport) {
       "a11y:ownership": record.ownership,
       "a11y:remediation": record.remediation
     }))
+  };
+}
+
+function toEvidenceProvenance(report: A11yReport): EvidenceExportProvenance {
+  const trail = report.summary.auditTrail;
+  const standard = report.summary.standard;
+
+  return {
+    tool: trail?.tool,
+    command: trail?.command,
+    requestedUrls: trail?.requestedUrls || report.summary.urls || [],
+    includedUrls: trail?.includedUrls || report.summary.urls || [],
+    outputFormats: trail?.outputFormats || [],
+    browsers: trail?.browsers,
+    automation: trail?.automation,
+    limits: trail?.limits,
+    standard: standard ? {
+      id: standard.id,
+      label: standard.label,
+      wcagVersion: standard.wcagVersion,
+      wcagLevel: standard.wcagLevel,
+      automatedCoverage: standard.automatedCoverage,
+      requiresManualReview: standard.requiresManualReview
+    } : undefined
   };
 }
 

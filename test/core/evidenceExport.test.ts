@@ -11,6 +11,10 @@ test("createEvidenceExport normalizes findings into portable evidence records", 
 
   assert.equal(evidence.version, 1);
   assert.equal(evidence.localOnly, true);
+  assert.deepEqual(evidence.provenance.command, { name: "audit", profile: "validation" });
+  assert.deepEqual(evidence.provenance.requestedUrls, ["https://example.test"]);
+  assert.equal(evidence.provenance.automation?.browserAutomation, true);
+  assert.equal(evidence.provenance.standard?.id, "wcag22-aa");
   assert.equal(evidence.summary.total, 2);
   assert.equal(evidence.summary.critical, 1);
   assert.equal(evidence.summary.wcagMapped, 1);
@@ -48,6 +52,8 @@ test("serializeEvidenceExport supports JSON, JSONL, and JSON-LD", () => {
   const lines = jsonl.trim().split("\n");
   assert.equal(lines.length, 2);
   assert.equal(JSON.parse(lines[0]).generatedAt, "2026-07-14T00:00:00.000Z");
+  assert.equal(JSON.parse(lines[0]).provenance.command.name, "audit");
+  assert.equal(JSON.parse(lines[0]).provenance.standard.id, "wcag22-aa");
   assert.match(JSON.parse(lines[0]).id, /^finding-[a-f0-9]{16}$/);
   assert.equal(JSON.parse(lines[0]).ruleId, "button-name");
   assert.equal(JSON.parse(lines[0]).duplicateCount, 2);
@@ -56,6 +62,8 @@ test("serializeEvidenceExport supports JSON, JSONL, and JSON-LD", () => {
   const linkedData = JSON.parse(jsonld);
   assert.equal(linkedData["@type"], "schema:Dataset");
   assert.equal(linkedData["schema:identifier"], "a11y-shiftleft-evidence-v1");
+  assert.equal(linkedData["a11y:provenance"].command.name, "audit");
+  assert.equal(linkedData["a11y:provenance"].standard.id, "wcag22-aa");
   assert.equal(linkedData["a11y:summary"].baselineNew, 1);
   assert.equal(linkedData["a11y:summary"].retestRemaining, 1);
   assert.deepEqual(linkedData["a11y:summary"].byCategory, { semantics: 1, contrast: 1 });
@@ -107,6 +115,15 @@ function report(): A11yReport {
           manualChecklist: false
         },
         boundaries: ["Automated findings are evidence for triage."]
+      },
+      standard: {
+        id: "wcag22-aa",
+        label: "WCAG 2.2 AA support mode",
+        wcagVersion: "2.2",
+        wcagLevel: "AA",
+        automatedCoverage: "partial",
+        requiresManualReview: true,
+        disclaimer: "Automated evidence is not a conformance claim."
       },
       complianceEvidence: {
         totalFindings: 2,

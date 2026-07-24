@@ -100,6 +100,9 @@
   evidence export summaries.
 - Added compact console summaries for `evidence export --out` with severity,
   finding-type, URL, and WCAG criterion highlights.
+- Added compact provenance metadata to machine-readable evidence exports,
+  including command profile, URL scope, automation flags, browser evidence, scan
+  limits, and standards preset.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.
