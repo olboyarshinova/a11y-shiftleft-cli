@@ -2845,6 +2845,8 @@ function renderManualChecklist(checklist: ManualChecklist): string {
       <span class="manual-review-metric"><strong>${summary.reviewedSteps}</strong> reviewed steps</span>
       <span class="manual-review-metric"><strong>${summary.taskEvidenceAttachments}</strong> task evidence links</span>
       <span class="manual-review-metric"><strong>${summary.redactedTaskEvidence}</strong> redacted evidence</span>
+      <span class="manual-review-metric"><strong>${summary.temporaryAcceptances}</strong> temporary acceptances</span>
+      <span class="manual-review-metric"><strong>${summary.temporaryAcceptanceExpiring}</strong> expiring soon</span>
     </div>
     ${renderManualEnvironmentTemplate()}
     ${checklist.items.map((item) => `<article class="manual-checklist-item" data-manual-checklist-item="${escapeAttribute(item.id)}">

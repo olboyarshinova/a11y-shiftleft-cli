@@ -123,7 +123,14 @@ test("createEvaluationScopeManifest records WCAG-EM-inspired browser exploration
             url: "reports/manual/search.png",
             notes: "No personal data.",
             redacted: true
-          }]
+          }],
+          temporaryAcceptance: {
+            accepted: true,
+            acceptedBy: "Accessibility lead",
+            acceptedUntil: "2099-01-01",
+            reason: "Vendor embed remediation is scheduled.",
+            followUp: "Retest after vendor update."
+          }
         }
       }]
     },
@@ -154,5 +161,7 @@ test("createEvaluationScopeManifest records WCAG-EM-inspired browser exploration
   assert.equal(manifest.reviewStatus.manualStepsCompleted, 1);
   assert.equal(manifest.reviewStatus.manualTaskEvidenceAttachments, 1);
   assert.equal(manifest.reviewStatus.manualRedactedTaskEvidence, 1);
+  assert.equal(manifest.reviewStatus.manualTemporaryAcceptances, 1);
+  assert.equal(manifest.reviewStatus.manualTemporaryAcceptancesExpiringSoon, 0);
   assert.equal(manifest.reviewStatus.needsHumanEvaluation, true);
 });

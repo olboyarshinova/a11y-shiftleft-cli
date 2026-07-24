@@ -70,6 +70,8 @@
 - Added compact manual-review evidence counters to the visual HTML report.
 - Added temporary-acceptance fields and counters to manual review records so
   accepted risks can include owner, expiry, reason, and follow-up evidence.
+- Surfaced temporary-acceptance counters in `evaluation-scope.json` and the
+  visual manual-review summary.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.

@@ -57,6 +57,8 @@ export interface EvaluationScopeManifest {
     manualStepsCompleted: number;
     manualTaskEvidenceAttachments: number;
     manualRedactedTaskEvidence: number;
+    manualTemporaryAcceptances: number;
+    manualTemporaryAcceptancesExpiringSoon: number;
     needsHumanEvaluation: true;
   };
   limitations: string[];
@@ -119,6 +121,8 @@ export function createEvaluationScopeManifest(report: A11yReport): EvaluationSco
       manualStepsCompleted: manualSummary?.reviewedSteps || 0,
       manualTaskEvidenceAttachments: manualSummary?.taskEvidenceAttachments || 0,
       manualRedactedTaskEvidence: manualSummary?.redactedTaskEvidence || 0,
+      manualTemporaryAcceptances: manualSummary?.temporaryAcceptances || 0,
+      manualTemporaryAcceptancesExpiringSoon: manualSummary?.temporaryAcceptanceExpiring || 0,
       needsHumanEvaluation: true
     },
     limitations: [
