@@ -15,6 +15,11 @@ test("createEvidenceExport normalizes findings into portable evidence records", 
   assert.equal(evidence.summary.critical, 1);
   assert.equal(evidence.summary.wcagMapped, 1);
   assert.equal(evidence.summary.needsReview, 1);
+  assert.equal(evidence.summary.duplicateOccurrences, 2);
+  assert.equal(evidence.summary.baselineNew, 1);
+  assert.equal(evidence.summary.baselineExisting, 1);
+  assert.equal(evidence.summary.retestNew, 1);
+  assert.equal(evidence.summary.retestRemaining, 1);
   assert.match(evidence.records[0]?.id || "", /^finding-[a-f0-9]{16}$/);
   assert.equal(evidence.records[0]?.id, createEvidenceExport(report(), "2026-07-15T00:00:00.000Z").records[0]?.id);
   assert.equal(evidence.records[0]?.wcag[0]?.id, "4.1.2");
@@ -44,6 +49,8 @@ test("serializeEvidenceExport supports JSON, JSONL, and JSON-LD", () => {
   const linkedData = JSON.parse(jsonld);
   assert.equal(linkedData["@type"], "schema:Dataset");
   assert.equal(linkedData["schema:identifier"], "a11y-shiftleft-evidence-v1");
+  assert.equal(linkedData["a11y:summary"].baselineNew, 1);
+  assert.equal(linkedData["a11y:summary"].retestRemaining, 1);
   assert.equal(linkedData["earl:assertions"].length, 2);
   assert.equal(linkedData["earl:assertions"][0]["@id"], `a11y:${evidence.records[0]?.id}`);
   assert.equal(linkedData["earl:assertions"][0]["earl:result"]["earl:outcome"], "earl:failed");
@@ -165,7 +172,9 @@ function report(): A11yReport {
         category: "contrast",
         message: "Potential contrast issue needs manual review",
         fingerprint: "color-review::.hero",
-        duplicateCount: 1
+        duplicateCount: 2,
+        baselineStatus: "existing",
+        retestStatus: "new"
       }
     ]
   };

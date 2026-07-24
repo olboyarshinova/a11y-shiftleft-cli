@@ -45,6 +45,11 @@ rollouts because they show whether a finding is new, already accepted in the
 baseline, still remaining after a retest, or representative of repeated
 occurrences.
 
+The export summary also includes lifecycle counts, including duplicate
+occurrences, baseline-new/existing findings, and retest-new/remaining findings.
+This gives dashboards and validation scripts a quick run-level signal without
+requiring every consumer to recalculate the same aggregates.
+
 The JSON-LD export is intentionally described as EARL-inspired evidence, not a
 formal conformance certificate. `needs-review` findings are represented as
 `earl:cantTell`; automated findings are represented as `earl:failed` evidence

@@ -58,6 +58,11 @@ export interface EvidenceExport {
     wcagMapped: number;
     needsReview: number;
     bestPractice: number;
+    duplicateOccurrences: number;
+    baselineNew: number;
+    baselineExisting: number;
+    retestNew: number;
+    retestRemaining: number;
   };
   records: EvidenceExportRecord[];
 }
@@ -85,7 +90,12 @@ export function createEvidenceExport(report: A11yReport, generatedAt = new Date(
       info: records.filter((record) => record.severity === "info").length,
       wcagMapped: records.filter((record) => record.wcag.length > 0).length,
       needsReview: records.filter((record) => record.findingType === "needs-review").length,
-      bestPractice: records.filter((record) => record.findingType === "best-practice").length
+      bestPractice: records.filter((record) => record.findingType === "best-practice").length,
+      duplicateOccurrences: records.reduce((sum, record) => sum + Math.max(0, record.duplicateCount - 1), 0),
+      baselineNew: records.filter((record) => record.baselineStatus === "new").length,
+      baselineExisting: records.filter((record) => record.baselineStatus === "existing").length,
+      retestNew: records.filter((record) => record.retestStatus === "new").length,
+      retestRemaining: records.filter((record) => record.retestStatus === "remaining").length
     },
     records
   };

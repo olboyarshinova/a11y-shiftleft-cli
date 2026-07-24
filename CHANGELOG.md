@@ -92,6 +92,8 @@
   evidence exports for easier downstream joins and validation scripts.
 - Added duplicate, baseline, and retest lifecycle metadata to machine-readable
   evidence exports.
+- Added lifecycle aggregate counts to machine-readable evidence export
+  summaries.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.
