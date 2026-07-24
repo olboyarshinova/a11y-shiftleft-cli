@@ -100,6 +100,18 @@ test("prepareShareReport writes sanitized local share artifacts", async () => {
       keyboardTraversal: true,
       lighthouseComparison: false,
       manualChecklist: true
+    },
+    reviewStatus: {
+      automatedFindings: 1,
+      manualReviewItems: 4,
+      manualReviewCompleted: 2,
+      manualStepRecords: 5,
+      manualStepsCompleted: 3,
+      manualTaskEvidenceAttachments: 2,
+      manualRedactedTaskEvidence: 1,
+      manualTemporaryAcceptances: 1,
+      manualTemporaryAcceptancesExpiringSoon: 0,
+      needsHumanEvaluation: true
     }
   }, null, 2));
 
@@ -143,6 +155,11 @@ test("prepareShareReport writes sanitized local share artifacts", async () => {
   assert.match(markdown, /Rendered states \| 2/);
   assert.match(markdown, /Automated sources \| axe/);
   assert.match(markdown, /Keyboard traversal \| yes/);
+  assert.match(markdown, /Manual review completed \| 2/);
+  assert.match(markdown, /Manual steps completed \| 3/);
+  assert.match(markdown, /Manual task evidence attachments \| 2/);
+  assert.match(markdown, /Temporary acceptances \| 1/);
+  assert.match(markdown, /Temporary acceptances expiring soon \| 0/);
 });
 
 test("prepareShareReport can write a self-contained visual HTML copy", async () => {

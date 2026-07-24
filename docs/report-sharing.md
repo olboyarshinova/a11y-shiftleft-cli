@@ -54,7 +54,9 @@ When the source report directory contains `evaluation-scope.json`, the export
 also writes a sanitized `share-evaluation-scope.json`. This preserves the
 WCAG-EM-inspired review scope without including screenshots or raw browser
 evidence. The Markdown `share-summary.md` also includes a compact sanitized
-scope table so reviewers can understand what was included without opening JSON.
+scope table so reviewers can understand what was included without opening JSON,
+including aggregate manual-review counts such as completed review items,
+recorded task evidence, and temporary acceptances.
 
 ## One-File Visual HTML
 

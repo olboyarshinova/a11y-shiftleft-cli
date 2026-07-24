@@ -72,6 +72,8 @@
   accepted risks can include owner, expiry, reason, and follow-up evidence.
 - Surfaced temporary-acceptance counters in `evaluation-scope.json` and the
   visual manual-review summary.
+- Added aggregate manual-review and temporary-acceptance counters to sanitized
+  `share-summary.md` exports.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.

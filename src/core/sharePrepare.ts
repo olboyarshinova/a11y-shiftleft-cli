@@ -381,6 +381,16 @@ function formatShareScope(scope: unknown): string {
       manualChecklist?: unknown;
       automatedSources?: unknown[];
     };
+    reviewStatus?: {
+      manualReviewItems?: unknown;
+      manualReviewCompleted?: unknown;
+      manualStepRecords?: unknown;
+      manualStepsCompleted?: unknown;
+      manualTaskEvidenceAttachments?: unknown;
+      manualRedactedTaskEvidence?: unknown;
+      manualTemporaryAcceptances?: unknown;
+      manualTemporaryAcceptancesExpiringSoon?: unknown;
+    };
   };
   const targetUrls = source.target?.urlsRequested?.filter((url): url is string => typeof url === "string") || [];
   const includedUrls = source.sample?.includedUrls?.filter((url): url is string => typeof url === "string") || [];
@@ -406,8 +416,20 @@ This WCAG-EM-inspired scope summary is sanitized for external review. It is repr
 | Keyboard traversal | ${source.evidence?.keyboardTraversal === true ? "yes" : "no"} |
 | Lighthouse comparison | ${source.evidence?.lighthouseComparison === true ? "yes" : "no"} |
 | Manual checklist | ${source.evidence?.manualChecklist === true ? "yes" : "no"} |
+| Manual review items | ${formatScopeNumber(source.reviewStatus?.manualReviewItems)} |
+| Manual review completed | ${formatScopeNumber(source.reviewStatus?.manualReviewCompleted)} |
+| Manual step records | ${formatScopeNumber(source.reviewStatus?.manualStepRecords)} |
+| Manual steps completed | ${formatScopeNumber(source.reviewStatus?.manualStepsCompleted)} |
+| Manual task evidence attachments | ${formatScopeNumber(source.reviewStatus?.manualTaskEvidenceAttachments)} |
+| Redacted manual task evidence | ${formatScopeNumber(source.reviewStatus?.manualRedactedTaskEvidence)} |
+| Temporary acceptances | ${formatScopeNumber(source.reviewStatus?.manualTemporaryAcceptances)} |
+| Temporary acceptances expiring soon | ${formatScopeNumber(source.reviewStatus?.manualTemporaryAcceptancesExpiringSoon)} |
 | Representative states | ${markdownCell(representativeStates)} |
 `;
+}
+
+function formatScopeNumber(value: unknown): string {
+  return typeof value === "number" ? String(value) : "not included";
 }
 
 function formatCountMap(value: Record<string, number> | undefined): string {
