@@ -2817,11 +2817,14 @@ function coverageRow(
   const checkboxLabel = automated
     ? `${area}: evidence collected automatically`
     : `${area}: mark manual review complete`;
+  const statusHtml = status === "Checklist ready" && !automated
+    ? `<a href="#manual-review-checklist">Checklist ready</a>`
+    : escapeHtml(status);
   const html = `<tr class="coverage-row-${automated ? "automated" : "review"} coverage-row-state-${state}"${automated ? "" : ` data-coverage-review="${escapeAttribute(id)}"`}>
     <td class="coverage-check-cell"><label><span class="visually-hidden">${escapeHtml(checkboxLabel)}</span><input type="checkbox"${automated ? " checked disabled" : ""}></label></td>
     <th scope="row">${escapeHtml(area)}</th>
     <td class="coverage-state-cell"><span class="coverage-state coverage-state-${state}"${automated ? "" : ` data-coverage-state data-default-state="${escapeAttribute(state)}"`}>${escapeHtml(state)}</span></td>
-    <td class="coverage-status-cell"><span class="coverage-status coverage-status-${automated ? "automated" : "review"}"${automated ? "" : ` data-coverage-status data-default-status="${escapeAttribute(status)}"`}>${escapeHtml(status)}</span></td>
+    <td class="coverage-status-cell"><span class="coverage-status coverage-status-${automated ? "automated" : "review"}"${automated ? "" : ` data-coverage-status data-default-status="${escapeAttribute(status)}"`}>${statusHtml}</span></td>
     <td class="coverage-findings">${findingCount === undefined ? "&mdash;" : findingCount}</td>
     <td>${evidence}</td>
   </tr>`;

@@ -1970,6 +1970,7 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /Evidence state/);
   assert.match(html, /class="coverage-state-cell"/);
   assert.match(html, /class="coverage-status-cell"/);
+  assert.match(html, /<a href="#manual-review-checklist">Checklist ready<\/a>/);
   assert.match(html, /coverage-state-failed/);
   assert.match(html, /coverage-state-passed/);
   assert.match(html, /coverage-state-needs-review/);

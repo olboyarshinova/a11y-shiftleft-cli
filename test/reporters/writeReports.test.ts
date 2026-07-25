@@ -853,6 +853,7 @@ test("writeReports supports a compact audit profile without legacy or duplicate 
   assert.match(markdown, /Voice and switch control readiness/);
   assert.match(markdown, /Task completion worksheet/);
   assert.match(markdown, /Embedded content/);
+  assert.match(markdown, /\[Checklist ready\]\(#manual-review-checklist\)/);
   assert.match(markdown, /Complete the primary task with a keyboard/);
   assert.equal(await exists(path.join(outputDir, "a11y-summary.csv")), true);
   assert.equal(await exists(path.join(outputDir, "a11y-pages.csv")), true);
