@@ -122,6 +122,8 @@
   `a11y-evidence.json`, `a11y-evidence.jsonl`, or `a11y-evidence.jsonld` exists.
 - Added automatic `a11y-evidence.json` generation inside `evidence pack` when a
   valid `a11y-report.json` is present and no JSON evidence export exists yet.
+- Added `evidence verify` to validate evidence-package checksums and report
+  missing or changed files before sharing or archiving a local package.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.

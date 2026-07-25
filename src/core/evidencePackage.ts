@@ -97,6 +97,13 @@ export interface EvidencePackageManifest {
   };
 }
 
+export interface EvidencePackageVerification {
+  valid: boolean;
+  filesChecked: number;
+  missingFiles: string[];
+  changedFiles: string[];
+}
+
 export async function createEvidencePackage(options: {
   reportsDir: string;
   outputDir: string;
@@ -163,6 +170,34 @@ export async function createEvidencePackage(options: {
   );
 
   return manifest;
+}
+
+export async function verifyEvidencePackage(packageDir: string): Promise<EvidencePackageVerification> {
+  const root = path.resolve(packageDir);
+  const manifest = JSON.parse(await fs.readFile(path.join(root, "evidence-manifest.json"), "utf8")) as EvidencePackageManifest;
+  const missingFiles: string[] = [];
+  const changedFiles: string[] = [];
+
+  for (const file of manifest.files) {
+    const filePath = path.join(root, file.path);
+    const stats = await safeFileStats(filePath);
+    if (!stats) {
+      missingFiles.push(file.path);
+      continue;
+    }
+
+    const actual = await describeFile(filePath, file.path);
+    if (actual.bytes !== file.bytes || actual.sha256 !== file.sha256) {
+      changedFiles.push(file.path);
+    }
+  }
+
+  return {
+    valid: missingFiles.length === 0 && changedFiles.length === 0,
+    filesChecked: manifest.files.length,
+    missingFiles,
+    changedFiles
+  };
 }
 
 async function createGeneratedEvidenceExport(

@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { createProgram } from "../../dist/cli.js";
-import { formatEvidenceExportOutput, formatEvidencePackOutput } from "../../dist/commands/evidence.js";
+import { formatEvidenceExportOutput, formatEvidencePackOutput, formatEvidenceVerifyOutput } from "../../dist/commands/evidence.js";
 import { createEvidenceExport } from "../../dist/core/evidenceExport.js";
 import type { EvidencePackageManifest } from "../../dist/core/evidencePackage.js";
 
@@ -18,6 +18,16 @@ test("evidence export exposes machine-readable evidence options", () => {
   assert.equal(flags.includes("--out"), true);
   assert.equal(flags.includes("--format"), true);
   assert.match(exportCommand.description(), /machine-readable finding evidence dataset/);
+});
+
+test("evidence verify exposes evidence package verification options", () => {
+  const evidence = createProgram().commands.find((item) => item.name() === "evidence");
+  const verifyCommand = evidence?.commands.find((item) => item.name() === "verify");
+
+  assert.ok(verifyCommand);
+  const flags = verifyCommand.options.map((option) => option.long);
+  assert.equal(flags.includes("--package"), true);
+  assert.match(verifyCommand.description(), /Verify checksums/);
 });
 
 test("formatEvidencePackOutput includes review hints for evidence packages", () => {
@@ -59,6 +69,26 @@ test("formatEvidencePackOutput shows when no review hints remain", () => {
 
   assert.match(output, /Review hints: none/);
   assert.match(output, /Contents: reports=2 exports=1 manual=1 keyboard=1 dashboard=1 visual=2 screenshots=3/);
+});
+
+test("formatEvidenceVerifyOutput summarizes valid and invalid packages", () => {
+  assert.match(formatEvidenceVerifyOutput({
+    valid: true,
+    filesChecked: 2,
+    missingFiles: [],
+    changedFiles: []
+  }, "/tmp/a11y-evidence"), /Evidence package verified: \/tmp\/a11y-evidence[\s\S]*Files checked: 2/);
+
+  const invalid = formatEvidenceVerifyOutput({
+    valid: false,
+    filesChecked: 3,
+    missingFiles: ["a11y-report.json"],
+    changedFiles: ["a11y-comment.md"]
+  }, "/tmp/a11y-evidence");
+
+  assert.match(invalid, /verification failed/);
+  assert.match(invalid, /missing: a11y-report\.json/);
+  assert.match(invalid, /changed: a11y-comment\.md/);
 });
 
 test("formatEvidenceExportOutput summarizes the exported evidence dataset", () => {

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { createEvidencePackage } from "../../dist/core/evidencePackage.js";
+import { createEvidencePackage, verifyEvidencePackage } from "../../dist/core/evidencePackage.js";
 
 test("createEvidencePackage defaults to text evidence with checksums", async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-evidence-"));
@@ -157,6 +157,19 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   assert.equal(generatedEvidence.generatedAt, "2026-06-20T00:00:00.000Z");
   assert.equal(generatedEvidence.localOnly, true);
   assert.equal(generatedEvidence.summary.total, 0);
+
+  const verification = await verifyEvidencePackage(outputDir);
+  assert.deepEqual(verification, {
+    valid: true,
+    filesChecked: manifest.files.length,
+    missingFiles: [],
+    changedFiles: []
+  });
+
+  await fs.appendFile(path.join(outputDir, "a11y-comment.md"), "Changed\n");
+  const changed = await verifyEvidencePackage(outputDir);
+  assert.equal(changed.valid, false);
+  assert.deepEqual(changed.changedFiles, ["a11y-comment.md"]);
 });
 
 test("createEvidencePackage includes visual evidence only when requested", async () => {

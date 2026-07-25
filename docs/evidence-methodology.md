@@ -58,6 +58,16 @@ If no JSON evidence export exists yet, `evidence pack` generates
 `a11y-evidence.json` inside the package from the source `a11y-report.json` when
 that report is valid.
 
+Before sharing or archiving a package, use `evidence verify` to recalculate file
+sizes and SHA-256 hashes from `evidence-manifest.json`:
+
+```bash
+npx a11y-shiftleft-cli evidence verify --package a11y-evidence
+```
+
+The command exits with a non-zero status when a packaged file is missing or has
+changed after the manifest was generated.
+
 When writing to `--out`, the command prints a compact run summary with severity
 counts, finding types, the most affected URL, and the most common WCAG criterion.
 This keeps CI logs and validation runs readable without opening the full export.

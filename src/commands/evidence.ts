@@ -8,7 +8,7 @@ import {
   type EvidenceExport,
   type EvidenceExportFormat
 } from "../core/evidenceExport.js";
-import { createEvidencePackage, type EvidencePackageManifest } from "../core/evidencePackage.js";
+import { createEvidencePackage, verifyEvidencePackage, type EvidencePackageManifest, type EvidencePackageVerification } from "../core/evidencePackage.js";
 
 interface EvidencePackOptions {
   reports?: string;
@@ -20,6 +20,10 @@ interface EvidenceExportOptions {
   report?: string;
   out?: string;
   format?: string;
+}
+
+interface EvidenceVerifyOptions {
+  package?: string;
 }
 
 export function registerEvidenceCommand(program: Command): void {
@@ -43,6 +47,19 @@ export function registerEvidenceCommand(program: Command): void {
       });
 
       console.log(formatEvidencePackOutput(manifest, outputDir));
+    });
+
+  evidence
+    .command("verify")
+    .description("Verify checksums in a local evidence package.")
+    .option("--package <dir>", "Evidence package directory", "a11y-evidence")
+    .action(async (options: EvidenceVerifyOptions) => {
+      const packageDir = path.resolve(options.package || "a11y-evidence");
+      const verification = await verifyEvidencePackage(packageDir);
+      console.log(formatEvidenceVerifyOutput(verification, packageDir));
+      if (!verification.valid) {
+        process.exitCode = 1;
+      }
     });
 
   evidence
@@ -84,6 +101,19 @@ export function formatEvidencePackOutput(manifest: EvidencePackageManifest, outp
     `Review before sharing: ${path.join(outputDir, "evidence-summary.md")}`,
     `Machine-readable manifest: ${path.join(outputDir, "evidence-manifest.json")}`,
     ...hints
+  ].join("\n");
+}
+
+export function formatEvidenceVerifyOutput(verification: EvidencePackageVerification, packageDir: string): string {
+  return [
+    verification.valid
+      ? `Evidence package verified: ${packageDir}`
+      : `Evidence package verification failed: ${packageDir}`,
+    `Files checked: ${verification.filesChecked}`,
+    `Missing files: ${verification.missingFiles.length}`,
+    `Changed files: ${verification.changedFiles.length}`,
+    ...verification.missingFiles.slice(0, 5).map((file) => `  missing: ${file}`),
+    ...verification.changedFiles.slice(0, 5).map((file) => `  changed: ${file}`)
   ].join("\n");
 }
 
