@@ -1638,6 +1638,33 @@ export function renderExplorationHtml(
       gap: 8px;
     }
 
+    .finding-target-text {
+      min-width: 0;
+    }
+
+    .finding-target-primary {
+      overflow-wrap: anywhere;
+    }
+
+    .finding-target-full {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    .finding-target-full summary {
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .finding-target-full code {
+      display: block;
+      margin-top: 3px;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      white-space: normal;
+    }
+
     .finding-marker {
       align-items: center;
       background: var(--ink);
@@ -3943,10 +3970,37 @@ function renderFindingTarget(
   const marker = markerNumber
     ? `<span class="finding-marker finding-marker-${issue.severity}" title="Screenshot marker ${markerNumber}">${markerNumber}</span>`
     : "";
-  const text = target
-    ? `${target}${labelText}${contrast}`
+  const targetDisplay = formatFindingTargetDisplay(target);
+  const text = targetDisplay.primary
+    ? `${targetDisplay.primary}${labelText}${contrast}`
     : `Target not available${labelText}${contrast}`;
-  return `<div class="finding-target">${marker}<div class="url">${escapeHtml(text)}</div></div>`;
+  const fullSelector = targetDisplay.full && targetDisplay.full !== targetDisplay.primary
+    ? `<details class="finding-target-full"><summary>Full selector</summary><code>${escapeHtml(targetDisplay.full)}</code></details>`
+    : "";
+  return `<div class="finding-target">${marker}<div class="url finding-target-text"><div class="finding-target-primary">${escapeHtml(text)}</div>${fullSelector}</div></div>`;
+}
+
+function formatFindingTargetDisplay(target: string | undefined): { primary: string; full?: string } {
+  if (!target) return { primary: "" };
+  if (target.length <= 120) return { primary: target };
+
+  const segments = target.split(/\s*>\s*/u).filter(Boolean);
+  const meaningful = [...segments].reverse().find((segment) => isMeaningfulSelectorSegment(segment));
+  const context = [...segments].reverse().find((segment) => segment !== meaningful && /\[data-testid=/u.test(segment));
+  const primary = meaningful || segments.at(-1) || target.slice(0, 120);
+  return {
+    primary: context
+      ? `${primary} in ${context} (${segments.length}-level selector)`
+      : `${primary} inside ${segments.length}-level selector`,
+    full: target
+  };
+}
+
+function isMeaningfulSelectorSegment(segment: string): boolean {
+  if (/^(button|a|input|select|textarea|summary|details|label|img|iframe|canvas)(?:[.#[:]|$)/u.test(segment)) return true;
+  if (/\[(?:role|aria-label|data-testid|name|type|id)=/u.test(segment)) return true;
+  if (/^#[A-Za-z0-9_-]+$/u.test(segment)) return true;
+  return false;
 }
 
 function normalizeIssueMessageForDisplay(message: string): string {

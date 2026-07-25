@@ -970,10 +970,30 @@ test("renderExplorationHtml groups identical issue messages into numbered locati
 
   assert.match(issueHtml, /2 locations/);
   assert.match(issueHtml, /<ol class="finding-targets">/);
-  assert.match(issueHtml, /<li><div class="finding-target"><span class="finding-marker finding-marker-warning" title="Screenshot marker 1">1<\/span><div class="url">\.py-4\.active\\:scale-\\\[0\\\.97\\\]\.text-base<\/div><\/div><\/li>/);
-  assert.match(issueHtml, /<li><div class="finding-target"><span class="finding-marker finding-marker-warning" title="Screenshot marker 2">2<\/span><div class="url">\.text-amber-signal<\/div><\/div><\/li>/);
+  assert.match(issueHtml, /title="Screenshot marker 1">1<\/span><div class="url finding-target-text"><div class="finding-target-primary">\.py-4\.active\\:scale-\\\[0\\\.97\\\]\.text-base<\/div>/);
+  assert.match(issueHtml, /title="Screenshot marker 2">2<\/span><div class="url finding-target-text"><div class="finding-target-primary">\.text-amber-signal<\/div>/);
   assert.match(issueHtml, /Needs review means axe could not complete this check automatically/);
   assert.equal((issueHtml.match(new RegExp(message.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g")) || []).length, 1);
+});
+
+test("renderExplorationHtml keeps long selectors available without using them as the primary target text", () => {
+  const longSelector = ".ee4cb4021c.c3bfe61347[role=\"group\"]:nth-child(10) > .ef200ef4bd > .baad532480[data-testid=\"web-core-property-card\"][target=\"_blank\"] > .ae5dbab14d.f6e3a11b0d.e95943ce9b > .c51e32e283.c3bdfd4ac2 > .dcb3e09ec9.ae5dbab14d.f6e3a11b0d > .dcb3e09ec9.ae5dbab14d.f6e3a11b0d > .a81870d302.a19a26a18c.f6e3a11b0d > .a297f43545 > .de5b77f4e5[role=\"button\"]";
+  const html = renderExplorationHtml(graph, [{
+    ...issues[0],
+    ruleId: "target-size",
+    severity: "warning",
+    findingType: "wcag",
+    wcag: ["2.5.8"],
+    message: "All touch targets must be 24px large, or leave sufficient space",
+    selector: longSelector,
+    fingerprint: "target-size::long-property-card-selector"
+  }]);
+  const issueHtml = issueBlockForRule(html, "target-size");
+
+  assert.match(issueHtml, /\[role="button"\] in \.baad532480\[data-testid="web-core-property-card"\]\[target="_blank"\] \(10-level selector\)/);
+  assert.match(issueHtml, /<summary>Full selector<\/summary>/);
+  assert.match(issueHtml, /web-core-property-card/);
+  assert.match(issueHtml, /de5b77f4e5\[role="button"\]/);
 });
 
 test("renderExplorationHtml explains when not every target has a screenshot marker", () => {
@@ -1404,8 +1424,8 @@ test("renderExplorationHtml shows identical contrast guidance once per screensho
   assert.doesNotMatch(html, /Applies to/);
   assert.doesNotMatch(html, /contrast-guidance-targets/);
   assert.match(html, /<div class="contrast-guidance-title"><span>Color recommendations<\/span><span class="contrast-guidance-markers" aria-label="Screenshot markers">/);
-  assert.match(html, /<span class="finding-marker finding-marker-critical" title="Screenshot marker 1">1<\/span><div class="url">\.first-muted-label/);
-  assert.match(html, /<span class="finding-marker finding-marker-critical" title="Screenshot marker 2">2<\/span><div class="url">\.second-muted-label/);
+  assert.match(html, /<span class="finding-marker finding-marker-critical" title="Screenshot marker 1">1<\/span><div class="url finding-target-text"><div class="finding-target-primary">\.first-muted-label/);
+  assert.match(html, /<span class="finding-marker finding-marker-critical" title="Screenshot marker 2">2<\/span><div class="url finding-target-text"><div class="finding-target-primary">\.second-muted-label/);
   assert.match(html, /<div class="contrast-guidance-title">[\s\S]*?<span class="finding-marker finding-marker-critical" title="Screenshot marker 1">1<\/span>[\s\S]*?<span class="finding-marker finding-marker-critical" title="Screenshot marker 2">2<\/span>[\s\S]*?<\/div>/);
 });
 
