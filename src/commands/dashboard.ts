@@ -130,6 +130,9 @@ export function formatDashboardSummary(data: DashboardData, destination: Dashboa
     data.latestDelta
       ? `Latest change: total ${formatDelta(data.latestDelta.total.change)}, critical ${formatDelta(data.latestDelta.critical.change)}, warning ${formatDelta(data.latestDelta.warning.change)}, Lighthouse ${formatDelta(data.latestDelta.lighthouseScore.change)}`
       : "Latest change: n/a (need 2 runs)",
+    data.latestDelta
+      ? `Latest review change: manual-open ${formatDelta(data.latestDelta.manualReviewOpen.change)}, journey-findings ${formatDelta(data.latestDelta.journeyFindings.change)}`
+      : "Latest review change: n/a (need 2 runs)",
     `New/worse problems: ${formatRulePageCounts(data.regressions?.rules.length, data.regressions?.pages.length)}`,
     `Resolved problems: ${formatRulePageCounts(data.resolved?.rules.length, data.resolved?.pages.length)}`,
     topRule

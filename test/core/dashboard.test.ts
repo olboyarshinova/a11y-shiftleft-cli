@@ -83,6 +83,8 @@ test("collectDashboardData summarizes historical report runs", async () => {
   assert.equal(data.latestDelta?.latestRunId, "run-2");
   assert.deepEqual(data.latestDelta?.total, { previous: 3, latest: 1, change: -2 });
   assert.deepEqual(data.latestDelta?.critical, { previous: 1, latest: 0, change: -1 });
+  assert.deepEqual(data.latestDelta?.manualReviewOpen, { previous: 0, latest: 3, change: 3 });
+  assert.deepEqual(data.latestDelta?.journeyFindings, { previous: 0, latest: 2, change: 2 });
   assert.deepEqual(data.latestDelta?.lighthouseScore, { previous: 88, latest: 94, change: 6 });
   assert.equal(data.regressions?.previousRunId, "run-1");
   assert.equal(data.regressions?.latestRunId, "run-2");
@@ -280,6 +282,19 @@ test("renderDashboardHtml shows latest delta between two runs", async () => {
     byPage: [
       page("http://localhost:3000/", 5, 2, 3, 0, 16)
     ],
+    manualReview: {
+      pass: 1,
+      fail: 2,
+      notReviewed: 2
+    },
+    journeyImpact: [{
+      name: "Checkout",
+      urls: ["http://localhost:3000/"],
+      findingCount: 3,
+      critical: 1,
+      warning: 2,
+      info: 0
+    }],
     lighthouseScore: 80
   });
   await writeReport(root, "run-2", {
@@ -294,6 +309,19 @@ test("renderDashboardHtml shows latest delta between two runs", async () => {
     byPage: [
       page("http://localhost:3000/", 2, 0, 2, 0, 4)
     ],
+    manualReview: {
+      pass: 2,
+      fail: 1,
+      notReviewed: 0
+    },
+    journeyImpact: [{
+      name: "Checkout",
+      urls: ["http://localhost:3000/"],
+      findingCount: 1,
+      critical: 0,
+      warning: 1,
+      info: 0
+    }],
     lighthouseScore: 93
   });
 
@@ -303,6 +331,8 @@ test("renderDashboardHtml shows latest delta between two runs", async () => {
   assert.match(html, /Comparison from <code>run-1<\/code> to <code>run-2<\/code>/);
   assert.match(html, /Total findings[\s\S]*?-3/);
   assert.match(html, /Critical[\s\S]*?-2/);
+  assert.match(html, /Manual review open[\s\S]*?-3/);
+  assert.match(html, /Journey findings[\s\S]*?-2/);
   assert.match(html, /Lighthouse score[\s\S]*?\+13/);
   assert.match(html, /delta-good/);
 });
@@ -369,6 +399,7 @@ test("formatDashboardSummary renders local output target", async () => {
   assert.match(output, /Latest ownership: third-party=1 human-verification=1/);
   assert.match(output, /Latest review: manual-open=2 manual-failed=1 journey-findings=1/);
   assert.match(output, /Latest change: total 0, critical -1, warning \+1, Lighthouse \+8/);
+  assert.match(output, /Latest review change: manual-open \+2, journey-findings \+1/);
   assert.match(output, /New\/worse problems: 1 rule\(s\), 1 page\(s\)/);
   assert.match(output, /Resolved problems: 1 rule\(s\), 1 page\(s\)/);
   assert.match(output, /Top rule: image-alt \(2\)/);

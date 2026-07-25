@@ -64,6 +64,8 @@ export interface DashboardLatestDelta {
   critical: DashboardDeltaMetric;
   warning: DashboardDeltaMetric;
   info: DashboardDeltaMetric;
+  manualReviewOpen: DashboardDeltaMetric;
+  journeyFindings: DashboardDeltaMetric;
   lighthouseScore: DashboardDeltaMetric;
 }
 
@@ -476,6 +478,8 @@ function summarizeLatestDelta(runs: DashboardRunSummary[]): DashboardLatestDelta
     critical: deltaMetric(previous.critical, latest.critical),
     warning: deltaMetric(previous.warning, latest.warning),
     info: deltaMetric(previous.info, latest.info),
+    manualReviewOpen: deltaMetric(previous.manualReviewOpen, latest.manualReviewOpen),
+    journeyFindings: deltaMetric(previous.journeyFindings, latest.journeyFindings),
     lighthouseScore: deltaMetric(nullableNumber(previous.lighthouseScore), nullableNumber(latest.lighthouseScore))
   };
 }
@@ -744,6 +748,8 @@ function latestDeltaSection(delta: DashboardLatestDelta | undefined): string {
         ${deltaRow("Critical", delta.critical, "lower")}
         ${deltaRow("Warnings", delta.warning, "lower")}
         ${deltaRow("Info", delta.info, "lower")}
+        ${deltaRow("Manual review open", delta.manualReviewOpen, "lower")}
+        ${deltaRow("Journey findings", delta.journeyFindings, "lower")}
         ${deltaRow("Lighthouse score", delta.lighthouseScore, "higher")}
       </tbody>
     </table>
