@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { getRemediationHint } from "./remediation.js";
 import { formatReportDateUtc } from "./reportDate.js";
+import { summarizeManualReviewRecords } from "./manualChecklist.js";
 import type { A11yReport, RemediationHint, Severity } from "../types.js";
 
 export interface DashboardOptions {
@@ -18,6 +19,10 @@ export interface DashboardTrendPoint {
   info: number;
   thirdPartyEmbedded: number;
   humanVerificationBlocked: number;
+  manualReviewOpen: number;
+  manualReviewFailed: number;
+  journeyFindings: number;
+  journeyCount: number;
   duplicateRate: number;
   scanDurationMs: number;
   lighthouseScore?: number | null;
@@ -356,6 +361,8 @@ export function renderDashboardHtml(data: DashboardData): string {
       <div class="metric"><span class="muted">Latest warnings</span><strong class="warning">${latest?.warning ?? 0}</strong></div>
       <div class="metric"><span class="muted">Third-party embeds</span><strong>${latest?.thirdPartyEmbedded ?? 0}</strong></div>
       <div class="metric"><span class="muted">Human verification</span><strong>${latest?.humanVerificationBlocked ?? 0}</strong></div>
+      <div class="metric"><span class="muted">Manual review open</span><strong>${latest?.manualReviewOpen ?? 0}</strong></div>
+      <div class="metric"><span class="muted">Journey findings</span><strong>${latest?.journeyFindings ?? 0}</strong></div>
       <div class="metric"><span class="muted">Change from previous</span><strong class="${deltaClass(data.latestDelta?.total.change ?? null, "lower")}">${formatDelta(data.latestDelta?.total.change ?? null)}</strong></div>
       <div class="metric"><span class="muted">Latest Lighthouse</span><strong>${latest?.lighthouseScore ?? "n/a"}</strong></div>
     </div>
@@ -429,6 +436,10 @@ async function readReports(rootDir: string, reportPaths: string[]): Promise<Repo
 
 function toDashboardRun(file: ReportFile): DashboardRunSummary {
   const summary = file.report.summary;
+  const manual = file.report.manualChecklist
+    ? summarizeManualReviewRecords(file.report.manualChecklist)
+    : undefined;
+  const journeys = summary.journeyImpact || [];
 
   return {
     id: runIdFromPath(file.relativePath),
@@ -440,6 +451,10 @@ function toDashboardRun(file: ReportFile): DashboardRunSummary {
     info: summary.info,
     thirdPartyEmbedded: summary.byOwnership?.["third-party-embed"] || 0,
     humanVerificationBlocked: summary.blockedByHumanVerification || 0,
+    manualReviewOpen: manual ? manual.notReviewed + manual.fail : 0,
+    manualReviewFailed: manual?.fail || 0,
+    journeyFindings: journeys.reduce((sum, journey) => sum + journey.findingCount, 0),
+    journeyCount: journeys.length,
     duplicateRate: summary.duplicateRate,
     scanDurationMs: summary.scanDurationMs,
     lighthouseScore: summary.lighthouse?.averageAccessibilityScore ?? undefined,
@@ -985,6 +1000,8 @@ function runsSection(runs: DashboardRunSummary[]): string {
       <td class="num info">${run.info}</td>
       <td class="num">${run.thirdPartyEmbedded}</td>
       <td class="num">${run.humanVerificationBlocked}</td>
+      <td class="num">${run.manualReviewOpen}</td>
+      <td class="num">${run.journeyFindings}</td>
       <td>${escapeHtml(run.framework)}</td>
       <td><code>${escapeHtml(run.reportPath)}</code></td>
     </tr>`)
@@ -993,7 +1010,7 @@ function runsSection(runs: DashboardRunSummary[]): string {
   return `<section>
     <h2 id="recent-runs-heading">Recent Runs</h2>
     <table class="runs-table" aria-labelledby="recent-runs-heading">
-      <thead><tr><th scope="col">Run</th><th scope="col">Generated</th><th scope="col" class="num">Total</th><th scope="col" class="num">Critical</th><th scope="col" class="num">Warning</th><th scope="col" class="num">Info</th><th scope="col" class="num">Third-party</th><th scope="col" class="num">Human verification</th><th scope="col">Framework</th><th scope="col">Report</th></tr></thead>
+      <thead><tr><th scope="col">Run</th><th scope="col">Generated</th><th scope="col" class="num">Total</th><th scope="col" class="num">Critical</th><th scope="col" class="num">Warning</th><th scope="col" class="num">Info</th><th scope="col" class="num">Third-party</th><th scope="col" class="num">Human verification</th><th scope="col" class="num">Manual open</th><th scope="col" class="num">Journey findings</th><th scope="col">Framework</th><th scope="col">Report</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
   </section>`;

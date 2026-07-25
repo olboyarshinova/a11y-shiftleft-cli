@@ -46,7 +46,20 @@ test("collectDashboardData summarizes historical report runs", async () => {
       page("http://localhost:3000/settings", 1, 0, 1, 0, 2)
     ],
     lighthouseScore: 94,
-    humanVerificationBlocked: 1
+    humanVerificationBlocked: 1,
+    manualReview: {
+      pass: 1,
+      fail: 1,
+      notReviewed: 2
+    },
+    journeyImpact: [{
+      name: "Checkout",
+      urls: ["http://localhost:3000/settings"],
+      findingCount: 2,
+      critical: 0,
+      warning: 2,
+      info: 0
+    }]
   });
 
   const data = await collectDashboardData(root);
@@ -58,8 +71,14 @@ test("collectDashboardData summarizes historical report runs", async () => {
   assert.deepEqual(data.trend.map((point) => point.lighthouseScore), [88, 94]);
   assert.deepEqual(data.trend.map((point) => point.thirdPartyEmbedded), [1, 0]);
   assert.deepEqual(data.trend.map((point) => point.humanVerificationBlocked), [0, 1]);
+  assert.deepEqual(data.trend.map((point) => point.manualReviewOpen), [0, 3]);
+  assert.deepEqual(data.trend.map((point) => point.journeyFindings), [0, 2]);
   assert.equal(data.latestRun?.thirdPartyEmbedded, 0);
   assert.equal(data.latestRun?.humanVerificationBlocked, 1);
+  assert.equal(data.latestRun?.manualReviewOpen, 3);
+  assert.equal(data.latestRun?.manualReviewFailed, 1);
+  assert.equal(data.latestRun?.journeyFindings, 2);
+  assert.equal(data.latestRun?.journeyCount, 1);
   assert.equal(data.latestDelta?.previousRunId, "run-1");
   assert.equal(data.latestDelta?.latestRunId, "run-2");
   assert.deepEqual(data.latestDelta?.total, { previous: 3, latest: 1, change: -2 });
@@ -121,6 +140,8 @@ test("renderDashboardHtml renders dashboard sections and escapes content", async
   assert.match(html, /Latest Change/);
   assert.match(html, /Third-party embeds/);
   assert.match(html, /Human verification/);
+  assert.match(html, /Manual review open/);
+  assert.match(html, /Journey findings/);
   assert.match(html, /Save at least two report runs to compare the latest audit with the previous one/);
   assert.match(html, /New Or Worse Problems/);
   assert.match(html, /Save at least two report runs to detect rule and page regressions/);
@@ -320,7 +341,20 @@ test("formatDashboardSummary renders local output target", async () => {
     ],
     lighthouseScore: 88,
     thirdPartyEmbedded: 1,
-    humanVerificationBlocked: 1
+    humanVerificationBlocked: 1,
+    manualReview: {
+      pass: 0,
+      fail: 1,
+      notReviewed: 1
+    },
+    journeyImpact: [{
+      name: "Checkout",
+      urls: ["http://localhost:3000/checkout"],
+      findingCount: 1,
+      critical: 0,
+      warning: 1,
+      info: 0
+    }]
   });
 
   const output = formatDashboardSummary(await collectDashboardData(root), {
@@ -333,6 +367,7 @@ test("formatDashboardSummary renders local output target", async () => {
   assert.match(output, /Runs indexed: 2/);
   assert.match(output, /Latest run: run-2 total=2 critical=0 warning=2 info=0/);
   assert.match(output, /Latest ownership: third-party=1 human-verification=1/);
+  assert.match(output, /Latest review: manual-open=2 manual-failed=1 journey-findings=1/);
   assert.match(output, /Latest change: total 0, critical -1, warning \+1, Lighthouse \+8/);
   assert.match(output, /New\/worse problems: 1 rule\(s\), 1 page\(s\)/);
   assert.match(output, /Resolved problems: 1 rule\(s\), 1 page\(s\)/);
@@ -374,6 +409,19 @@ interface ReportInput {
   lighthouseScore?: number;
   thirdPartyEmbedded?: number;
   humanVerificationBlocked?: number;
+  manualReview?: {
+    pass: number;
+    fail: number;
+    notReviewed: number;
+  };
+  journeyImpact?: Array<{
+    name: string;
+    urls: string[];
+    findingCount: number;
+    critical: number;
+    warning: number;
+    info: number;
+  }>;
 }
 
 async function writeReport(root: string, run: string, input: ReportInput): Promise<void> {
@@ -412,6 +460,7 @@ async function writeReport(root: string, run: string, input: ReportInput): Promi
       byCategory: { controls: input.total },
       byOwnership: input.thirdPartyEmbedded ? { "third-party-embed": input.thirdPartyEmbedded } : {},
       blockedByHumanVerification: input.humanVerificationBlocked || 0,
+      ...(input.journeyImpact ? { journeyImpact: input.journeyImpact } : {}),
       byPour: { robust: input.total },
       byWcagLevel: { A: input.total },
       byWcagVersion: { "2.0": input.total },
@@ -454,6 +503,7 @@ async function writeReport(root: string, run: string, input: ReportInput): Promi
       } : {})
     },
     issues: input.issues,
+    ...(input.manualReview ? { manualChecklist: manualChecklist(input.manualReview) } : {}),
     ...(typeof input.lighthouseScore === "number" ? {
       lighthouse: [{
         url: "http://localhost:3000",
@@ -478,6 +528,40 @@ async function writeReport(root: string, run: string, input: ReportInput): Promi
       }]
     } : {})
   }, null, 2));
+}
+
+function manualChecklist(counts: NonNullable<ReportInput["manualReview"]>) {
+  return {
+    generatedAt: "2026-06-11T00:00:00.000Z",
+    framework: "react",
+    urls: ["http://localhost:3000"],
+    items: [
+      ...Array.from({ length: counts.pass }, (_item, index) => manualChecklistItem(`pass-${index}`, "pass")),
+      ...Array.from({ length: counts.fail }, (_item, index) => manualChecklistItem(`fail-${index}`, "fail")),
+      ...Array.from({ length: counts.notReviewed }, (_item, index) => manualChecklistItem(`not-reviewed-${index}`, "not-reviewed"))
+    ]
+  };
+}
+
+function manualChecklistItem(id: string, status: "pass" | "fail" | "not-reviewed") {
+  return {
+    id,
+    title: `Manual check ${id}`,
+    principle: "operable",
+    wcag: ["2.1.1"],
+    whyManual: "Human confirmation is required.",
+    steps: ["Complete the task manually."],
+    evidence: ["Record the task outcome."],
+    review: {
+      status,
+      tester: "",
+      testedAt: "",
+      environment: "",
+      notes: "",
+      evidenceLinks: [],
+      remediationOwner: ""
+    }
+  };
 }
 
 function issue(ruleId: string, severity: "critical" | "warning" | "info", url: string) {

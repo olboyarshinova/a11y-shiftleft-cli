@@ -124,6 +124,9 @@ export function formatDashboardSummary(data: DashboardData, destination: Dashboa
     latest
       ? `Latest ownership: third-party=${latest.thirdPartyEmbedded} human-verification=${latest.humanVerificationBlocked}`
       : "Latest ownership: none",
+    latest
+      ? `Latest review: manual-open=${latest.manualReviewOpen} manual-failed=${latest.manualReviewFailed} journey-findings=${latest.journeyFindings}`
+      : "Latest review: none",
     data.latestDelta
       ? `Latest change: total ${formatDelta(data.latestDelta.total.change)}, critical ${formatDelta(data.latestDelta.critical.change)}, warning ${formatDelta(data.latestDelta.warning.change)}, Lighthouse ${formatDelta(data.latestDelta.lighthouseScore.change)}`
       : "Latest change: n/a (need 2 runs)",

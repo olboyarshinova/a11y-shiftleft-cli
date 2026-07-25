@@ -109,6 +109,8 @@
   without including screenshots or raw rendered HTML.
 - Added manual-review and journey counts to the `evidence export --out` console
   summary when that evidence exists.
+- Added manual-review and journey metrics to local dashboard summaries, including
+  top-level cards, recent-run tables, dashboard JSON, and CLI output.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.
