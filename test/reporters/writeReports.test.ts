@@ -848,11 +848,13 @@ test("writeReports supports a compact audit profile without legacy or duplicate 
   assert.match(markdown, /Form error states/);
   assert.match(markdown, /Image alternatives/);
   assert.match(markdown, /Media and motion/);
+  assert.match(markdown, /Media and motion \| No media or active motion observed/);
   assert.match(markdown, /Time limits and recovery/);
   assert.match(markdown, /Predictable actions and calm recovery/);
   assert.match(markdown, /Voice and switch control readiness/);
   assert.match(markdown, /Task completion worksheet/);
   assert.match(markdown, /Embedded content/);
+  assert.match(markdown, /Embedded content and complex graphics \| No iframe or canvas observed/);
   assert.match(markdown, /\[Checklist ready\]\(#manual-review-checklist\)/);
   assert.match(markdown, /Complete the primary task with a keyboard/);
   assert.equal(await exists(path.join(outputDir, "a11y-summary.csv")), true);

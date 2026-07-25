@@ -2012,7 +2012,7 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /reduced-motion CSS in 1\/1 state/);
   assert.match(html, /Reduced-motion CSS query detected: yes/);
   assert.match(html, /Embedded content and complex graphics/);
-  assert.match(html, /Automated evidence \+ owner review/);
+  assert.match(html, /Automated findings \+ owner review/);
   assert.match(html, /1 third-party finding needs owner follow-up/);
   assert.match(html, /Voice and switch control readiness/);
   assert.match(html, /Task completion worksheet/);
@@ -2066,6 +2066,8 @@ test("renderExplorationHtml hides successful per-state diagnostic details", () =
   assert.match(html, /Audit Coverage/);
   assert.match(html, /1 state checked for overflow and clipped text/);
   assert.match(html, /0 image alternatives flagged for human review/);
+  assert.match(html, /coverage-row-state-needs-review" data-coverage-review="media-motion"[\s\S]*?Media and motion[\s\S]*?Manual review required/);
+  assert.match(html, /coverage-row-state-needs-review" data-coverage-review="embedded-content"[\s\S]*?Embedded content and complex graphics[\s\S]*?Owner review recommended/);
   assert.match(html, /coverage-state-not-tested/);
   assert.match(html, /coverage-state-passed/);
 });
