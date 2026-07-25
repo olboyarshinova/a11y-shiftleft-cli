@@ -10,6 +10,9 @@ const TEXT_EVIDENCE_FILES = [
   "a11y-pages.csv",
   "a11y-rules.csv",
   "a11y-findings.csv",
+  "a11y-evidence.json",
+  "a11y-evidence.jsonl",
+  "a11y-evidence.jsonld",
   "a11y-manual-checklist.md",
   "a11y-manual-checklist.json",
   "evaluation-scope.json",
@@ -76,6 +79,7 @@ export interface EvidencePackageManifest {
   reviewHints: string[];
   contentSummary: {
     automatedReports: number;
+    evidenceExportFiles: number;
     manualReviewFiles: number;
     evaluationScope: boolean;
     keyboardEvidenceFiles: number;
@@ -361,6 +365,11 @@ function summarizeEvidenceContents(files: EvidencePackageFile[]): EvidencePackag
       "a11y-findings.csv",
       "a11y-metrics.csv"
     ]),
+    evidenceExportFiles: countMatching(paths, [
+      "a11y-evidence.json",
+      "a11y-evidence.jsonl",
+      "a11y-evidence.jsonld"
+    ]),
     manualReviewFiles: countMatching(paths, [
       "a11y-manual-checklist.md",
       "a11y-manual-checklist.json"
@@ -450,6 +459,7 @@ ${formatReviewHintsMarkdown(manifest.reviewHints)}
 | Evidence type | Count |
 |---|---:|
 | Automated report files | ${manifest.contentSummary.automatedReports} |
+| Machine-readable evidence exports | ${manifest.contentSummary.evidenceExportFiles} |
 | Manual-review files | ${manifest.contentSummary.manualReviewFiles} |
 | Evaluation scope | ${manifest.contentSummary.evaluationScope ? 1 : 0} |
 | Keyboard evidence files | ${manifest.contentSummary.keyboardEvidenceFiles} |

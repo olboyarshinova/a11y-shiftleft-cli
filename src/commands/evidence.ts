@@ -91,6 +91,7 @@ function formatEvidencePackContents(manifest: EvidencePackageManifest): string {
   const content = manifest.contentSummary;
   return [
     `reports=${content.automatedReports}`,
+    `exports=${content.evidenceExportFiles}`,
     `manual=${content.manualReviewFiles}`,
     `keyboard=${content.keyboardEvidenceFiles}`,
     `dashboard=${content.dashboardFiles}`,

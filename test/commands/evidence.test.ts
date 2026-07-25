@@ -33,7 +33,7 @@ test("formatEvidencePackOutput includes review hints for evidence packages", () 
   const output = formatEvidencePackOutput(manifest, "/tmp/a11y-evidence");
 
   assert.match(output, /Created local evidence package with 1 file/);
-  assert.match(output, /Contents: reports=1 manual=0 keyboard=0 dashboard=0 visual=0 screenshots=0/);
+  assert.match(output, /Contents: reports=1 exports=0 manual=0 keyboard=0 dashboard=0 visual=0 screenshots=0/);
   assert.match(output, /Review before sharing: \/tmp\/a11y-evidence\/evidence-summary\.md/);
   assert.match(output, /Machine-readable manifest: \/tmp\/a11y-evidence\/evidence-manifest\.json/);
   assert.match(output, /Review hints: 4/);
@@ -46,6 +46,7 @@ test("formatEvidencePackOutput shows when no review hints remain", () => {
     reviewHints: [],
     contentSummary: {
       automatedReports: 2,
+      evidenceExportFiles: 1,
       manualReviewFiles: 1,
       evaluationScope: true,
       keyboardEvidenceFiles: 1,
@@ -57,7 +58,7 @@ test("formatEvidencePackOutput shows when no review hints remain", () => {
   }), "/tmp/a11y-evidence");
 
   assert.match(output, /Review hints: none/);
-  assert.match(output, /Contents: reports=2 manual=1 keyboard=1 dashboard=1 visual=2 screenshots=3/);
+  assert.match(output, /Contents: reports=2 exports=1 manual=1 keyboard=1 dashboard=1 visual=2 screenshots=3/);
 });
 
 test("formatEvidenceExportOutput summarizes the exported evidence dataset", () => {
@@ -223,6 +224,7 @@ function evidenceManifest(overrides: Partial<EvidencePackageManifest> = {}): Evi
     includeVisual: false,
     contentSummary: {
       automatedReports: 1,
+      evidenceExportFiles: 0,
       manualReviewFiles: 0,
       evaluationScope: false,
       keyboardEvidenceFiles: 0,

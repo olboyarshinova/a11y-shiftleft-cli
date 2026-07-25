@@ -31,6 +31,7 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
     issues: []
   }, null, 2));
   await fs.writeFile(path.join(reportsDir, "a11y-comment.md"), "# Report\n");
+  await fs.writeFile(path.join(reportsDir, "a11y-evidence.jsonl"), "{\"ruleId\":\"button-name\"}\n");
   await fs.writeFile(path.join(reportsDir, "a11y-manual-checklist.md"), "# Manual\n");
   await fs.writeFile(path.join(reportsDir, "evaluation-scope.json"), JSON.stringify({
     reviewStatus: {
@@ -94,6 +95,7 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   });
   assert.deepEqual(manifest.files.map((file) => file.path), [
     "a11y-comment.md",
+    "a11y-evidence.jsonl",
     "a11y-manual-checklist.md",
     "a11y-report.json",
     "dashboard.json",
@@ -102,6 +104,7 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   ]);
   assert.deepEqual(manifest.contentSummary, {
     automatedReports: 2,
+    evidenceExportFiles: 1,
     manualReviewFiles: 1,
     evaluationScope: true,
     keyboardEvidenceFiles: 1,
@@ -137,10 +140,12 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   assert.match(summary, /Manual review is incomplete/);
   assert.match(summary, /Visual reports and screenshots were excluded/);
   assert.match(summary, /Automated report files \| 2/);
+  assert.match(summary, /Machine-readable evidence exports \| 1/);
   assert.match(summary, /Manual-review files \| 1/);
   assert.match(summary, /Keyboard evidence files \| 1/);
   assert.match(summary, /Dashboard files \| 1/);
   assert.match(summary, /`a11y-report\.json`/);
+  assert.match(summary, /`a11y-evidence\.jsonl`/);
   assert.match(summary, /`dashboard\.json`/);
   assert.match(summary, /`evaluation-scope\.json`/);
   assert.match(summary, /[a-f0-9]{64}/);

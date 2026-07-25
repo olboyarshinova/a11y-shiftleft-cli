@@ -118,6 +118,8 @@
 - Added evidence-package content counts to the `evidence pack` terminal output
   so reports, manual-review files, keyboard evidence, dashboard files, visual
   reports, and screenshots are visible immediately after packaging.
+- Added machine-readable evidence export files to local evidence packages when
+  `a11y-evidence.json`, `a11y-evidence.jsonl`, or `a11y-evidence.jsonld` exists.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.
