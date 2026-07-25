@@ -115,6 +115,9 @@
   findings in local dashboard HTML, JSON, and CLI summaries.
 - Added local dashboard JSON to evidence packages by default and dashboard
   HTML/PDF when visual evidence is explicitly included.
+- Added evidence-package content counts to the `evidence pack` terminal output
+  so reports, manual-review files, keyboard evidence, dashboard files, visual
+  reports, and screenshots are visible immediately after packaging.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.

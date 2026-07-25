@@ -80,10 +80,23 @@ export function formatEvidencePackOutput(manifest: EvidencePackageManifest, outp
     : ["Review hints: none"];
   return [
     `Created local evidence package with ${manifest.files.length} file${manifest.files.length === 1 ? "" : "s"}: ${outputDir}`,
+    `Contents: ${formatEvidencePackContents(manifest)}`,
     `Review before sharing: ${path.join(outputDir, "evidence-summary.md")}`,
     `Machine-readable manifest: ${path.join(outputDir, "evidence-manifest.json")}`,
     ...hints
   ].join("\n");
+}
+
+function formatEvidencePackContents(manifest: EvidencePackageManifest): string {
+  const content = manifest.contentSummary;
+  return [
+    `reports=${content.automatedReports}`,
+    `manual=${content.manualReviewFiles}`,
+    `keyboard=${content.keyboardEvidenceFiles}`,
+    `dashboard=${content.dashboardFiles}`,
+    `visual=${content.visualReports}`,
+    `screenshots=${content.screenshots}`
+  ].join(" ");
 }
 
 export function formatEvidenceExportOutput(evidence: EvidenceExport, outputPath: string): string {
