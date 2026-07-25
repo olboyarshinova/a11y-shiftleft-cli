@@ -1017,6 +1017,66 @@ test("renderExplorationHtml groups clipped text messages by rule instead of clip
   assert.match(issueHtml, /\.subtitle/);
 });
 
+test("renderExplorationHtml groups inconsistent same-purpose control names without repeating observed names", () => {
+  const html = renderExplorationHtml(graph, [
+    {
+      ...issues[0],
+      ruleId: "control-name-inconsistent",
+      severity: "warning",
+      findingType: "needs-review",
+      wcag: ["3.2.4"],
+      wcagCriteria: [{
+        id: "3.2.4",
+        title: "Consistent Identification",
+        level: "AA",
+        principle: "understandable",
+        introducedIn: "2.0",
+        url: "https://www.w3.org/WAI/WCAG22/Understanding/consistent-identification.html"
+      }],
+      tags: ["needs-review"],
+      message: "Potential inconsistent accessible name for the same-purpose button. Observed names: \"Book now\", \"Reserve\".",
+      selector: ".booking-card button",
+      fingerprint: "control-name-inconsistent::booking"
+    },
+    {
+      ...issues[0],
+      ruleId: "control-name-inconsistent",
+      severity: "warning",
+      findingType: "needs-review",
+      wcag: ["3.2.4"],
+      wcagCriteria: [{
+        id: "3.2.4",
+        title: "Consistent Identification",
+        level: "AA",
+        principle: "understandable",
+        introducedIn: "2.0",
+        url: "https://www.w3.org/WAI/WCAG22/Understanding/consistent-identification.html"
+      }],
+      tags: ["needs-review"],
+      message: "Potential inconsistent accessible name for the same-purpose button. Observed names: \"Continue\", \"Next\".",
+      selector: ".checkout button",
+      fingerprint: "control-name-inconsistent::checkout",
+      elementBounds: {
+        x: 55,
+        y: 35,
+        width: 18,
+        height: 6,
+        coordinateSpace: "viewport" as const
+      }
+    }
+  ]);
+  const issueHtml = issueBlockForRule(html, "control-name-inconsistent");
+
+  assert.match(issueHtml, /2 locations/);
+  assert.match(issueHtml, /Potential inconsistent accessible name for the same-purpose button\./);
+  assert.equal((issueHtml.match(/Potential inconsistent accessible name for the same-purpose button\./g) || []).length, 1);
+  assert.doesNotMatch(issueHtml, /Observed names/);
+  assert.doesNotMatch(issueHtml, /Book now/);
+  assert.doesNotMatch(issueHtml, /Continue/);
+  assert.match(issueHtml, /\.booking-card button/);
+  assert.match(issueHtml, /\.checkout button/);
+});
+
 test("renderExplorationHtml keeps long selectors available without using them as the primary target text", () => {
   const longSelector = ".ee4cb4021c.c3bfe61347[role=\"group\"]:nth-child(10) > .ef200ef4bd > .baad532480[data-testid=\"web-core-property-card\"][target=\"_blank\"] > .ae5dbab14d.f6e3a11b0d.e95943ce9b > .c51e32e283.c3bdfd4ac2 > .dcb3e09ec9.ae5dbab14d.f6e3a11b0d > .dcb3e09ec9.ae5dbab14d.f6e3a11b0d > .a81870d302.a19a26a18c.f6e3a11b0d > .a297f43545 > .de5b77f4e5[role=\"button\"]";
   const html = renderExplorationHtml(graph, [{

@@ -4008,6 +4008,11 @@ function normalizeIssueMessageForDisplay(message: string, ruleId?: string): stri
     return "Text may be clipped at 320px.";
   }
 
+  if (ruleId === "control-name-inconsistent") {
+    const match = message.match(/^(Potential inconsistent accessible name for the same-purpose [^.]+)\./u);
+    if (match) return `${match[1]}.`;
+  }
+
   return message.replace(/\s+Label:\s*"[^"]*"\.?$/u, ".").replace(/\.\.$/u, ".");
 }
 
