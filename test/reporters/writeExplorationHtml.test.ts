@@ -1095,6 +1095,9 @@ test("renderExplorationHtml keeps long selectors available without using them as
   assert.match(issueHtml, /<summary>Full selector<\/summary>/);
   assert.match(issueHtml, /web-core-property-card/);
   assert.match(issueHtml, /de5b77f4e5\[role="button"\]/);
+  assert.match(html, /\.finding-target-full \{[\s\S]*?display: inline-block/);
+  assert.match(html, /\.finding-target-full summary \{[\s\S]*?font-size: 11px/);
+  assert.match(html, /\.finding-target-full code \{[\s\S]*?max-height: 84px/);
 });
 
 test("renderExplorationHtml explains when not every target has a screenshot marker", () => {

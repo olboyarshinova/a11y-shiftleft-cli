@@ -1648,20 +1648,34 @@ export function renderExplorationHtml(
 
     .finding-target-full {
       color: var(--muted);
+      display: inline-block;
       font-size: 12px;
-      margin-top: 3px;
+      margin-top: 2px;
     }
 
     .finding-target-full summary {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 5px;
       cursor: pointer;
+      display: inline-flex;
+      font-size: 11px;
       font-weight: 700;
+      line-height: 1;
+      padding: 3px 6px;
     }
 
     .finding-target-full code {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 5px;
       display: block;
-      margin-top: 3px;
+      margin-top: 4px;
+      max-height: 84px;
       max-width: 100%;
+      overflow: auto;
       overflow-wrap: anywhere;
+      padding: 5px;
       white-space: normal;
     }
 
