@@ -113,6 +113,8 @@
   top-level cards, recent-run tables, dashboard JSON, and CLI output.
 - Added latest-run delta tracking for manual-review open items and journey
   findings in local dashboard HTML, JSON, and CLI summaries.
+- Added local dashboard JSON to evidence packages by default and dashboard
+  HTML/PDF when visual evidence is explicitly included.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.

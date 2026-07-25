@@ -45,6 +45,14 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
     }
   }, null, 2));
   await fs.writeFile(path.join(reportsDir, "keyboard-report.json"), "{}\n");
+  await fs.writeFile(path.join(reportsDir, "dashboard.json"), JSON.stringify({
+    totalRuns: 2,
+    latestRun: {
+      total: 4,
+      manualReviewOpen: 2,
+      journeyFindings: 1
+    }
+  }, null, 2));
   await fs.writeFile(path.join(reportsDir, "exploration.html"), "<h1>Visual</h1>");
   await fs.writeFile(path.join(reportsDir, "screenshots", "state-1.jpg"), "image-data");
 
@@ -88,6 +96,7 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
     "a11y-comment.md",
     "a11y-manual-checklist.md",
     "a11y-report.json",
+    "dashboard.json",
     "evaluation-scope.json",
     "keyboard-report.json"
   ]);
@@ -96,6 +105,7 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
     manualReviewFiles: 1,
     evaluationScope: true,
     keyboardEvidenceFiles: 1,
+    dashboardFiles: 1,
     visualReports: 0,
     screenshots: 0,
     rawExplorationGraph: false
@@ -129,7 +139,9 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   assert.match(summary, /Automated report files \| 2/);
   assert.match(summary, /Manual-review files \| 1/);
   assert.match(summary, /Keyboard evidence files \| 1/);
+  assert.match(summary, /Dashboard files \| 1/);
   assert.match(summary, /`a11y-report\.json`/);
+  assert.match(summary, /`dashboard\.json`/);
   assert.match(summary, /`evaluation-scope\.json`/);
   assert.match(summary, /[a-f0-9]{64}/);
 });
@@ -142,6 +154,7 @@ test("createEvidencePackage includes visual evidence only when requested", async
   await fs.writeFile(path.join(reportsDir, "a11y-report.json"), "{}\n");
   await fs.writeFile(path.join(reportsDir, "exploration.html"), "<h1>Visual</h1>");
   await fs.writeFile(path.join(reportsDir, "exploration.pdf"), "pdf-data");
+  await fs.writeFile(path.join(reportsDir, "dashboard.html"), "<h1>Dashboard</h1>");
   await fs.writeFile(path.join(reportsDir, "screenshots", "state-1.png"), "image-data");
   await fs.writeFile(path.join(reportsDir, "screenshots", "notes.txt"), "not evidence");
 
@@ -150,6 +163,7 @@ test("createEvidencePackage includes visual evidence only when requested", async
   assert.equal(manifest.reportSummary, undefined);
   assert.deepEqual(manifest.files.map((file) => file.path), [
     "a11y-report.json",
+    "dashboard.html",
     "exploration.html",
     "exploration.pdf",
     "screenshots/state-1.png"
@@ -157,7 +171,8 @@ test("createEvidencePackage includes visual evidence only when requested", async
   assert.equal(manifest.privacy.screenshotsIncluded, true);
   assert.equal(manifest.privacy.reviewRequiredBeforeSharing, true);
   assert.equal(manifest.privacy.warnings.length, 3);
-  assert.equal(manifest.contentSummary.visualReports, 2);
+  assert.equal(manifest.contentSummary.visualReports, 3);
+  assert.equal(manifest.contentSummary.dashboardFiles, 1);
   assert.equal(manifest.contentSummary.screenshots, 1);
   assert.deepEqual(manifest.reviewHints, [
     "No audit count summary was found in a11y-report.json.",
@@ -169,7 +184,8 @@ test("createEvidencePackage includes visual evidence only when requested", async
   const summary = await fs.readFile(path.join(outputDir, "evidence-summary.md"), "utf8");
   assert.match(summary, /Include visual evidence \| yes/);
   assert.match(summary, /Screenshots included \| yes/);
-  assert.match(summary, /Visual reports \| 2/);
+  assert.match(summary, /Visual reports \| 3/);
+  assert.match(summary, /Dashboard files \| 1/);
   assert.match(summary, /Screenshots \| 1/);
   assert.match(summary, /No audit count summary was found/);
   assert.match(summary, /No keyboard evidence file was included/);

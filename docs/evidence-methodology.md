@@ -46,6 +46,11 @@ evidence counts, temporary acceptances, and journey impact totals. This keeps
 manual validation work visible next to automated findings without exporting
 screenshots or raw HTML.
 
+Evidence packages include `dashboard.json` when it exists so trend and
+manual-review deltas can travel with the audit evidence. Dashboard HTML and PDF
+are included only when visual evidence is explicitly requested, because those
+files may be shared-facing visual artifacts.
+
 When writing to `--out`, the command prints a compact run summary with severity
 counts, finding types, the most affected URL, and the most common WCAG criterion.
 This keeps CI logs and validation runs readable without opening the full export.

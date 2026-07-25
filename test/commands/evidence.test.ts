@@ -212,6 +212,7 @@ function evidenceManifest(overrides: Partial<EvidencePackageManifest> = {}): Evi
       manualReviewFiles: 0,
       evaluationScope: false,
       keyboardEvidenceFiles: 0,
+      dashboardFiles: 0,
       visualReports: 0,
       screenshots: 0,
       rawExplorationGraph: false

@@ -15,14 +15,17 @@ const TEXT_EVIDENCE_FILES = [
   "evaluation-scope.json",
   "keyboard-report.json",
   "keyboard-path.md",
-  "exploration-graph.json"
+  "exploration-graph.json",
+  "dashboard.json"
 ] as const;
 
 const VISUAL_EVIDENCE_FILES = [
   "a11y-report.html",
   "a11y-report.pdf",
   "exploration.html",
-  "exploration.pdf"
+  "exploration.pdf",
+  "dashboard.html",
+  "dashboard.pdf"
 ] as const;
 
 const SCREENSHOT_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp"]);
@@ -76,6 +79,7 @@ export interface EvidencePackageManifest {
     manualReviewFiles: number;
     evaluationScope: boolean;
     keyboardEvidenceFiles: number;
+    dashboardFiles: number;
     visualReports: number;
     screenshots: number;
     rawExplorationGraph: boolean;
@@ -366,11 +370,18 @@ function summarizeEvidenceContents(files: EvidencePackageFile[]): EvidencePackag
       "keyboard-report.json",
       "keyboard-path.md"
     ]),
+    dashboardFiles: countMatching(paths, [
+      "dashboard.json",
+      "dashboard.html",
+      "dashboard.pdf"
+    ]),
     visualReports: countMatching(paths, [
       "a11y-report.html",
       "a11y-report.pdf",
       "exploration.html",
-      "exploration.pdf"
+      "exploration.pdf",
+      "dashboard.html",
+      "dashboard.pdf"
     ]),
     screenshots: files.filter((file) => file.path.startsWith("screenshots/")).length,
     rawExplorationGraph: paths.has("exploration-graph.json")
@@ -442,6 +453,7 @@ ${formatReviewHintsMarkdown(manifest.reviewHints)}
 | Manual-review files | ${manifest.contentSummary.manualReviewFiles} |
 | Evaluation scope | ${manifest.contentSummary.evaluationScope ? 1 : 0} |
 | Keyboard evidence files | ${manifest.contentSummary.keyboardEvidenceFiles} |
+| Dashboard files | ${manifest.contentSummary.dashboardFiles} |
 | Visual reports | ${manifest.contentSummary.visualReports} |
 | Screenshots | ${manifest.contentSummary.screenshots} |
 | Raw exploration graph | ${manifest.contentSummary.rawExplorationGraph ? 1 : 0} |
