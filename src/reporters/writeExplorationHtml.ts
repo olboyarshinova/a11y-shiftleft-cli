@@ -3905,7 +3905,7 @@ function stateIssueDisplayKey(issue: DedupedIssue): string {
   return JSON.stringify({
     severity: issue.severity,
     findingType: issue.findingType,
-    message: normalizeIssueMessageForDisplay(issue.message),
+    message: normalizeIssueMessageForDisplay(issue.message, issue.ruleId),
     colorScheme: issue.colorScheme || "",
     lifecycle: lifecycleLabelsForIssue(issue).map((item) => item.label).sort(),
     wcag: (issue.wcagCriteria || []).map((criterion) => `${criterion.id}:${criterion.level}`).sort(),
@@ -3925,7 +3925,7 @@ function renderFindingOccurrenceGroup(
   return `<li class="finding-occurrence">
       ${totalRuleIssues > 1 ? `<div>${severityBadge(issue.severity)} ${findingTypeBadge(issue.findingType)}${renderLifecycleBadges(group.issues)}${grouped ? ` <span class="badge">${group.issues.length} locations</span>` : ""}</div>` : ""}
       ${totalRuleIssues > 1 && issue.colorScheme ? `<div class="badges"><span class="badge">${escapeHtml(issue.colorScheme)} color scheme</span></div>` : ""}
-      <div>${escapeHtml(normalizeIssueMessageForDisplay(issue.message))}</div>
+      <div>${escapeHtml(normalizeIssueMessageForDisplay(issue.message, issue.ruleId))}</div>
       ${grouped ? renderFindingTargets(group.issues, annotationNumberByIssueKey) : renderFindingTarget(group.issues[0], annotationNumberByIssueKey)}
       ${renderRemediationTracking(issue)}
       ${renderOwnership(issue)}
@@ -4003,7 +4003,11 @@ function isMeaningfulSelectorSegment(segment: string): boolean {
   return false;
 }
 
-function normalizeIssueMessageForDisplay(message: string): string {
+function normalizeIssueMessageForDisplay(message: string, ruleId?: string): string {
+  if (ruleId === "layout-clipped-text" && message.startsWith("Text may be clipped at 320px:")) {
+    return "Text may be clipped at 320px.";
+  }
+
   return message.replace(/\s+Label:\s*"[^"]*"\.?$/u, ".").replace(/\.\.$/u, ".");
 }
 
@@ -4136,7 +4140,7 @@ function ticketDraftTypeKey(issue: DedupedIssue): string {
   return JSON.stringify({
     ruleId: issue.ruleId,
     findingType: issue.findingType,
-    message: normalizeIssueMessageForDisplay(issue.message),
+    message: normalizeIssueMessageForDisplay(issue.message, issue.ruleId),
     wcag: (issue.wcagCriteria || []).map((criterion) => `${criterion.id}:${criterion.level}`).sort(),
     ownership: issue.ownership?.kind || ""
   });
@@ -4196,7 +4200,7 @@ function buildIssueMarkdown(ruleId: string, issues: DedupedIssue[]): string {
   const lines: Array<string | undefined> = [
     `## ${ruleId}`,
     "",
-    normalizeIssueMessageForDisplay(primary.message),
+    normalizeIssueMessageForDisplay(primary.message, primary.ruleId),
     "",
     "### Evidence",
     "",

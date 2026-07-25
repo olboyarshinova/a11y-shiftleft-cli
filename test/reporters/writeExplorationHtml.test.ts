@@ -976,6 +976,47 @@ test("renderExplorationHtml groups identical issue messages into numbered locati
   assert.equal((issueHtml.match(new RegExp(message.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g")) || []).length, 1);
 });
 
+test("renderExplorationHtml groups clipped text messages by rule instead of clipped text content", () => {
+  const html = renderExplorationHtml(graph, [
+    {
+      ...issues[0],
+      ruleId: "layout-clipped-text",
+      severity: "warning",
+      findingType: "needs-review",
+      tags: ["needs-review", "wcag1410"],
+      message: "Text may be clipped at 320px: \"Long product headline\"",
+      selector: ".headline",
+      fingerprint: "layout-clipped-text::headline"
+    },
+    {
+      ...issues[0],
+      ruleId: "layout-clipped-text",
+      severity: "warning",
+      findingType: "needs-review",
+      tags: ["needs-review", "wcag1410"],
+      message: "Text may be clipped at 320px: \"Account card subtitle\"",
+      selector: ".subtitle",
+      fingerprint: "layout-clipped-text::subtitle",
+      elementBounds: {
+        x: 55,
+        y: 35,
+        width: 18,
+        height: 6,
+        coordinateSpace: "viewport" as const
+      }
+    }
+  ]);
+  const issueHtml = issueBlockForRule(html, "layout-clipped-text");
+
+  assert.match(issueHtml, /2 locations/);
+  assert.match(issueHtml, /Text may be clipped at 320px\./);
+  assert.equal((issueHtml.match(/Text may be clipped at 320px\./g) || []).length, 1);
+  assert.doesNotMatch(issueHtml, /Long product headline/);
+  assert.doesNotMatch(issueHtml, /Account card subtitle/);
+  assert.match(issueHtml, /\.headline/);
+  assert.match(issueHtml, /\.subtitle/);
+});
+
 test("renderExplorationHtml keeps long selectors available without using them as the primary target text", () => {
   const longSelector = ".ee4cb4021c.c3bfe61347[role=\"group\"]:nth-child(10) > .ef200ef4bd > .baad532480[data-testid=\"web-core-property-card\"][target=\"_blank\"] > .ae5dbab14d.f6e3a11b0d.e95943ce9b > .c51e32e283.c3bdfd4ac2 > .dcb3e09ec9.ae5dbab14d.f6e3a11b0d > .dcb3e09ec9.ae5dbab14d.f6e3a11b0d > .a81870d302.a19a26a18c.f6e3a11b0d > .a297f43545 > .de5b77f4e5[role=\"button\"]";
   const html = renderExplorationHtml(graph, [{
