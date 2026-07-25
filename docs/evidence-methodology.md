@@ -54,6 +54,9 @@ If a machine-readable evidence export has already been generated, the package
 also copies `a11y-evidence.json`, `a11y-evidence.jsonl`, or
 `a11y-evidence.jsonld` so validation datasets and review packages can stay in
 sync.
+If no JSON evidence export exists yet, `evidence pack` generates
+`a11y-evidence.json` inside the package from the source `a11y-report.json` when
+that report is valid.
 
 When writing to `--out`, the command prints a compact run summary with severity
 counts, finding types, the most affected URL, and the most common WCAG criterion.

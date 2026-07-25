@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { createEvidenceExport, readA11yReport, serializeEvidenceExport } from "./evidenceExport.js";
 
 const TEXT_EVIDENCE_FILES = [
   "a11y-report.json",
@@ -104,6 +105,7 @@ export async function createEvidencePackage(options: {
 }): Promise<EvidencePackageManifest> {
   const reportsDir = path.resolve(options.reportsDir);
   const outputDir = path.resolve(options.outputDir);
+  const generatedAt = options.generatedAt || new Date().toISOString();
   await ensureDirectory(reportsDir, "Reports directory");
   await ensureEmptyOutput(outputDir);
 
@@ -121,6 +123,9 @@ export async function createEvidencePackage(options: {
     files.push(...await copyScreenshotEvidence(reportsDir, outputDir));
   }
 
+  const generatedEvidenceExport = await createGeneratedEvidenceExport(reportsDir, outputDir, files, generatedAt);
+  if (generatedEvidenceExport) files.push(generatedEvidenceExport);
+
   if (files.length === 0) {
     throw new Error(`No supported accessibility report artifacts found in ${reportsDir}`);
   }
@@ -132,7 +137,7 @@ export async function createEvidencePackage(options: {
   const contentSummary = summarizeEvidenceContents(files);
   const manifest: EvidencePackageManifest = {
     version: 1,
-    generatedAt: options.generatedAt || new Date().toISOString(),
+    generatedAt,
     source: path.basename(reportsDir),
     localOnly: true,
     includeVisual: Boolean(options.includeVisual),
@@ -158,6 +163,26 @@ export async function createEvidencePackage(options: {
   );
 
   return manifest;
+}
+
+async function createGeneratedEvidenceExport(
+  reportsDir: string,
+  outputDir: string,
+  files: EvidencePackageFile[],
+  generatedAt: string
+): Promise<EvidencePackageFile | null> {
+  if (files.some((file) => file.path === "a11y-evidence.json")) return null;
+
+  try {
+    const report = await readA11yReport(path.join(reportsDir, "a11y-report.json"));
+    const outputPath = path.join(outputDir, "a11y-evidence.json");
+    await fs.writeFile(outputPath, serializeEvidenceExport(createEvidenceExport(report, generatedAt), "json"));
+    return describeFile(outputPath, "a11y-evidence.json");
+  } catch (error) {
+    if (isNodeError(error) && error.code === "ENOENT") return null;
+    if (error instanceof Error && error.message.startsWith("Invalid accessibility report:")) return null;
+    throw error;
+  }
 }
 
 async function copyEvidenceFile(

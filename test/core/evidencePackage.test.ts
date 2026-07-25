@@ -11,6 +11,7 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   const outputDir = path.join(root, "evidence");
   await fs.mkdir(path.join(reportsDir, "screenshots"), { recursive: true });
   await fs.writeFile(path.join(reportsDir, "a11y-report.json"), JSON.stringify({
+    generatedAt: "2026-06-19T00:00:00.000Z",
     summary: {
       total: 4,
       critical: 1,
@@ -95,6 +96,7 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   });
   assert.deepEqual(manifest.files.map((file) => file.path), [
     "a11y-comment.md",
+    "a11y-evidence.json",
     "a11y-evidence.jsonl",
     "a11y-manual-checklist.md",
     "a11y-report.json",
@@ -104,7 +106,7 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   ]);
   assert.deepEqual(manifest.contentSummary, {
     automatedReports: 2,
-    evidenceExportFiles: 1,
+    evidenceExportFiles: 2,
     manualReviewFiles: 1,
     evaluationScope: true,
     keyboardEvidenceFiles: 1,
@@ -140,15 +142,21 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   assert.match(summary, /Manual review is incomplete/);
   assert.match(summary, /Visual reports and screenshots were excluded/);
   assert.match(summary, /Automated report files \| 2/);
-  assert.match(summary, /Machine-readable evidence exports \| 1/);
+  assert.match(summary, /Machine-readable evidence exports \| 2/);
   assert.match(summary, /Manual-review files \| 1/);
   assert.match(summary, /Keyboard evidence files \| 1/);
   assert.match(summary, /Dashboard files \| 1/);
   assert.match(summary, /`a11y-report\.json`/);
+  assert.match(summary, /`a11y-evidence\.json`/);
   assert.match(summary, /`a11y-evidence\.jsonl`/);
   assert.match(summary, /`dashboard\.json`/);
   assert.match(summary, /`evaluation-scope\.json`/);
   assert.match(summary, /[a-f0-9]{64}/);
+
+  const generatedEvidence = JSON.parse(await fs.readFile(path.join(outputDir, "a11y-evidence.json"), "utf8"));
+  assert.equal(generatedEvidence.generatedAt, "2026-06-20T00:00:00.000Z");
+  assert.equal(generatedEvidence.localOnly, true);
+  assert.equal(generatedEvidence.summary.total, 0);
 });
 
 test("createEvidencePackage includes visual evidence only when requested", async () => {

@@ -120,6 +120,8 @@
   reports, and screenshots are visible immediately after packaging.
 - Added machine-readable evidence export files to local evidence packages when
   `a11y-evidence.json`, `a11y-evidence.jsonl`, or `a11y-evidence.jsonld` exists.
+- Added automatic `a11y-evidence.json` generation inside `evidence pack` when a
+  valid `a11y-report.json` is present and no JSON evidence export exists yet.
 - Added targeted remediation guidance for `label-content-name-mismatch` so
   voice-control related findings explain how to align visible labels and
   accessible names.
