@@ -342,7 +342,7 @@ page/state to review in each profile. The summary also calls out
 profile-specific rule signals and includes coverage-overlap counts,
 profile-specific page/state signals, copy-paste commands, direct links to
 matching visual evidence, screenshot hints, screenshot review notes, and a short
-side-by-side comparison queue.
+side-by-side comparison queue with an overlay slider for captured screenshots.
 
 Install the browser engine before using it, for example:
 
@@ -357,7 +357,8 @@ review for browser-specific rule signals and the first page/state to inspect in
 each browser report. The summary also calls out browser-only rule signals and
 coverage-overlap counts, browser-only page/state signals, copy-paste commands,
 direct links to matching visual evidence, screenshot hints, screenshot review
-notes, and a short side-by-side comparison queue.
+notes, and a short side-by-side comparison queue with an overlay slider for
+captured screenshots.
 
 Audit profiles are shortcuts:
 

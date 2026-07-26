@@ -30,6 +30,8 @@
   matrix comparison queues.
 - Added local HTML summaries for device and browser matrix audits with
   side-by-side visual evidence cards.
+- Added an overlay slider to matrix HTML summaries so reviewers can compare two
+  captured screenshots without opening separate tabs.
 
 ## 0.9.0
 

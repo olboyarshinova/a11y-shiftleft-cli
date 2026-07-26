@@ -1199,6 +1199,14 @@ export function renderAuditMatrixHtmlSummary(
     th { color: var(--muted); font-weight: 700; }
     .comparison-card { display: grid; gap: 12px; }
     .comparison-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+    .diff-slider { border: 1px solid var(--border); border-radius: 8px; background: #ffffff; overflow: hidden; }
+    .diff-slider header { display: flex; justify-content: space-between; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    .diff-frame { position: relative; min-height: 220px; max-height: 520px; background: #eef2f7; overflow: hidden; }
+    .diff-frame img { display: block; width: 100%; max-height: 520px; object-fit: contain; }
+    .diff-frame .diff-overlay { position: absolute; inset: 0; clip-path: inset(0 calc(100% - var(--split, 50%)) 0 0); }
+    .diff-frame .diff-divider { position: absolute; top: 0; bottom: 0; left: var(--split, 50%); width: 3px; background: #ffffff; box-shadow: 0 0 0 1px rgba(23, 32, 51, 0.35); }
+    .diff-control { display: grid; gap: 6px; padding: 10px 12px 12px; }
+    .diff-control input { width: 100%; }
     .evidence-card { overflow: hidden; }
     .evidence-card header { display: flex; justify-content: space-between; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
     .evidence-card img { display: block; width: 100%; max-height: 460px; object-fit: contain; background: #eef2f7; border-bottom: 1px solid var(--border); }
@@ -1221,6 +1229,17 @@ export function renderAuditMatrixHtmlSummary(
     ${renderAuditMatrixHtmlProfiles(report.profiles, profileKind, baseOutputDir)}
     ${renderAuditMatrixHtmlVisualQueue(visualQueue, report.profiles, baseOutputDir)}
   </main>
+  <script>
+    document.querySelectorAll("[data-diff-slider]").forEach(function(slider) {
+      var input = slider.querySelector("[data-diff-input]");
+      if (!input) return;
+      var update = function() {
+        slider.style.setProperty("--split", input.value + "%");
+      };
+      input.addEventListener("input", update);
+      update();
+    });
+  </script>
 </body>
 </html>
 `;
@@ -1270,10 +1289,38 @@ function renderAuditMatrixHtmlVisualQueue(
         <h3 id="comparison-${escapeAttribute(slugifyMatrixId(item.stateKey))}">${escapeHtml(item.label)}</h3>
         <p class="muted">${escapeHtml(item.compare)} · ${escapeHtml(`${item.spread} finding spread at depth ${item.depth}`)}<br>${escapeHtml(item.screenshotReview)}</p>
       </div>
+      ${renderAuditMatrixHtmlDiffSlider(item, profiles, baseOutputDir)}
       <div class="comparison-grid">
         ${item.visualEvidence.map((evidence) => renderAuditMatrixHtmlEvidenceCard(evidence, profiles, baseOutputDir, item.label)).join("")}
       </div>
     </article>`).join("")}
+  </section>`;
+}
+
+function renderAuditMatrixHtmlDiffSlider(
+  item: AuditMatrixVisualComparison,
+  profiles: Array<{ label: string; outputDir: string }>,
+  baseOutputDir: string
+): string {
+  const evidence = item.visualEvidence.filter((entry) => entry.screenshot).slice(0, 2);
+  const [left, right] = evidence;
+  if (!left || !right) return "";
+  const leftSrc = resolveAuditMatrixScreenshotSrc(left, profiles, baseOutputDir);
+  const rightSrc = resolveAuditMatrixScreenshotSrc(right, profiles, baseOutputDir);
+  return `<section class="diff-slider" data-diff-slider style="--split: 50%;" aria-label="${escapeAttribute(`Visual overlay comparison for ${item.label}`)}">
+    <header>
+      <strong>Visual overlay</strong>
+      <span class="muted">${escapeHtml(left.label)} vs ${escapeHtml(right.label)}</span>
+    </header>
+    <div class="diff-frame">
+      <img src="${escapeAttribute(leftSrc)}" alt="${escapeAttribute(`${left.label} screenshot for ${item.label}`)}" loading="lazy">
+      <img class="diff-overlay" src="${escapeAttribute(rightSrc)}" alt="${escapeAttribute(`${right.label} screenshot for ${item.label}`)}" loading="lazy">
+      <span class="diff-divider" aria-hidden="true"></span>
+    </div>
+    <label class="diff-control">
+      <span>Drag to reveal ${escapeHtml(right.label)} over ${escapeHtml(left.label)}</span>
+      <input type="range" min="0" max="100" value="50" data-diff-input aria-label="${escapeAttribute(`Reveal ${right.label} over ${left.label}`)}">
+    </label>
   </section>`;
 }
 

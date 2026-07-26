@@ -468,6 +468,10 @@ test("renderAuditMatrixHtmlSummary creates side-by-side visual evidence links", 
 
   assert.match(html, /<title>Device Audit Summary<\/title>/);
   assert.match(html, /Side-by-side Review/);
+  assert.match(html, /Visual overlay/);
+  assert.match(html, /data-diff-slider/);
+  assert.match(html, /data-diff-input/);
+  assert.match(html, /Drag to reveal mobile \(iPhone 13\) over desktop/);
   assert.match(html, /desktop\/a11y-report\.html#state-1/);
   assert.match(html, /mobile\/a11y-report\.html#state-1/);
   assert.match(html, /desktop\/screenshots\/state-1\.png/);
