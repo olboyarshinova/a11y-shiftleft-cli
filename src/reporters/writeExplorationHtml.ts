@@ -182,6 +182,12 @@ export function renderExplorationHtml(
       color: var(--info);
     }
 
+    .report-filter-status {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
     body[data-report-view="review"] .finding-target-full,
     body[data-report-view="review"] .finding-groups,
     body[data-report-view="review"] .safe-guardrails {
@@ -2264,8 +2270,27 @@ export function renderExplorationHtml(
     (() => {
       const buttons = Array.from(document.querySelectorAll('[data-finding-filter]'));
       if (buttons.length === 0) return;
+      const status = document.querySelector('[data-finding-filter-status]');
       const reportId = document.body.dataset.coverageReportId || 'report';
       const storageKey = 'a11y-shiftleft:finding-filter:' + reportId;
+
+      const matchesFilter = (element, mode) => {
+        if (mode === 'critical') {
+          return element.dataset.issueCritical === 'true' || element.dataset.stateCritical === 'true';
+        }
+        if (mode === 'actionable') {
+          if (element.classList.contains('issue')) return element.dataset.issueInfoOnly !== 'true';
+          return element.dataset.stateInfoOnly !== 'true' && element.dataset.stateNoFindings !== 'true';
+        }
+        return true;
+      };
+
+      const updateStatus = (mode) => {
+        if (!status) return;
+        const visibleStates = Array.from(document.querySelectorAll('.state')).filter((state) => matchesFilter(state, mode)).length;
+        const visibleIssues = Array.from(document.querySelectorAll('.issue')).filter((issue) => matchesFilter(issue, mode)).length;
+        status.textContent = 'Showing ' + visibleStates + ' state' + (visibleStates === 1 ? '' : 's') + ' and ' + visibleIssues + ' issue group' + (visibleIssues === 1 ? '' : 's') + '.';
+      };
 
       const activate = (mode) => {
         const selectedMode = buttons.some((button) => button.dataset.findingFilter === mode) ? mode : 'all';
@@ -2273,6 +2298,7 @@ export function renderExplorationHtml(
         for (const button of buttons) {
           button.setAttribute('aria-pressed', button.dataset.findingFilter === selectedMode ? 'true' : 'false');
         }
+        updateStatus(selectedMode);
         try {
           localStorage.setItem(storageKey, selectedMode);
         } catch {
@@ -2637,6 +2663,7 @@ function renderReportViewControls(): string {
     <button class="report-view-button" type="button" data-finding-filter="all" aria-pressed="true" aria-label="Show all finding groups">All</button>
     <button class="report-view-button" type="button" data-finding-filter="critical" aria-pressed="false" aria-label="Show only finding groups with critical issues">Critical</button>
     <button class="report-view-button" type="button" data-finding-filter="actionable" aria-pressed="false" aria-label="Show critical and warning finding groups">Critical + Warning</button>
+    <span class="report-filter-status" data-finding-filter-status aria-live="polite"></span>
   </div>`;
 }
 
