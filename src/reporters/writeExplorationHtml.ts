@@ -4341,7 +4341,8 @@ function buildIssueMarkdown(ruleId: string, issues: DedupedIssue[]): string {
       "",
       `- ${primary.ownership.label}`,
       primary.ownership.source ? `- Source: ${primary.ownership.source}` : undefined,
-      primary.ownership.note ? `- Note: ${primary.ownership.note}` : undefined
+      primary.ownership.note ? `- Note: ${primary.ownership.note}` : undefined,
+      ...thirdPartyOwnerFollowUp(primary)
     ].filter((line): line is string => line !== undefined))
     : [];
 
@@ -4380,6 +4381,20 @@ function buildIssueMarkdown(ruleId: string, issues: DedupedIssue[]): string {
   ];
 
   return lines.filter((line): line is string => line !== undefined).join("\n");
+}
+
+function thirdPartyOwnerFollowUp(issue: DedupedIssue): string[] {
+  if (issue.ownership?.kind !== "third-party-embed") return [];
+  const source = issue.ownership.source || "the embedded provider";
+  return [
+    "",
+    "### Owner follow-up",
+    "",
+    `- Confirm whether the embedded content from ${source} is required on this page.`,
+    "- If the provider controls the defect, file a vendor/content-owner request and track the response separately from first-party code fixes.",
+    "- Provide a first-party fallback, transcript, link, or alternative path when users cannot complete the task through the embed.",
+    "- Retest the embed source or isolated page when access is available, then document the manual verification result."
+  ];
 }
 
 function formatIssueTargetForMarkdown(issue: DedupedIssue): string {

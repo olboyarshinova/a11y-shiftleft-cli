@@ -398,6 +398,10 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(decodedCopyPayload, /## button-name/);
   assert.match(decodedCopyPayload, /WCAG 4\.1\.2 Name, Role, Value \(A\)/);
   assert.match(decodedCopyPayload, /Ownership/);
+  assert.match(decodedCopyPayload, /Owner follow-up/);
+  assert.match(decodedCopyPayload, /embedded content from youtube\.com is required/);
+  assert.match(decodedCopyPayload, /vendor\/content-owner request/);
+  assert.match(decodedCopyPayload, /first-party fallback, transcript, link, or alternative path/);
   assert.match(html, /# Accessibility Ticket Drafts/);
   assert.match(html, /&lt;!-- Ticket draft 1 of 1 --&gt;/);
   assert.match(html, /Give every button an accessible name/);
