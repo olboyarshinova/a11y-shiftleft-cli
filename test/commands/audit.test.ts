@@ -162,6 +162,7 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
   ]);
 
   assert.match(markdown, /# Device Audit Summary/);
+  assert.match(markdown, /Total across profiles: 3 total \(1 critical, 2 warning, 0 info\); 4 explored states\./);
   assert.match(markdown, /\| Device profile \| Status \| Findings \| States \| Report \|/);
   assert.match(markdown, /desktop \| completed \| 3 total \(1 critical, 2 warning, 0 info\) \| 4 \| \[Open report\]\(reports\/devices\/desktop\/a11y-report\.html\)/);
   assert.match(markdown, /mobile \(iPhone 13\) \| failed \| not available \| not available \| \[Open report\]\(reports\/devices\/mobile\/a11y-report\.html\)/);
