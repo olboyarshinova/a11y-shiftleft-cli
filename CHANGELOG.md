@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added rule-level difference review to `audit --devices` and
+  `audit --browsers` Markdown/JSON summaries so teams can quickly spot
+  responsive or browser-specific accessibility signals.
+
 ## 0.9.0
 
 - Added `audit --devices` for separate desktop, mobile, tablet, and named

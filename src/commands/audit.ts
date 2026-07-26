@@ -169,6 +169,41 @@ export interface AuditDeviceSummary {
   warning: number;
   info: number;
   states?: number;
+  topRules?: AuditMatrixRuleSummary[];
+  topPages?: AuditMatrixPageSummary[];
+}
+
+export interface AuditMatrixRuleSummary {
+  ruleId: string;
+  severity: Severity;
+  count: number;
+}
+
+export interface AuditMatrixPageSummary {
+  page: string;
+  total: number;
+  critical: number;
+  warning: number;
+  info: number;
+}
+
+export interface AuditMatrixProfilePeak {
+  label: string;
+  value: number;
+}
+
+export interface AuditMatrixRuleDifference {
+  ruleId: string;
+  severity: Severity;
+  total: number;
+  profileCounts: Record<string, number>;
+}
+
+export interface AuditMatrixComparison {
+  highestTotal?: AuditMatrixProfilePeak;
+  highestCritical?: AuditMatrixProfilePeak;
+  differingRules: AuditMatrixRuleDifference[];
+  commonRules: AuditMatrixRuleDifference[];
 }
 
 interface AuditDeviceRunResult {
@@ -191,6 +226,7 @@ export interface AuditDeviceMatrixReport {
     summary?: AuditDeviceSummary;
   }>;
   totals: AuditDeviceSummary;
+  comparison: AuditMatrixComparison;
 }
 
 interface AuditBrowserRunResult {
@@ -213,6 +249,7 @@ export interface AuditBrowserMatrixReport {
     summary?: AuditDeviceSummary;
   }>;
   totals: AuditDeviceSummary;
+  comparison: AuditMatrixComparison;
 }
 
 export async function runAuditBrowserMatrix(options: AuditOptions): Promise<{ failed: boolean; outputDir: string }> {
@@ -299,12 +336,14 @@ export function createAuditBrowserMatrixReport(
       jsonReport: path.join(result.outputDir, "a11y-report.json"),
       ...(result.summary ? { summary: result.summary } : {})
     })),
-    totals: summarizeAuditDeviceMatrix(results)
+    totals: summarizeAuditDeviceMatrix(results),
+    comparison: createAuditMatrixComparison(results)
   };
 }
 
 export function formatAuditBrowserMatrixSummary(results: Array<{ target: AuditBrowserTarget; failed: boolean; outputDir: string; summary?: AuditDeviceSummary }>): string {
   const totals = summarizeAuditDeviceMatrix(results);
+  const comparison = createAuditMatrixComparison(results);
   const rows = results.map((result) => (
     `| ${escapeMarkdownTableCell(result.target.label)} | ${result.failed ? "failed" : "completed"} | ${formatDeviceSummaryCounts(result)} | ${formatDeviceSummaryStates(result)} | [Open report](${escapeMarkdownLink(`${result.outputDir}/a11y-report.html`)}) |`
   )).join("\n");
@@ -321,6 +360,8 @@ Total across browsers: ${formatDeviceSummaryCounts({ summary: totals })}; ${form
 | Browser engine | Status | Findings | States | Report |
 |---|---|---:|---:|---|
 ${rows}
+
+${formatAuditMatrixComparison("browser engine", comparison)}
 `;
 }
 
@@ -408,7 +449,8 @@ export function createAuditDeviceMatrixReport(
       jsonReport: path.join(result.outputDir, "a11y-report.json"),
       ...(result.summary ? { summary: result.summary } : {})
     })),
-    totals: summarizeAuditDeviceMatrix(results)
+    totals: summarizeAuditDeviceMatrix(results),
+    comparison: createAuditMatrixComparison(results)
   };
 }
 
@@ -433,6 +475,7 @@ function summarizeAuditDeviceMatrix(results: Array<{ summary?: AuditDeviceSummar
 
 export function formatAuditDeviceMatrixSummary(results: Array<{ target: AuditDeviceTarget; failed: boolean; outputDir: string; summary?: AuditDeviceSummary }>): string {
   const totals = summarizeAuditDeviceMatrix(results);
+  const comparison = createAuditMatrixComparison(results);
   const rows = results.map((result) => (
     `| ${escapeMarkdownTableCell(result.target.label)} | ${result.failed ? "failed" : "completed"} | ${formatDeviceSummaryCounts(result)} | ${formatDeviceSummaryStates(result)} | [Open report](${escapeMarkdownLink(`${result.outputDir}/a11y-report.html`)}) |`
   )).join("\n");
@@ -448,6 +491,8 @@ Total across profiles: ${formatDeviceSummaryCounts({ summary: totals })}; ${form
 | Device profile | Status | Findings | States | Report |
 |---|---|---:|---:|---|
 ${rows}
+
+${formatAuditMatrixComparison("device profile", comparison)}
 `;
 }
 
@@ -460,11 +505,156 @@ async function readAuditDeviceSummary(outputDir: string): Promise<AuditDeviceSum
       critical: Number(report.summary.critical || 0),
       warning: Number(report.summary.warning || 0),
       info: Number(report.summary.info || 0),
-      states: report.exploration?.summary.statesVisited
+      states: report.exploration?.summary.statesVisited,
+      topRules: summarizeAuditMatrixRules(report.issues || []),
+      topPages: (report.summary.byPage || []).slice(0, 5).map((page) => ({
+        page: page.url,
+        total: page.total,
+        critical: page.critical,
+        warning: page.warning,
+        info: page.info
+      }))
     };
   } catch {
     return undefined;
   }
+}
+
+function summarizeAuditMatrixRules(issues: A11yReport["issues"], limit = 20): AuditMatrixRuleSummary[] {
+  const groups = new Map<string, AuditMatrixRuleSummary>();
+  for (const issue of issues) {
+    const count = 1 + (issue.duplicateCount || 0);
+    const existing = groups.get(issue.ruleId);
+    if (!existing) {
+      groups.set(issue.ruleId, {
+        ruleId: issue.ruleId,
+        severity: issue.severity,
+        count
+      });
+      continue;
+    }
+
+    existing.count += count;
+    if (severityRankValue(issue.severity) > severityRankValue(existing.severity)) {
+      existing.severity = issue.severity;
+    }
+  }
+
+  return [...groups.values()]
+    .sort((left, right) => (
+      severityRankValue(right.severity) - severityRankValue(left.severity)
+      || right.count - left.count
+      || left.ruleId.localeCompare(right.ruleId)
+    ))
+    .slice(0, limit);
+}
+
+function createAuditMatrixComparison(
+  results: Array<{ target: { label: string }; summary?: AuditDeviceSummary }>
+): AuditMatrixComparison {
+  const completed = results.filter((result) => result.summary);
+  const highestTotal = maxProfile(completed, (summary) => summary.total);
+  const highestCritical = maxProfile(completed, (summary) => summary.critical);
+  const profileLabels = completed.map((result) => result.target.label);
+  const ruleMap = new Map<string, AuditMatrixRuleDifference>();
+
+  for (const result of completed) {
+    const label = result.target.label;
+    for (const rule of result.summary?.topRules || []) {
+      const existing = ruleMap.get(rule.ruleId) || {
+        ruleId: rule.ruleId,
+        severity: rule.severity,
+        total: 0,
+        profileCounts: Object.fromEntries(profileLabels.map((profileLabel) => [profileLabel, 0]))
+      };
+      existing.profileCounts[label] = rule.count;
+      existing.total += rule.count;
+      if (severityRankValue(rule.severity) > severityRankValue(existing.severity)) {
+        existing.severity = rule.severity;
+      }
+      ruleMap.set(rule.ruleId, existing);
+    }
+  }
+
+  const rules = [...ruleMap.values()].sort(compareAuditMatrixRules);
+  const differingRules = rules
+    .filter((rule) => {
+      const counts = profileLabels.map((label) => rule.profileCounts[label] || 0);
+      return new Set(counts).size > 1;
+    })
+    .slice(0, 8);
+  const commonRules = rules
+    .filter((rule) => profileLabels.length > 1 && profileLabels.every((label) => (rule.profileCounts[label] || 0) > 0))
+    .slice(0, 5);
+
+  return {
+    ...(highestTotal ? { highestTotal } : {}),
+    ...(highestCritical ? { highestCritical } : {}),
+    differingRules,
+    commonRules
+  };
+}
+
+function maxProfile(
+  results: Array<{ target: { label: string }; summary?: AuditDeviceSummary }>,
+  pick: (summary: AuditDeviceSummary) => number
+): AuditMatrixProfilePeak | undefined {
+  return results.reduce<AuditMatrixProfilePeak | undefined>((highest, result) => {
+    if (!result.summary) return highest;
+    const value = pick(result.summary);
+    if (!highest || value > highest.value) return { label: result.target.label, value };
+    return highest;
+  }, undefined);
+}
+
+function compareAuditMatrixRules(left: AuditMatrixRuleDifference, right: AuditMatrixRuleDifference): number {
+  return severityRankValue(right.severity) - severityRankValue(left.severity)
+    || right.total - left.total
+    || left.ruleId.localeCompare(right.ruleId);
+}
+
+function formatAuditMatrixComparison(kind: string, comparison: AuditMatrixComparison): string {
+  const lines = [
+    "## Difference Review",
+    "",
+    `Use this section to spot findings that may be specific to one ${kind}. Treat differences as review signals until a person confirms the behavior in the visual reports.`,
+    "",
+    `- Most findings: ${comparison.highestTotal ? `${comparison.highestTotal.label} (${comparison.highestTotal.value})` : "not available"}.`,
+    `- Most critical findings: ${comparison.highestCritical ? `${comparison.highestCritical.label} (${comparison.highestCritical.value})` : "not available"}.`,
+    "",
+    "### Rules That Differ",
+    "",
+    formatAuditMatrixRuleTable(comparison.differingRules),
+    "",
+    "### Rules Seen In Every Completed Profile",
+    "",
+    formatAuditMatrixRuleTable(comparison.commonRules)
+  ];
+
+  return lines.join("\n");
+}
+
+function formatAuditMatrixRuleTable(rules: AuditMatrixRuleDifference[]): string {
+  if (rules.length === 0) return "No rule-level differences found in the available summaries.";
+  return [
+    "| Rule | Severity | Total | Profile counts |",
+    "|---|---|---:|---|",
+    ...rules.map((rule) => (
+      `| \`${escapeMarkdownTableCell(rule.ruleId)}\` | ${rule.severity} | ${rule.total} | ${escapeMarkdownTableCell(formatProfileCounts(rule.profileCounts))} |`
+    ))
+  ].join("\n");
+}
+
+function formatProfileCounts(profileCounts: Record<string, number>): string {
+  return Object.entries(profileCounts)
+    .map(([label, count]) => `${label}: ${count}`)
+    .join("; ");
+}
+
+function severityRankValue(severity: Severity): number {
+  if (severity === "critical") return 3;
+  if (severity === "warning") return 2;
+  return 1;
 }
 
 function formatDeviceSummaryCounts(result: { summary?: AuditDeviceSummary }): string {

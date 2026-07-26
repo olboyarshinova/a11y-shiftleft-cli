@@ -175,21 +175,39 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
         critical: 1,
         warning: 2,
         info: 0,
-        states: 4
+        states: 4,
+        topRules: [
+          { ruleId: "color-contrast", severity: "critical", count: 2 },
+          { ruleId: "target-size", severity: "warning", count: 1 }
+        ]
       }
     },
     {
       target: { label: "mobile (iPhone 13)", slug: "mobile", device: "iPhone 13" },
-      failed: true,
-      outputDir: "reports/devices/mobile"
+      failed: false,
+      outputDir: "reports/devices/mobile",
+      summary: {
+        total: 5,
+        critical: 0,
+        warning: 5,
+        info: 0,
+        states: 3,
+        topRules: [
+          { ruleId: "target-size", severity: "warning", count: 5 }
+        ]
+      }
     }
   ]);
 
   assert.match(markdown, /# Device Audit Summary/);
-  assert.match(markdown, /Total across profiles: 3 total \(1 critical, 2 warning, 0 info\); 4 explored states\./);
+  assert.match(markdown, /Total across profiles: 8 total \(1 critical, 7 warning, 0 info\); 7 explored states\./);
   assert.match(markdown, /\| Device profile \| Status \| Findings \| States \| Report \|/);
   assert.match(markdown, /desktop \| completed \| 3 total \(1 critical, 2 warning, 0 info\) \| 4 \| \[Open report\]\(reports\/devices\/desktop\/a11y-report\.html\)/);
-  assert.match(markdown, /mobile \(iPhone 13\) \| failed \| not available \| not available \| \[Open report\]\(reports\/devices\/mobile\/a11y-report\.html\)/);
+  assert.match(markdown, /mobile \(iPhone 13\) \| completed \| 5 total \(0 critical, 5 warning, 0 info\) \| 3 \| \[Open report\]\(reports\/devices\/mobile\/a11y-report\.html\)/);
+  assert.match(markdown, /## Difference Review/);
+  assert.match(markdown, /Most findings: mobile \(iPhone 13\) \(5\)\./);
+  assert.match(markdown, /`color-contrast` \| critical \| 2 \| desktop: 2; mobile \(iPhone 13\): 0/);
+  assert.match(markdown, /`target-size` \| warning \| 6 \| desktop: 1; mobile \(iPhone 13\): 5/);
 });
 
 test("createAuditDeviceMatrixReport exports machine-readable device results", () => {
@@ -203,7 +221,10 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
         critical: 1,
         warning: 2,
         info: 0,
-        states: 4
+        states: 4,
+        topRules: [
+          { ruleId: "color-contrast", severity: "critical", count: 2 }
+        ]
       }
     },
     {
@@ -215,7 +236,10 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
         critical: 0,
         warning: 1,
         info: 1,
-        states: 3
+        states: 3,
+        topRules: [
+          { ruleId: "target-size", severity: "warning", count: 1 }
+        ]
       }
     }
   ], "2026-07-26T00:00:00.000Z");
@@ -228,6 +252,14 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
     info: 1,
     states: 7
   });
+  assert.deepEqual(report.comparison.highestTotal, {
+    label: "desktop",
+    value: 3
+  });
+  assert.deepEqual(report.comparison.differingRules.map((rule) => rule.ruleId), [
+    "color-contrast",
+    "target-size"
+  ]);
   assert.deepEqual(report.profiles[1], {
     label: "mobile (iPhone 13)",
     slug: "mobile",
@@ -241,7 +273,10 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
       critical: 0,
       warning: 1,
       info: 1,
-      states: 3
+      states: 3,
+      topRules: [
+        { ruleId: "target-size", severity: "warning", count: 1 }
+      ]
     }
   });
 });
@@ -257,21 +292,38 @@ test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
         critical: 1,
         warning: 2,
         info: 1,
-        states: 5
+        states: 5,
+        topRules: [
+          { ruleId: "button-name", severity: "critical", count: 1 },
+          { ruleId: "focus-visible", severity: "warning", count: 2 }
+        ]
       }
     },
     {
       target: { label: "WebKit", slug: "webkit", browser: "webkit" },
-      failed: true,
-      outputDir: "reports/browsers/webkit"
+      failed: false,
+      outputDir: "reports/browsers/webkit",
+      summary: {
+        total: 2,
+        critical: 0,
+        warning: 2,
+        info: 0,
+        states: 4,
+        topRules: [
+          { ruleId: "focus-visible", severity: "warning", count: 2 }
+        ]
+      }
     }
   ]);
 
   assert.match(markdown, /# Browser Audit Summary/);
-  assert.match(markdown, /Total across browsers: 4 total \(1 critical, 2 warning, 1 info\); 5 explored states\./);
+  assert.match(markdown, /Total across browsers: 6 total \(1 critical, 4 warning, 1 info\); 9 explored states\./);
   assert.match(markdown, /\| Browser engine \| Status \| Findings \| States \| Report \|/);
   assert.match(markdown, /Chromium \| completed \| 4 total \(1 critical, 2 warning, 1 info\) \| 5 \| \[Open report\]\(reports\/browsers\/chromium\/a11y-report\.html\)/);
-  assert.match(markdown, /WebKit \| failed \| not available \| not available \| \[Open report\]\(reports\/browsers\/webkit\/a11y-report\.html\)/);
+  assert.match(markdown, /WebKit \| completed \| 2 total \(0 critical, 2 warning, 0 info\) \| 4 \| \[Open report\]\(reports\/browsers\/webkit\/a11y-report\.html\)/);
+  assert.match(markdown, /Use this section to spot findings that may be specific to one browser engine/);
+  assert.match(markdown, /`button-name` \| critical \| 1 \| Chromium: 1; WebKit: 0/);
+  assert.match(markdown, /`focus-visible` \| warning \| 4 \| Chromium: 2; WebKit: 2/);
 });
 
 test("createAuditBrowserMatrixReport exports machine-readable browser results", () => {
@@ -285,7 +337,10 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
         critical: 1,
         warning: 2,
         info: 1,
-        states: 5
+        states: 5,
+        topRules: [
+          { ruleId: "button-name", severity: "critical", count: 1 }
+        ]
       }
     },
     {
@@ -297,7 +352,10 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
         critical: 0,
         warning: 2,
         info: 0,
-        states: 3
+        states: 3,
+        topRules: [
+          { ruleId: "keyboard-focus-visible", severity: "warning", count: 2 }
+        ]
       }
     }
   ], "2026-07-26T00:00:00.000Z");
@@ -310,6 +368,11 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
     info: 1,
     states: 8
   });
+  assert.deepEqual(report.comparison.highestCritical, {
+    label: "Chromium",
+    value: 1
+  });
+  assert.equal(report.comparison.differingRules[0].ruleId, "button-name");
   assert.deepEqual(report.profiles[0], {
     label: "Chromium",
     slug: "chromium",
@@ -323,7 +386,10 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
       critical: 1,
       warning: 2,
       info: 1,
-      states: 5
+      states: 5,
+      topRules: [
+        { ruleId: "button-name", severity: "critical", count: 1 }
+      ]
     }
   });
 });

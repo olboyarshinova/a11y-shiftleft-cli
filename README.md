@@ -337,7 +337,8 @@ Playwright preset. Use `--devices desktop mobile tablet` when you want separate
 reports for several responsive profiles in one command; each profile is written
 to its own subfolder under `--out`, with a local summary at
 `<out>/a11y-device-audit.md` and machine-readable
-`<out>/a11y-device-audit.json` that compare finding counts and explored states.
+`<out>/a11y-device-audit.json` that compare finding counts, explored states,
+and rule differences across profiles.
 
 Install the browser engine before using it, for example:
 
@@ -347,7 +348,8 @@ npx playwright install webkit
 
 Use `--browsers chromium firefox webkit` when you want separate reports for
 several browser engines in one command. This writes one report per browser plus
-local Markdown and JSON summaries under `--out`.
+local Markdown and JSON summaries under `--out`, including a difference review
+for browser-specific rule signals.
 
 Audit profiles are shortcuts:
 
