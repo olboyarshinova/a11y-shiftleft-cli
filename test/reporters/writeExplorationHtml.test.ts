@@ -285,6 +285,7 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /UI states explored/);
   assert.match(html, /Rendered states/);
   assert.match(html, /Safe Exploration Guardrails/);
+  assert.match(html, /class="panel panel-full-width safe-guardrails" aria-label="Safe exploration guardrails"/);
   assert.ok(html.indexOf("Safe Exploration Guardrails") > html.indexOf("Share Review Copy"));
   assert.ok(html.indexOf("Safe Exploration Guardrails") < html.indexOf("Coverage Note"));
   assert.match(html, /1 action was skipped/);

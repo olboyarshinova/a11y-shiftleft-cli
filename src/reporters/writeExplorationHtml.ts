@@ -3700,7 +3700,7 @@ function renderSafeExplorationGuardrails(graph: ExplorationGraph): string {
   const visibleSummaries = summaries.slice(0, 4);
   const hiddenCount = Math.max(0, summaries.length - visibleSummaries.length);
 
-  return `<section class="panel safe-guardrails" aria-label="Safe exploration guardrails">
+  return `<section class="panel panel-full-width safe-guardrails" aria-label="Safe exploration guardrails">
     <h2>Safe Exploration Guardrails</h2>
     <p class="muted">${total} action${total === 1 ? "" : "s"} ${total === 1 ? "was" : "were"} skipped to avoid risky side effects such as submitting forms, changing account state, accepting cookies, opening external tabs, or using blocked safe-mode patterns. Safe cookie reject/close controls may be used only to remove overlays before scanning.</p>
     <div class="safe-guardrails-grid">
