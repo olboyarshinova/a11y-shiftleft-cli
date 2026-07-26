@@ -2265,7 +2265,13 @@ export function renderExplorationHtml(
           if (!checkbox || !status || !state) continue;
           const checked = checkbox.checked;
           row.classList.toggle('coverage-row-reviewed', checked);
-          status.textContent = checked ? 'Reviewed manually' : status.dataset.defaultStatus;
+          if (checked) {
+            status.textContent = 'Reviewed manually';
+          } else if (status.dataset.defaultStatusHtml) {
+            status.innerHTML = status.dataset.defaultStatusHtml;
+          } else {
+            status.textContent = status.dataset.defaultStatus;
+          }
           status.classList.toggle('coverage-status-automated', checked);
           status.classList.toggle('coverage-status-review', !checked);
           state.textContent = checked ? 'passed' : state.dataset.defaultState;
@@ -2990,11 +2996,14 @@ function coverageRow(
   const statusHtml = status === "Checklist ready" && !automated
     ? `<a href="#${escapeAttribute(checklistAnchor)}">Checklist ready</a>`
     : escapeHtml(status);
+  const defaultStatusHtmlAttribute = statusHtml !== escapeHtml(status)
+    ? ` data-default-status-html="${escapeAttribute(statusHtml)}"`
+    : "";
   const html = `<tr class="coverage-row-${automated ? "automated" : "review"} coverage-row-state-${state}"${automated ? "" : ` data-coverage-review="${escapeAttribute(id)}"`}>
     <td class="coverage-check-cell"><label><span class="visually-hidden">${escapeHtml(checkboxLabel)}</span><input type="checkbox"${automated ? " checked disabled" : ""}></label></td>
     <th scope="row">${escapeHtml(area)}</th>
     <td class="coverage-state-cell"><span class="coverage-state coverage-state-${state}"${automated ? "" : ` data-coverage-state data-default-state="${escapeAttribute(state)}"`}>${escapeHtml(state)}</span></td>
-    <td class="coverage-status-cell"><span class="coverage-status coverage-status-${automated ? "automated" : "review"}"${automated ? "" : ` data-coverage-status data-default-status="${escapeAttribute(status)}"`}>${statusHtml}</span></td>
+    <td class="coverage-status-cell"><span class="coverage-status coverage-status-${automated ? "automated" : "review"}"${automated ? "" : ` data-coverage-status data-default-status="${escapeAttribute(status)}"${defaultStatusHtmlAttribute}`}>${statusHtml}</span></td>
     <td class="coverage-findings">${findingCount === undefined ? "&mdash;" : findingCount}</td>
     <td>${evidence}</td>
   </tr>`;

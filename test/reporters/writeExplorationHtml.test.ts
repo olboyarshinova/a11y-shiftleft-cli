@@ -2185,6 +2185,8 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /class="coverage-state-cell"/);
   assert.match(html, /class="coverage-status-cell"/);
   assert.match(html, /<a href="#manual-review-checklist">Checklist ready<\/a>/);
+  assert.match(html, /data-default-status-html="&lt;a href=&quot;#manual-review-checklist&quot;&gt;Checklist ready&lt;\/a&gt;"/);
+  assert.match(html, /status\.innerHTML = status\.dataset\.defaultStatusHtml/);
   assert.doesNotMatch(html, /href="#manual-checklist-item-screen-reader-smoke"/);
   assert.doesNotMatch(html, /id="manual-checklist-item-screen-reader-smoke"/);
   assert.match(html, /coverage-state-failed/);
