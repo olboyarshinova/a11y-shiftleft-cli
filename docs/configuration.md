@@ -166,8 +166,9 @@ This writes one report per profile, for example
 `reports/devices/desktop/a11y-report.html`,
 `reports/devices/mobile/a11y-report.html`, and
 `reports/devices/tablet/a11y-report.html`, plus a local summary at
-`reports/devices/a11y-device-audit.md`. The scan is intentionally bounded; use
-it for responsive browser evidence, not as a native mobile app audit.
+`reports/devices/a11y-device-audit.md` with finding counts, explored states,
+and links to each visual report. The scan is intentionally bounded; use it for
+responsive browser evidence, not as a native mobile app audit.
 
 Install the browser engine before using it:
 

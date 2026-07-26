@@ -145,7 +145,14 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
     {
       target: { label: "desktop", slug: "desktop" },
       failed: false,
-      outputDir: "reports/devices/desktop"
+      outputDir: "reports/devices/desktop",
+      summary: {
+        total: 3,
+        critical: 1,
+        warning: 2,
+        info: 0,
+        states: 4
+      }
     },
     {
       target: { label: "mobile (iPhone 13)", slug: "mobile", device: "iPhone 13" },
@@ -155,6 +162,7 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
   ]);
 
   assert.match(markdown, /# Device Audit Summary/);
-  assert.match(markdown, /desktop \| completed \| \[Open report\]\(reports\/devices\/desktop\/a11y-report\.html\)/);
-  assert.match(markdown, /mobile \(iPhone 13\) \| failed \| \[Open report\]\(reports\/devices\/mobile\/a11y-report\.html\)/);
+  assert.match(markdown, /\| Device profile \| Status \| Findings \| States \| Report \|/);
+  assert.match(markdown, /desktop \| completed \| 3 total \(1 critical, 2 warning, 0 info\) \| 4 \| \[Open report\]\(reports\/devices\/desktop\/a11y-report\.html\)/);
+  assert.match(markdown, /mobile \(iPhone 13\) \| failed \| not available \| not available \| \[Open report\]\(reports\/devices\/mobile\/a11y-report\.html\)/);
 });
