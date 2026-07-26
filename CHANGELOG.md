@@ -24,6 +24,8 @@
   summaries so reviewers can jump to the matching state in each profile report.
 - Added a visual comparison queue to matrix summaries so reviewers know which
   device or browser profile pairs to compare first.
+- Added screenshot evidence metadata to matrix state summaries, including
+  full-page/viewport hints and duplicate-screenshot reuse signals.
 
 ## 0.9.0
 

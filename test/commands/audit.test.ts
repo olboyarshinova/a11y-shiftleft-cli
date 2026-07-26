@@ -182,7 +182,7 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
         ],
         topStates: [
           { id: "state-2", label: "Click: Open menu", url: "https://example.com/", depth: 1, issueCount: 3 },
-          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 1 }
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 1, screenshot: "screenshots/state-1.png", screenshotEvidenceCount: 1, screenshotFullPage: true }
         ],
         topPages: [
           { page: "https://example.com/", total: 3, critical: 1, warning: 2, info: 0 }
@@ -205,7 +205,7 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
         ],
         topStates: [
           { id: "state-4", label: "Navigate: Checkout", url: "https://example.com/checkout", depth: 2, issueCount: 5 },
-          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 4 }
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 4, screenshot: "screenshots/state-1-mobile.png", screenshotEvidenceCount: 2, screenshotFullPage: false }
         ],
         topPages: [
           { page: "https://example.com/checkout", total: 5, critical: 0, warning: 5, info: 0 }
@@ -238,7 +238,7 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
   assert.match(markdown, /mobile \(iPhone 13\) \| state \| Navigate: Checkout \(5 findings, depth 2\)/);
   assert.match(markdown, /### Shared States With Different Finding Counts/);
   assert.match(markdown, /Initial page \| https:\/\/example\.com\/ \| 0 \| 3 \| desktop: 1; mobile \(iPhone 13\): 4/);
-  assert.match(markdown, /\[desktop: 1\]\(reports\/devices\/desktop\/a11y-report\.html#state-1\); \[mobile \(iPhone 13\): 4\]\(reports\/devices\/mobile\/a11y-report\.html#state-1\)/);
+  assert.match(markdown, /\[desktop: 1\]\(reports\/devices\/desktop\/a11y-report\.html#state-1\) \(full-page, 1 screenshot\); \[mobile \(iPhone 13\): 4\]\(reports\/devices\/mobile\/a11y-report\.html#state-1\) \(viewport, 2 screenshots\)/);
   assert.match(markdown, /### Visual Comparison Queue/);
   assert.match(markdown, /Initial page \| mobile \(iPhone 13\) \(4\) vs desktop \(1\) \| 3 finding spread at depth 0/);
   assert.match(markdown, /## Review Hotspots/);
@@ -267,7 +267,7 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
           { ruleId: "color-contrast", severity: "critical", count: 2 }
         ],
         topStates: [
-          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 2 }
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 2, screenshot: "screenshots/state-1.png", screenshotEvidenceCount: 1, screenshotFullPage: true }
         ],
         topPages: [
           { page: "https://example.com/", total: 3, critical: 1, warning: 2, info: 0 }
@@ -290,7 +290,7 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
         ],
         topStates: [
           { id: "state-3", label: "Click: Filters", url: "https://example.com/", depth: 1, issueCount: 1 },
-          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 1 }
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 1, screenshot: "screenshots/state-1-mobile.png", screenshotEvidenceCount: 1, screenshotFullPage: false, visualDuplicateOf: "state-1" }
         ],
         topPages: [
           { page: "https://example.com/filters", total: 2, critical: 0, warning: 1, info: 1 }
@@ -341,8 +341,8 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
         "mobile (iPhone 13)": 1
       },
       evidenceLinks: [
-        { label: "desktop", report: "reports/devices/desktop/a11y-report.html#state-1", count: 2 },
-        { label: "mobile (iPhone 13)", report: "reports/devices/mobile/a11y-report.html#state-1", count: 1 }
+        { label: "desktop", report: "reports/devices/desktop/a11y-report.html#state-1", count: 2, screenshot: "screenshots/state-1.png", screenshotEvidenceCount: 1, screenshotFullPage: true },
+        { label: "mobile (iPhone 13)", report: "reports/devices/mobile/a11y-report.html#state-1", count: 1, screenshot: "screenshots/state-1-mobile.png", screenshotEvidenceCount: 1, screenshotFullPage: false, visualDuplicateOf: "state-1" }
       ]
     }
   ]);
@@ -355,8 +355,8 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
       spread: 1,
       compare: "desktop (2) vs mobile (iPhone 13) (1)",
       evidenceLinks: [
-        { label: "desktop", report: "reports/devices/desktop/a11y-report.html#state-1", count: 2 },
-        { label: "mobile (iPhone 13)", report: "reports/devices/mobile/a11y-report.html#state-1", count: 1 }
+        { label: "desktop", report: "reports/devices/desktop/a11y-report.html#state-1", count: 2, screenshot: "screenshots/state-1.png", screenshotEvidenceCount: 1, screenshotFullPage: true },
+        { label: "mobile (iPhone 13)", report: "reports/devices/mobile/a11y-report.html#state-1", count: 1, screenshot: "screenshots/state-1-mobile.png", screenshotEvidenceCount: 1, screenshotFullPage: false, visualDuplicateOf: "state-1" }
       ]
     }
   ]);
@@ -403,7 +403,7 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
       ],
       topStates: [
         { id: "state-3", label: "Click: Filters", url: "https://example.com/", depth: 1, issueCount: 1 },
-        { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 1 }
+        { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 1, screenshot: "screenshots/state-1-mobile.png", screenshotEvidenceCount: 1, screenshotFullPage: false, visualDuplicateOf: "state-1" }
       ],
       topPages: [
         { page: "https://example.com/filters", total: 2, critical: 0, warning: 1, info: 1 }
@@ -429,7 +429,7 @@ test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
           { ruleId: "focus-visible", severity: "warning", count: 2 }
         ],
         topStates: [
-          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 4 }
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 4, screenshot: "screenshots/state-1-chromium.png", screenshotEvidenceCount: 2, screenshotFullPage: true }
         ],
         topPages: [
           { page: "https://example.com/", total: 4, critical: 1, warning: 2, info: 1 }
@@ -452,7 +452,7 @@ test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
         ],
         topStates: [
           { id: "state-2", label: "Click: Details", url: "https://example.com/", depth: 1, issueCount: 2 },
-          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 1 }
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 1, screenshot: "screenshots/state-1-webkit.png", screenshotEvidenceCount: 1, screenshotFullPage: false, visualDuplicateOf: "state-1" }
         ],
         topPages: [
           { page: "https://example.com/details", total: 2, critical: 0, warning: 2, info: 0 }
@@ -481,7 +481,7 @@ test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
   assert.match(markdown, /WebKit \| page \| https:\/\/example\.com\/details \(2 findings\)/);
   assert.match(markdown, /WebKit \| state \| Click: Details \(2 findings, depth 1\)/);
   assert.match(markdown, /Initial page \| https:\/\/example\.com\/ \| 0 \| 3 \| Chromium: 4; WebKit: 1/);
-  assert.match(markdown, /\[Chromium: 4\]\(reports\/browsers\/chromium\/a11y-report\.html#state-1\); \[WebKit: 1\]\(reports\/browsers\/webkit\/a11y-report\.html#state-1\)/);
+  assert.match(markdown, /\[Chromium: 4\]\(reports\/browsers\/chromium\/a11y-report\.html#state-1\) \(full-page, 2 screenshots\); \[WebKit: 1\]\(reports\/browsers\/webkit\/a11y-report\.html#state-1\) \(viewport, 1 screenshot, reuses state-1\)/);
   assert.match(markdown, /### Visual Comparison Queue/);
   assert.match(markdown, /Initial page \| Chromium \(4\) vs WebKit \(1\) \| 3 finding spread at depth 0/);
   assert.match(markdown, /Chromium \| Initial page \(4 findings, depth 0\) \| button-name: 1; focus-visible: 2/);
@@ -509,7 +509,7 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
           { ruleId: "button-name", severity: "critical", count: 1 }
         ],
         topStates: [
-          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 4 }
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 4, screenshot: "screenshots/state-1-chromium.png", screenshotEvidenceCount: 2, screenshotFullPage: true }
         ],
         topPages: [
           { page: "https://example.com/", total: 4, critical: 1, warning: 2, info: 1 }
@@ -532,7 +532,7 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
         ],
         topStates: [
           { id: "state-2", label: "Click: Open menu", url: "https://example.com/", depth: 1, issueCount: 2 },
-          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 1 }
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 1, screenshot: "screenshots/state-1-firefox.png", screenshotEvidenceCount: 1, screenshotFullPage: false }
         ],
         topPages: [
           { page: "https://example.com/menu", total: 2, critical: 0, warning: 2, info: 0 }
@@ -578,8 +578,8 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
         Firefox: 1
       },
       evidenceLinks: [
-        { label: "Chromium", report: "reports/browsers/chromium/a11y-report.html#state-1", count: 4 },
-        { label: "Firefox", report: "reports/browsers/firefox/a11y-report.html#state-1", count: 1 }
+        { label: "Chromium", report: "reports/browsers/chromium/a11y-report.html#state-1", count: 4, screenshot: "screenshots/state-1-chromium.png", screenshotEvidenceCount: 2, screenshotFullPage: true },
+        { label: "Firefox", report: "reports/browsers/firefox/a11y-report.html#state-1", count: 1, screenshot: "screenshots/state-1-firefox.png", screenshotEvidenceCount: 1, screenshotFullPage: false }
       ]
     }
   ]);
@@ -592,8 +592,8 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
       spread: 3,
       compare: "Chromium (4) vs Firefox (1)",
       evidenceLinks: [
-        { label: "Chromium", report: "reports/browsers/chromium/a11y-report.html#state-1", count: 4 },
-        { label: "Firefox", report: "reports/browsers/firefox/a11y-report.html#state-1", count: 1 }
+        { label: "Chromium", report: "reports/browsers/chromium/a11y-report.html#state-1", count: 4, screenshot: "screenshots/state-1-chromium.png", screenshotEvidenceCount: 2, screenshotFullPage: true },
+        { label: "Firefox", report: "reports/browsers/firefox/a11y-report.html#state-1", count: 1, screenshot: "screenshots/state-1-firefox.png", screenshotEvidenceCount: 1, screenshotFullPage: false }
       ]
     }
   ]);
@@ -622,7 +622,7 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
         { ruleId: "button-name", severity: "critical", count: 1 }
       ],
       topStates: [
-        { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 4 }
+        { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 4, screenshot: "screenshots/state-1-chromium.png", screenshotEvidenceCount: 2, screenshotFullPage: true }
       ],
       topPages: [
         { page: "https://example.com/", total: 4, critical: 1, warning: 2, info: 1 }

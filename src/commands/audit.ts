@@ -194,6 +194,10 @@ export interface AuditMatrixStateSummary {
   url: string;
   depth: number;
   issueCount: number;
+  screenshot?: string;
+  screenshotEvidenceCount?: number;
+  screenshotFullPage?: boolean;
+  visualDuplicateOf?: string;
 }
 
 export interface AuditMatrixProfilePeak {
@@ -227,6 +231,10 @@ export interface AuditMatrixStateEvidenceLink {
   label: string;
   report: string;
   count: number;
+  screenshot?: string;
+  screenshotEvidenceCount?: number;
+  screenshotFullPage?: boolean;
+  visualDuplicateOf?: string;
 }
 
 export interface AuditMatrixSharedStateDifference {
@@ -659,7 +667,11 @@ function summarizeAuditMatrixStates(exploration: A11yReport["exploration"], limi
       label: state.actionLabel,
       url: state.url,
       depth: state.depth,
-      issueCount: state.issueCount
+      issueCount: state.issueCount,
+      ...(state.screenshot ? { screenshot: state.screenshot } : {}),
+      ...(state.screenshotEvidence?.length ? { screenshotEvidenceCount: state.screenshotEvidence.length } : {}),
+      ...(state.screenshotFullPage !== undefined ? { screenshotFullPage: state.screenshotFullPage } : {}),
+      ...(state.visualDuplicateOf ? { visualDuplicateOf: state.visualDuplicateOf } : {})
     }));
 }
 
@@ -862,7 +874,11 @@ function summarizeSharedStateDifferences(
           existing.evidenceLinks.push({
             label: result.target.label,
             report,
-            count: state.issueCount
+            count: state.issueCount,
+            ...(state.screenshot ? { screenshot: state.screenshot } : {}),
+            ...(state.screenshotEvidenceCount ? { screenshotEvidenceCount: state.screenshotEvidenceCount } : {}),
+            ...(state.screenshotFullPage !== undefined ? { screenshotFullPage: state.screenshotFullPage } : {}),
+            ...(state.visualDuplicateOf ? { visualDuplicateOf: state.visualDuplicateOf } : {})
           });
         }
       }
@@ -1064,8 +1080,21 @@ function formatSharedStateDifferences(states: AuditMatrixSharedStateDifference[]
 function formatAuditMatrixEvidenceLinks(links: AuditMatrixStateEvidenceLink[]): string {
   if (links.length === 0) return "Open the profile reports";
   return links
-    .map((link) => `[${escapeMarkdownTableCell(`${link.label}: ${link.count}`)}](${escapeMarkdownLink(link.report)})`)
+    .map((link) => `${formatAuditMatrixEvidenceLink(link)}${formatAuditMatrixScreenshotHint(link)}`)
     .join("; ");
+}
+
+function formatAuditMatrixEvidenceLink(link: AuditMatrixStateEvidenceLink): string {
+  return `[${escapeMarkdownTableCell(`${link.label}: ${link.count}`)}](${escapeMarkdownLink(link.report)})`;
+}
+
+function formatAuditMatrixScreenshotHint(link: AuditMatrixStateEvidenceLink): string {
+  const details = [
+    link.screenshotFullPage === true ? "full-page" : link.screenshotFullPage === false ? "viewport" : "",
+    link.screenshotEvidenceCount ? `${link.screenshotEvidenceCount} screenshot${link.screenshotEvidenceCount === 1 ? "" : "s"}` : "",
+    link.visualDuplicateOf ? `reuses ${link.visualDuplicateOf}` : ""
+  ].filter(Boolean);
+  return details.length > 0 ? ` (${escapeMarkdownTableCell(details.join(", "))})` : "";
 }
 
 function formatVisualComparisonQueue(queue: AuditMatrixVisualComparison[]): string {
