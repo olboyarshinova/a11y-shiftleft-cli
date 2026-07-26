@@ -561,13 +561,36 @@ test("renderExplorationHtml shows issue lifecycle badges", () => {
   assert.match(html, /badge-lifecycle-remaining">remaining<\/span>/);
   assert.match(html, /badge-lifecycle-remaining">tracked: accepted-temporarily<\/span>/);
   assert.match(html, /aria-label="Remediation tracking"/);
+  assert.match(html, /class="finding-context finding-context-tracking finding-context-tracking-accepted-temporarily"/);
   assert.match(html, /Tracking: Accepted temporarily/);
   assert.match(html, /Owner: frontend/);
   assert.match(html, /Updated: 2026-07-16/);
-  assert.match(html, /Review by: 2026-08-01/);
+  assert.match(html, /Temporary review by: 2026-08-01/);
   assert.match(html, /Queued for design-system fix/);
+  assert.match(html, /\.finding-context-tracking-fixed \{[\s\S]*?border-left-color: var\(--ok\)/);
+  assert.match(html, /\.finding-context-tracking-open \{[\s\S]*?border-left-color: var\(--critical\)/);
+  assert.match(html, /\.tracking-review-date \{[\s\S]*?font-weight: 800/);
   assert.match(html, /badge-lifecycle-review">needs manual review<\/span>/);
   assert.match(html, /badge-lifecycle-remaining">third-party<\/span>/);
+});
+
+test("renderExplorationHtml styles fixed remediation tracking as resolved evidence", () => {
+  const html = renderExplorationHtml(graph, [{
+    ...issues[0],
+    remediationTracking: {
+      fingerprint: "button-name::state-1",
+      status: "fixed" as const,
+      owner: "frontend",
+      reason: "Verified after component patch.",
+      updatedAt: "2026-07-20",
+      reviewBy: "2026-07-22"
+    }
+  }]);
+
+  assert.match(html, /class="finding-context finding-context-tracking finding-context-tracking-fixed"/);
+  assert.match(html, /Tracking: Fixed/);
+  assert.match(html, /Fixed evidence review by: 2026-07-22/);
+  assert.match(html, /Verified after component patch/);
 });
 
 test("renderExplorationHtml groups all ticket drafts by issue type across states", () => {

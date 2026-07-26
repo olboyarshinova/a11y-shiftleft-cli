@@ -1841,6 +1841,26 @@ export function renderExplorationHtml(
       border-left-color: var(--warning-marker);
     }
 
+    .finding-context-tracking-fixed {
+      background: #f0fdf4;
+      border-left-color: var(--ok);
+    }
+
+    .finding-context-tracking-manual-review,
+    .finding-context-tracking-in-progress {
+      background: #eff6ff;
+      border-left-color: var(--info);
+    }
+
+    .finding-context-tracking-open {
+      background: #fff1f2;
+      border-left-color: var(--critical);
+    }
+
+    .tracking-review-date {
+      font-weight: 800;
+    }
+
     .finding-context-blocked {
       border-left-color: var(--critical);
     }
@@ -4207,15 +4227,22 @@ function renderRemediationTracking(issue: DedupedIssue): string {
   const tracking = issue.remediationTracking;
   if (!tracking) return "";
   const reviewBy = tracking.reviewBy
-    ? `<span>Review by: ${escapeHtml(tracking.reviewBy)}</span>`
+    ? `<span class="tracking-review-date">${escapeHtml(formatTrackingReviewLabel(tracking.status))}: ${escapeHtml(tracking.reviewBy)}</span>`
     : "";
-  return `<aside class="finding-context finding-context-tracking" aria-label="Remediation tracking">
+  const statusClass = `finding-context-tracking-${tracking.status}`;
+  return `<aside class="finding-context finding-context-tracking ${escapeAttribute(statusClass)}" aria-label="Remediation tracking">
     <strong>Tracking: ${escapeHtml(formatRemediationStatus(tracking.status))}</strong>
     <span>Owner: ${escapeHtml(tracking.owner)}</span>
     <span>Updated: ${escapeHtml(tracking.updatedAt)}</span>
     ${reviewBy}
     <span>${escapeHtml(tracking.reason)}</span>
   </aside>`;
+}
+
+function formatTrackingReviewLabel(status: NonNullable<DedupedIssue["remediationTracking"]>["status"]): string {
+  if (status === "accepted-temporarily") return "Temporary review by";
+  if (status === "fixed") return "Fixed evidence review by";
+  return "Review by";
 }
 
 function formatRemediationStatus(status: NonNullable<DedupedIssue["remediationTracking"]>["status"]): string {
