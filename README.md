@@ -341,7 +341,8 @@ to its own subfolder under `--out`, with a local summary at
 rule differences, and the highest-priority page/state to review in each
 profile. The summary also calls out profile-specific rule signals and includes
 coverage-overlap counts, profile-specific page/state signals, and copy-paste
-commands with reproduction notes to rerun and confirm one profile.
+commands with reproduction notes to rerun and confirm one profile. It also
+highlights shared UI states whose finding counts differ between profiles.
 
 Install the browser engine before using it, for example:
 
@@ -355,7 +356,8 @@ local Markdown and JSON summaries under `--out`, including a difference review
 for browser-specific rule signals and the first page/state to inspect in each
 browser report. The summary also calls out browser-only rule signals and
 coverage-overlap counts, browser-only page/state signals, and copy-paste
-commands with reproduction notes to rerun and confirm one browser engine.
+commands with reproduction notes to rerun and confirm one browser engine. It
+also highlights shared UI states whose finding counts differ between browsers.
 
 Audit profiles are shortcuts:
 

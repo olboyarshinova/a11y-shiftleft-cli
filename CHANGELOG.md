@@ -18,6 +18,8 @@
   issues are easier to separate from device-only or browser-only signals.
 - Added reproduction notes to device and browser matrix summaries so reviewers
   can confirm profile-only signals before filing defects.
+- Added shared UI-state difference summaries to device and browser matrix
+  reports so repeated states with different finding counts are easier to spot.
 
 ## 0.9.0
 

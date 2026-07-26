@@ -181,7 +181,8 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
           { ruleId: "target-size", severity: "warning", count: 1 }
         ],
         topStates: [
-          { id: "state-2", label: "Click: Open menu", url: "https://example.com/", depth: 1, issueCount: 3 }
+          { id: "state-2", label: "Click: Open menu", url: "https://example.com/", depth: 1, issueCount: 3 },
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 1 }
         ],
         topPages: [
           { page: "https://example.com/", total: 3, critical: 1, warning: 2, info: 0 }
@@ -203,7 +204,8 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
           { ruleId: "layout-horizontal-overflow", severity: "warning", count: 2 }
         ],
         topStates: [
-          { id: "state-4", label: "Navigate: Checkout", url: "https://example.com/checkout", depth: 2, issueCount: 5 }
+          { id: "state-4", label: "Navigate: Checkout", url: "https://example.com/checkout", depth: 2, issueCount: 5 },
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 4 }
         ],
         topPages: [
           { page: "https://example.com/checkout", total: 5, critical: 0, warning: 5, info: 0 }
@@ -224,7 +226,7 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
   assert.match(markdown, /mobile \(iPhone 13\) \| completed \| 5 total \(0 critical, 5 warning, 0 info\) \| 3 \| \[Open report\]\(reports\/devices\/mobile\/a11y-report\.html\)/);
   assert.match(markdown, /## Difference Review/);
   assert.match(markdown, /Most findings: mobile \(iPhone 13\) \(5\)\./);
-  assert.match(markdown, /Coverage overlap: 0 shared affected pages; 2 profile-specific affected pages; 0 shared affected states; 2 profile-specific affected states\./);
+  assert.match(markdown, /Coverage overlap: 0 shared affected pages; 2 profile-specific affected pages; 1 shared affected state; 2 profile-specific affected states\./);
   assert.match(markdown, /`color-contrast` \| critical \| 2 \| desktop: 2; mobile \(iPhone 13\): 0/);
   assert.match(markdown, /`target-size` \| warning \| 6 \| desktop: 1; mobile \(iPhone 13\): 5/);
   assert.match(markdown, /### Profile-Specific Rule Signals/);
@@ -234,6 +236,8 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
   assert.match(markdown, /desktop \| page \| https:\/\/example\.com\/ \(3 findings\)/);
   assert.match(markdown, /mobile \(iPhone 13\) \| page \| https:\/\/example\.com\/checkout \(5 findings\)/);
   assert.match(markdown, /mobile \(iPhone 13\) \| state \| Navigate: Checkout \(5 findings, depth 2\)/);
+  assert.match(markdown, /### Shared States With Different Finding Counts/);
+  assert.match(markdown, /Initial page \| https:\/\/example\.com\/ \| 0 \| 3 \| desktop: 1; mobile \(iPhone 13\): 4/);
   assert.match(markdown, /## Review Hotspots/);
   assert.match(markdown, /desktop \| Click: Open menu \(3 findings, depth 1\) \| color-contrast: 2; target-size: 1/);
   assert.match(markdown, /mobile \(iPhone 13\) \| Navigate: Checkout \(5 findings, depth 2\) \| target-size: 5/);
@@ -282,7 +286,8 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
           { ruleId: "layout-horizontal-overflow", severity: "warning", count: 2 }
         ],
         topStates: [
-          { id: "state-3", label: "Click: Filters", url: "https://example.com/", depth: 1, issueCount: 1 }
+          { id: "state-3", label: "Click: Filters", url: "https://example.com/", depth: 1, issueCount: 1 },
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 1 }
         ],
         topPages: [
           { page: "https://example.com/filters", total: 2, critical: 0, warning: 1, info: 1 }
@@ -317,9 +322,23 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
     completedProfiles: 2,
     commonPages: 0,
     profileSpecificPages: 2,
-    commonStates: 0,
-    profileSpecificStates: 2
+    commonStates: 1,
+    profileSpecificStates: 1
   });
+  assert.deepEqual(report.comparison.sharedStateDifferences, [
+    {
+      stateKey: "https://example.com/::Initial page::depth-0",
+      label: "Initial page",
+      url: "https://example.com/",
+      depth: 0,
+      total: 3,
+      spread: 1,
+      profileCounts: {
+        desktop: 2,
+        "mobile (iPhone 13)": 1
+      }
+    }
+  ]);
   assert.deepEqual(report.comparison.profileSpecificRules, [
     {
       label: "desktop",
@@ -340,7 +359,6 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
     "mobile (iPhone 13)"
   ]);
   assert.deepEqual(report.comparison.profileSpecificStates.map((group) => group.label), [
-    "desktop",
     "mobile (iPhone 13)"
   ]);
   assert.deepEqual(report.profiles[1], {
@@ -363,7 +381,8 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
         { ruleId: "layout-horizontal-overflow", severity: "warning", count: 2 }
       ],
       topStates: [
-        { id: "state-3", label: "Click: Filters", url: "https://example.com/", depth: 1, issueCount: 1 }
+        { id: "state-3", label: "Click: Filters", url: "https://example.com/", depth: 1, issueCount: 1 },
+        { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 1 }
       ],
       topPages: [
         { page: "https://example.com/filters", total: 2, critical: 0, warning: 1, info: 1 }
@@ -411,7 +430,8 @@ test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
           { ruleId: "webkit-focus-ring", severity: "warning", count: 1 }
         ],
         topStates: [
-          { id: "state-2", label: "Click: Details", url: "https://example.com/", depth: 1, issueCount: 2 }
+          { id: "state-2", label: "Click: Details", url: "https://example.com/", depth: 1, issueCount: 2 },
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 1 }
         ],
         topPages: [
           { page: "https://example.com/details", total: 2, critical: 0, warning: 2, info: 0 }
@@ -432,13 +452,14 @@ test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
   assert.match(markdown, /Chromium \| completed \| 4 total \(1 critical, 2 warning, 1 info\) \| 5 \| \[Open report\]\(reports\/browsers\/chromium\/a11y-report\.html\)/);
   assert.match(markdown, /WebKit \| completed \| 2 total \(0 critical, 2 warning, 0 info\) \| 4 \| \[Open report\]\(reports\/browsers\/webkit\/a11y-report\.html\)/);
   assert.match(markdown, /Use this section to spot findings that may be specific to one browser engine/);
-  assert.match(markdown, /Coverage overlap: 0 shared affected pages; 2 profile-specific affected pages; 0 shared affected states; 2 profile-specific affected states\./);
+  assert.match(markdown, /Coverage overlap: 0 shared affected pages; 2 profile-specific affected pages; 1 shared affected state; 1 profile-specific affected state\./);
   assert.match(markdown, /`button-name` \| critical \| 1 \| Chromium: 1; WebKit: 0/);
   assert.match(markdown, /`focus-visible` \| warning \| 4 \| Chromium: 2; WebKit: 2/);
   assert.match(markdown, /Chromium \| button-name: 1 critical/);
   assert.match(markdown, /WebKit \| webkit-focus-ring: 1 warning/);
   assert.match(markdown, /WebKit \| page \| https:\/\/example\.com\/details \(2 findings\)/);
   assert.match(markdown, /WebKit \| state \| Click: Details \(2 findings, depth 1\)/);
+  assert.match(markdown, /Initial page \| https:\/\/example\.com\/ \| 0 \| 3 \| Chromium: 4; WebKit: 1/);
   assert.match(markdown, /Chromium \| Initial page \(4 findings, depth 0\) \| button-name: 1; focus-visible: 2/);
   assert.match(markdown, /WebKit \| Click: Details \(2 findings, depth 1\) \| focus-visible: 2/);
   assert.match(markdown, /--wait-for-selector '\[data-ready\]' --no-keyboard --browser chromium/);
@@ -486,7 +507,8 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
           { ruleId: "firefox-outline-offset", severity: "warning", count: 1 }
         ],
         topStates: [
-          { id: "state-2", label: "Click: Open menu", url: "https://example.com/", depth: 1, issueCount: 2 }
+          { id: "state-2", label: "Click: Open menu", url: "https://example.com/", depth: 1, issueCount: 2 },
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 1 }
         ],
         topPages: [
           { page: "https://example.com/menu", total: 2, critical: 0, warning: 2, info: 0 }
@@ -516,9 +538,23 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
     completedProfiles: 2,
     commonPages: 0,
     profileSpecificPages: 2,
-    commonStates: 0,
-    profileSpecificStates: 2
+    commonStates: 1,
+    profileSpecificStates: 1
   });
+  assert.deepEqual(report.comparison.sharedStateDifferences, [
+    {
+      stateKey: "https://example.com/::Initial page::depth-0",
+      label: "Initial page",
+      url: "https://example.com/",
+      depth: 0,
+      total: 5,
+      spread: 3,
+      profileCounts: {
+        Chromium: 4,
+        Firefox: 1
+      }
+    }
+  ]);
   assert.equal(report.comparison.differingRules[0].ruleId, "button-name");
   assert.deepEqual(report.comparison.profileSpecificRules.map((group) => group.label), [
     "Chromium",

@@ -223,6 +223,16 @@ export interface AuditMatrixProfileSpecificStates {
   states: AuditMatrixStateSummary[];
 }
 
+export interface AuditMatrixSharedStateDifference {
+  stateKey: string;
+  label: string;
+  url: string;
+  depth: number;
+  total: number;
+  spread: number;
+  profileCounts: Record<string, number>;
+}
+
 export interface AuditMatrixCoverageOverlap {
   completedProfiles: number;
   commonPages: number;
@@ -240,6 +250,7 @@ export interface AuditMatrixComparison {
   profileSpecificRules: AuditMatrixProfileSpecificRules[];
   profileSpecificPages: AuditMatrixProfileSpecificPages[];
   profileSpecificStates: AuditMatrixProfileSpecificStates[];
+  sharedStateDifferences: AuditMatrixSharedStateDifference[];
 }
 
 interface AuditDeviceRunResult {
@@ -675,6 +686,7 @@ function createAuditMatrixComparison(
   const profileSpecificRules = summarizeProfileSpecificRules(completed, rules);
   const profileSpecificPages = summarizeProfileSpecificPages(completed);
   const profileSpecificStates = summarizeProfileSpecificStates(completed);
+  const sharedStateDifferences = summarizeSharedStateDifferences(completed);
 
   return {
     ...(highestTotal ? { highestTotal } : {}),
@@ -684,7 +696,8 @@ function createAuditMatrixComparison(
     coverageOverlap,
     profileSpecificRules,
     profileSpecificPages,
-    profileSpecificStates
+    profileSpecificStates,
+    sharedStateDifferences
   };
 }
 
@@ -802,6 +815,61 @@ function summarizeProfileSpecificStates(
   })).filter((group) => group.states.length > 0);
 }
 
+function summarizeSharedStateDifferences(
+  results: Array<{ target: { label: string }; summary?: AuditDeviceSummary }>,
+  limit = 5
+): AuditMatrixSharedStateDifference[] {
+  const labels = results.map((result) => result.target.label);
+  if (labels.length < 2) return [];
+  const states = new Map<string, {
+    state: AuditMatrixStateSummary;
+    profileCounts: Record<string, number>;
+  }>();
+
+  for (const result of results) {
+    for (const state of result.summary?.topStates || []) {
+      const key = auditMatrixStateKey(state);
+      const existing = states.get(key) || {
+        state,
+        profileCounts: Object.fromEntries(labels.map((label) => [label, 0]))
+      };
+      existing.profileCounts[result.target.label] = Math.max(existing.profileCounts[result.target.label] || 0, state.issueCount);
+      states.set(key, existing);
+    }
+  }
+
+  return [...states.entries()]
+    .filter(([, state]) => labels.filter((label) => (state.profileCounts[label] || 0) > 0).length > 1)
+    .map(([stateKey, state]) => {
+      const counts = labels.map((label) => state.profileCounts[label] || 0);
+      const total = counts.reduce((sum, count) => sum + count, 0);
+      const spread = Math.max(...counts) - Math.min(...counts);
+      return {
+        stateKey,
+        label: state.state.label || state.state.id,
+        url: state.state.url,
+        depth: state.state.depth,
+        total,
+        spread,
+        profileCounts: state.profileCounts
+      };
+    })
+    .filter((state) => state.spread > 0)
+    .sort(compareAuditMatrixSharedStateDifferences)
+    .slice(0, limit);
+}
+
+function compareAuditMatrixSharedStateDifferences(
+  left: AuditMatrixSharedStateDifference,
+  right: AuditMatrixSharedStateDifference
+): number {
+  return right.spread - left.spread
+    || right.total - left.total
+    || left.depth - right.depth
+    || left.label.localeCompare(right.label)
+    || left.url.localeCompare(right.url);
+}
+
 function compareAuditMatrixPages(left: AuditMatrixPageSummary, right: AuditMatrixPageSummary): number {
   return right.critical - left.critical
     || right.warning - left.warning
@@ -862,7 +930,11 @@ function formatAuditMatrixComparison(kind: string, comparison: AuditMatrixCompar
     "",
     "### Profile-Specific Page And State Signals",
     "",
-    formatProfileSpecificCoverageSignals(comparison)
+    formatProfileSpecificCoverageSignals(comparison),
+    "",
+    "### Shared States With Different Finding Counts",
+    "",
+    formatSharedStateDifferences(comparison.sharedStateDifferences)
   ];
 
   return lines.join("\n");
@@ -906,6 +978,17 @@ function formatProfileSpecificCoverageSignals(comparison: AuditMatrixComparison)
     "| Profile | Signal | Review target |",
     "|---|---|---|",
     ...rows
+  ].join("\n");
+}
+
+function formatSharedStateDifferences(states: AuditMatrixSharedStateDifference[]): string {
+  if (states.length === 0) return "No shared states with different finding counts found in the available summaries.";
+  return [
+    "| State | URL | Depth | Difference | Profile counts |",
+    "|---|---|---:|---:|---|",
+    ...states.map((state) => (
+      `| ${escapeMarkdownTableCell(state.label)} | ${escapeMarkdownTableCell(state.url)} | ${state.depth} | ${state.spread} | ${escapeMarkdownTableCell(formatProfileCounts(state.profileCounts))} |`
+    ))
   ].join("\n");
 }
 
