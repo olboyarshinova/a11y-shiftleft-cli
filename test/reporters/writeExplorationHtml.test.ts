@@ -964,9 +964,12 @@ test("renderExplorationHtml collapses large affected finding lists", () => {
   const html = renderExplorationHtml(graph, repeatedIssues);
   const issueHtml = issueBlockForRule(html, "button-name");
 
-  assert.match(issueHtml, /<details class="affected-findings"><summary>Affected findings \(6\) · 6 critical<\/summary>/);
+  assert.match(issueHtml, /<details class="affected-findings"><summary>Affected findings \(6\) <span class="severity-mix" aria-label="Severity mix"><span class="severity-mix-count severity-mix-critical">6 critical<\/span><\/span><\/summary>/);
   assert.doesNotMatch(issueHtml, /<details class="affected-findings" open><summary>Affected findings \(6\)/);
   assert.match(html, /\.affected-findings > summary \{[\s\S]*?font-weight: 800/);
+  assert.match(html, /\.severity-mix-critical \{[\s\S]*?color: var\(--critical\)/);
+  assert.match(html, /\.severity-mix-warning \{[\s\S]*?color: var\(--warning\)/);
+  assert.match(html, /\.severity-mix-info \{[\s\S]*?color: var\(--info\)/);
 });
 
 test("renderExplorationHtml groups identical issue messages into numbered locations", () => {

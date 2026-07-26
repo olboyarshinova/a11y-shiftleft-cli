@@ -1686,6 +1686,29 @@ export function renderExplorationHtml(
       font-weight: 800;
     }
 
+    .severity-mix {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-left: 4px;
+    }
+
+    .severity-mix-count {
+      font-weight: 900;
+    }
+
+    .severity-mix-critical {
+      color: var(--critical);
+    }
+
+    .severity-mix-warning {
+      color: var(--warning);
+    }
+
+    .severity-mix-info {
+      color: var(--info);
+    }
+
     .finding-targets li::marker {
       color: var(--muted);
       font-weight: 700;
@@ -4141,8 +4164,18 @@ function renderStateIssueGroup(
 
 function renderAffectedFindingsDetails(issues: DedupedIssue[], occurrences: string): string {
   const openAttribute = issues.length <= 5 ? " open" : "";
-  const severitySummary = formatSeverityMix(issues);
-  return `<details class="affected-findings"${openAttribute}><summary>Affected findings (${issues.length})${severitySummary ? ` · ${escapeHtml(severitySummary)}` : ""}</summary>${occurrences}</details>`;
+  return `<details class="affected-findings"${openAttribute}><summary>Affected findings (${issues.length}) ${renderSeverityMixInline(issues)}</summary>${occurrences}</details>`;
+}
+
+function renderSeverityMixInline(issues: DedupedIssue[]): string {
+  const summary = summarizeIssues(issues);
+  const items = [
+    summary.critical ? `<span class="severity-mix-count severity-mix-critical">${summary.critical} critical</span>` : "",
+    summary.warning ? `<span class="severity-mix-count severity-mix-warning">${summary.warning} warning</span>` : "",
+    summary.info ? `<span class="severity-mix-count severity-mix-info">${summary.info} info</span>` : ""
+  ].filter(Boolean);
+  if (items.length === 0) return `<span class="severity-mix"><span class="severity-mix-count">0</span></span>`;
+  return `<span class="severity-mix" aria-label="Severity mix">${items.join('<span aria-hidden="true">·</span>')}</span>`;
 }
 
 function groupStateIssuesForDisplay(issues: DedupedIssue[]): Array<{ key: string; representative: DedupedIssue; issues: DedupedIssue[] }> {
