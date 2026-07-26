@@ -188,6 +188,11 @@ export function renderExplorationHtml(
       display: none;
     }
 
+    body[data-finding-filter="critical"] .issue:not([data-issue-critical="true"]),
+    body[data-finding-filter="actionable"] .issue[data-issue-info-only="true"] {
+      display: none;
+    }
+
     h2 {
       font-size: 16px;
       margin-bottom: 8px;
@@ -2251,6 +2256,36 @@ export function renderExplorationHtml(
     })();
 
     (() => {
+      const buttons = Array.from(document.querySelectorAll('[data-finding-filter]'));
+      if (buttons.length === 0) return;
+      const reportId = document.body.dataset.coverageReportId || 'report';
+      const storageKey = 'a11y-shiftleft:finding-filter:' + reportId;
+
+      const activate = (mode) => {
+        const selectedMode = buttons.some((button) => button.dataset.findingFilter === mode) ? mode : 'all';
+        document.body.dataset.findingFilter = selectedMode;
+        for (const button of buttons) {
+          button.setAttribute('aria-pressed', button.dataset.findingFilter === selectedMode ? 'true' : 'false');
+        }
+        try {
+          localStorage.setItem(storageKey, selectedMode);
+        } catch {
+          // The report remains usable when storage is unavailable.
+        }
+      };
+
+      for (const button of buttons) {
+        button.addEventListener('click', () => activate(button.dataset.findingFilter));
+      }
+
+      try {
+        activate(localStorage.getItem(storageKey) || 'all');
+      } catch {
+        activate('all');
+      }
+    })();
+
+    (() => {
       const rows = Array.from(document.querySelectorAll('[data-coverage-review]'));
       const progress = document.querySelector('[data-coverage-progress]');
       const reportId = document.body.dataset.coverageReportId || 'report';
@@ -2592,6 +2627,10 @@ function renderReportViewControls(): string {
     <span class="report-view-label">View</span>
     <button class="report-view-button" type="button" data-report-view="full" aria-pressed="true" aria-label="Show full developer report details">Full</button>
     <button class="report-view-button" type="button" data-report-view="review" aria-pressed="false" aria-label="Show a compact review view with fewer technical details">Review</button>
+    <span class="report-view-label">Findings</span>
+    <button class="report-view-button" type="button" data-finding-filter="all" aria-pressed="true" aria-label="Show all finding groups">All</button>
+    <button class="report-view-button" type="button" data-finding-filter="critical" aria-pressed="false" aria-label="Show only finding groups with critical issues">Critical</button>
+    <button class="report-view-button" type="button" data-finding-filter="actionable" aria-pressed="false" aria-label="Show critical and warning finding groups">Critical + Warning</button>
   </div>`;
 }
 
@@ -4017,7 +4056,7 @@ function renderStateIssueGroup(
     </ul>
   </details>` : ""}`;
 
-  return `<li class="issue">
+  return `<li class="issue" data-issue-critical="${summary.critical > 0 ? "true" : "false"}" data-issue-warning="${summary.warning > 0 ? "true" : "false"}" data-issue-info-only="${summary.critical === 0 && summary.warning === 0 && summary.info > 0 ? "true" : "false"}">
     <div class="triage-title">
       <div class="triage-title-main">
         <code>${escapeHtml(ruleId)}</code>

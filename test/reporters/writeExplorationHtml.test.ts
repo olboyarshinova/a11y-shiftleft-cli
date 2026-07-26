@@ -340,6 +340,14 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /data-report-view="review"/);
   assert.match(html, /body\[data-report-view="review"\] \.finding-target-full/);
   assert.match(html, /a11y-shiftleft:report-view:/);
+  assert.match(html, /data-finding-filter="all"/);
+  assert.match(html, /data-finding-filter="critical"/);
+  assert.match(html, /data-finding-filter="actionable"/);
+  assert.match(html, /body\[data-finding-filter="critical"\] \.issue:not\(\[data-issue-critical="true"\]\)/);
+  assert.match(html, /a11y-shiftleft:finding-filter:/);
+  assert.match(html, /data-issue-critical="true"/);
+  assert.match(html, /data-issue-warning="false"/);
+  assert.match(html, /data-issue-info-only="false"/);
   assert.match(html, /\.ticket-drafts \{[\s\S]*?align-self: start/);
   assert.match(html, /\.ticket-drafts \{[\s\S]*?margin-top: 0/);
   assert.match(html, /@media \(min-width: 1100px\) \{[\s\S]*?\.ticket-drafts \{[\s\S]*?margin-top: 44px/);
@@ -711,7 +719,7 @@ test("renderExplorationHtml sorts rule triage by severity and WCAG level", () =>
     html.indexOf('<article class="state state-critical" id="state-1"'),
     html.indexOf('<article class="state state-ok state-compact" id="state-2"')
   );
-  const stateGroupOrder = [...stateOne.matchAll(/<li class="issue">[\s\S]*?<code>(critical-a|critical-aa|warning-a|info-aaa)<\/code>/g)]
+  const stateGroupOrder = [...stateOne.matchAll(/<li class="issue"[^>]*>[\s\S]*?<code>(critical-a|critical-aa|warning-a|info-aaa)<\/code>/g)]
     .map((match) => match[1]);
 
   assert.match(topRules, /critical-a/);
