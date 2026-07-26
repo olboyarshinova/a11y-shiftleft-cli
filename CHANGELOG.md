@@ -16,6 +16,8 @@
   or browser profile.
 - Added coverage-overlap counts to matrix summaries so repeated cross-profile
   issues are easier to separate from device-only or browser-only signals.
+- Added reproduction notes to device and browser matrix summaries so reviewers
+  can confirm profile-only signals before filing defects.
 
 ## 0.9.0
 

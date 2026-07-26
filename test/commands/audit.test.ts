@@ -239,6 +239,9 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
   assert.match(markdown, /mobile \(iPhone 13\) \| Navigate: Checkout \(5 findings, depth 2\) \| target-size: 5/);
   assert.match(markdown, /npx a11y-shiftleft-cli audit --url https:\/\/example\.com\/ --max-depth 3 --limit 12 --out reports\/devices\/desktop --with-lighthouse/);
   assert.match(markdown, /--out reports\/devices\/mobile --with-lighthouse --device 'iPhone 13'/);
+  assert.match(markdown, /## Reproduction Notes/);
+  assert.match(markdown, /desktop \| Use as the desktop comparison baseline for responsive issues\./);
+  assert.match(markdown, /mobile \(iPhone 13\) \| Compare against the desktop report; treat profile-only findings as responsive signals until confirmed\./);
 });
 
 test("createAuditDeviceMatrixReport exports machine-readable device results", () => {
@@ -440,6 +443,9 @@ test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
   assert.match(markdown, /WebKit \| Click: Details \(2 findings, depth 1\) \| focus-visible: 2/);
   assert.match(markdown, /--wait-for-selector '\[data-ready\]' --no-keyboard --browser chromium/);
   assert.match(markdown, /--wait-for-selector '\[data-ready\]' --no-keyboard --browser webkit/);
+  assert.match(markdown, /## Reproduction Notes/);
+  assert.match(markdown, /Chromium \| Use as the Chromium comparison baseline unless your target users rely on another browser\./);
+  assert.match(markdown, /WebKit \| Compare against Chromium and this browser report; treat engine-only findings as browser signals until confirmed\./);
 });
 
 test("createAuditBrowserMatrixReport exports machine-readable browser results", () => {

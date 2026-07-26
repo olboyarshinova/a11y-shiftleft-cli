@@ -390,9 +390,11 @@ export function formatAuditBrowserMatrixSummary(
   const rows = results.map((result) => (
     `| ${escapeMarkdownTableCell(result.target.label)} | ${result.failed ? "failed" : "completed"} | ${formatDeviceSummaryCounts(result)} | ${formatDeviceSummaryStates(result)} | [Open report](${escapeMarkdownLink(`${result.outputDir}/a11y-report.html`)}) |`
   )).join("\n");
-  const hotspots = formatAuditMatrixHotspots("Browser engine", results, (result) => (
+  const commandForResult = (result: { target: AuditBrowserTarget; outputDir: string }) => (
     options ? buildAuditBrowserRerunCommand(result, options) : undefined
-  ));
+  );
+  const hotspots = formatAuditMatrixHotspots("Browser engine", results, commandForResult);
+  const reproductionNotes = formatAuditMatrixReproductionNotes("browser", "Browser engine", results, commandForResult);
 
   return `# Browser Audit Summary
 
@@ -410,6 +412,8 @@ ${rows}
 ${formatAuditMatrixComparison("browser engine", comparison)}
 
 ${hotspots}
+
+${reproductionNotes}
 `;
 }
 
@@ -532,9 +536,11 @@ export function formatAuditDeviceMatrixSummary(
   const rows = results.map((result) => (
     `| ${escapeMarkdownTableCell(result.target.label)} | ${result.failed ? "failed" : "completed"} | ${formatDeviceSummaryCounts(result)} | ${formatDeviceSummaryStates(result)} | [Open report](${escapeMarkdownLink(`${result.outputDir}/a11y-report.html`)}) |`
   )).join("\n");
-  const hotspots = formatAuditMatrixHotspots("Device profile", results, (result) => (
+  const commandForResult = (result: { target: AuditDeviceTarget; outputDir: string }) => (
     options ? buildAuditDeviceRerunCommand(result, options) : undefined
-  ));
+  );
+  const hotspots = formatAuditMatrixHotspots("Device profile", results, commandForResult);
+  const reproductionNotes = formatAuditMatrixReproductionNotes("device", "Device profile", results, commandForResult);
 
   return `# Device Audit Summary
 
@@ -551,6 +557,8 @@ ${rows}
 ${formatAuditMatrixComparison("device profile", comparison)}
 
 ${hotspots}
+
+${reproductionNotes}
 `;
 }
 
@@ -935,6 +943,46 @@ No completed profile summaries were available. Open each generated visual report
       `| ${escapeMarkdownTableCell(result.target.label)} | ${escapeMarkdownTableCell(formatAuditMatrixHotspotTarget(result.summary))} | ${escapeMarkdownTableCell(formatAuditMatrixTopRules(result.summary))} | [Open report](${escapeMarkdownLink(`${result.outputDir}/a11y-report.html`)}) | ${formatAuditMatrixRerunCell(commandForResult?.(result))} |`
     ))
   ].join("\n");
+}
+
+function formatAuditMatrixReproductionNotes<T extends { target: { label: string }; failed: boolean; outputDir: string; summary?: AuditDeviceSummary }>(
+  kind: "device" | "browser",
+  profileHeading: string,
+  results: T[],
+  commandForResult?: (result: T) => string | undefined
+): string {
+  const completed = results.filter((result) => result.summary);
+  if (completed.length === 0) {
+    return `## Reproduction Notes
+
+No completed profile summaries were available. Re-run the failed profiles after checking server availability, auth state, and bot-detection blockers.`;
+  }
+
+  return [
+    "## Reproduction Notes",
+    "",
+    kind === "device"
+      ? "Responsive differences should be reproduced in the same viewport or Playwright device before filing a bug."
+      : "Browser differences should be reproduced in the same browser engine before filing a bug.",
+    "",
+    `| ${profileHeading} | What to confirm | Re-run command |`,
+    "|---|---|---|",
+    ...completed.map((result) => (
+      `| ${escapeMarkdownTableCell(result.target.label)} | ${escapeMarkdownTableCell(formatAuditMatrixReproductionNote(kind, result.target.label))} | ${formatAuditMatrixRerunCell(commandForResult?.(result))} |`
+    ))
+  ].join("\n");
+}
+
+function formatAuditMatrixReproductionNote(kind: "device" | "browser", label: string): string {
+  if (kind === "device") {
+    return /^desktop$/i.test(label)
+      ? "Use as the desktop comparison baseline for responsive issues."
+      : "Compare against the desktop report; treat profile-only findings as responsive signals until confirmed.";
+  }
+
+  return /^chromium$/i.test(label)
+    ? "Use as the Chromium comparison baseline unless your target users rely on another browser."
+    : "Compare against Chromium and this browser report; treat engine-only findings as browser signals until confirmed.";
 }
 
 function formatAuditMatrixHotspotTarget(summary?: AuditDeviceSummary): string {
