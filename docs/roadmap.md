@@ -93,15 +93,15 @@ Section 508 certification.
   fixed or sticky control checks.
 - Continue cross-browser evidence beyond the current `--browser` and
   `--browsers` profile runs. Current matrix summaries include rule-level
-  difference review across generated Chromium, Firefox, and WebKit reports;
-  next, add visual state comparison and clearer browser-specific reproduction
-  notes. Clearly label browser-specific differences for manual review before
-  treating them as product defects.
+  difference review and profile-specific review hotspots across generated
+  Chromium, Firefox, and WebKit reports; next, add visual state comparison and
+  clearer browser-specific reproduction notes. Clearly label browser-specific
+  differences for manual review before treating them as product defects.
 - Continue responsive web evidence beyond the current `--mobile`, `--tablet`,
   `--device`, and `--devices` profile runs. Current matrix summaries include
-  rule-level difference review across generated desktop, mobile, and tablet
-  reports; next, add visual state comparison and viewport-specific reproduction
-  notes. Treat this as
+  rule-level difference review and profile-specific review hotspots across
+  generated desktop, mobile, and tablet reports; next, add visual state
+  comparison and viewport-specific reproduction notes. Treat this as
   responsive/mobile browser testing for rendered websites, not as native iOS or
   Android app auditing.
 - Extend modal checks with additional close, cancel, successful-completion, and

@@ -5,6 +5,8 @@
 - Added rule-level difference review to `audit --devices` and
   `audit --browsers` Markdown/JSON summaries so teams can quickly spot
   responsive or browser-specific accessibility signals.
+- Added matrix review hotspots so device and browser summaries point reviewers
+  to the highest-priority page or UI state in each generated visual report.
 
 ## 0.9.0
 

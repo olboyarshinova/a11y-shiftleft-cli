@@ -171,6 +171,7 @@ export interface AuditDeviceSummary {
   states?: number;
   topRules?: AuditMatrixRuleSummary[];
   topPages?: AuditMatrixPageSummary[];
+  topStates?: AuditMatrixStateSummary[];
 }
 
 export interface AuditMatrixRuleSummary {
@@ -185,6 +186,14 @@ export interface AuditMatrixPageSummary {
   critical: number;
   warning: number;
   info: number;
+}
+
+export interface AuditMatrixStateSummary {
+  id: string;
+  label: string;
+  url: string;
+  depth: number;
+  issueCount: number;
 }
 
 export interface AuditMatrixProfilePeak {
@@ -347,6 +356,7 @@ export function formatAuditBrowserMatrixSummary(results: Array<{ target: AuditBr
   const rows = results.map((result) => (
     `| ${escapeMarkdownTableCell(result.target.label)} | ${result.failed ? "failed" : "completed"} | ${formatDeviceSummaryCounts(result)} | ${formatDeviceSummaryStates(result)} | [Open report](${escapeMarkdownLink(`${result.outputDir}/a11y-report.html`)}) |`
   )).join("\n");
+  const hotspots = formatAuditMatrixHotspots("Browser engine", results);
 
   return `# Browser Audit Summary
 
@@ -362,6 +372,8 @@ Total across browsers: ${formatDeviceSummaryCounts({ summary: totals })}; ${form
 ${rows}
 
 ${formatAuditMatrixComparison("browser engine", comparison)}
+
+${hotspots}
 `;
 }
 
@@ -479,6 +491,7 @@ export function formatAuditDeviceMatrixSummary(results: Array<{ target: AuditDev
   const rows = results.map((result) => (
     `| ${escapeMarkdownTableCell(result.target.label)} | ${result.failed ? "failed" : "completed"} | ${formatDeviceSummaryCounts(result)} | ${formatDeviceSummaryStates(result)} | [Open report](${escapeMarkdownLink(`${result.outputDir}/a11y-report.html`)}) |`
   )).join("\n");
+  const hotspots = formatAuditMatrixHotspots("Device profile", results);
 
   return `# Device Audit Summary
 
@@ -493,6 +506,8 @@ Total across profiles: ${formatDeviceSummaryCounts({ summary: totals })}; ${form
 ${rows}
 
 ${formatAuditMatrixComparison("device profile", comparison)}
+
+${hotspots}
 `;
 }
 
@@ -513,7 +528,8 @@ async function readAuditDeviceSummary(outputDir: string): Promise<AuditDeviceSum
         critical: page.critical,
         warning: page.warning,
         info: page.info
-      }))
+      })),
+      topStates: summarizeAuditMatrixStates(report.exploration)
     };
   } catch {
     return undefined;
@@ -547,6 +563,24 @@ function summarizeAuditMatrixRules(issues: A11yReport["issues"], limit = 20): Au
       || left.ruleId.localeCompare(right.ruleId)
     ))
     .slice(0, limit);
+}
+
+function summarizeAuditMatrixStates(exploration: A11yReport["exploration"], limit = 5): AuditMatrixStateSummary[] {
+  return (exploration?.states || [])
+    .filter((state) => state.issueCount > 0)
+    .sort((left, right) => (
+      right.issueCount - left.issueCount
+      || left.depth - right.depth
+      || left.id.localeCompare(right.id)
+    ))
+    .slice(0, limit)
+    .map((state) => ({
+      id: state.id,
+      label: state.actionLabel,
+      url: state.url,
+      depth: state.depth,
+      issueCount: state.issueCount
+    }));
 }
 
 function createAuditMatrixComparison(
@@ -643,6 +677,50 @@ function formatAuditMatrixRuleTable(rules: AuditMatrixRuleDifference[]): string 
       `| \`${escapeMarkdownTableCell(rule.ruleId)}\` | ${rule.severity} | ${rule.total} | ${escapeMarkdownTableCell(formatProfileCounts(rule.profileCounts))} |`
     ))
   ].join("\n");
+}
+
+function formatAuditMatrixHotspots(
+  profileHeading: string,
+  results: Array<{ target: { label: string }; outputDir: string; summary?: AuditDeviceSummary }>
+): string {
+  const completed = results.filter((result) => result.summary);
+  if (completed.length === 0) {
+    return `## Review Hotspots
+
+No completed profile summaries were available. Open each generated visual report directly.`;
+  }
+
+  return [
+    "## Review Hotspots",
+    "",
+    "Open the visual report for the profile, then start with these pages or states.",
+    "",
+    `| ${profileHeading} | Start here | Top rule signals | Report |`,
+    "|---|---|---|---|",
+    ...completed.map((result) => (
+      `| ${escapeMarkdownTableCell(result.target.label)} | ${escapeMarkdownTableCell(formatAuditMatrixHotspotTarget(result.summary))} | ${escapeMarkdownTableCell(formatAuditMatrixTopRules(result.summary))} | [Open report](${escapeMarkdownLink(`${result.outputDir}/a11y-report.html`)}) |`
+    ))
+  ].join("\n");
+}
+
+function formatAuditMatrixHotspotTarget(summary?: AuditDeviceSummary): string {
+  const topState = summary?.topStates?.[0];
+  if (topState) {
+    return `${topState.label || topState.id} (${topState.issueCount} finding${topState.issueCount === 1 ? "" : "s"}, depth ${topState.depth})`;
+  }
+
+  const topPage = summary?.topPages?.[0];
+  if (topPage) {
+    return `${topPage.page} (${topPage.total} finding${topPage.total === 1 ? "" : "s"})`;
+  }
+
+  return "No findings in completed summary";
+}
+
+function formatAuditMatrixTopRules(summary?: AuditDeviceSummary, limit = 3): string {
+  const rules = (summary?.topRules || []).slice(0, limit);
+  if (rules.length === 0) return "No rule findings";
+  return rules.map((rule) => `${rule.ruleId}: ${rule.count}`).join("; ");
 }
 
 function formatProfileCounts(profileCounts: Record<string, number>): string {

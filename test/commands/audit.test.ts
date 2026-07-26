@@ -179,6 +179,9 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
         topRules: [
           { ruleId: "color-contrast", severity: "critical", count: 2 },
           { ruleId: "target-size", severity: "warning", count: 1 }
+        ],
+        topStates: [
+          { id: "state-2", label: "Click: Open menu", url: "https://example.com/", depth: 1, issueCount: 3 }
         ]
       }
     },
@@ -194,6 +197,9 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
         states: 3,
         topRules: [
           { ruleId: "target-size", severity: "warning", count: 5 }
+        ],
+        topStates: [
+          { id: "state-4", label: "Navigate: Checkout", url: "https://example.com/checkout", depth: 2, issueCount: 5 }
         ]
       }
     }
@@ -208,6 +214,9 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
   assert.match(markdown, /Most findings: mobile \(iPhone 13\) \(5\)\./);
   assert.match(markdown, /`color-contrast` \| critical \| 2 \| desktop: 2; mobile \(iPhone 13\): 0/);
   assert.match(markdown, /`target-size` \| warning \| 6 \| desktop: 1; mobile \(iPhone 13\): 5/);
+  assert.match(markdown, /## Review Hotspots/);
+  assert.match(markdown, /desktop \| Click: Open menu \(3 findings, depth 1\) \| color-contrast: 2; target-size: 1/);
+  assert.match(markdown, /mobile \(iPhone 13\) \| Navigate: Checkout \(5 findings, depth 2\) \| target-size: 5/);
 });
 
 test("createAuditDeviceMatrixReport exports machine-readable device results", () => {
@@ -224,6 +233,9 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
         states: 4,
         topRules: [
           { ruleId: "color-contrast", severity: "critical", count: 2 }
+        ],
+        topStates: [
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 2 }
         ]
       }
     },
@@ -239,6 +251,9 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
         states: 3,
         topRules: [
           { ruleId: "target-size", severity: "warning", count: 1 }
+        ],
+        topStates: [
+          { id: "state-3", label: "Click: Filters", url: "https://example.com/", depth: 1, issueCount: 1 }
         ]
       }
     }
@@ -276,6 +291,9 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
       states: 3,
       topRules: [
         { ruleId: "target-size", severity: "warning", count: 1 }
+      ],
+      topStates: [
+        { id: "state-3", label: "Click: Filters", url: "https://example.com/", depth: 1, issueCount: 1 }
       ]
     }
   });
@@ -296,6 +314,9 @@ test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
         topRules: [
           { ruleId: "button-name", severity: "critical", count: 1 },
           { ruleId: "focus-visible", severity: "warning", count: 2 }
+        ],
+        topStates: [
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 4 }
         ]
       }
     },
@@ -311,6 +332,9 @@ test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
         states: 4,
         topRules: [
           { ruleId: "focus-visible", severity: "warning", count: 2 }
+        ],
+        topStates: [
+          { id: "state-2", label: "Click: Details", url: "https://example.com/", depth: 1, issueCount: 2 }
         ]
       }
     }
@@ -324,6 +348,8 @@ test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
   assert.match(markdown, /Use this section to spot findings that may be specific to one browser engine/);
   assert.match(markdown, /`button-name` \| critical \| 1 \| Chromium: 1; WebKit: 0/);
   assert.match(markdown, /`focus-visible` \| warning \| 4 \| Chromium: 2; WebKit: 2/);
+  assert.match(markdown, /Chromium \| Initial page \(4 findings, depth 0\) \| button-name: 1; focus-visible: 2/);
+  assert.match(markdown, /WebKit \| Click: Details \(2 findings, depth 1\) \| focus-visible: 2/);
 });
 
 test("createAuditBrowserMatrixReport exports machine-readable browser results", () => {
@@ -340,6 +366,9 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
         states: 5,
         topRules: [
           { ruleId: "button-name", severity: "critical", count: 1 }
+        ],
+        topStates: [
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 4 }
         ]
       }
     },
@@ -355,6 +384,9 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
         states: 3,
         topRules: [
           { ruleId: "keyboard-focus-visible", severity: "warning", count: 2 }
+        ],
+        topStates: [
+          { id: "state-2", label: "Click: Open menu", url: "https://example.com/", depth: 1, issueCount: 2 }
         ]
       }
     }
@@ -389,6 +421,9 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
       states: 5,
       topRules: [
         { ruleId: "button-name", severity: "critical", count: 1 }
+      ],
+      topStates: [
+        { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 4 }
       ]
     }
   });
