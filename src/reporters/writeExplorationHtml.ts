@@ -3841,14 +3841,15 @@ function renderIssues(
   }
 
   const rankedGroups = [...groups.entries()].sort(compareIssueGroupEntries);
-  const visibleGroups = rankedGroups.slice(0, 8);
-  const remainingGroups = rankedGroups.slice(8);
+  const visibleGroups = rankedGroups.slice(0, 10);
+  const remainingGroups = rankedGroups.slice(10);
+  const remainingIssueCount = remainingGroups.reduce((total, [, groupIssues]) => total + groupIssues.length, 0);
 
   return `<ul class="issue-list">
     ${visibleGroups.map(([ruleId, groupIssues]) => renderStateIssueGroup(ruleId, groupIssues, annotationNumberByIssueKey)).join("\n")}
   </ul>
   ${remainingGroups.length > 0 ? `<details>
-    <summary>Show ${remainingGroups.length} more rule group${remainingGroups.length === 1 ? "" : "s"}</summary>
+    <summary>Show ${remainingGroups.length} more rule group${remainingGroups.length === 1 ? "" : "s"} (${remainingIssueCount} hidden finding${remainingIssueCount === 1 ? "" : "s"}, ${issues.length} total)</summary>
     <ul class="issue-list">${remainingGroups.map(([ruleId, groupIssues]) => renderStateIssueGroup(ruleId, groupIssues, annotationNumberByIssueKey)).join("\n")}</ul>
   </details>` : ""}`;
 }

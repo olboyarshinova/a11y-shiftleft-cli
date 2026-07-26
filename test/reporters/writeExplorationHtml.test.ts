@@ -1830,7 +1830,7 @@ test("renderExplorationHtml provides fallback guidance for unknown rules", () =>
 });
 
 test("renderExplorationHtml keeps diagnostic exploration data out of the visual report", () => {
-  const overflowIssues = Array.from({ length: 9 }, (_, index) => ({
+  const overflowIssues = Array.from({ length: 11 }, (_, index) => ({
     ...issues[0],
     ruleId: `test-rule-${index + 1}`,
     message: `Finding ${index + 1}`,
@@ -1856,8 +1856,8 @@ test("renderExplorationHtml keeps diagnostic exploration data out of the visual 
     skippedActions: overflowActions
   }, overflowIssues);
 
-  assert.match(html, /Show 1 more rule group/);
-  assert.match(html, /Finding 9/);
+  assert.match(html, /Show 1 more rule group \(1 hidden finding, 11 total\)/);
+  assert.match(html, /Finding 11/);
   assert.doesNotMatch(html, /State transitions and skipped actions can be saved to <code>exploration-graph\.json<\/code> with <code>--raw<\/code>/);
   assert.doesNotMatch(html, /Show 1 more transition/);
   assert.doesNotMatch(html, /Transition 13/);
