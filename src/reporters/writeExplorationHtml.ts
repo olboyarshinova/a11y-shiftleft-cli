@@ -3843,13 +3843,14 @@ function renderIssues(
   const rankedGroups = [...groups.entries()].sort(compareIssueGroupEntries);
   const visibleGroups = rankedGroups.slice(0, 10);
   const remainingGroups = rankedGroups.slice(10);
-  const remainingIssueCount = remainingGroups.reduce((total, [, groupIssues]) => total + groupIssues.length, 0);
+  const remainingIssues = remainingGroups.flatMap(([, groupIssues]) => groupIssues);
+  const remainingIssueCount = remainingIssues.length;
 
   return `<ul class="issue-list">
     ${visibleGroups.map(([ruleId, groupIssues]) => renderStateIssueGroup(ruleId, groupIssues, annotationNumberByIssueKey)).join("\n")}
   </ul>
   ${remainingGroups.length > 0 ? `<details>
-    <summary>Show ${remainingGroups.length} more rule group${remainingGroups.length === 1 ? "" : "s"} (${remainingIssueCount} hidden finding${remainingIssueCount === 1 ? "" : "s"}, ${issues.length} total)</summary>
+    <summary>Show ${remainingGroups.length} more rule group${remainingGroups.length === 1 ? "" : "s"} (${remainingIssueCount} hidden finding${remainingIssueCount === 1 ? "" : "s"}: ${escapeHtml(formatSeverityMix(remainingIssues))}, ${issues.length} total)</summary>
     <ul class="issue-list">${remainingGroups.map(([ruleId, groupIssues]) => renderStateIssueGroup(ruleId, groupIssues, annotationNumberByIssueKey)).join("\n")}</ul>
   </details>` : ""}`;
 }
@@ -3898,12 +3899,13 @@ function renderStateIssueGroup(
   const ownershipLabels = [...new Set(sortedIssues.map((issue) => issue.ownership?.label).filter(Boolean))];
   const visibleDisplayGroups = displayGroups.slice(0, 10);
   const hiddenDisplayGroups = displayGroups.slice(10);
-  const hiddenIssueCount = hiddenDisplayGroups.reduce((total, group) => total + group.issues.length, 0);
+  const hiddenIssues = hiddenDisplayGroups.flatMap((group) => group.issues);
+  const hiddenIssueCount = hiddenIssues.length;
   const occurrences = `<ul class="finding-occurrences">
     ${visibleDisplayGroups.map((group) => renderFindingOccurrenceGroup(group, sortedIssues.length, annotationNumberByIssueKey)).join("\n")}
   </ul>
   ${hiddenDisplayGroups.length > 0 ? `<details class="finding-overflow">
-    <summary>Show ${hiddenDisplayGroups.length} more finding group${hiddenDisplayGroups.length === 1 ? "" : "s"} (${hiddenIssueCount} hidden, ${sortedIssues.length} total)</summary>
+    <summary>Show ${hiddenDisplayGroups.length} more finding group${hiddenDisplayGroups.length === 1 ? "" : "s"} (${hiddenIssueCount} hidden: ${escapeHtml(formatSeverityMix(hiddenIssues))}, ${sortedIssues.length} total)</summary>
     <ul class="finding-occurrences">
       ${hiddenDisplayGroups.map((group) => renderFindingOccurrenceGroup(group, sortedIssues.length, annotationNumberByIssueKey)).join("\n")}
     </ul>
@@ -4000,7 +4002,7 @@ function renderFindingTargets(
     ${visibleIssues.map((issue) => `<li>${renderFindingTarget(issue, annotationNumberByIssueKey)}</li>`).join("\n")}
     ${hiddenIssues.length > 0 ? `<li class="finding-target-more">
       <details>
-        <summary>Show ${hiddenIssues.length} more location${hiddenIssues.length === 1 ? "" : "s"} (${issues.length} total)</summary>
+        <summary>Show ${hiddenIssues.length} more location${hiddenIssues.length === 1 ? "" : "s"} (${hiddenIssues.length} hidden: ${escapeHtml(formatSeverityMix(hiddenIssues))}, ${issues.length} total)</summary>
         <ol class="finding-targets finding-targets-nested">
           ${hiddenIssues.map((issue) => `<li>${renderFindingTarget(issue, annotationNumberByIssueKey)}</li>`).join("\n")}
         </ol>
@@ -4614,6 +4616,15 @@ function summarizeIssues(issues: DedupedIssue[]): Record<Severity, number> {
     warning: 0,
     info: 0
   });
+}
+
+function formatSeverityMix(issues: DedupedIssue[]): string {
+  const summary = summarizeIssues(issues);
+  return [
+    summary.critical ? `${summary.critical} critical` : "",
+    summary.warning ? `${summary.warning} warning` : "",
+    summary.info ? `${summary.info} info` : ""
+  ].filter(Boolean).join(", ") || "0";
 }
 
 function groupIssuesByStateId(issues: DedupedIssue[]): Map<string, DedupedIssue[]> {
