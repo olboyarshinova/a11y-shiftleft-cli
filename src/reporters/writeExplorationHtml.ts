@@ -149,62 +149,6 @@ export function renderExplorationHtml(
       font-weight: 700;
     }
 
-    .report-view-controls {
-      align-items: center;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin: 12px 0 0;
-    }
-
-    .report-view-label {
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .report-view-button {
-      background: #f8fafc;
-      border: 1px solid var(--line);
-      border-radius: 5px;
-      color: var(--ink);
-      cursor: pointer;
-      font: inherit;
-      font-size: 12px;
-      font-weight: 700;
-      line-height: 1.2;
-      padding: 5px 8px;
-    }
-
-    .report-view-button[aria-pressed="true"] {
-      background: #e7f0ff;
-      border-color: #9cc5ff;
-      color: var(--info);
-    }
-
-    .report-filter-status {
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    body[data-report-view="review"] .finding-target-full,
-    body[data-report-view="review"] .finding-groups,
-    body[data-report-view="review"] .safe-guardrails {
-      display: none;
-    }
-
-    body[data-finding-filter="critical"] .issue:not([data-issue-critical="true"]),
-    body[data-finding-filter="actionable"] .issue[data-issue-info-only="true"] {
-      display: none;
-    }
-
-    body[data-finding-filter="critical"] .state:not([data-state-critical="true"]),
-    body[data-finding-filter="actionable"] .state[data-state-info-only="true"],
-    body[data-finding-filter="actionable"] .state[data-state-no-findings="true"] {
-      display: none;
-    }
-
     h2 {
       font-size: 16px;
       margin-bottom: 8px;
@@ -2209,7 +2153,6 @@ export function renderExplorationHtml(
         </div>
         <h1>${escapeHtml(options.title || "a11y-shiftleft exploration report")}</h1>
         <p class="muted">Generated: <time datetime="${escapeAttribute(graph.generatedAt)}">${escapeHtml(formatReportDateUtc(graph.generatedAt))}</time><br>Start URL: ${escapeHtml(graph.startUrl)}<br>Scan depth: ${escapeHtml(formatDepthScope(graph.summary.maxDepth))}<br>Scan scope: ${escapeHtml(graph.summary.scopeSelector ? `selector ${graph.summary.scopeSelector}; up to ${graph.summary.maxStates} states, ${graph.summary.statesVisited} rendered` : `up to ${graph.summary.maxStates} states, ${graph.summary.statesVisited} rendered`)}<br>Hidden elements: ${escapeHtml(formatHiddenElements(graph.summary.hideElements))}</p>
-        ${renderReportViewControls()}
       </div>
       ${renderTicketDraftsPanel(reportIssues)}
     </div>
@@ -2271,86 +2214,6 @@ export function renderExplorationHtml(
     </section>
   </main>
   <script>
-    (() => {
-      const buttons = Array.from(document.querySelectorAll('[data-report-view]'));
-      if (buttons.length === 0) return;
-      const reportId = document.body.dataset.coverageReportId || 'report';
-      const storageKey = 'a11y-shiftleft:report-view:' + reportId;
-
-      const activate = (mode) => {
-        const selectedMode = buttons.some((button) => button.dataset.reportView === mode) ? mode : 'full';
-        document.body.dataset.reportView = selectedMode;
-        for (const button of buttons) {
-          button.setAttribute('aria-pressed', button.dataset.reportView === selectedMode ? 'true' : 'false');
-        }
-        try {
-          localStorage.setItem(storageKey, selectedMode);
-        } catch {
-          // The report remains usable when storage is unavailable.
-        }
-      };
-
-      for (const button of buttons) {
-        button.addEventListener('click', () => activate(button.dataset.reportView));
-      }
-
-      try {
-        activate(localStorage.getItem(storageKey) || 'full');
-      } catch {
-        activate('full');
-      }
-    })();
-
-    (() => {
-      const buttons = Array.from(document.querySelectorAll('[data-finding-filter]'));
-      if (buttons.length === 0) return;
-      const status = document.querySelector('[data-finding-filter-status]');
-      const reportId = document.body.dataset.coverageReportId || 'report';
-      const storageKey = 'a11y-shiftleft:finding-filter:' + reportId;
-
-      const matchesFilter = (element, mode) => {
-        if (mode === 'critical') {
-          return element.dataset.issueCritical === 'true' || element.dataset.stateCritical === 'true';
-        }
-        if (mode === 'actionable') {
-          if (element.classList.contains('issue')) return element.dataset.issueInfoOnly !== 'true';
-          return element.dataset.stateInfoOnly !== 'true' && element.dataset.stateNoFindings !== 'true';
-        }
-        return true;
-      };
-
-      const updateStatus = (mode) => {
-        if (!status) return;
-        const visibleStates = Array.from(document.querySelectorAll('.state')).filter((state) => matchesFilter(state, mode)).length;
-        const visibleIssues = Array.from(document.querySelectorAll('.issue')).filter((issue) => matchesFilter(issue, mode)).length;
-        status.textContent = 'Showing ' + visibleStates + ' state' + (visibleStates === 1 ? '' : 's') + ' and ' + visibleIssues + ' issue group' + (visibleIssues === 1 ? '' : 's') + '.';
-      };
-
-      const activate = (mode) => {
-        const selectedMode = buttons.some((button) => button.dataset.findingFilter === mode) ? mode : 'all';
-        document.body.dataset.findingFilter = selectedMode;
-        for (const button of buttons) {
-          button.setAttribute('aria-pressed', button.dataset.findingFilter === selectedMode ? 'true' : 'false');
-        }
-        updateStatus(selectedMode);
-        try {
-          localStorage.setItem(storageKey, selectedMode);
-        } catch {
-          // The report remains usable when storage is unavailable.
-        }
-      };
-
-      for (const button of buttons) {
-        button.addEventListener('click', () => activate(button.dataset.findingFilter));
-      }
-
-      try {
-        activate(localStorage.getItem(storageKey) || 'all');
-      } catch {
-        activate('all');
-      }
-    })();
-
     (() => {
       const rows = Array.from(document.querySelectorAll('[data-coverage-review]'));
       const progress = document.querySelector('[data-coverage-progress]');
@@ -2686,19 +2549,6 @@ function formatIgnoreOwnerCleanup(owner: IgnoreSummary["ownerSummaries"][number]
     owner.expiredRules ? `${owner.expiredRules} expired` : "",
     owner.invalidRules ? `${owner.invalidRules} invalid` : ""
   ].filter(Boolean).join(", ") || "no active cleanup needed";
-}
-
-function renderReportViewControls(): string {
-  return `<div class="report-view-controls" aria-label="Report view mode">
-    <span class="report-view-label">View</span>
-    <button class="report-view-button" type="button" data-report-view="full" aria-pressed="true" aria-label="Show full developer report details">Full</button>
-    <button class="report-view-button" type="button" data-report-view="review" aria-pressed="false" aria-label="Show a compact review view with fewer technical details">Review</button>
-    <span class="report-view-label">Findings</span>
-    <button class="report-view-button" type="button" data-finding-filter="all" aria-pressed="true" aria-label="Show all finding groups">All</button>
-    <button class="report-view-button" type="button" data-finding-filter="critical" aria-pressed="false" aria-label="Show only finding groups with critical issues">Critical</button>
-    <button class="report-view-button" type="button" data-finding-filter="actionable" aria-pressed="false" aria-label="Show critical and warning finding groups">Critical + Warning</button>
-    <span class="report-filter-status" data-finding-filter-status aria-live="polite"></span>
-  </div>`;
 }
 
 function renderTicketDraftsPanel(issues: DedupedIssue[]): string {
@@ -3210,7 +3060,7 @@ function renderState(state: StateViewModel): string {
     return renderCompactState(state, stateSeverity, issueBadges);
   }
 
-  return `<article class="state state-${stateSeverity}" id="${escapeAttribute(state.id)}"${stateFilterAttributes(issueSummary, state.issues.length)}>
+  return `<article class="state state-${stateSeverity}" id="${escapeAttribute(state.id)}">
   ${renderStateScreenshot(state)}
   <div class="state-body">
     <div class="state-title">
@@ -3244,7 +3094,7 @@ function renderState(state: StateViewModel): string {
 
 function renderCompactState(state: StateViewModel, stateSeverity: string, issueBadges: string): string {
   const issueSummary = summarizeIssues(state.issues);
-  return `<article class="state state-${stateSeverity} state-compact" id="${escapeAttribute(state.id)}"${stateFilterAttributes(issueSummary, state.issues.length)}>
+  return `<article class="state state-${stateSeverity} state-compact" id="${escapeAttribute(state.id)}">
   ${renderStateScreenshot(state)}
   <div class="state-body">
     <div class="state-compact-summary">
@@ -4081,7 +3931,7 @@ function renderNonVisualIssues(issues: DedupedIssue[]): string {
     issueSummary.info ? badge("info", `${issueSummary.info} info`) : ""
   ].filter(Boolean).join("");
 
-  return `<article class="state state-${stateSeverity} non-visual-findings" aria-label="Non-visual findings"${stateFilterAttributes(issueSummary, issues.length)}>
+  return `<article class="state state-${stateSeverity} non-visual-findings" aria-label="Non-visual findings">
     <div class="non-visual-finding-summary">Source and keyboard findings</div>
     <div class="state-body">
       <div class="state-title">
@@ -4094,16 +3944,6 @@ function renderNonVisualIssues(issues: DedupedIssue[]): string {
       ${renderIssues(issues)}
     </div>
   </article>`;
-}
-
-function stateFilterAttributes(summary: Record<Severity, number>, issueCount: number): string {
-  const attributes = [
-    `data-state-critical="${summary.critical > 0 ? "true" : "false"}"`,
-    `data-state-warning="${summary.warning > 0 ? "true" : "false"}"`,
-    `data-state-info-only="${summary.critical === 0 && summary.warning === 0 && summary.info > 0 ? "true" : "false"}"`,
-    `data-state-no-findings="${issueCount === 0 ? "true" : "false"}"`
-  ].join(" ");
-  return ` ${attributes}`;
 }
 
 function renderStateIssueGroup(
@@ -4134,7 +3974,7 @@ function renderStateIssueGroup(
     </ul>
   </details>` : ""}`;
 
-  return `<li class="issue" data-issue-critical="${summary.critical > 0 ? "true" : "false"}" data-issue-warning="${summary.warning > 0 ? "true" : "false"}" data-issue-info-only="${summary.critical === 0 && summary.warning === 0 && summary.info > 0 ? "true" : "false"}">
+  return `<li class="issue">
     <div class="triage-title">
       <div class="triage-title-main">
         <code>${escapeHtml(ruleId)}</code>
