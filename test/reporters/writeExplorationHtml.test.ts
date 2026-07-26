@@ -335,6 +335,11 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.ok(html.indexOf("Ticket Drafts") < html.indexOf("Exploration summary"));
   assert.match(html, /class="report-header-grid"/);
   assert.match(html, /\.report-header-grid \{/);
+  assert.match(html, /class="report-view-controls"/);
+  assert.match(html, /data-report-view="full"/);
+  assert.match(html, /data-report-view="review"/);
+  assert.match(html, /body\[data-report-view="review"\] \.finding-target-full/);
+  assert.match(html, /a11y-shiftleft:report-view:/);
   assert.match(html, /\.ticket-drafts \{[\s\S]*?align-self: start/);
   assert.match(html, /\.ticket-drafts \{[\s\S]*?margin-top: 0/);
   assert.match(html, /@media \(min-width: 1100px\) \{[\s\S]*?\.ticket-drafts \{[\s\S]*?margin-top: 44px/);

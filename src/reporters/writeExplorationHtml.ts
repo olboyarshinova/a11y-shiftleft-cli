@@ -149,6 +149,45 @@ export function renderExplorationHtml(
       font-weight: 700;
     }
 
+    .report-view-controls {
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0 0;
+    }
+
+    .report-view-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .report-view-button {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      color: var(--ink);
+      cursor: pointer;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.2;
+      padding: 5px 8px;
+    }
+
+    .report-view-button[aria-pressed="true"] {
+      background: #e7f0ff;
+      border-color: #9cc5ff;
+      color: var(--info);
+    }
+
+    body[data-report-view="review"] .finding-target-full,
+    body[data-report-view="review"] .finding-groups,
+    body[data-report-view="review"] .safe-guardrails {
+      display: none;
+    }
+
     h2 {
       font-size: 16px;
       margin-bottom: 8px;
@@ -2119,6 +2158,7 @@ export function renderExplorationHtml(
         </div>
         <h1>${escapeHtml(options.title || "a11y-shiftleft exploration report")}</h1>
         <p class="muted">Generated: <time datetime="${escapeAttribute(graph.generatedAt)}">${escapeHtml(formatReportDateUtc(graph.generatedAt))}</time><br>Start URL: ${escapeHtml(graph.startUrl)}<br>Scan depth: ${escapeHtml(formatDepthScope(graph.summary.maxDepth))}<br>Scan scope: ${escapeHtml(graph.summary.scopeSelector ? `selector ${graph.summary.scopeSelector}; up to ${graph.summary.maxStates} states, ${graph.summary.statesVisited} rendered` : `up to ${graph.summary.maxStates} states, ${graph.summary.statesVisited} rendered`)}<br>Hidden elements: ${escapeHtml(formatHiddenElements(graph.summary.hideElements))}</p>
+        ${renderReportViewControls()}
       </div>
       ${renderTicketDraftsPanel(reportIssues)}
     </div>
@@ -2180,6 +2220,36 @@ export function renderExplorationHtml(
     </section>
   </main>
   <script>
+    (() => {
+      const buttons = Array.from(document.querySelectorAll('[data-report-view]'));
+      if (buttons.length === 0) return;
+      const reportId = document.body.dataset.coverageReportId || 'report';
+      const storageKey = 'a11y-shiftleft:report-view:' + reportId;
+
+      const activate = (mode) => {
+        const selectedMode = buttons.some((button) => button.dataset.reportView === mode) ? mode : 'full';
+        document.body.dataset.reportView = selectedMode;
+        for (const button of buttons) {
+          button.setAttribute('aria-pressed', button.dataset.reportView === selectedMode ? 'true' : 'false');
+        }
+        try {
+          localStorage.setItem(storageKey, selectedMode);
+        } catch {
+          // The report remains usable when storage is unavailable.
+        }
+      };
+
+      for (const button of buttons) {
+        button.addEventListener('click', () => activate(button.dataset.reportView));
+      }
+
+      try {
+        activate(localStorage.getItem(storageKey) || 'full');
+      } catch {
+        activate('full');
+      }
+    })();
+
     (() => {
       const rows = Array.from(document.querySelectorAll('[data-coverage-review]'));
       const progress = document.querySelector('[data-coverage-progress]');
@@ -2515,6 +2585,14 @@ function formatIgnoreOwnerCleanup(owner: IgnoreSummary["ownerSummaries"][number]
     owner.expiredRules ? `${owner.expiredRules} expired` : "",
     owner.invalidRules ? `${owner.invalidRules} invalid` : ""
   ].filter(Boolean).join(", ") || "no active cleanup needed";
+}
+
+function renderReportViewControls(): string {
+  return `<div class="report-view-controls" aria-label="Report view mode">
+    <span class="report-view-label">View</span>
+    <button class="report-view-button" type="button" data-report-view="full" aria-pressed="true" aria-label="Show full developer report details">Full</button>
+    <button class="report-view-button" type="button" data-report-view="review" aria-pressed="false" aria-label="Show a compact review view with fewer technical details">Review</button>
+  </div>`;
 }
 
 function renderTicketDraftsPanel(issues: DedupedIssue[]): string {
