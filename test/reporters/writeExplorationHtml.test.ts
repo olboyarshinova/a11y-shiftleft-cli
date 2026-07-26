@@ -2127,6 +2127,7 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /Manual review evidence summary/);
   assert.match(html, /0<\/strong> step records/);
   assert.match(html, /0<\/strong> task evidence links/);
+  assert.match(html, /id="manual-checklist-item-form-label-quality"/);
   assert.match(html, /data-manual-checklist-item="form-label-quality"/);
   assert.match(html, /data-manual-checklist-checkbox/);
   assert.match(html, /Mark Meaningful form labels and instructions as reviewed/);
@@ -2182,6 +2183,8 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /class="coverage-state-cell"/);
   assert.match(html, /class="coverage-status-cell"/);
   assert.match(html, /<a href="#manual-review-checklist">Checklist ready<\/a>/);
+  assert.doesNotMatch(html, /href="#manual-checklist-item-screen-reader-smoke"/);
+  assert.doesNotMatch(html, /id="manual-checklist-item-screen-reader-smoke"/);
   assert.match(html, /coverage-state-failed/);
   assert.match(html, /coverage-state-passed/);
   assert.match(html, /coverage-state-needs-review/);
@@ -2233,6 +2236,37 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /Iframe and canvas evidence/);
   assert.match(html, /#sales-chart/);
   assert.match(html, /Modern axe scans accessible frame documents recursively/);
+});
+
+test("renderExplorationHtml links coverage rows to matching manual checklist items", () => {
+  const html = renderExplorationHtml(graph, issues, {
+    manualChecklist: {
+      generatedAt: "2026-06-21T00:00:00.000Z",
+      framework: "react",
+      urls: ["http://localhost:3000"],
+      items: [{
+        id: "sensory-color-instructions",
+        title: "Sensory and color-only instructions",
+        principle: "perceivable",
+        wcag: ["1.3.3", "1.4.1"],
+        whyManual: "Instruction meaning requires human judgment.",
+        steps: ["Review color-only, shape-only, and position-only cues."],
+        evidence: ["Instruction review notes"],
+        targets: [],
+        review: {
+          status: "not-reviewed",
+          tester: "",
+          testedAt: "",
+          environment: "",
+          notes: "",
+          evidenceLinks: []
+        }
+      }]
+    }
+  });
+
+  assert.match(html, /id="manual-checklist-item-sensory-color-instructions"/);
+  assert.match(html, /<a href="#manual-checklist-item-sensory-color-instructions">Checklist ready<\/a>/);
 });
 
 test("renderExplorationHtml hides successful per-state diagnostic details", () => {
