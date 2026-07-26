@@ -1125,8 +1125,10 @@ test("renderExplorationHtml explains when not every target has a screenshot mark
 
   assert.match(issueHtml, /12 of 13 shown on screenshots/);
   assert.match(issueHtml, /Show 3 more locations \(3 hidden: 3 warning, 13 total\)/);
+  assert.match(issueHtml, /class="finding-target-more finding-target-more-warning"/);
   assert.match(issueHtml, /\.contrast-12/);
   assert.match(html, /\.finding-target-more summary \{[\s\S]*?display: inline-flex/);
+  assert.match(html, /\.finding-target-more-warning summary \{[\s\S]*?color: var\(--warning\)/);
 });
 
 test("renderExplorationHtml collapses finding groups after ten visible groups", () => {
@@ -1145,6 +1147,7 @@ test("renderExplorationHtml collapses finding groups after ten visible groups", 
   const issueHtml = issueBlockForRule(html, "layout-clipped-text");
 
   assert.match(issueHtml, /Show 2 more finding groups \(2 hidden: 2 warning, 12 total\)/);
+  assert.match(issueHtml, /class="finding-overflow finding-overflow-warning"/);
   assert.match(issueHtml, /Different clipped text message 1/);
   assert.match(issueHtml, /Different clipped text message 12/);
   assert.match(html, /\.finding-overflow summary,[\s\S]*?display: inline-flex/);
@@ -1857,6 +1860,7 @@ test("renderExplorationHtml keeps diagnostic exploration data out of the visual 
   }, overflowIssues);
 
   assert.match(html, /Show 1 more rule group \(1 hidden finding: 1 critical, 11 total\)/);
+  assert.match(html, /class="issue-overflow issue-overflow-critical"/);
   assert.match(html, /Finding 11/);
   assert.doesNotMatch(html, /State transitions and skipped actions can be saved to <code>exploration-graph\.json<\/code> with <code>--raw<\/code>/);
   assert.doesNotMatch(html, /Show 1 more transition/);

@@ -1632,11 +1632,13 @@ export function renderExplorationHtml(
       margin-left: -24px;
     }
 
+    .issue-overflow,
     .finding-overflow,
     .finding-target-more details {
       margin-top: 6px;
     }
 
+    .issue-overflow summary,
     .finding-overflow summary,
     .finding-target-more summary {
       background: #f8fafc;
@@ -1649,6 +1651,30 @@ export function renderExplorationHtml(
       font-weight: 700;
       line-height: 1.2;
       padding: 5px 8px;
+    }
+
+    .issue-overflow-critical summary,
+    .finding-overflow-critical summary,
+    .finding-target-more-critical summary {
+      background: #fff1f2;
+      border-color: #f3a2aa;
+      color: var(--critical);
+    }
+
+    .issue-overflow-warning summary,
+    .finding-overflow-warning summary,
+    .finding-target-more-warning summary {
+      background: #fff7ed;
+      border-color: #fed7aa;
+      color: var(--warning);
+    }
+
+    .issue-overflow-info summary,
+    .finding-overflow-info summary,
+    .finding-target-more-info summary {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: var(--info);
     }
 
     .finding-target-more {
@@ -3845,11 +3871,12 @@ function renderIssues(
   const remainingGroups = rankedGroups.slice(10);
   const remainingIssues = remainingGroups.flatMap(([, groupIssues]) => groupIssues);
   const remainingIssueCount = remainingIssues.length;
+  const remainingSeverity = dominantSeverity(remainingIssues);
 
   return `<ul class="issue-list">
     ${visibleGroups.map(([ruleId, groupIssues]) => renderStateIssueGroup(ruleId, groupIssues, annotationNumberByIssueKey)).join("\n")}
   </ul>
-  ${remainingGroups.length > 0 ? `<details>
+  ${remainingGroups.length > 0 ? `<details class="issue-overflow issue-overflow-${remainingSeverity}">
     <summary>Show ${remainingGroups.length} more rule group${remainingGroups.length === 1 ? "" : "s"} (${remainingIssueCount} hidden finding${remainingIssueCount === 1 ? "" : "s"}: ${escapeHtml(formatSeverityMix(remainingIssues))}, ${issues.length} total)</summary>
     <ul class="issue-list">${remainingGroups.map(([ruleId, groupIssues]) => renderStateIssueGroup(ruleId, groupIssues, annotationNumberByIssueKey)).join("\n")}</ul>
   </details>` : ""}`;
@@ -3901,10 +3928,11 @@ function renderStateIssueGroup(
   const hiddenDisplayGroups = displayGroups.slice(10);
   const hiddenIssues = hiddenDisplayGroups.flatMap((group) => group.issues);
   const hiddenIssueCount = hiddenIssues.length;
+  const hiddenSeverity = dominantSeverity(hiddenIssues);
   const occurrences = `<ul class="finding-occurrences">
     ${visibleDisplayGroups.map((group) => renderFindingOccurrenceGroup(group, sortedIssues.length, annotationNumberByIssueKey)).join("\n")}
   </ul>
-  ${hiddenDisplayGroups.length > 0 ? `<details class="finding-overflow">
+  ${hiddenDisplayGroups.length > 0 ? `<details class="finding-overflow finding-overflow-${hiddenSeverity}">
     <summary>Show ${hiddenDisplayGroups.length} more finding group${hiddenDisplayGroups.length === 1 ? "" : "s"} (${hiddenIssueCount} hidden: ${escapeHtml(formatSeverityMix(hiddenIssues))}, ${sortedIssues.length} total)</summary>
     <ul class="finding-occurrences">
       ${hiddenDisplayGroups.map((group) => renderFindingOccurrenceGroup(group, sortedIssues.length, annotationNumberByIssueKey)).join("\n")}
@@ -4000,7 +4028,7 @@ function renderFindingTargets(
     : "";
   return `<ol class="finding-targets">
     ${visibleIssues.map((issue) => `<li>${renderFindingTarget(issue, annotationNumberByIssueKey)}</li>`).join("\n")}
-    ${hiddenIssues.length > 0 ? `<li class="finding-target-more">
+    ${hiddenIssues.length > 0 ? `<li class="finding-target-more finding-target-more-${dominantSeverity(hiddenIssues)}">
       <details>
         <summary>Show ${hiddenIssues.length} more location${hiddenIssues.length === 1 ? "" : "s"} (${hiddenIssues.length} hidden: ${escapeHtml(formatSeverityMix(hiddenIssues))}, ${issues.length} total)</summary>
         <ol class="finding-targets finding-targets-nested">
@@ -4625,6 +4653,13 @@ function formatSeverityMix(issues: DedupedIssue[]): string {
     summary.warning ? `${summary.warning} warning` : "",
     summary.info ? `${summary.info} info` : ""
   ].filter(Boolean).join(", ") || "0";
+}
+
+function dominantSeverity(issues: DedupedIssue[]): Severity {
+  const summary = summarizeIssues(issues);
+  if (summary.critical > 0) return "critical";
+  if (summary.warning > 0) return "warning";
+  return "info";
 }
 
 function groupIssuesByStateId(issues: DedupedIssue[]): Map<string, DedupedIssue[]> {
