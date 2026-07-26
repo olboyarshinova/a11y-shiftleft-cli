@@ -155,6 +155,19 @@ come from Playwright device presets, such as `Desktop Chrome`, `Desktop Safari`,
 `iPhone 13`, and `Pixel 5`. For visual reports, `audit --mobile` is a shortcut
 for `iPhone 13`, and `audit --tablet` is a shortcut for `iPad (gen 7)`.
 
+Use `--devices` when you want separate visual reports for several responsive
+profiles without rerunning the command manually:
+
+```bash
+npx a11y-shiftleft-cli audit --url $APP_URL --devices desktop mobile tablet --out reports/devices
+```
+
+This writes one report per profile, for example
+`reports/devices/desktop/a11y-report.html`,
+`reports/devices/mobile/a11y-report.html`, and
+`reports/devices/tablet/a11y-report.html`. The scan is intentionally bounded;
+use it for responsive browser evidence, not as a native mobile app audit.
+
 Install the browser engine before using it:
 
 ```bash

@@ -277,6 +277,7 @@ The commands below assume `APP_URL` is set to your local, staging, or preview UR
 | `agent` | Summarize an existing report | `npx a11y-shiftleft-cli agent review --report reports` |
 | `audit` | Quick risk triage | `npx a11y-shiftleft-cli audit --url $APP_URL --profile risk --out reports` |
 | `audit` | Broader local scan | `npx a11y-shiftleft-cli audit --url $APP_URL --max-depth 3 --limit 50 --out reports` |
+| `audit` | Compare desktop, phone, and tablet layouts | `npx a11y-shiftleft-cli audit --url $APP_URL --devices desktop mobile tablet --out reports/devices` |
 | `audit` | Check one component or page area | `npx a11y-shiftleft-cli audit --url $APP_URL --scope '#main' --out reports` |
 | `check` | Fast CI or PR check | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports` |
 | `check` | Save current known findings as a baseline | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --update-baseline` |
@@ -329,9 +330,13 @@ or other non-product overlays make screenshots noisy. Hidden selectors are
 recorded in the visual and Markdown reports.
 
 Use `--browser chromium|firefox|webkit` when you need evidence from another
-browser engine. Use `--mobile` for the default phone profile, `--tablet` for the
-default tablet profile, or `--device "<Playwright device>"` when you need an
-exact Playwright preset. Install that browser first, for example:
+browser engine. Use `--mobile` for one default phone audit, `--tablet` for one
+default tablet audit, or `--device "<Playwright device>"` when you need an exact
+Playwright preset. Use `--devices desktop mobile tablet` when you want separate
+reports for several responsive profiles in one command; each profile is written
+to its own subfolder under `--out`.
+
+Install the browser engine before using it, for example:
 
 ```bash
 npx playwright install webkit

@@ -1,4 +1,5 @@
 import type { Command } from "commander";
+import path from "node:path";
 import { runEslintAdapter } from "../adapters/eslintAdapter.js";
 import { runExplorePlaywrightAdapter, writeExplorationGraph } from "../adapters/explorePlaywrightAdapter.js";
 import { runKeyboardPlaywrightAdapter } from "../adapters/keyboardPlaywrightAdapter.js";
@@ -12,7 +13,7 @@ import { normalizeCliValue, normalizeHttpUrlInput } from "../core/urlInput.js";
 import { dedupeIssues } from "../core/dedupe.js";
 import { readScopePlanIfExists } from "../core/scopePlan.js";
 import { detectFramework } from "../core/detectFramework.js";
-import { resolveDevicePreset } from "../core/devicePresets.js";
+import { MOBILE_DEVICE_PRESET, resolveDevicePreset, TABLET_DEVICE_PRESET } from "../core/devicePresets.js";
 import { applyIgnores, DEFAULT_IGNORE_FILE } from "../core/ignore.js";
 import { normalizeIssue } from "../core/normalize.js";
 import { openReportFile } from "../core/openReport.js";
@@ -37,6 +38,7 @@ export interface AuditOptions {
   out?: string;
   browser?: string;
   device?: string;
+  devices?: string[];
   authState?: string;
   mobile?: boolean;
   tablet?: boolean;
@@ -92,6 +94,7 @@ export function registerAuditCommand(program: Command): void {
     .option("--out <dir>", "Output directory", "reports")
     .option("--browser <engine>", "Browser engine for browser and keyboard evidence: chromium, firefox, or webkit")
     .option("--device <name>", "Playwright device preset, for example \"iPhone 13\" or \"Pixel 5\"")
+    .option("--devices <profiles...>", "Run separate audits for several profiles: desktop, mobile, tablet, or Playwright device names")
     .option("--auth-state <file>", "Playwright storage state file for authenticated audits")
     .option("--mobile", "Use the default mobile browser profile (iPhone 13)")
     .option("--tablet", "Use the default tablet browser profile (iPad gen 7)")
@@ -132,9 +135,98 @@ export function registerAuditCommand(program: Command): void {
     .option("--open", "Open the visual HTML report after the audit finishes")
     .option("--quiet", "Suppress console summary")
     .action(async (options: AuditOptions, command: Command) => {
-      const result = await runAudit(resolveAuditProfileOptions(options, command));
+      const resolvedOptions = resolveAuditProfileOptions(options, command);
+      const result = hasAuditDeviceMatrix(resolvedOptions)
+        ? await runAuditDeviceMatrix(resolvedOptions)
+        : await runAudit(resolvedOptions);
       if (result.failed) process.exitCode = 1;
     });
+}
+
+export interface AuditDeviceTarget {
+  label: string;
+  slug: string;
+  device?: string;
+}
+
+export async function runAuditDeviceMatrix(options: AuditOptions): Promise<{ failed: boolean; outputDir: string }> {
+  const targets = resolveAuditDeviceTargets(options);
+  if (targets.length === 0) return runAudit(options);
+
+  const baseOutputDir = normalizeOptionalCliValue(options.out) || "reports";
+  const results: Array<{ target: AuditDeviceTarget; failed: boolean; outputDir: string }> = [];
+
+  if (!options.quiet) {
+    console.log(`[audit] Running ${targets.length} device profile${targets.length === 1 ? "" : "s"}: ${targets.map((target) => target.label).join(", ")}`);
+  }
+
+  for (const target of targets) {
+    const outputDir = path.join(baseOutputDir, target.slug);
+    if (!options.quiet) console.log(`[audit] Device profile: ${target.label} -> ${outputDir}`);
+    const result = await runAudit({
+      ...options,
+      devices: undefined,
+      device: target.device,
+      mobile: false,
+      tablet: false,
+      out: outputDir
+    });
+    results.push({ target, ...result });
+  }
+
+  if (!options.quiet) {
+    console.log([
+      "a11y-shiftleft device audit",
+      ...results.map((result) => `${result.failed ? "failed" : "completed"} ${result.target.label}: ${result.outputDir}/a11y-report.html`)
+    ].join("\n"));
+  }
+
+  return {
+    failed: results.some((result) => result.failed),
+    outputDir: baseOutputDir
+  };
+}
+
+export function hasAuditDeviceMatrix(options: Pick<AuditOptions, "devices">): boolean {
+  return Boolean(options.devices?.some((device) => device.trim()));
+}
+
+export function resolveAuditDeviceTargets(options: Pick<AuditOptions, "device" | "devices" | "mobile" | "tablet">): AuditDeviceTarget[] {
+  const requested = (options.devices || []).map((profile) => profile.trim()).filter(Boolean);
+  if (requested.length === 0) return [];
+  if (options.device || options.mobile || options.tablet) {
+    throw new Error("Use either --devices or one of --device, --mobile, --tablet.");
+  }
+
+  const seen = new Set<string>();
+  return requested.flatMap((profile) => {
+    const target = auditDeviceTarget(profile);
+    const key = `${target.label}|${target.device || ""}`.toLowerCase();
+    if (seen.has(key)) return [];
+    seen.add(key);
+    return [target];
+  });
+}
+
+function auditDeviceTarget(profile: string): AuditDeviceTarget {
+  const normalized = profile.toLowerCase();
+  if (normalized === "desktop") return { label: "desktop", slug: "desktop" };
+  if (normalized === "mobile") return { label: `mobile (${MOBILE_DEVICE_PRESET})`, slug: "mobile", device: MOBILE_DEVICE_PRESET };
+  if (normalized === "tablet") return { label: `tablet (${TABLET_DEVICE_PRESET})`, slug: "tablet", device: TABLET_DEVICE_PRESET };
+  return {
+    label: profile,
+    slug: slugifyDeviceProfile(profile),
+    device: profile
+  };
+}
+
+function slugifyDeviceProfile(value: string): string {
+  const slug = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || "device";
 }
 
 export async function runAudit(options: AuditOptions): Promise<{ failed: boolean; outputDir: string }> {

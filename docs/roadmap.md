@@ -94,10 +94,11 @@ Section 508 certification.
 - Extend cross-browser evidence from single-engine runs into a bounded
   comparison profile that runs Chromium, Firefox, and WebKit side by side while
   clearly labeling browser-specific differences for manual review.
-- Extend responsive web evidence beyond the current `--mobile`, `--tablet`, and
-  `--device` profiles with optional multi-device comparison matrices. Treat
-  this as responsive/mobile browser testing for rendered websites, not as native
-  iOS or Android app auditing.
+- Continue responsive web evidence beyond the current `--mobile`, `--tablet`,
+  `--device`, and `--devices` profile runs with a richer comparison summary
+  across generated desktop, mobile, and tablet reports. Treat this as
+  responsive/mobile browser testing for rendered websites, not as native iOS or
+  Android app auditing.
 - Extend modal checks with additional close, cancel, successful-completion, and
   non-modal dialog paths.
 - Extend live-region evidence beyond the current manual checklist row and

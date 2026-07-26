@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createProgram } from "../../dist/cli.js";
-import { normalizeAuditUrl, resolveAuditDepthOption, resolveAuditProfileOptions } from "../../dist/commands/audit.js";
+import { hasAuditDeviceMatrix, normalizeAuditUrl, resolveAuditDepthOption, resolveAuditDeviceTargets, resolveAuditProfileOptions } from "../../dist/commands/audit.js";
 
 test("audit is the unified visual report command with optional extra formats", () => {
   const audit = createProgram().commands.find((command) => command.name() === "audit");
@@ -20,6 +20,7 @@ test("audit is the unified visual report command with optional extra formats", (
   assert.equal(flags.includes("--max-depth"), true);
   assert.equal(flags.includes("--mobile"), true);
   assert.equal(flags.includes("--tablet"), true);
+  assert.equal(flags.includes("--devices"), true);
   assert.equal(flags.includes("--auth-state"), true);
   assert.equal(flags.includes("--no-keyboard"), true);
   assert.equal(flags.includes("--no-manual-review"), true);
@@ -112,5 +113,29 @@ test("normalizeAuditUrl rejects non-http URLs", () => {
   assert.throws(
     () => normalizeAuditUrl("file:///tmp/example.html"),
     /Use http:\/\/ or https:\/\//
+  );
+});
+
+test("resolveAuditDeviceTargets maps bounded device matrix profiles", () => {
+  assert.equal(hasAuditDeviceMatrix({ devices: ["desktop", "mobile"] }), true);
+  assert.equal(hasAuditDeviceMatrix({ devices: ["   "] }), false);
+  assert.deepEqual(resolveAuditDeviceTargets({
+    devices: ["desktop", "mobile", "tablet", "Pixel 5", "mobile"]
+  }), [
+    { label: "desktop", slug: "desktop" },
+    { label: "mobile (iPhone 13)", slug: "mobile", device: "iPhone 13" },
+    { label: "tablet (iPad (gen 7))", slug: "tablet", device: "iPad (gen 7)" },
+    { label: "Pixel 5", slug: "pixel-5", device: "Pixel 5" }
+  ]);
+});
+
+test("resolveAuditDeviceTargets rejects conflicting single-device options", () => {
+  assert.throws(
+    () => resolveAuditDeviceTargets({ devices: ["desktop", "mobile"], mobile: true }),
+    /Use either --devices/
+  );
+  assert.throws(
+    () => resolveAuditDeviceTargets({ devices: ["desktop"], device: "Pixel 5" }),
+    /Use either --devices/
   );
 });
