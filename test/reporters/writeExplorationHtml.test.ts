@@ -344,7 +344,11 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /data-finding-filter="critical"/);
   assert.match(html, /data-finding-filter="actionable"/);
   assert.match(html, /body\[data-finding-filter="critical"\] \.issue:not\(\[data-issue-critical="true"\]\)/);
+  assert.match(html, /body\[data-finding-filter="critical"\] \.state:not\(\[data-state-critical="true"\]\)/);
+  assert.match(html, /body\[data-finding-filter="actionable"\] \.state\[data-state-no-findings="true"\]/);
   assert.match(html, /a11y-shiftleft:finding-filter:/);
+  assert.match(html, /data-state-critical="true"/);
+  assert.match(html, /data-state-no-findings="true"/);
   assert.match(html, /data-issue-critical="true"/);
   assert.match(html, /data-issue-warning="false"/);
   assert.match(html, /data-issue-info-only="false"/);

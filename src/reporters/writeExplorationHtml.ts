@@ -193,6 +193,12 @@ export function renderExplorationHtml(
       display: none;
     }
 
+    body[data-finding-filter="critical"] .state:not([data-state-critical="true"]),
+    body[data-finding-filter="actionable"] .state[data-state-info-only="true"],
+    body[data-finding-filter="actionable"] .state[data-state-no-findings="true"] {
+      display: none;
+    }
+
     h2 {
       font-size: 16px;
       margin-bottom: 8px;
@@ -3143,7 +3149,7 @@ function renderState(state: StateViewModel): string {
     return renderCompactState(state, stateSeverity, issueBadges);
   }
 
-  return `<article class="state state-${stateSeverity}" id="${escapeAttribute(state.id)}">
+  return `<article class="state state-${stateSeverity}" id="${escapeAttribute(state.id)}"${stateFilterAttributes(issueSummary, state.issues.length)}>
   ${renderStateScreenshot(state)}
   <div class="state-body">
     <div class="state-title">
@@ -3176,7 +3182,8 @@ function renderState(state: StateViewModel): string {
 }
 
 function renderCompactState(state: StateViewModel, stateSeverity: string, issueBadges: string): string {
-  return `<article class="state state-${stateSeverity} state-compact" id="${escapeAttribute(state.id)}">
+  const issueSummary = summarizeIssues(state.issues);
+  return `<article class="state state-${stateSeverity} state-compact" id="${escapeAttribute(state.id)}"${stateFilterAttributes(issueSummary, state.issues.length)}>
   ${renderStateScreenshot(state)}
   <div class="state-body">
     <div class="state-compact-summary">
@@ -4013,7 +4020,7 @@ function renderNonVisualIssues(issues: DedupedIssue[]): string {
     issueSummary.info ? badge("info", `${issueSummary.info} info`) : ""
   ].filter(Boolean).join("");
 
-  return `<article class="state state-${stateSeverity} non-visual-findings" aria-label="Non-visual findings">
+  return `<article class="state state-${stateSeverity} non-visual-findings" aria-label="Non-visual findings"${stateFilterAttributes(issueSummary, issues.length)}>
     <div class="non-visual-finding-summary">Source and keyboard findings</div>
     <div class="state-body">
       <div class="state-title">
@@ -4026,6 +4033,16 @@ function renderNonVisualIssues(issues: DedupedIssue[]): string {
       ${renderIssues(issues)}
     </div>
   </article>`;
+}
+
+function stateFilterAttributes(summary: Record<Severity, number>, issueCount: number): string {
+  const attributes = [
+    `data-state-critical="${summary.critical > 0 ? "true" : "false"}"`,
+    `data-state-warning="${summary.warning > 0 ? "true" : "false"}"`,
+    `data-state-info-only="${summary.critical === 0 && summary.warning === 0 && summary.info > 0 ? "true" : "false"}"`,
+    `data-state-no-findings="${issueCount === 0 ? "true" : "false"}"`
+  ].join(" ");
+  return ` ${attributes}`;
 }
 
 function renderStateIssueGroup(
