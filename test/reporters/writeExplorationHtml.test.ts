@@ -2130,6 +2130,8 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /id="manual-checklist-item-form-label-quality"/);
   assert.match(html, /data-manual-checklist-item="form-label-quality"/);
   assert.match(html, /data-manual-checklist-checkbox/);
+  assert.match(html, /\.manual-checklist-item \{[\s\S]*?scroll-margin-top: 18px/);
+  assert.match(html, /\.manual-checklist-item:target \{[\s\S]*?border-color: #fb923c/);
   assert.match(html, /Mark Meaningful form labels and instructions as reviewed/);
   assert.match(html, /Review guidance/);
   assert.match(html, /a11y-shiftleft:manual-checklist:/);

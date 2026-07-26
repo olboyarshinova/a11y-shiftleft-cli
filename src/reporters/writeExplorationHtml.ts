@@ -709,10 +709,17 @@ export function renderExplorationHtml(
       border: 1px solid var(--line);
       border-radius: 8px;
       padding: 10px 12px;
+      scroll-margin-top: 18px;
     }
 
     .manual-checklist-item + .manual-checklist-item {
       margin-top: 10px;
+    }
+
+    .manual-checklist-item:target {
+      background: #fff7ed;
+      border-color: #fb923c;
+      box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.2);
     }
 
     .manual-checklist-item-reviewed {
