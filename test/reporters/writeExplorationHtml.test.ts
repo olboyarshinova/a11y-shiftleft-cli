@@ -955,6 +955,20 @@ test("renderExplorationHtml groups repeated remediation by rule", () => {
   assert.equal((html.match(/<summary>How to fix<\/summary>/g) || []).length, 1);
 });
 
+test("renderExplorationHtml collapses large affected finding lists", () => {
+  const repeatedIssues = Array.from({ length: 6 }, (_, index) => ({
+    ...issues[0],
+    selector: `.repeated-button-${index + 1}`,
+    fingerprint: `button-name::state-1::repeated-${index + 1}`
+  }));
+  const html = renderExplorationHtml(graph, repeatedIssues);
+  const issueHtml = issueBlockForRule(html, "button-name");
+
+  assert.match(issueHtml, /<details class="affected-findings"><summary>Affected findings \(6\) · 6 critical<\/summary>/);
+  assert.doesNotMatch(issueHtml, /<details class="affected-findings" open><summary>Affected findings \(6\)/);
+  assert.match(html, /\.affected-findings > summary \{[\s\S]*?font-weight: 800/);
+});
+
 test("renderExplorationHtml groups identical issue messages into numbered locations", () => {
   const message = "Potential color contrast issue needs manual review because the rendered background may include an image, gradient, video, overlay, or other complex visual treatment.";
   const html = renderExplorationHtml(graph, [

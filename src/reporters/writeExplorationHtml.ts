@@ -1675,6 +1675,17 @@ export function renderExplorationHtml(
       padding-left: 24px;
     }
 
+    .affected-findings {
+      margin-top: 8px;
+    }
+
+    .affected-findings > summary {
+      color: var(--ink);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
     .finding-targets li::marker {
       color: var(--muted);
       font-weight: 700;
@@ -4121,11 +4132,17 @@ function renderStateIssueGroup(
     ${renderWcagCriteria(criteria)}
     ${sortedIssues.some((issue) => issue.findingType === "needs-review") ? renderNeedsReviewNote(sortedIssues) : ""}
     ${sortedIssues.length > 1
-      ? `<details open><summary>Affected findings (${sortedIssues.length})</summary>${occurrences}</details>`
+      ? renderAffectedFindingsDetails(sortedIssues, occurrences)
       : occurrences}
     ${sortedIssues.length > 1 ? renderGroupedContrastGuidance(sortedIssues, annotationNumberByIssueKey) : ""}
     ${renderRemediation(sortedIssues[0])}
   </li>`;
+}
+
+function renderAffectedFindingsDetails(issues: DedupedIssue[], occurrences: string): string {
+  const openAttribute = issues.length <= 5 ? " open" : "";
+  const severitySummary = formatSeverityMix(issues);
+  return `<details class="affected-findings"${openAttribute}><summary>Affected findings (${issues.length})${severitySummary ? ` · ${escapeHtml(severitySummary)}` : ""}</summary>${occurrences}</details>`;
 }
 
 function groupStateIssuesForDisplay(issues: DedupedIssue[]): Array<{ key: string; representative: DedupedIssue; issues: DedupedIssue[] }> {
