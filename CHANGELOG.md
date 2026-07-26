@@ -22,6 +22,8 @@
   reports so repeated states with different finding counts are easier to spot.
 - Added direct visual evidence links for shared state differences in matrix
   summaries so reviewers can jump to the matching state in each profile report.
+- Added a visual comparison queue to matrix summaries so reviewers know which
+  device or browser profile pairs to compare first.
 
 ## 0.9.0
 

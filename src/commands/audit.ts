@@ -240,6 +240,16 @@ export interface AuditMatrixSharedStateDifference {
   evidenceLinks: AuditMatrixStateEvidenceLink[];
 }
 
+export interface AuditMatrixVisualComparison {
+  stateKey: string;
+  label: string;
+  url: string;
+  depth: number;
+  spread: number;
+  compare: string;
+  evidenceLinks: AuditMatrixStateEvidenceLink[];
+}
+
 export interface AuditMatrixCoverageOverlap {
   completedProfiles: number;
   commonPages: number;
@@ -258,6 +268,7 @@ export interface AuditMatrixComparison {
   profileSpecificPages: AuditMatrixProfileSpecificPages[];
   profileSpecificStates: AuditMatrixProfileSpecificStates[];
   sharedStateDifferences: AuditMatrixSharedStateDifference[];
+  visualComparisonQueue: AuditMatrixVisualComparison[];
 }
 
 interface AuditDeviceRunResult {
@@ -694,6 +705,7 @@ function createAuditMatrixComparison(
   const profileSpecificPages = summarizeProfileSpecificPages(completed);
   const profileSpecificStates = summarizeProfileSpecificStates(completed);
   const sharedStateDifferences = summarizeSharedStateDifferences(completed);
+  const visualComparisonQueue = summarizeVisualComparisonQueue(sharedStateDifferences);
 
   return {
     ...(highestTotal ? { highestTotal } : {}),
@@ -704,7 +716,8 @@ function createAuditMatrixComparison(
     profileSpecificRules,
     profileSpecificPages,
     profileSpecificStates,
-    sharedStateDifferences
+    sharedStateDifferences,
+    visualComparisonQueue
   };
 }
 
@@ -890,6 +903,38 @@ function compareAuditMatrixSharedStateDifferences(
     || left.url.localeCompare(right.url);
 }
 
+function summarizeVisualComparisonQueue(
+  states: AuditMatrixSharedStateDifference[],
+  limit = 5
+): AuditMatrixVisualComparison[] {
+  return states
+    .map((state) => {
+      const links = state.evidenceLinks
+        .filter((link) => link.count > 0)
+        .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label));
+      const highest = links[0];
+      const lowest = links[links.length - 1];
+      if (!highest || !lowest || highest.label === lowest.label || highest.count === lowest.count) return undefined;
+      return {
+        stateKey: state.stateKey,
+        label: state.label,
+        url: state.url,
+        depth: state.depth,
+        spread: state.spread,
+        compare: `${highest.label} (${highest.count}) vs ${lowest.label} (${lowest.count})`,
+        evidenceLinks: [highest, lowest]
+      };
+    })
+    .filter((state): state is AuditMatrixVisualComparison => Boolean(state))
+    .sort((left, right) => (
+      right.spread - left.spread
+      || left.depth - right.depth
+      || left.label.localeCompare(right.label)
+      || left.url.localeCompare(right.url)
+    ))
+    .slice(0, limit);
+}
+
 function compareAuditMatrixPages(left: AuditMatrixPageSummary, right: AuditMatrixPageSummary): number {
   return right.critical - left.critical
     || right.warning - left.warning
@@ -954,7 +999,11 @@ function formatAuditMatrixComparison(kind: string, comparison: AuditMatrixCompar
     "",
     "### Shared States With Different Finding Counts",
     "",
-    formatSharedStateDifferences(comparison.sharedStateDifferences)
+    formatSharedStateDifferences(comparison.sharedStateDifferences),
+    "",
+    "### Visual Comparison Queue",
+    "",
+    formatVisualComparisonQueue(comparison.visualComparisonQueue)
   ];
 
   return lines.join("\n");
@@ -1017,6 +1066,17 @@ function formatAuditMatrixEvidenceLinks(links: AuditMatrixStateEvidenceLink[]): 
   return links
     .map((link) => `[${escapeMarkdownTableCell(`${link.label}: ${link.count}`)}](${escapeMarkdownLink(link.report)})`)
     .join("; ");
+}
+
+function formatVisualComparisonQueue(queue: AuditMatrixVisualComparison[]): string {
+  if (queue.length === 0) return "No visual comparison queue was available from the completed profile summaries.";
+  return [
+    "| State | Compare first | Why | Evidence |",
+    "|---|---|---|---|",
+    ...queue.map((item) => (
+      `| ${escapeMarkdownTableCell(item.label)} | ${escapeMarkdownTableCell(item.compare)} | ${escapeMarkdownTableCell(`${item.spread} finding spread at depth ${item.depth}`)} | ${formatAuditMatrixEvidenceLinks(item.evidenceLinks)} |`
+    ))
+  ].join("\n");
 }
 
 function formatAuditMatrixRuleTable(rules: AuditMatrixRuleDifference[]): string {
