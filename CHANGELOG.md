@@ -14,6 +14,8 @@
 - Added profile-specific page and UI-state signals to matrix summaries so
   reviewers can see which affected pages or states only appeared in one device
   or browser profile.
+- Added coverage-overlap counts to matrix summaries so repeated cross-profile
+  issues are easier to separate from device-only or browser-only signals.
 
 ## 0.9.0
 

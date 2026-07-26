@@ -223,11 +223,20 @@ export interface AuditMatrixProfileSpecificStates {
   states: AuditMatrixStateSummary[];
 }
 
+export interface AuditMatrixCoverageOverlap {
+  completedProfiles: number;
+  commonPages: number;
+  profileSpecificPages: number;
+  commonStates: number;
+  profileSpecificStates: number;
+}
+
 export interface AuditMatrixComparison {
   highestTotal?: AuditMatrixProfilePeak;
   highestCritical?: AuditMatrixProfilePeak;
   differingRules: AuditMatrixRuleDifference[];
   commonRules: AuditMatrixRuleDifference[];
+  coverageOverlap: AuditMatrixCoverageOverlap;
   profileSpecificRules: AuditMatrixProfileSpecificRules[];
   profileSpecificPages: AuditMatrixProfileSpecificPages[];
   profileSpecificStates: AuditMatrixProfileSpecificStates[];
@@ -654,6 +663,7 @@ function createAuditMatrixComparison(
   const commonRules = rules
     .filter((rule) => profileLabels.length > 1 && profileLabels.every((label) => (rule.profileCounts[label] || 0) > 0))
     .slice(0, 5);
+  const coverageOverlap = summarizeCoverageOverlap(completed);
   const profileSpecificRules = summarizeProfileSpecificRules(completed, rules);
   const profileSpecificPages = summarizeProfileSpecificPages(completed);
   const profileSpecificStates = summarizeProfileSpecificStates(completed);
@@ -663,10 +673,48 @@ function createAuditMatrixComparison(
     ...(highestCritical ? { highestCritical } : {}),
     differingRules,
     commonRules,
+    coverageOverlap,
     profileSpecificRules,
     profileSpecificPages,
     profileSpecificStates
   };
+}
+
+function summarizeCoverageOverlap(
+  results: Array<{ target: { label: string }; summary?: AuditDeviceSummary }>
+): AuditMatrixCoverageOverlap {
+  const completedProfiles = results.length;
+  const pageProfiles = collectProfileSets(results, (summary) => (summary.topPages || []).map((page) => page.page));
+  const stateProfiles = collectProfileSets(results, (summary) => (summary.topStates || []).map(auditMatrixStateKey));
+  const hasComparison = completedProfiles > 1;
+
+  return {
+    completedProfiles,
+    commonPages: hasComparison ? countProfileSets(pageProfiles, completedProfiles) : 0,
+    profileSpecificPages: hasComparison ? countProfileSets(pageProfiles, 1) : 0,
+    commonStates: hasComparison ? countProfileSets(stateProfiles, completedProfiles) : 0,
+    profileSpecificStates: hasComparison ? countProfileSets(stateProfiles, 1) : 0
+  };
+}
+
+function collectProfileSets(
+  results: Array<{ target: { label: string }; summary?: AuditDeviceSummary }>,
+  pickValues: (summary: AuditDeviceSummary) => string[]
+): Map<string, Set<string>> {
+  const profileSets = new Map<string, Set<string>>();
+  for (const result of results) {
+    if (!result.summary) continue;
+    for (const value of new Set(pickValues(result.summary).filter(Boolean))) {
+      const profiles = profileSets.get(value) || new Set<string>();
+      profiles.add(result.target.label);
+      profileSets.set(value, profiles);
+    }
+  }
+  return profileSets;
+}
+
+function countProfileSets(profileSets: Map<string, Set<string>>, size: number): number {
+  return [...profileSets.values()].filter((profiles) => profiles.size === size).length;
 }
 
 function summarizeProfileSpecificRules(
@@ -790,6 +838,7 @@ function formatAuditMatrixComparison(kind: string, comparison: AuditMatrixCompar
     "",
     `- Most findings: ${comparison.highestTotal ? `${comparison.highestTotal.label} (${comparison.highestTotal.value})` : "not available"}.`,
     `- Most critical findings: ${comparison.highestCritical ? `${comparison.highestCritical.label} (${comparison.highestCritical.value})` : "not available"}.`,
+    `- Coverage overlap: ${formatCoverageOverlapSentence(comparison.coverageOverlap)}.`,
     "",
     "### Rules That Differ",
     "",
@@ -809,6 +858,16 @@ function formatAuditMatrixComparison(kind: string, comparison: AuditMatrixCompar
   ];
 
   return lines.join("\n");
+}
+
+function formatCoverageOverlapSentence(overlap: AuditMatrixCoverageOverlap): string {
+  if (overlap.completedProfiles < 2) return "not enough completed profiles to compare";
+  return [
+    `${overlap.commonPages} shared affected page${overlap.commonPages === 1 ? "" : "s"}`,
+    `${overlap.profileSpecificPages} profile-specific affected page${overlap.profileSpecificPages === 1 ? "" : "s"}`,
+    `${overlap.commonStates} shared affected state${overlap.commonStates === 1 ? "" : "s"}`,
+    `${overlap.profileSpecificStates} profile-specific affected state${overlap.profileSpecificStates === 1 ? "" : "s"}`
+  ].join("; ");
 }
 
 function formatProfileSpecificRuleSignals(groups: AuditMatrixProfileSpecificRules[]): string {

@@ -224,6 +224,7 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
   assert.match(markdown, /mobile \(iPhone 13\) \| completed \| 5 total \(0 critical, 5 warning, 0 info\) \| 3 \| \[Open report\]\(reports\/devices\/mobile\/a11y-report\.html\)/);
   assert.match(markdown, /## Difference Review/);
   assert.match(markdown, /Most findings: mobile \(iPhone 13\) \(5\)\./);
+  assert.match(markdown, /Coverage overlap: 0 shared affected pages; 2 profile-specific affected pages; 0 shared affected states; 2 profile-specific affected states\./);
   assert.match(markdown, /`color-contrast` \| critical \| 2 \| desktop: 2; mobile \(iPhone 13\): 0/);
   assert.match(markdown, /`target-size` \| warning \| 6 \| desktop: 1; mobile \(iPhone 13\): 5/);
   assert.match(markdown, /### Profile-Specific Rule Signals/);
@@ -309,6 +310,13 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
     "layout-horizontal-overflow",
     "target-size"
   ]);
+  assert.deepEqual(report.comparison.coverageOverlap, {
+    completedProfiles: 2,
+    commonPages: 0,
+    profileSpecificPages: 2,
+    commonStates: 0,
+    profileSpecificStates: 2
+  });
   assert.deepEqual(report.comparison.profileSpecificRules, [
     {
       label: "desktop",
@@ -421,6 +429,7 @@ test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
   assert.match(markdown, /Chromium \| completed \| 4 total \(1 critical, 2 warning, 1 info\) \| 5 \| \[Open report\]\(reports\/browsers\/chromium\/a11y-report\.html\)/);
   assert.match(markdown, /WebKit \| completed \| 2 total \(0 critical, 2 warning, 0 info\) \| 4 \| \[Open report\]\(reports\/browsers\/webkit\/a11y-report\.html\)/);
   assert.match(markdown, /Use this section to spot findings that may be specific to one browser engine/);
+  assert.match(markdown, /Coverage overlap: 0 shared affected pages; 2 profile-specific affected pages; 0 shared affected states; 2 profile-specific affected states\./);
   assert.match(markdown, /`button-name` \| critical \| 1 \| Chromium: 1; WebKit: 0/);
   assert.match(markdown, /`focus-visible` \| warning \| 4 \| Chromium: 2; WebKit: 2/);
   assert.match(markdown, /Chromium \| button-name: 1 critical/);
@@ -496,6 +505,13 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
   assert.deepEqual(report.comparison.highestCritical, {
     label: "Chromium",
     value: 1
+  });
+  assert.deepEqual(report.comparison.coverageOverlap, {
+    completedProfiles: 2,
+    commonPages: 0,
+    profileSpecificPages: 2,
+    commonStates: 0,
+    profileSpecificStates: 2
   });
   assert.equal(report.comparison.differingRules[0].ruleId, "button-name");
   assert.deepEqual(report.comparison.profileSpecificRules.map((group) => group.label), [
