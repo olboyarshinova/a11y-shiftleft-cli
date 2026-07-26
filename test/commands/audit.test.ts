@@ -241,6 +241,7 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
   assert.match(markdown, /\[desktop: 1\]\(reports\/devices\/desktop\/a11y-report\.html#state-1\) \(full-page, 1 screenshot\); \[mobile \(iPhone 13\): 4\]\(reports\/devices\/mobile\/a11y-report\.html#state-1\) \(viewport, 2 screenshots\)/);
   assert.match(markdown, /### Visual Comparison Queue/);
   assert.match(markdown, /Initial page \| mobile \(iPhone 13\) \(4\) vs desktop \(1\) \| 3 finding spread at depth 0/);
+  assert.match(markdown, /Screenshot capture modes differ; compare the linked full-page and viewport evidence carefully/);
   assert.match(markdown, /## Review Hotspots/);
   assert.match(markdown, /desktop \| Click: Open menu \(3 findings, depth 1\) \| color-contrast: 2; target-size: 1/);
   assert.match(markdown, /mobile \(iPhone 13\) \| Navigate: Checkout \(5 findings, depth 2\) \| target-size: 5/);
@@ -354,6 +355,11 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
       depth: 0,
       spread: 1,
       compare: "desktop (2) vs mobile (iPhone 13) (1)",
+      screenshotReview: "At least one profile reuses a screenshot from another state; confirm the linked report before treating it as a visual difference.",
+      visualEvidence: [
+        { label: "desktop", report: "reports/devices/desktop/a11y-report.html#state-1", count: 2, screenshot: "screenshots/state-1.png", screenshotMode: "full-page", screenshotEvidenceCount: 1 },
+        { label: "mobile (iPhone 13)", report: "reports/devices/mobile/a11y-report.html#state-1", count: 1, screenshot: "screenshots/state-1-mobile.png", screenshotMode: "viewport", screenshotEvidenceCount: 1, visualDuplicateOf: "state-1" }
+      ],
       evidenceLinks: [
         { label: "desktop", report: "reports/devices/desktop/a11y-report.html#state-1", count: 2, screenshot: "screenshots/state-1.png", screenshotEvidenceCount: 1, screenshotFullPage: true },
         { label: "mobile (iPhone 13)", report: "reports/devices/mobile/a11y-report.html#state-1", count: 1, screenshot: "screenshots/state-1-mobile.png", screenshotEvidenceCount: 1, screenshotFullPage: false, visualDuplicateOf: "state-1" }
@@ -484,6 +490,7 @@ test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
   assert.match(markdown, /\[Chromium: 4\]\(reports\/browsers\/chromium\/a11y-report\.html#state-1\) \(full-page, 2 screenshots\); \[WebKit: 1\]\(reports\/browsers\/webkit\/a11y-report\.html#state-1\) \(viewport, 1 screenshot, reuses state-1\)/);
   assert.match(markdown, /### Visual Comparison Queue/);
   assert.match(markdown, /Initial page \| Chromium \(4\) vs WebKit \(1\) \| 3 finding spread at depth 0/);
+  assert.match(markdown, /At least one profile reuses a screenshot from another state; confirm the linked report before treating it as a visual difference/);
   assert.match(markdown, /Chromium \| Initial page \(4 findings, depth 0\) \| button-name: 1; focus-visible: 2/);
   assert.match(markdown, /WebKit \| Click: Details \(2 findings, depth 1\) \| focus-visible: 2/);
   assert.match(markdown, /--wait-for-selector '\[data-ready\]' --no-keyboard --browser chromium/);
@@ -591,6 +598,11 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
       depth: 0,
       spread: 3,
       compare: "Chromium (4) vs Firefox (1)",
+      screenshotReview: "Screenshot capture modes differ; compare the linked full-page and viewport evidence carefully.",
+      visualEvidence: [
+        { label: "Chromium", report: "reports/browsers/chromium/a11y-report.html#state-1", count: 4, screenshot: "screenshots/state-1-chromium.png", screenshotMode: "full-page", screenshotEvidenceCount: 2 },
+        { label: "Firefox", report: "reports/browsers/firefox/a11y-report.html#state-1", count: 1, screenshot: "screenshots/state-1-firefox.png", screenshotMode: "viewport", screenshotEvidenceCount: 1 }
+      ],
       evidenceLinks: [
         { label: "Chromium", report: "reports/browsers/chromium/a11y-report.html#state-1", count: 4, screenshot: "screenshots/state-1-chromium.png", screenshotEvidenceCount: 2, screenshotFullPage: true },
         { label: "Firefox", report: "reports/browsers/firefox/a11y-report.html#state-1", count: 1, screenshot: "screenshots/state-1-firefox.png", screenshotEvidenceCount: 1, screenshotFullPage: false }

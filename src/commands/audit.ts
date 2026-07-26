@@ -255,7 +255,19 @@ export interface AuditMatrixVisualComparison {
   depth: number;
   spread: number;
   compare: string;
+  screenshotReview: string;
+  visualEvidence: AuditMatrixVisualEvidence[];
   evidenceLinks: AuditMatrixStateEvidenceLink[];
+}
+
+export interface AuditMatrixVisualEvidence {
+  label: string;
+  report: string;
+  count: number;
+  screenshot?: string;
+  screenshotMode: "full-page" | "viewport" | "unknown";
+  screenshotEvidenceCount: number;
+  visualDuplicateOf?: string;
 }
 
 export interface AuditMatrixCoverageOverlap {
@@ -938,6 +950,8 @@ function summarizeVisualComparisonQueue(
         depth: state.depth,
         spread: state.spread,
         compare: `${highest.label} (${highest.count}) vs ${lowest.label} (${lowest.count})`,
+        screenshotReview: summarizeVisualComparisonScreenshotReview([highest, lowest]),
+        visualEvidence: [highest, lowest].map(createAuditMatrixVisualEvidence),
         evidenceLinks: [highest, lowest]
       };
     })
@@ -949,6 +963,37 @@ function summarizeVisualComparisonQueue(
       || left.url.localeCompare(right.url)
     ))
     .slice(0, limit);
+}
+
+function createAuditMatrixVisualEvidence(link: AuditMatrixStateEvidenceLink): AuditMatrixVisualEvidence {
+  return {
+    label: link.label,
+    report: link.report,
+    count: link.count,
+    ...(link.screenshot ? { screenshot: link.screenshot } : {}),
+    screenshotMode: link.screenshotFullPage === true ? "full-page" : link.screenshotFullPage === false ? "viewport" : "unknown",
+    screenshotEvidenceCount: link.screenshotEvidenceCount || 0,
+    ...(link.visualDuplicateOf ? { visualDuplicateOf: link.visualDuplicateOf } : {})
+  };
+}
+
+function summarizeVisualComparisonScreenshotReview(links: AuditMatrixStateEvidenceLink[]): string {
+  if (links.every((link) => !link.screenshot && !link.screenshotEvidenceCount)) {
+    return "No screenshot evidence captured; rerun with screenshots enabled before comparing visually.";
+  }
+  if (links.some((link) => link.visualDuplicateOf)) {
+    return "At least one profile reuses a screenshot from another state; confirm the linked report before treating it as a visual difference.";
+  }
+  const modes = new Set(links.map((link) => (
+    link.screenshotFullPage === true ? "full-page" : link.screenshotFullPage === false ? "viewport" : "unknown"
+  )));
+  if (modes.size > 1) {
+    return "Screenshot capture modes differ; compare the linked full-page and viewport evidence carefully.";
+  }
+  if (links.every((link) => Boolean(link.screenshotEvidenceCount))) {
+    return "Focused screenshot evidence is available for both profiles.";
+  }
+  return "Screenshot evidence is available for at least one profile; use the linked visual reports for confirmation.";
 }
 
 function compareAuditMatrixPages(left: AuditMatrixPageSummary, right: AuditMatrixPageSummary): number {
@@ -1100,10 +1145,10 @@ function formatAuditMatrixScreenshotHint(link: AuditMatrixStateEvidenceLink): st
 function formatVisualComparisonQueue(queue: AuditMatrixVisualComparison[]): string {
   if (queue.length === 0) return "No visual comparison queue was available from the completed profile summaries.";
   return [
-    "| State | Compare first | Why | Evidence |",
-    "|---|---|---|---|",
+    "| State | Compare first | Why | Screenshot review | Evidence |",
+    "|---|---|---|---|---|",
     ...queue.map((item) => (
-      `| ${escapeMarkdownTableCell(item.label)} | ${escapeMarkdownTableCell(item.compare)} | ${escapeMarkdownTableCell(`${item.spread} finding spread at depth ${item.depth}`)} | ${formatAuditMatrixEvidenceLinks(item.evidenceLinks)} |`
+      `| ${escapeMarkdownTableCell(item.label)} | ${escapeMarkdownTableCell(item.compare)} | ${escapeMarkdownTableCell(`${item.spread} finding spread at depth ${item.depth}`)} | ${escapeMarkdownTableCell(item.screenshotReview)} | ${formatAuditMatrixEvidenceLinks(item.evidenceLinks)} |`
     ))
   ].join("\n");
 }

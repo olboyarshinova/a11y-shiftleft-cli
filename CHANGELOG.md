@@ -26,6 +26,8 @@
   device or browser profile pairs to compare first.
 - Added screenshot evidence metadata to matrix state summaries, including
   full-page/viewport hints and duplicate-screenshot reuse signals.
+- Added screenshot review notes and machine-readable visual evidence pairs to
+  matrix comparison queues.
 
 ## 0.9.0
 

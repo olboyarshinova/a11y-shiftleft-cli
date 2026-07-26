@@ -343,8 +343,8 @@ profile. The summary also calls out profile-specific rule signals and includes
 coverage-overlap counts, profile-specific page/state signals, and copy-paste
 commands with reproduction notes to rerun and confirm one profile. It also
 highlights shared UI states whose finding counts differ between profiles, with
-direct links to the matching visual evidence, screenshot hints, and a short
-comparison queue.
+direct links to the matching visual evidence, screenshot hints, screenshot
+review notes, and a short comparison queue.
 
 Install the browser engine before using it, for example:
 
@@ -360,8 +360,8 @@ browser report. The summary also calls out browser-only rule signals and
 coverage-overlap counts, browser-only page/state signals, and copy-paste
 commands with reproduction notes to rerun and confirm one browser engine. It
 also highlights shared UI states whose finding counts differ between browsers,
-with direct links to the matching visual evidence, screenshot hints, and a short
-comparison queue.
+with direct links to the matching visual evidence, screenshot hints, screenshot
+review notes, and a short comparison queue.
 
 Audit profiles are shortcuts:
 

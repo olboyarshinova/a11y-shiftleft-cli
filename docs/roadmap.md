@@ -97,8 +97,9 @@ Section 508 certification.
   Chromium, Firefox, and WebKit reports plus copy-paste commands to rerun one
   profile. They also call out coverage-overlap counts plus browser-only rule,
   page, UI-state, shared-state-difference, visual-evidence-link, comparison
-  queue, screenshot evidence metadata, and reproduction signals for manual
-  triage; next, add screenshot-level visual diffing. Clearly label
+  queue, screenshot evidence metadata, screenshot review notes, visual evidence
+  pairs, and reproduction signals for manual triage; next, add side-by-side or
+  pixel-level visual diffing. Clearly label
   browser-specific differences for manual review before treating them as product
   defects.
 - Continue responsive web evidence beyond the current `--mobile`, `--tablet`,
@@ -107,9 +108,9 @@ Section 508 certification.
   generated desktop, mobile, and tablet reports plus copy-paste commands to
   rerun one profile. They also call out coverage-overlap counts plus
   profile-specific rule, page, UI-state, shared-state-difference,
-  visual-evidence-link, comparison queue, screenshot evidence metadata, and
-  reproduction signals for manual triage; next, add screenshot-level visual
-  diffing. Treat this as
+  visual-evidence-link, comparison queue, screenshot evidence metadata,
+  screenshot review notes, visual evidence pairs, and reproduction signals for
+  manual triage; next, add side-by-side or pixel-level visual diffing. Treat this as
   responsive/mobile browser testing for rendered websites, not as native iOS or
   Android app auditing.
 - Extend modal checks with additional close, cancel, successful-completion, and
