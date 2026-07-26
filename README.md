@@ -278,6 +278,7 @@ The commands below assume `APP_URL` is set to your local, staging, or preview UR
 | `audit` | Quick risk triage | `npx a11y-shiftleft-cli audit --url $APP_URL --profile risk --out reports` |
 | `audit` | Broader local scan | `npx a11y-shiftleft-cli audit --url $APP_URL --max-depth 3 --limit 50 --out reports` |
 | `audit` | Compare desktop, phone, and tablet layouts | `npx a11y-shiftleft-cli audit --url $APP_URL --devices desktop mobile tablet --out reports/devices` |
+| `audit` | Compare Chromium, Firefox, and WebKit evidence | `npx a11y-shiftleft-cli audit --url $APP_URL --browsers chromium firefox webkit --out reports/browsers` |
 | `audit` | Check one component or page area | `npx a11y-shiftleft-cli audit --url $APP_URL --scope '#main' --out reports` |
 | `check` | Fast CI or PR check | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports` |
 | `check` | Save current known findings as a baseline | `npx a11y-shiftleft-cli check --dynamic --url $APP_URL --out reports --update-baseline` |
@@ -343,6 +344,10 @@ Install the browser engine before using it, for example:
 ```bash
 npx playwright install webkit
 ```
+
+Use `--browsers chromium firefox webkit` when you want separate reports for
+several browser engines in one command. This writes one report per browser plus
+local Markdown and JSON summaries under `--out`.
 
 Audit profiles are shortcuts:
 

@@ -171,6 +171,18 @@ This writes one report per profile, for example
 and links to each visual report. The scan is intentionally bounded; use it for
 responsive browser evidence, not as a native mobile app audit.
 
+Use `--browsers` when you want separate visual reports for several browser
+engines without rerunning the command manually:
+
+```bash
+npx a11y-shiftleft-cli audit --url $APP_URL --browsers chromium firefox webkit --out reports/browsers
+```
+
+This writes `reports/browsers/a11y-browser-audit.md` and
+`reports/browsers/a11y-browser-audit.json` with finding counts, explored states,
+and links to each browser-specific visual report. Browser-specific differences
+should still be reviewed manually before treating them as product defects.
+
 Install the browser engine before using it:
 
 ```bash

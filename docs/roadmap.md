@@ -91,9 +91,10 @@ Section 508 certification.
   tool cannot prove automatically.
 - Extend reflow evidence with explicit 200%/400% zoom checks and overlapping
   fixed or sticky control checks.
-- Extend cross-browser evidence from single-engine runs into a bounded
-  comparison profile that runs Chromium, Firefox, and WebKit side by side while
-  clearly labeling browser-specific differences for manual review.
+- Continue cross-browser evidence beyond the current `--browser` and
+  `--browsers` profile runs with a richer comparison summary across generated
+  Chromium, Firefox, and WebKit reports. Clearly label browser-specific
+  differences for manual review before treating them as product defects.
 - Continue responsive web evidence beyond the current `--mobile`, `--tablet`,
   `--device`, and `--devices` profile runs with a richer comparison summary
   across generated desktop, mobile, and tablet reports. Treat this as

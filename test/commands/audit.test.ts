@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createProgram } from "../../dist/cli.js";
-import { createAuditDeviceMatrixReport, formatAuditDeviceMatrixSummary, hasAuditDeviceMatrix, normalizeAuditUrl, resolveAuditDepthOption, resolveAuditDeviceTargets, resolveAuditProfileOptions } from "../../dist/commands/audit.js";
+import { createAuditBrowserMatrixReport, createAuditDeviceMatrixReport, formatAuditBrowserMatrixSummary, formatAuditDeviceMatrixSummary, hasAuditBrowserMatrix, hasAuditDeviceMatrix, normalizeAuditUrl, resolveAuditBrowserTargets, resolveAuditDepthOption, resolveAuditDeviceTargets, resolveAuditProfileOptions } from "../../dist/commands/audit.js";
 
 test("audit is the unified visual report command with optional extra formats", () => {
   const audit = createProgram().commands.find((command) => command.name() === "audit");
@@ -18,6 +18,7 @@ test("audit is the unified visual report command with optional extra formats", (
   assert.equal(flags.includes("--raw"), true);
   assert.equal(flags.includes("--open"), true);
   assert.equal(flags.includes("--max-depth"), true);
+  assert.equal(flags.includes("--browsers"), true);
   assert.equal(flags.includes("--mobile"), true);
   assert.equal(flags.includes("--tablet"), true);
   assert.equal(flags.includes("--devices"), true);
@@ -140,6 +141,29 @@ test("resolveAuditDeviceTargets rejects conflicting single-device options", () =
   );
 });
 
+test("resolveAuditBrowserTargets maps bounded browser matrix engines", () => {
+  assert.equal(hasAuditBrowserMatrix({ browsers: ["chromium", "webkit"] }), true);
+  assert.equal(hasAuditBrowserMatrix({ browsers: ["   "] }), false);
+  assert.deepEqual(resolveAuditBrowserTargets({
+    browsers: ["chromium", "firefox", "webkit", "Chromium"]
+  }), [
+    { label: "Chromium", slug: "chromium", browser: "chromium" },
+    { label: "Firefox", slug: "firefox", browser: "firefox" },
+    { label: "WebKit", slug: "webkit", browser: "webkit" }
+  ]);
+});
+
+test("resolveAuditBrowserTargets rejects conflicting and unknown browser options", () => {
+  assert.throws(
+    () => resolveAuditBrowserTargets({ browsers: ["chromium", "webkit"], browser: "chromium" }),
+    /Use either --browsers/
+  );
+  assert.throws(
+    () => resolveAuditBrowserTargets({ browsers: ["chrome"] }),
+    /Unsupported browser engine/
+  );
+});
+
 test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
   const markdown = formatAuditDeviceMatrixSummary([
     {
@@ -218,6 +242,88 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
       warning: 1,
       info: 1,
       states: 3
+    }
+  });
+});
+
+test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
+  const markdown = formatAuditBrowserMatrixSummary([
+    {
+      target: { label: "Chromium", slug: "chromium", browser: "chromium" },
+      failed: false,
+      outputDir: "reports/browsers/chromium",
+      summary: {
+        total: 4,
+        critical: 1,
+        warning: 2,
+        info: 1,
+        states: 5
+      }
+    },
+    {
+      target: { label: "WebKit", slug: "webkit", browser: "webkit" },
+      failed: true,
+      outputDir: "reports/browsers/webkit"
+    }
+  ]);
+
+  assert.match(markdown, /# Browser Audit Summary/);
+  assert.match(markdown, /Total across browsers: 4 total \(1 critical, 2 warning, 1 info\); 5 explored states\./);
+  assert.match(markdown, /\| Browser engine \| Status \| Findings \| States \| Report \|/);
+  assert.match(markdown, /Chromium \| completed \| 4 total \(1 critical, 2 warning, 1 info\) \| 5 \| \[Open report\]\(reports\/browsers\/chromium\/a11y-report\.html\)/);
+  assert.match(markdown, /WebKit \| failed \| not available \| not available \| \[Open report\]\(reports\/browsers\/webkit\/a11y-report\.html\)/);
+});
+
+test("createAuditBrowserMatrixReport exports machine-readable browser results", () => {
+  const report = createAuditBrowserMatrixReport([
+    {
+      target: { label: "Chromium", slug: "chromium", browser: "chromium" },
+      failed: false,
+      outputDir: "reports/browsers/chromium",
+      summary: {
+        total: 4,
+        critical: 1,
+        warning: 2,
+        info: 1,
+        states: 5
+      }
+    },
+    {
+      target: { label: "Firefox", slug: "firefox", browser: "firefox" },
+      failed: false,
+      outputDir: "reports/browsers/firefox",
+      summary: {
+        total: 2,
+        critical: 0,
+        warning: 2,
+        info: 0,
+        states: 3
+      }
+    }
+  ], "2026-07-26T00:00:00.000Z");
+
+  assert.equal(report.generatedAt, "2026-07-26T00:00:00.000Z");
+  assert.deepEqual(report.totals, {
+    total: 6,
+    critical: 1,
+    warning: 4,
+    info: 1,
+    states: 8
+  });
+  assert.deepEqual(report.profiles[0], {
+    label: "Chromium",
+    slug: "chromium",
+    browser: "chromium",
+    status: "completed",
+    outputDir: "reports/browsers/chromium",
+    htmlReport: "reports/browsers/chromium/a11y-report.html",
+    jsonReport: "reports/browsers/chromium/a11y-report.json",
+    summary: {
+      total: 4,
+      critical: 1,
+      warning: 2,
+      info: 1,
+      states: 5
     }
   });
 });

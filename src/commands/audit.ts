@@ -26,7 +26,7 @@ import { cleanExploreArtifacts } from "../reporters/cleanExploreArtifacts.js";
 import { writeExplorationHtml } from "../reporters/writeExplorationHtml.js";
 import { writeExplorationPdf } from "../reporters/writeExplorationPdf.js";
 import { writeReports } from "../reporters/writeReports.js";
-import type { A11yReport, ComplianceStandard, Framework, Issue, KeyboardAuditResult, LighthouseAuditResult, Severity } from "../types.js";
+import type { A11yReport, BrowserEngine, ComplianceStandard, Framework, Issue, KeyboardAuditResult, LighthouseAuditResult, Severity } from "../types.js";
 import { filterByWcagConformance, shouldFail } from "./check.js";
 
 export interface AuditOptions {
@@ -38,6 +38,7 @@ export interface AuditOptions {
   withLighthouse?: boolean;
   out?: string;
   browser?: string;
+  browsers?: string[];
   device?: string;
   devices?: string[];
   authState?: string;
@@ -94,6 +95,7 @@ export function registerAuditCommand(program: Command): void {
     .option("--with-lighthouse", "Add optional Lighthouse accessibility score comparison")
     .option("--out <dir>", "Output directory", "reports")
     .option("--browser <engine>", "Browser engine for browser and keyboard evidence: chromium, firefox, or webkit")
+    .option("--browsers <engines...>", "Run separate audits for several browser engines: chromium, firefox, webkit")
     .option("--device <name>", "Playwright device preset, for example \"iPhone 13\" or \"Pixel 5\"")
     .option("--devices <profiles...>", "Run separate audits for several profiles: desktop, mobile, tablet, or Playwright device names")
     .option("--auth-state <file>", "Playwright storage state file for authenticated audits")
@@ -137,11 +139,22 @@ export function registerAuditCommand(program: Command): void {
     .option("--quiet", "Suppress console summary")
     .action(async (options: AuditOptions, command: Command) => {
       const resolvedOptions = resolveAuditProfileOptions(options, command);
-      const result = hasAuditDeviceMatrix(resolvedOptions)
+      if (hasAuditBrowserMatrix(resolvedOptions) && hasAuditDeviceMatrix(resolvedOptions)) {
+        throw new Error("Use either --browsers or --devices for this release. Run separate commands when you need both comparisons.");
+      }
+      const result = hasAuditBrowserMatrix(resolvedOptions)
+        ? await runAuditBrowserMatrix(resolvedOptions)
+        : hasAuditDeviceMatrix(resolvedOptions)
         ? await runAuditDeviceMatrix(resolvedOptions)
         : await runAudit(resolvedOptions);
       if (result.failed) process.exitCode = 1;
     });
+}
+
+export interface AuditBrowserTarget {
+  label: string;
+  slug: string;
+  browser: BrowserEngine;
 }
 
 export interface AuditDeviceTarget {
@@ -178,6 +191,156 @@ export interface AuditDeviceMatrixReport {
     summary?: AuditDeviceSummary;
   }>;
   totals: AuditDeviceSummary;
+}
+
+interface AuditBrowserRunResult {
+  target: AuditBrowserTarget;
+  failed: boolean;
+  outputDir: string;
+  summary?: AuditDeviceSummary;
+}
+
+export interface AuditBrowserMatrixReport {
+  generatedAt: string;
+  profiles: Array<{
+    label: string;
+    slug: string;
+    browser: BrowserEngine;
+    status: "completed" | "failed";
+    outputDir: string;
+    htmlReport: string;
+    jsonReport: string;
+    summary?: AuditDeviceSummary;
+  }>;
+  totals: AuditDeviceSummary;
+}
+
+export async function runAuditBrowserMatrix(options: AuditOptions): Promise<{ failed: boolean; outputDir: string }> {
+  const targets = resolveAuditBrowserTargets(options);
+  if (targets.length === 0) return runAudit(options);
+
+  const baseOutputDir = normalizeOptionalCliValue(options.out) || "reports";
+  const results: AuditBrowserRunResult[] = [];
+
+  if (!options.quiet) {
+    console.log(`[audit] Running ${targets.length} browser engine${targets.length === 1 ? "" : "s"}: ${targets.map((target) => target.label).join(", ")}`);
+  }
+
+  for (const target of targets) {
+    const outputDir = path.join(baseOutputDir, target.slug);
+    if (!options.quiet) console.log(`[audit] Browser engine: ${target.label} -> ${outputDir}`);
+    const result = await runAudit({
+      ...options,
+      browsers: undefined,
+      browser: target.browser,
+      out: outputDir
+    });
+    results.push({
+      target,
+      ...result,
+      summary: await readAuditDeviceSummary(outputDir)
+    });
+  }
+
+  const summaryPath = path.join(baseOutputDir, "a11y-browser-audit.md");
+  const jsonSummaryPath = path.join(baseOutputDir, "a11y-browser-audit.json");
+  await fs.mkdir(baseOutputDir, { recursive: true });
+  await fs.writeFile(summaryPath, formatAuditBrowserMatrixSummary(results), "utf8");
+  await fs.writeFile(jsonSummaryPath, `${JSON.stringify(createAuditBrowserMatrixReport(results), null, 2)}\n`, "utf8");
+
+  if (!options.quiet) {
+    console.log([
+      "a11y-shiftleft browser audit",
+      ...results.map((result) => `${result.failed ? "failed" : "completed"} ${result.target.label}: ${result.outputDir}/a11y-report.html`),
+      `Summary: ${summaryPath}`,
+      `JSON summary: ${jsonSummaryPath}`
+    ].join("\n"));
+  }
+
+  return {
+    failed: results.some((result) => result.failed),
+    outputDir: baseOutputDir
+  };
+}
+
+export function hasAuditBrowserMatrix(options: Pick<AuditOptions, "browsers">): boolean {
+  return Boolean(options.browsers?.some((browser) => browser.trim()));
+}
+
+export function resolveAuditBrowserTargets(options: Pick<AuditOptions, "browser" | "browsers">): AuditBrowserTarget[] {
+  const requested = (options.browsers || []).map((browser) => browser.trim()).filter(Boolean);
+  if (requested.length === 0) return [];
+  if (options.browser) {
+    throw new Error("Use either --browsers or --browser.");
+  }
+
+  const seen = new Set<BrowserEngine>();
+  return requested.flatMap((browser) => {
+    const target = auditBrowserTarget(browser);
+    if (seen.has(target.browser)) return [];
+    seen.add(target.browser);
+    return [target];
+  });
+}
+
+export function createAuditBrowserMatrixReport(
+  results: Array<{ target: AuditBrowserTarget; failed: boolean; outputDir: string; summary?: AuditDeviceSummary }>,
+  generatedAt = new Date().toISOString()
+): AuditBrowserMatrixReport {
+  return {
+    generatedAt,
+    profiles: results.map((result) => ({
+      label: result.target.label,
+      slug: result.target.slug,
+      browser: result.target.browser,
+      status: result.failed ? "failed" : "completed",
+      outputDir: result.outputDir,
+      htmlReport: path.join(result.outputDir, "a11y-report.html"),
+      jsonReport: path.join(result.outputDir, "a11y-report.json"),
+      ...(result.summary ? { summary: result.summary } : {})
+    })),
+    totals: summarizeAuditDeviceMatrix(results)
+  };
+}
+
+export function formatAuditBrowserMatrixSummary(results: Array<{ target: AuditBrowserTarget; failed: boolean; outputDir: string; summary?: AuditDeviceSummary }>): string {
+  const totals = summarizeAuditDeviceMatrix(results);
+  const rows = results.map((result) => (
+    `| ${escapeMarkdownTableCell(result.target.label)} | ${result.failed ? "failed" : "completed"} | ${formatDeviceSummaryCounts(result)} | ${formatDeviceSummaryStates(result)} | [Open report](${escapeMarkdownLink(`${result.outputDir}/a11y-report.html`)}) |`
+  )).join("\n");
+
+  return `# Browser Audit Summary
+
+This file links the separate visual reports generated by \`audit --browsers\`.
+Use these reports to compare bounded browser evidence across Chromium, Firefox,
+and WebKit. Browser-specific differences still need human review before being
+treated as product defects.
+
+Total across browsers: ${formatDeviceSummaryCounts({ summary: totals })}; ${formatDeviceSummaryStates({ summary: totals })} explored states.
+
+| Browser engine | Status | Findings | States | Report |
+|---|---|---:|---:|---|
+${rows}
+`;
+}
+
+function auditBrowserTarget(browser: string): AuditBrowserTarget {
+  const normalized = browser.trim().toLowerCase();
+  if (normalized !== "chromium" && normalized !== "firefox" && normalized !== "webkit") {
+    throw new Error(`Unsupported browser engine: ${browser}. Use ${supportedBrowserEnginesText()}.`);
+  }
+
+  const labels: Record<BrowserEngine, string> = {
+    chromium: "Chromium",
+    firefox: "Firefox",
+    webkit: "WebKit"
+  };
+
+  return {
+    label: labels[normalized],
+    slug: normalized,
+    browser: normalized
+  };
 }
 
 export async function runAuditDeviceMatrix(options: AuditOptions): Promise<{ failed: boolean; outputDir: string }> {
