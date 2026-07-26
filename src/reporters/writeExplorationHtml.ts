@@ -2494,7 +2494,7 @@ function renderIgnoreCleanup(ignore: IgnoreSummary | undefined): string {
     ? `<ul class="ignore-owner-list">${ownerRows.map((owner) => `<li><strong>${escapeHtml(owner.owner)}</strong>: ${escapeHtml(formatIgnoreOwnerCleanup(owner))}</li>`).join("")}</ul>`
     : "";
 
-  return `<section class="panel ignore-cleanup" aria-label="Ignore cleanup">
+  return `<section class="panel panel-full-width ignore-cleanup" aria-label="Ignore cleanup">
     <h2>Ignore Cleanup</h2>
     <p class="muted">${needsCleanup
       ? "Review stale or expiring temporary exceptions before they become permanent accessibility debt."
@@ -2530,7 +2530,7 @@ function renderReportRetention(retention: ReportRetentionEvidence | undefined): 
     ? "no files deleted in preview mode"
     : "old report runs deleted";
 
-  return `<section class="panel ignore-cleanup" aria-label="Report retention">
+  return `<section class="panel panel-full-width ignore-cleanup" aria-label="Report retention">
     <h2>Report Retention</h2>
     <p class="muted">${escapeHtml(mode)}. Policy keeps up to ${retention.maxRuns} report run${retention.maxRuns === 1 ? "" : "s"} and removes runs older than ${retention.maxAgeDays} day${retention.maxAgeDays === 1 ? "" : "s"}.</p>
     <div class="ignore-cleanup-grid">

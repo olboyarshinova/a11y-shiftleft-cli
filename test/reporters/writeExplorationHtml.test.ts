@@ -517,6 +517,7 @@ test("renderExplorationHtml includes report retention evidence without local pat
   });
 
   assert.match(html, /Report Retention/);
+  assert.match(html, /class="panel panel-full-width ignore-cleanup" aria-label="Report retention"/);
   assert.match(html, /Dry-run preview/);
   assert.match(html, /keeps up to 5 report runs/);
   assert.match(html, /removes runs older than 14 days/);
@@ -1822,6 +1823,7 @@ test("renderExplorationHtml includes ignore cleanup guidance when ignore metadat
   });
 
   assert.match(html, /Ignore Cleanup/);
+  assert.match(html, /class="panel panel-full-width ignore-cleanup" aria-label="Ignore cleanup"/);
   assert.match(html, /Ignored findings/);
   assert.match(html, /Expiring soon/);
   assert.match(html, /Expired/);
