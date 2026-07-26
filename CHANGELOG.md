@@ -11,6 +11,9 @@
   reviewer can reproduce one profile without rerunning the whole matrix.
 - Added profile-specific rule signals to matrix summaries, making mobile-only,
   tablet-only, or browser-only findings easier to triage.
+- Added profile-specific page and UI-state signals to matrix summaries so
+  reviewers can see which affected pages or states only appeared in one device
+  or browser profile.
 
 ## 0.9.0
 

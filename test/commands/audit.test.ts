@@ -182,6 +182,9 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
         ],
         topStates: [
           { id: "state-2", label: "Click: Open menu", url: "https://example.com/", depth: 1, issueCount: 3 }
+        ],
+        topPages: [
+          { page: "https://example.com/", total: 3, critical: 1, warning: 2, info: 0 }
         ]
       }
     },
@@ -201,6 +204,9 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
         ],
         topStates: [
           { id: "state-4", label: "Navigate: Checkout", url: "https://example.com/checkout", depth: 2, issueCount: 5 }
+        ],
+        topPages: [
+          { page: "https://example.com/checkout", total: 5, critical: 0, warning: 5, info: 0 }
         ]
       }
     }
@@ -223,6 +229,10 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
   assert.match(markdown, /### Profile-Specific Rule Signals/);
   assert.match(markdown, /desktop \| color-contrast: 2 critical/);
   assert.match(markdown, /mobile \(iPhone 13\) \| layout-horizontal-overflow: 2 warning/);
+  assert.match(markdown, /### Profile-Specific Page And State Signals/);
+  assert.match(markdown, /desktop \| page \| https:\/\/example\.com\/ \(3 findings\)/);
+  assert.match(markdown, /mobile \(iPhone 13\) \| page \| https:\/\/example\.com\/checkout \(5 findings\)/);
+  assert.match(markdown, /mobile \(iPhone 13\) \| state \| Navigate: Checkout \(5 findings, depth 2\)/);
   assert.match(markdown, /## Review Hotspots/);
   assert.match(markdown, /desktop \| Click: Open menu \(3 findings, depth 1\) \| color-contrast: 2; target-size: 1/);
   assert.match(markdown, /mobile \(iPhone 13\) \| Navigate: Checkout \(5 findings, depth 2\) \| target-size: 5/);
@@ -247,6 +257,9 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
         ],
         topStates: [
           { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 2 }
+        ],
+        topPages: [
+          { page: "https://example.com/", total: 3, critical: 1, warning: 2, info: 0 }
         ]
       }
     },
@@ -266,6 +279,9 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
         ],
         topStates: [
           { id: "state-3", label: "Click: Filters", url: "https://example.com/", depth: 1, issueCount: 1 }
+        ],
+        topPages: [
+          { page: "https://example.com/filters", total: 2, critical: 0, warning: 1, info: 1 }
         ]
       }
     }
@@ -308,6 +324,14 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
       ]
     }
   ]);
+  assert.deepEqual(report.comparison.profileSpecificPages.map((group) => group.label), [
+    "desktop",
+    "mobile (iPhone 13)"
+  ]);
+  assert.deepEqual(report.comparison.profileSpecificStates.map((group) => group.label), [
+    "desktop",
+    "mobile (iPhone 13)"
+  ]);
   assert.deepEqual(report.profiles[1], {
     label: "mobile (iPhone 13)",
     slug: "mobile",
@@ -329,6 +353,9 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
       ],
       topStates: [
         { id: "state-3", label: "Click: Filters", url: "https://example.com/", depth: 1, issueCount: 1 }
+      ],
+      topPages: [
+        { page: "https://example.com/filters", total: 2, critical: 0, warning: 1, info: 1 }
       ]
     }
   });
@@ -352,6 +379,9 @@ test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
         ],
         topStates: [
           { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 4 }
+        ],
+        topPages: [
+          { page: "https://example.com/", total: 4, critical: 1, warning: 2, info: 1 }
         ]
       }
     },
@@ -371,6 +401,9 @@ test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
         ],
         topStates: [
           { id: "state-2", label: "Click: Details", url: "https://example.com/", depth: 1, issueCount: 2 }
+        ],
+        topPages: [
+          { page: "https://example.com/details", total: 2, critical: 0, warning: 2, info: 0 }
         ]
       }
     }
@@ -392,6 +425,8 @@ test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
   assert.match(markdown, /`focus-visible` \| warning \| 4 \| Chromium: 2; WebKit: 2/);
   assert.match(markdown, /Chromium \| button-name: 1 critical/);
   assert.match(markdown, /WebKit \| webkit-focus-ring: 1 warning/);
+  assert.match(markdown, /WebKit \| page \| https:\/\/example\.com\/details \(2 findings\)/);
+  assert.match(markdown, /WebKit \| state \| Click: Details \(2 findings, depth 1\)/);
   assert.match(markdown, /Chromium \| Initial page \(4 findings, depth 0\) \| button-name: 1; focus-visible: 2/);
   assert.match(markdown, /WebKit \| Click: Details \(2 findings, depth 1\) \| focus-visible: 2/);
   assert.match(markdown, /--wait-for-selector '\[data-ready\]' --no-keyboard --browser chromium/);
@@ -415,6 +450,9 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
         ],
         topStates: [
           { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 4 }
+        ],
+        topPages: [
+          { page: "https://example.com/", total: 4, critical: 1, warning: 2, info: 1 }
         ]
       }
     },
@@ -434,6 +472,9 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
         ],
         topStates: [
           { id: "state-2", label: "Click: Open menu", url: "https://example.com/", depth: 1, issueCount: 2 }
+        ],
+        topPages: [
+          { page: "https://example.com/menu", total: 2, critical: 0, warning: 2, info: 0 }
         ]
       }
     }
@@ -461,6 +502,7 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
     "Chromium",
     "Firefox"
   ]);
+  assert.deepEqual(report.comparison.profileSpecificPages[1].pages[0].page, "https://example.com/menu");
   assert.deepEqual(report.profiles[0], {
     label: "Chromium",
     slug: "chromium",
@@ -481,6 +523,9 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
       ],
       topStates: [
         { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 4 }
+      ],
+      topPages: [
+        { page: "https://example.com/", total: 4, critical: 1, warning: 2, info: 1 }
       ]
     }
   });

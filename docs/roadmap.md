@@ -95,17 +95,17 @@ Section 508 certification.
   `--browsers` profile runs. Current matrix summaries include rule-level
   difference review and profile-specific review hotspots across generated
   Chromium, Firefox, and WebKit reports plus copy-paste commands to rerun one
-  profile. They also call out browser-only rule signals for manual triage; next,
-  add visual state comparison and clearer browser-specific reproduction notes.
-  Clearly label browser-specific differences for manual review before treating
-  them as product defects.
+  profile. They also call out browser-only rule, page, and UI-state signals for
+  manual triage; next, add visual state comparison and clearer browser-specific
+  reproduction notes. Clearly label browser-specific differences for manual
+  review before treating them as product defects.
 - Continue responsive web evidence beyond the current `--mobile`, `--tablet`,
   `--device`, and `--devices` profile runs. Current matrix summaries include
   rule-level difference review and profile-specific review hotspots across
   generated desktop, mobile, and tablet reports plus copy-paste commands to
-  rerun one profile. They also call out profile-specific rule signals for
-  manual triage; next, add visual state comparison and viewport-specific
-  reproduction notes. Treat this as
+  rerun one profile. They also call out profile-specific rule, page, and
+  UI-state signals for manual triage; next, add visual state comparison and
+  viewport-specific reproduction notes. Treat this as
   responsive/mobile browser testing for rendered websites, not as native iOS or
   Android app auditing.
 - Extend modal checks with additional close, cancel, successful-completion, and
