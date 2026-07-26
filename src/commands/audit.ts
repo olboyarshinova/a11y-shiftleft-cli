@@ -223,6 +223,12 @@ export interface AuditMatrixProfileSpecificStates {
   states: AuditMatrixStateSummary[];
 }
 
+export interface AuditMatrixStateEvidenceLink {
+  label: string;
+  report: string;
+  count: number;
+}
+
 export interface AuditMatrixSharedStateDifference {
   stateKey: string;
   label: string;
@@ -231,6 +237,7 @@ export interface AuditMatrixSharedStateDifference {
   total: number;
   spread: number;
   profileCounts: Record<string, number>;
+  evidenceLinks: AuditMatrixStateEvidenceLink[];
 }
 
 export interface AuditMatrixCoverageOverlap {
@@ -646,7 +653,7 @@ function summarizeAuditMatrixStates(exploration: A11yReport["exploration"], limi
 }
 
 function createAuditMatrixComparison(
-  results: Array<{ target: { label: string }; summary?: AuditDeviceSummary }>
+  results: Array<{ target: { label: string }; outputDir?: string; summary?: AuditDeviceSummary }>
 ): AuditMatrixComparison {
   const completed = results.filter((result) => result.summary);
   const highestTotal = maxProfile(completed, (summary) => summary.total);
@@ -816,7 +823,7 @@ function summarizeProfileSpecificStates(
 }
 
 function summarizeSharedStateDifferences(
-  results: Array<{ target: { label: string }; summary?: AuditDeviceSummary }>,
+  results: Array<{ target: { label: string }; outputDir?: string; summary?: AuditDeviceSummary }>,
   limit = 5
 ): AuditMatrixSharedStateDifference[] {
   const labels = results.map((result) => result.target.label);
@@ -824,6 +831,7 @@ function summarizeSharedStateDifferences(
   const states = new Map<string, {
     state: AuditMatrixStateSummary;
     profileCounts: Record<string, number>;
+    evidenceLinks: AuditMatrixStateEvidenceLink[];
   }>();
 
   for (const result of results) {
@@ -831,9 +839,20 @@ function summarizeSharedStateDifferences(
       const key = auditMatrixStateKey(state);
       const existing = states.get(key) || {
         state,
-        profileCounts: Object.fromEntries(labels.map((label) => [label, 0]))
+        profileCounts: Object.fromEntries(labels.map((label) => [label, 0])),
+        evidenceLinks: []
       };
       existing.profileCounts[result.target.label] = Math.max(existing.profileCounts[result.target.label] || 0, state.issueCount);
+      if (result.outputDir) {
+        const report = `${result.outputDir}/a11y-report.html#${state.id}`;
+        if (!existing.evidenceLinks.some((link) => link.label === result.target.label && link.report === report)) {
+          existing.evidenceLinks.push({
+            label: result.target.label,
+            report,
+            count: state.issueCount
+          });
+        }
+      }
       states.set(key, existing);
     }
   }
@@ -851,7 +870,8 @@ function summarizeSharedStateDifferences(
         depth: state.state.depth,
         total,
         spread,
-        profileCounts: state.profileCounts
+        profileCounts: state.profileCounts,
+        evidenceLinks: state.evidenceLinks.sort((left, right) => labels.indexOf(left.label) - labels.indexOf(right.label))
       };
     })
     .filter((state) => state.spread > 0)
@@ -984,12 +1004,19 @@ function formatProfileSpecificCoverageSignals(comparison: AuditMatrixComparison)
 function formatSharedStateDifferences(states: AuditMatrixSharedStateDifference[]): string {
   if (states.length === 0) return "No shared states with different finding counts found in the available summaries.";
   return [
-    "| State | URL | Depth | Difference | Profile counts |",
-    "|---|---|---:|---:|---|",
+    "| State | URL | Depth | Difference | Profile counts | Visual evidence |",
+    "|---|---|---:|---:|---|---|",
     ...states.map((state) => (
-      `| ${escapeMarkdownTableCell(state.label)} | ${escapeMarkdownTableCell(state.url)} | ${state.depth} | ${state.spread} | ${escapeMarkdownTableCell(formatProfileCounts(state.profileCounts))} |`
+      `| ${escapeMarkdownTableCell(state.label)} | ${escapeMarkdownTableCell(state.url)} | ${state.depth} | ${state.spread} | ${escapeMarkdownTableCell(formatProfileCounts(state.profileCounts))} | ${formatAuditMatrixEvidenceLinks(state.evidenceLinks)} |`
     ))
   ].join("\n");
+}
+
+function formatAuditMatrixEvidenceLinks(links: AuditMatrixStateEvidenceLink[]): string {
+  if (links.length === 0) return "Open the profile reports";
+  return links
+    .map((link) => `[${escapeMarkdownTableCell(`${link.label}: ${link.count}`)}](${escapeMarkdownLink(link.report)})`)
+    .join("; ");
 }
 
 function formatAuditMatrixRuleTable(rules: AuditMatrixRuleDifference[]): string {

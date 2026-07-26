@@ -20,6 +20,8 @@
   can confirm profile-only signals before filing defects.
 - Added shared UI-state difference summaries to device and browser matrix
   reports so repeated states with different finding counts are easier to spot.
+- Added direct visual evidence links for shared state differences in matrix
+  summaries so reviewers can jump to the matching state in each profile report.
 
 ## 0.9.0
 

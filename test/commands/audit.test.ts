@@ -238,6 +238,7 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
   assert.match(markdown, /mobile \(iPhone 13\) \| state \| Navigate: Checkout \(5 findings, depth 2\)/);
   assert.match(markdown, /### Shared States With Different Finding Counts/);
   assert.match(markdown, /Initial page \| https:\/\/example\.com\/ \| 0 \| 3 \| desktop: 1; mobile \(iPhone 13\): 4/);
+  assert.match(markdown, /\[desktop: 1\]\(reports\/devices\/desktop\/a11y-report\.html#state-1\); \[mobile \(iPhone 13\): 4\]\(reports\/devices\/mobile\/a11y-report\.html#state-1\)/);
   assert.match(markdown, /## Review Hotspots/);
   assert.match(markdown, /desktop \| Click: Open menu \(3 findings, depth 1\) \| color-contrast: 2; target-size: 1/);
   assert.match(markdown, /mobile \(iPhone 13\) \| Navigate: Checkout \(5 findings, depth 2\) \| target-size: 5/);
@@ -336,7 +337,11 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
       profileCounts: {
         desktop: 2,
         "mobile (iPhone 13)": 1
-      }
+      },
+      evidenceLinks: [
+        { label: "desktop", report: "reports/devices/desktop/a11y-report.html#state-1", count: 2 },
+        { label: "mobile (iPhone 13)", report: "reports/devices/mobile/a11y-report.html#state-1", count: 1 }
+      ]
     }
   ]);
   assert.deepEqual(report.comparison.profileSpecificRules, [
@@ -460,6 +465,7 @@ test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
   assert.match(markdown, /WebKit \| page \| https:\/\/example\.com\/details \(2 findings\)/);
   assert.match(markdown, /WebKit \| state \| Click: Details \(2 findings, depth 1\)/);
   assert.match(markdown, /Initial page \| https:\/\/example\.com\/ \| 0 \| 3 \| Chromium: 4; WebKit: 1/);
+  assert.match(markdown, /\[Chromium: 4\]\(reports\/browsers\/chromium\/a11y-report\.html#state-1\); \[WebKit: 1\]\(reports\/browsers\/webkit\/a11y-report\.html#state-1\)/);
   assert.match(markdown, /Chromium \| Initial page \(4 findings, depth 0\) \| button-name: 1; focus-visible: 2/);
   assert.match(markdown, /WebKit \| Click: Details \(2 findings, depth 1\) \| focus-visible: 2/);
   assert.match(markdown, /--wait-for-selector '\[data-ready\]' --no-keyboard --browser chromium/);
@@ -552,7 +558,11 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
       profileCounts: {
         Chromium: 4,
         Firefox: 1
-      }
+      },
+      evidenceLinks: [
+        { label: "Chromium", report: "reports/browsers/chromium/a11y-report.html#state-1", count: 4 },
+        { label: "Firefox", report: "reports/browsers/firefox/a11y-report.html#state-1", count: 1 }
+      ]
     }
   ]);
   assert.equal(report.comparison.differingRules[0].ruleId, "button-name");
