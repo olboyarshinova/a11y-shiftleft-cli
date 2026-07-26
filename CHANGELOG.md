@@ -9,6 +9,8 @@
   to the highest-priority page or UI state in each generated visual report.
 - Added copy-paste re-run commands to device and browser matrix summaries so a
   reviewer can reproduce one profile without rerunning the whole matrix.
+- Added profile-specific rule signals to matrix summaries, making mobile-only,
+  tablet-only, or browser-only findings easier to triage.
 
 ## 0.9.0
 

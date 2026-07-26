@@ -208,11 +208,17 @@ export interface AuditMatrixRuleDifference {
   profileCounts: Record<string, number>;
 }
 
+export interface AuditMatrixProfileSpecificRules {
+  label: string;
+  rules: AuditMatrixRuleSummary[];
+}
+
 export interface AuditMatrixComparison {
   highestTotal?: AuditMatrixProfilePeak;
   highestCritical?: AuditMatrixProfilePeak;
   differingRules: AuditMatrixRuleDifference[];
   commonRules: AuditMatrixRuleDifference[];
+  profileSpecificRules: AuditMatrixProfileSpecificRules[];
 }
 
 interface AuditDeviceRunResult {
@@ -636,13 +642,44 @@ function createAuditMatrixComparison(
   const commonRules = rules
     .filter((rule) => profileLabels.length > 1 && profileLabels.every((label) => (rule.profileCounts[label] || 0) > 0))
     .slice(0, 5);
+  const profileSpecificRules = summarizeProfileSpecificRules(completed, rules);
 
   return {
     ...(highestTotal ? { highestTotal } : {}),
     ...(highestCritical ? { highestCritical } : {}),
     differingRules,
-    commonRules
+    commonRules,
+    profileSpecificRules
   };
+}
+
+function summarizeProfileSpecificRules(
+  results: Array<{ target: { label: string }; summary?: AuditDeviceSummary }>,
+  rules: AuditMatrixRuleDifference[],
+  limit = 5
+): AuditMatrixProfileSpecificRules[] {
+  const labels = results.map((result) => result.target.label);
+  if (labels.length < 2) return [];
+
+  return labels.map((label) => ({
+    label,
+    rules: rules
+      .filter((rule) => (rule.profileCounts[label] || 0) > 0)
+      .filter((rule) => labels.every((otherLabel) => otherLabel === label || (rule.profileCounts[otherLabel] || 0) === 0))
+      .map((rule) => ({
+        ruleId: rule.ruleId,
+        severity: rule.severity,
+        count: rule.profileCounts[label] || 0
+      }))
+      .sort(compareAuditMatrixRuleSummaries)
+      .slice(0, limit)
+  })).filter((group) => group.rules.length > 0);
+}
+
+function compareAuditMatrixRuleSummaries(left: AuditMatrixRuleSummary, right: AuditMatrixRuleSummary): number {
+  return severityRankValue(right.severity) - severityRankValue(left.severity)
+    || right.count - left.count
+    || left.ruleId.localeCompare(right.ruleId);
 }
 
 function maxProfile(
@@ -678,10 +715,25 @@ function formatAuditMatrixComparison(kind: string, comparison: AuditMatrixCompar
     "",
     "### Rules Seen In Every Completed Profile",
     "",
-    formatAuditMatrixRuleTable(comparison.commonRules)
+    formatAuditMatrixRuleTable(comparison.commonRules),
+    "",
+    "### Profile-Specific Rule Signals",
+    "",
+    formatProfileSpecificRuleSignals(comparison.profileSpecificRules)
   ];
 
   return lines.join("\n");
+}
+
+function formatProfileSpecificRuleSignals(groups: AuditMatrixProfileSpecificRules[]): string {
+  if (groups.length === 0) return "No profile-specific rule signals found in the available summaries.";
+  return [
+    "| Profile | Rules found only in this profile |",
+    "|---|---|",
+    ...groups.map((group) => (
+      `| ${escapeMarkdownTableCell(group.label)} | ${escapeMarkdownTableCell(group.rules.map((rule) => `${rule.ruleId}: ${rule.count} ${rule.severity}`).join("; "))} |`
+    ))
+  ].join("\n");
 }
 
 function formatAuditMatrixRuleTable(rules: AuditMatrixRuleDifference[]): string {
