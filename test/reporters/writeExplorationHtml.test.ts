@@ -1124,6 +1124,30 @@ test("renderExplorationHtml explains when not every target has a screenshot mark
   const issueHtml = issueBlockForRule(html, "color-contrast");
 
   assert.match(issueHtml, /12 of 13 shown on screenshots/);
+  assert.match(issueHtml, /Show 3 more locations \(13 total\)/);
+  assert.match(issueHtml, /\.contrast-12/);
+  assert.match(html, /\.finding-target-more summary \{[\s\S]*?display: inline-flex/);
+});
+
+test("renderExplorationHtml collapses finding groups after ten visible groups", () => {
+  const manyMessageIssues = Array.from({ length: 12 }, (_, index) => ({
+    ...issues[0],
+    ruleId: "layout-clipped-text",
+    severity: "warning" as const,
+    findingType: "needs-review" as const,
+    tags: ["needs-review", "wcag1410"],
+    message: `Different clipped text message ${index + 1}`,
+    selector: `.clipped-${index + 1}`,
+    fingerprint: `layout-clipped-text::message-${index + 1}`,
+    contrast: undefined
+  }));
+  const html = renderExplorationHtml(graph, manyMessageIssues);
+  const issueHtml = issueBlockForRule(html, "layout-clipped-text");
+
+  assert.match(issueHtml, /Show 2 more finding groups \(2 hidden, 12 total\)/);
+  assert.match(issueHtml, /Different clipped text message 1/);
+  assert.match(issueHtml, /Different clipped text message 12/);
+  assert.match(html, /\.finding-overflow summary,[\s\S]*?display: inline-flex/);
 });
 
 test("renderExplorationHtml numbers screenshot annotations from top to bottom", () => {

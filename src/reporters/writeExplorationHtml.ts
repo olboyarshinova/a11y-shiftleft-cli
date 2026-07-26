@@ -1632,6 +1632,34 @@ export function renderExplorationHtml(
       margin-left: -24px;
     }
 
+    .finding-overflow,
+    .finding-target-more details {
+      margin-top: 6px;
+    }
+
+    .finding-overflow summary,
+    .finding-target-more summary {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      color: var(--ink);
+      cursor: pointer;
+      display: inline-flex;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.2;
+      padding: 5px 8px;
+    }
+
+    .finding-target-more {
+      list-style: none;
+      margin-left: -24px;
+    }
+
+    .finding-targets-nested {
+      margin-top: 6px;
+    }
+
     .finding-target {
       align-items: start;
       display: flex;
@@ -3867,9 +3895,18 @@ function renderStateIssueGroup(
   const levels = [...new Set(criteria.map((criterion) => criterion.level))];
   const findingTypes = [...new Set(sortedIssues.map((issue) => issue.findingType))];
   const ownershipLabels = [...new Set(sortedIssues.map((issue) => issue.ownership?.label).filter(Boolean))];
+  const visibleDisplayGroups = displayGroups.slice(0, 10);
+  const hiddenDisplayGroups = displayGroups.slice(10);
+  const hiddenIssueCount = hiddenDisplayGroups.reduce((total, group) => total + group.issues.length, 0);
   const occurrences = `<ul class="finding-occurrences">
-    ${displayGroups.map((group) => renderFindingOccurrenceGroup(group, sortedIssues.length, annotationNumberByIssueKey)).join("\n")}
-  </ul>`;
+    ${visibleDisplayGroups.map((group) => renderFindingOccurrenceGroup(group, sortedIssues.length, annotationNumberByIssueKey)).join("\n")}
+  </ul>
+  ${hiddenDisplayGroups.length > 0 ? `<details class="finding-overflow">
+    <summary>Show ${hiddenDisplayGroups.length} more finding group${hiddenDisplayGroups.length === 1 ? "" : "s"} (${hiddenIssueCount} hidden, ${sortedIssues.length} total)</summary>
+    <ul class="finding-occurrences">
+      ${hiddenDisplayGroups.map((group) => renderFindingOccurrenceGroup(group, sortedIssues.length, annotationNumberByIssueKey)).join("\n")}
+    </ul>
+  </details>` : ""}`;
 
   return `<li class="issue">
     <div class="triage-title">
@@ -3952,12 +3989,22 @@ function renderFindingTargets(
   issues: DedupedIssue[],
   annotationNumberByIssueKey: Record<string, number> = {}
 ): string {
+  const visibleIssues = issues.slice(0, 10);
+  const hiddenIssues = issues.slice(10);
   const markedCount = issues.filter((issue) => annotationNumberByIssueKey[annotationIssueKey(issue)]).length;
   const markerNote = markedCount > 0 && markedCount < issues.length
     ? `<li class="finding-target-note">${markedCount} of ${issues.length} shown on screenshots</li>`
     : "";
   return `<ol class="finding-targets">
-    ${issues.map((issue) => `<li>${renderFindingTarget(issue, annotationNumberByIssueKey)}</li>`).join("\n")}
+    ${visibleIssues.map((issue) => `<li>${renderFindingTarget(issue, annotationNumberByIssueKey)}</li>`).join("\n")}
+    ${hiddenIssues.length > 0 ? `<li class="finding-target-more">
+      <details>
+        <summary>Show ${hiddenIssues.length} more location${hiddenIssues.length === 1 ? "" : "s"} (${issues.length} total)</summary>
+        <ol class="finding-targets finding-targets-nested">
+          ${hiddenIssues.map((issue) => `<li>${renderFindingTarget(issue, annotationNumberByIssueKey)}</li>`).join("\n")}
+        </ol>
+      </details>
+    </li>` : ""}
     ${markerNote}
   </ol>`;
 }
