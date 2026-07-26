@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createProgram } from "../../dist/cli.js";
-import { hasAuditDeviceMatrix, normalizeAuditUrl, resolveAuditDepthOption, resolveAuditDeviceTargets, resolveAuditProfileOptions } from "../../dist/commands/audit.js";
+import { formatAuditDeviceMatrixSummary, hasAuditDeviceMatrix, normalizeAuditUrl, resolveAuditDepthOption, resolveAuditDeviceTargets, resolveAuditProfileOptions } from "../../dist/commands/audit.js";
 
 test("audit is the unified visual report command with optional extra formats", () => {
   const audit = createProgram().commands.find((command) => command.name() === "audit");
@@ -138,4 +138,23 @@ test("resolveAuditDeviceTargets rejects conflicting single-device options", () =
     () => resolveAuditDeviceTargets({ devices: ["desktop"], device: "Pixel 5" }),
     /Use either --devices/
   );
+});
+
+test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
+  const markdown = formatAuditDeviceMatrixSummary([
+    {
+      target: { label: "desktop", slug: "desktop" },
+      failed: false,
+      outputDir: "reports/devices/desktop"
+    },
+    {
+      target: { label: "mobile (iPhone 13)", slug: "mobile", device: "iPhone 13" },
+      failed: true,
+      outputDir: "reports/devices/mobile"
+    }
+  ]);
+
+  assert.match(markdown, /# Device Audit Summary/);
+  assert.match(markdown, /desktop \| completed \| \[Open report\]\(reports\/devices\/desktop\/a11y-report\.html\)/);
+  assert.match(markdown, /mobile \(iPhone 13\) \| failed \| \[Open report\]\(reports\/devices\/mobile\/a11y-report\.html\)/);
 });
