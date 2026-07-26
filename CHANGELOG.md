@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+## 0.9.0
+
+- Added `audit --devices` for separate desktop, mobile, tablet, and named
+  Playwright device visual reports in one bounded command.
+- Added `audit --browsers` for separate Chromium, Firefox, and WebKit visual
+  reports in one bounded command.
+- Added local Markdown and JSON summaries for device and browser audit runs,
+  including status, finding counts, explored state counts, and report links.
+- Fixed visual-report `Checklist ready` links so Audit Coverage rows keep their
+  checklist anchors after report initialization.
+- Updated README, configuration docs, and roadmap for responsive and
+  cross-browser audit profiles.
+
 - Added top-of-report human-verification guidance with a recommended rerun
   command when CAPTCHA, bot protection, or verify-you-are-human challenges block
   exploration.
