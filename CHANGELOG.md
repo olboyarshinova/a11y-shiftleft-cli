@@ -7,6 +7,8 @@
   responsive or browser-specific accessibility signals.
 - Added matrix review hotspots so device and browser summaries point reviewers
   to the highest-priority page or UI state in each generated visual report.
+- Added copy-paste re-run commands to device and browser matrix summaries so a
+  reviewer can reproduce one profile without rerunning the whole matrix.
 
 ## 0.9.0
 

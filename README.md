@@ -339,7 +339,7 @@ to its own subfolder under `--out`, with a local summary at
 `<out>/a11y-device-audit.md` and machine-readable
 `<out>/a11y-device-audit.json` that compare finding counts, explored states,
 rule differences, and the highest-priority page/state to review in each
-profile.
+profile. The summary also includes copy-paste commands to rerun one profile.
 
 Install the browser engine before using it, for example:
 
@@ -351,7 +351,8 @@ Use `--browsers chromium firefox webkit` when you want separate reports for
 several browser engines in one command. This writes one report per browser plus
 local Markdown and JSON summaries under `--out`, including a difference review
 for browser-specific rule signals and the first page/state to inspect in each
-browser report.
+browser report. The summary also includes copy-paste commands to rerun one
+browser engine.
 
 Audit profiles are shortcuts:
 

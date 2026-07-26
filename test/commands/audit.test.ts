@@ -203,7 +203,12 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
         ]
       }
     }
-  ]);
+  ], {
+    url: "https://example.com/",
+    maxDepth: "3",
+    limit: "12",
+    withLighthouse: true
+  });
 
   assert.match(markdown, /# Device Audit Summary/);
   assert.match(markdown, /Total across profiles: 8 total \(1 critical, 7 warning, 0 info\); 7 explored states\./);
@@ -217,6 +222,8 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
   assert.match(markdown, /## Review Hotspots/);
   assert.match(markdown, /desktop \| Click: Open menu \(3 findings, depth 1\) \| color-contrast: 2; target-size: 1/);
   assert.match(markdown, /mobile \(iPhone 13\) \| Navigate: Checkout \(5 findings, depth 2\) \| target-size: 5/);
+  assert.match(markdown, /npx a11y-shiftleft-cli audit --url https:\/\/example\.com\/ --max-depth 3 --limit 12 --out reports\/devices\/desktop --with-lighthouse/);
+  assert.match(markdown, /--out reports\/devices\/mobile --with-lighthouse --device 'iPhone 13'/);
 });
 
 test("createAuditDeviceMatrixReport exports machine-readable device results", () => {
@@ -257,7 +264,12 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
         ]
       }
     }
-  ], "2026-07-26T00:00:00.000Z");
+  ], "2026-07-26T00:00:00.000Z", {
+    url: "https://example.com/",
+    depth: "2",
+    limit: "10",
+    screenshots: false
+  });
 
   assert.equal(report.generatedAt, "2026-07-26T00:00:00.000Z");
   assert.deepEqual(report.totals, {
@@ -283,6 +295,7 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
     outputDir: "reports/devices/mobile",
     htmlReport: "reports/devices/mobile/a11y-report.html",
     jsonReport: "reports/devices/mobile/a11y-report.json",
+    rerunCommand: "npx a11y-shiftleft-cli audit --url https://example.com/ --max-depth 2 --limit 10 --out reports/devices/mobile --no-screenshots --device 'iPhone 13'",
     summary: {
       total: 2,
       critical: 0,
@@ -338,7 +351,13 @@ test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
         ]
       }
     }
-  ]);
+  ], {
+    url: "https://example.com/",
+    maxDepth: "1",
+    limit: "8",
+    keyboard: false,
+    waitForSelector: "[data-ready]"
+  });
 
   assert.match(markdown, /# Browser Audit Summary/);
   assert.match(markdown, /Total across browsers: 6 total \(1 critical, 4 warning, 1 info\); 9 explored states\./);
@@ -350,6 +369,8 @@ test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
   assert.match(markdown, /`focus-visible` \| warning \| 4 \| Chromium: 2; WebKit: 2/);
   assert.match(markdown, /Chromium \| Initial page \(4 findings, depth 0\) \| button-name: 1; focus-visible: 2/);
   assert.match(markdown, /WebKit \| Click: Details \(2 findings, depth 1\) \| focus-visible: 2/);
+  assert.match(markdown, /--wait-for-selector '\[data-ready\]' --no-keyboard --browser chromium/);
+  assert.match(markdown, /--wait-for-selector '\[data-ready\]' --no-keyboard --browser webkit/);
 });
 
 test("createAuditBrowserMatrixReport exports machine-readable browser results", () => {
@@ -390,7 +411,12 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
         ]
       }
     }
-  ], "2026-07-26T00:00:00.000Z");
+  ], "2026-07-26T00:00:00.000Z", {
+    url: "https://example.com/",
+    maxDepth: "1",
+    limit: "6",
+    standard: "section508"
+  });
 
   assert.equal(report.generatedAt, "2026-07-26T00:00:00.000Z");
   assert.deepEqual(report.totals, {
@@ -413,6 +439,7 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
     outputDir: "reports/browsers/chromium",
     htmlReport: "reports/browsers/chromium/a11y-report.html",
     jsonReport: "reports/browsers/chromium/a11y-report.json",
+    rerunCommand: "npx a11y-shiftleft-cli audit --url https://example.com/ --max-depth 1 --limit 6 --out reports/browsers/chromium --standard section508 --browser chromium",
     summary: {
       total: 4,
       critical: 1,

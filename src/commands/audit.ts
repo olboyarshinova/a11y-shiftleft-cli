@@ -232,6 +232,7 @@ export interface AuditDeviceMatrixReport {
     outputDir: string;
     htmlReport: string;
     jsonReport: string;
+    rerunCommand?: string;
     summary?: AuditDeviceSummary;
   }>;
   totals: AuditDeviceSummary;
@@ -255,6 +256,7 @@ export interface AuditBrowserMatrixReport {
     outputDir: string;
     htmlReport: string;
     jsonReport: string;
+    rerunCommand?: string;
     summary?: AuditDeviceSummary;
   }>;
   totals: AuditDeviceSummary;
@@ -291,8 +293,8 @@ export async function runAuditBrowserMatrix(options: AuditOptions): Promise<{ fa
   const summaryPath = path.join(baseOutputDir, "a11y-browser-audit.md");
   const jsonSummaryPath = path.join(baseOutputDir, "a11y-browser-audit.json");
   await fs.mkdir(baseOutputDir, { recursive: true });
-  await fs.writeFile(summaryPath, formatAuditBrowserMatrixSummary(results), "utf8");
-  await fs.writeFile(jsonSummaryPath, `${JSON.stringify(createAuditBrowserMatrixReport(results), null, 2)}\n`, "utf8");
+  await fs.writeFile(summaryPath, formatAuditBrowserMatrixSummary(results, options), "utf8");
+  await fs.writeFile(jsonSummaryPath, `${JSON.stringify(createAuditBrowserMatrixReport(results, undefined, options), null, 2)}\n`, "utf8");
 
   if (!options.quiet) {
     console.log([
@@ -331,7 +333,8 @@ export function resolveAuditBrowserTargets(options: Pick<AuditOptions, "browser"
 
 export function createAuditBrowserMatrixReport(
   results: Array<{ target: AuditBrowserTarget; failed: boolean; outputDir: string; summary?: AuditDeviceSummary }>,
-  generatedAt = new Date().toISOString()
+  generatedAt = new Date().toISOString(),
+  options?: Pick<AuditOptions, "url" | "depth" | "maxDepth" | "limit" | "withLighthouse" | "keyboard" | "screenshots" | "standard" | "authState" | "waitMs" | "waitForSelector">
 ): AuditBrowserMatrixReport {
   return {
     generatedAt,
@@ -343,6 +346,7 @@ export function createAuditBrowserMatrixReport(
       outputDir: result.outputDir,
       htmlReport: path.join(result.outputDir, "a11y-report.html"),
       jsonReport: path.join(result.outputDir, "a11y-report.json"),
+      ...(options ? { rerunCommand: buildAuditBrowserRerunCommand(result, options) } : {}),
       ...(result.summary ? { summary: result.summary } : {})
     })),
     totals: summarizeAuditDeviceMatrix(results),
@@ -350,13 +354,18 @@ export function createAuditBrowserMatrixReport(
   };
 }
 
-export function formatAuditBrowserMatrixSummary(results: Array<{ target: AuditBrowserTarget; failed: boolean; outputDir: string; summary?: AuditDeviceSummary }>): string {
+export function formatAuditBrowserMatrixSummary(
+  results: Array<{ target: AuditBrowserTarget; failed: boolean; outputDir: string; summary?: AuditDeviceSummary }>,
+  options?: Pick<AuditOptions, "url" | "depth" | "maxDepth" | "limit" | "withLighthouse" | "keyboard" | "screenshots" | "standard" | "authState" | "waitMs" | "waitForSelector">
+): string {
   const totals = summarizeAuditDeviceMatrix(results);
   const comparison = createAuditMatrixComparison(results);
   const rows = results.map((result) => (
     `| ${escapeMarkdownTableCell(result.target.label)} | ${result.failed ? "failed" : "completed"} | ${formatDeviceSummaryCounts(result)} | ${formatDeviceSummaryStates(result)} | [Open report](${escapeMarkdownLink(`${result.outputDir}/a11y-report.html`)}) |`
   )).join("\n");
-  const hotspots = formatAuditMatrixHotspots("Browser engine", results);
+  const hotspots = formatAuditMatrixHotspots("Browser engine", results, (result) => (
+    options ? buildAuditBrowserRerunCommand(result, options) : undefined
+  ));
 
   return `# Browser Audit Summary
 
@@ -427,8 +436,8 @@ export async function runAuditDeviceMatrix(options: AuditOptions): Promise<{ fai
   const summaryPath = path.join(baseOutputDir, "a11y-device-audit.md");
   const jsonSummaryPath = path.join(baseOutputDir, "a11y-device-audit.json");
   await fs.mkdir(baseOutputDir, { recursive: true });
-  await fs.writeFile(summaryPath, formatAuditDeviceMatrixSummary(results), "utf8");
-  await fs.writeFile(jsonSummaryPath, `${JSON.stringify(createAuditDeviceMatrixReport(results), null, 2)}\n`, "utf8");
+  await fs.writeFile(summaryPath, formatAuditDeviceMatrixSummary(results, options), "utf8");
+  await fs.writeFile(jsonSummaryPath, `${JSON.stringify(createAuditDeviceMatrixReport(results, undefined, options), null, 2)}\n`, "utf8");
 
   if (!options.quiet) {
     console.log([
@@ -447,7 +456,8 @@ export async function runAuditDeviceMatrix(options: AuditOptions): Promise<{ fai
 
 export function createAuditDeviceMatrixReport(
   results: Array<{ target: AuditDeviceTarget; failed: boolean; outputDir: string; summary?: AuditDeviceSummary }>,
-  generatedAt = new Date().toISOString()
+  generatedAt = new Date().toISOString(),
+  options?: Pick<AuditOptions, "url" | "depth" | "maxDepth" | "limit" | "withLighthouse" | "keyboard" | "screenshots" | "standard" | "authState" | "waitMs" | "waitForSelector">
 ): AuditDeviceMatrixReport {
   return {
     generatedAt,
@@ -459,6 +469,7 @@ export function createAuditDeviceMatrixReport(
       outputDir: result.outputDir,
       htmlReport: path.join(result.outputDir, "a11y-report.html"),
       jsonReport: path.join(result.outputDir, "a11y-report.json"),
+      ...(options ? { rerunCommand: buildAuditDeviceRerunCommand(result, options) } : {}),
       ...(result.summary ? { summary: result.summary } : {})
     })),
     totals: summarizeAuditDeviceMatrix(results),
@@ -485,13 +496,18 @@ function summarizeAuditDeviceMatrix(results: Array<{ summary?: AuditDeviceSummar
   });
 }
 
-export function formatAuditDeviceMatrixSummary(results: Array<{ target: AuditDeviceTarget; failed: boolean; outputDir: string; summary?: AuditDeviceSummary }>): string {
+export function formatAuditDeviceMatrixSummary(
+  results: Array<{ target: AuditDeviceTarget; failed: boolean; outputDir: string; summary?: AuditDeviceSummary }>,
+  options?: Pick<AuditOptions, "url" | "depth" | "maxDepth" | "limit" | "withLighthouse" | "keyboard" | "screenshots" | "standard" | "authState" | "waitMs" | "waitForSelector">
+): string {
   const totals = summarizeAuditDeviceMatrix(results);
   const comparison = createAuditMatrixComparison(results);
   const rows = results.map((result) => (
     `| ${escapeMarkdownTableCell(result.target.label)} | ${result.failed ? "failed" : "completed"} | ${formatDeviceSummaryCounts(result)} | ${formatDeviceSummaryStates(result)} | [Open report](${escapeMarkdownLink(`${result.outputDir}/a11y-report.html`)}) |`
   )).join("\n");
-  const hotspots = formatAuditMatrixHotspots("Device profile", results);
+  const hotspots = formatAuditMatrixHotspots("Device profile", results, (result) => (
+    options ? buildAuditDeviceRerunCommand(result, options) : undefined
+  ));
 
   return `# Device Audit Summary
 
@@ -679,9 +695,10 @@ function formatAuditMatrixRuleTable(rules: AuditMatrixRuleDifference[]): string 
   ].join("\n");
 }
 
-function formatAuditMatrixHotspots(
+function formatAuditMatrixHotspots<T extends { target: { label: string }; outputDir: string; summary?: AuditDeviceSummary }>(
   profileHeading: string,
-  results: Array<{ target: { label: string }; outputDir: string; summary?: AuditDeviceSummary }>
+  results: T[],
+  commandForResult?: (result: T) => string | undefined
 ): string {
   const completed = results.filter((result) => result.summary);
   if (completed.length === 0) {
@@ -695,10 +712,10 @@ No completed profile summaries were available. Open each generated visual report
     "",
     "Open the visual report for the profile, then start with these pages or states.",
     "",
-    `| ${profileHeading} | Start here | Top rule signals | Report |`,
-    "|---|---|---|---|",
+    `| ${profileHeading} | Start here | Top rule signals | Report | Re-run just this profile |`,
+    "|---|---|---|---|---|",
     ...completed.map((result) => (
-      `| ${escapeMarkdownTableCell(result.target.label)} | ${escapeMarkdownTableCell(formatAuditMatrixHotspotTarget(result.summary))} | ${escapeMarkdownTableCell(formatAuditMatrixTopRules(result.summary))} | [Open report](${escapeMarkdownLink(`${result.outputDir}/a11y-report.html`)}) |`
+      `| ${escapeMarkdownTableCell(result.target.label)} | ${escapeMarkdownTableCell(formatAuditMatrixHotspotTarget(result.summary))} | ${escapeMarkdownTableCell(formatAuditMatrixTopRules(result.summary))} | [Open report](${escapeMarkdownLink(`${result.outputDir}/a11y-report.html`)}) | ${formatAuditMatrixRerunCell(commandForResult?.(result))} |`
     ))
   ].join("\n");
 }
@@ -721,6 +738,64 @@ function formatAuditMatrixTopRules(summary?: AuditDeviceSummary, limit = 3): str
   const rules = (summary?.topRules || []).slice(0, limit);
   if (rules.length === 0) return "No rule findings";
   return rules.map((rule) => `${rule.ruleId}: ${rule.count}`).join("; ");
+}
+
+function formatAuditMatrixRerunCell(command?: string): string {
+  return command ? `\`${escapeMarkdownTableCell(command)}\`` : "not available";
+}
+
+function buildAuditDeviceRerunCommand(
+  result: { target: AuditDeviceTarget; outputDir: string },
+  options: Pick<AuditOptions, "url" | "depth" | "maxDepth" | "limit" | "withLighthouse" | "keyboard" | "screenshots" | "standard" | "authState" | "waitMs" | "waitForSelector">
+): string {
+  const args = baseAuditRerunArgs(options, result.outputDir);
+  if (result.target.device) args.push("--device", result.target.device);
+  return formatCliCommand(args);
+}
+
+function buildAuditBrowserRerunCommand(
+  result: { target: AuditBrowserTarget; outputDir: string },
+  options: Pick<AuditOptions, "url" | "depth" | "maxDepth" | "limit" | "withLighthouse" | "keyboard" | "screenshots" | "standard" | "authState" | "waitMs" | "waitForSelector">
+): string {
+  return formatCliCommand([
+    ...baseAuditRerunArgs(options, result.outputDir),
+    "--browser",
+    result.target.browser
+  ]);
+}
+
+function baseAuditRerunArgs(
+  options: Pick<AuditOptions, "url" | "depth" | "maxDepth" | "limit" | "withLighthouse" | "keyboard" | "screenshots" | "standard" | "authState" | "waitMs" | "waitForSelector">,
+  outputDir: string
+): string[] {
+  const args = [
+    "audit",
+    "--url",
+    options.url,
+    "--max-depth",
+    resolveAuditDepthOption(options) || "2",
+    "--limit",
+    options.limit || "20",
+    "--out",
+    outputDir
+  ];
+  if (options.standard) args.push("--standard", options.standard);
+  if (options.authState) args.push("--auth-state", options.authState);
+  if (options.waitMs) args.push("--wait-ms", options.waitMs);
+  if (options.waitForSelector) args.push("--wait-for-selector", options.waitForSelector);
+  if (options.withLighthouse) args.push("--with-lighthouse");
+  if (options.keyboard === false) args.push("--no-keyboard");
+  if (options.screenshots === false) args.push("--no-screenshots");
+  return args;
+}
+
+function formatCliCommand(args: string[]): string {
+  return ["npx", "a11y-shiftleft-cli", ...args.map(quoteCliArg)].join(" ");
+}
+
+function quoteCliArg(value: string): string {
+  if (/^[A-Za-z0-9_./:@%+=,-]+$/.test(value)) return value;
+  return `'${value.replace(/'/g, "'\\''")}'`;
 }
 
 function formatProfileCounts(profileCounts: Record<string, number>): string {
