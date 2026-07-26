@@ -229,6 +229,30 @@ test("getRemediationHint explains keyboard focus loss and unreachable controls",
   assert.equal(unreachable.howToFix.some((step) => step.includes("tabindex")), true);
 });
 
+test("getRemediationHint explains keyboard focus traversal and visibility findings", () => {
+  const positiveTabIndex = getRemediationHint("keyboard-positive-tabindex", getWcagCriteria(["2.4.3"]), "unknown");
+  const stuck = getRemediationHint("keyboard-focus-stuck", getWcagCriteria(["2.1.2"]), "unknown");
+  const cycle = getRemediationHint("keyboard-focus-cycle", getWcagCriteria(["2.1.2", "2.4.3"]), "unknown");
+  const reverse = getRemediationHint("keyboard-reverse-order-mismatch", getWcagCriteria(["2.4.3"]), "unknown");
+  const notReached = getRemediationHint("keyboard-focus-not-reached", getWcagCriteria(["2.1.1"]), "unknown");
+  const notVisible = getRemediationHint("keyboard-focus-not-visible", getWcagCriteria(["2.4.7"]), "unknown");
+  const obscured = getRemediationHint("keyboard-focus-obscured", getWcagCriteria(["2.4.11"]), "unknown");
+  const indicator = getRemediationHint("keyboard-focus-indicator-missing", getWcagCriteria(["2.4.7"]), "react");
+
+  assert.match(positiveTabIndex.summary, /positive tabindex/);
+  assert.equal(positiveTabIndex.howToFix.some((step) => step.includes("DOM order")), true);
+  assert.match(stuck.summary, /trapped/);
+  assert.equal(stuck.docs.some((url) => url.includes("no-keyboard-trap")), true);
+  assert.match(cycle.summary, /cycle/);
+  assert.equal(cycle.howToFix.some((step) => step.includes("keyboard-operable exit")), true);
+  assert.match(reverse.summary, /reverse keyboard traversal/);
+  assert.match(notReached.summary, /move focus from the document/);
+  assert.match(notVisible.summary, /focused element visible/);
+  assert.match(obscured.summary, /sticky headers/);
+  assert.match(indicator.summary, /visible focus indicator/);
+  assert.equal(indicator.frameworkExamples?.react?.includes(":focus-visible"), true);
+});
+
 test("getRemediationHint explains stateful keyboard activation failures", () => {
   const hint = getRemediationHint("keyboard-activation-no-effect", getWcagCriteria(["2.1.1"]), "unknown");
 

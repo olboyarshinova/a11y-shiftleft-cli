@@ -796,6 +796,18 @@ const RULE_HINTS: Record<string, RemediationHint> = {
       angular: "<main><h1>Favorite items</h1></main>"
     }
   },
+  "keyboard-positive-tabindex": {
+    summary: "Avoid positive tabindex values because they can create an unexpected focus order.",
+    howToFix: [
+      "Remove positive tabindex values and let DOM order define the natural Tab sequence.",
+      "Move the element in the DOM when the visual and keyboard order need to match.",
+      "Use tabindex=\"0\" only for custom controls that must participate in the normal focus order."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html",
+      "https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/tabindex"
+    ]
+  },
   "keyboard-focus-lost": {
     summary: "Keep keyboard focus on a meaningful interactive target after every Tab press.",
     howToFix: [
@@ -805,6 +817,30 @@ const RULE_HINTS: Record<string, RemediationHint> = {
     ],
     docs: [
       "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html",
+      "https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html"
+    ]
+  },
+  "keyboard-focus-stuck": {
+    summary: "Prevent keyboard focus from getting trapped on one control during normal Tab navigation.",
+    howToFix: [
+      "Check keydown handlers, focus traps, portals, and inert or disabled state changes that may stop Tab from advancing.",
+      "For dialogs and menus, keep focus contained only while the component is open and provide a clear keyboard close path.",
+      "Retest forward and reverse Tab traversal from before, inside, and after the affected component."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/no-keyboard-trap.html",
+      "https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html"
+    ]
+  },
+  "keyboard-focus-cycle": {
+    summary: "Review the focus cycle because Tab repeated before all detected controls were reached.",
+    howToFix: [
+      "Compare the visual page with the recorded focus path and identify controls skipped before the cycle repeated.",
+      "Remove unintended focus traps, hidden sentinels, positive tabindex values, or inert ancestors that interrupt traversal.",
+      "If the cycle is intentional inside a modal or widget, document the contained region and verify there is a keyboard-operable exit."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/no-keyboard-trap.html",
       "https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html"
     ]
   },
@@ -819,6 +855,83 @@ const RULE_HINTS: Record<string, RemediationHint> = {
       "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html",
       "https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/tabindex"
     ]
+  },
+  "keyboard-reverse-focus-not-reached": {
+    summary: "Make Shift+Tab move focus backward from the first completed focus target.",
+    howToFix: [
+      "Check whether custom focus management intercepts Shift+Tab or moves focus to a hidden element.",
+      "Keep reverse traversal symmetrical with the forward Tab order unless a modal or composite widget has a documented pattern.",
+      "Retest Shift+Tab from the first, middle, and last focusable control in the affected workflow."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html",
+      "https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html"
+    ]
+  },
+  "keyboard-reverse-order-mismatch": {
+    summary: "Align reverse keyboard traversal with the completed forward Tab order.",
+    howToFix: [
+      "Compare the forward and Shift+Tab paths and identify the first point where they diverge.",
+      "Remove one-way focus jumps, positive tabindex values, and scripts that reorder focus differently by direction.",
+      "For composite widgets, verify that the implemented pattern is documented and predictable for keyboard users."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html",
+      "https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/"
+    ]
+  },
+  "keyboard-focus-not-reached": {
+    summary: "Allow Tab to move focus from the document into the page's interactive controls.",
+    howToFix: [
+      "Check whether a page-level key handler, overlay, disabled body state, or focus trap blocks the first Tab press.",
+      "Make the first meaningful interactive control or skip link reachable without a pointer.",
+      "Retest from a fresh page load using only Tab, Shift+Tab, Enter, Space, and Escape."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html",
+      "https://www.w3.org/WAI/WCAG22/Understanding/bypass-blocks.html"
+    ]
+  },
+  "keyboard-focus-not-visible": {
+    summary: "Keep the focused element visible when keyboard focus moves to it.",
+    howToFix: [
+      "Avoid moving focus to hidden, clipped, offscreen, or zero-size elements.",
+      "If focus moves to content inside a scrollable container, scroll the focused item into view.",
+      "Move focus to the visible control that represents the action instead of an internal hidden proxy element."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html",
+      "https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html"
+    ]
+  },
+  "keyboard-focus-obscured": {
+    summary: "Keep the focused control from being covered by sticky headers, overlays, or adjacent content.",
+    howToFix: [
+      "Adjust scroll-margin, sticky offsets, z-index, and overlay positioning so the focused item remains visible.",
+      "Close or move temporary UI that covers focused controls unless it is the active keyboard context.",
+      "Retest at desktop, narrow viewport, and 400% zoom because obscured focus often appears only after reflow."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html",
+      "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html"
+    ]
+  },
+  "keyboard-focus-indicator-missing": {
+    summary: "Show a clear visible focus indicator when a keyboard user reaches this control.",
+    howToFix: [
+      "Use :focus-visible with an outline, border, underline, or other visible indicator that is not color alone.",
+      "Avoid removing outlines globally unless every interactive component has an accessible replacement.",
+      "Verify the indicator in normal colors, forced-colors or high-contrast mode, and 400% zoom."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html",
+      "https://www.w3.org/WAI/WCAG22/Understanding/focus-appearance.html"
+    ],
+    frameworkExamples: {
+      react: ".button:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }",
+      vue: ".button:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }",
+      angular: ".button:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }"
+    }
   },
   "keyboard-activation-no-effect": {
     summary: "Implement the documented keyboard interaction for this stateful control.",
