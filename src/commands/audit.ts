@@ -165,6 +165,21 @@ interface AuditDeviceRunResult {
   summary?: AuditDeviceSummary;
 }
 
+export interface AuditDeviceMatrixReport {
+  generatedAt: string;
+  profiles: Array<{
+    label: string;
+    slug: string;
+    device?: string;
+    status: "completed" | "failed";
+    outputDir: string;
+    htmlReport: string;
+    jsonReport: string;
+    summary?: AuditDeviceSummary;
+  }>;
+  totals: AuditDeviceSummary;
+}
+
 export async function runAuditDeviceMatrix(options: AuditOptions): Promise<{ failed: boolean; outputDir: string }> {
   const targets = resolveAuditDeviceTargets(options);
   if (targets.length === 0) return runAudit(options);
@@ -194,14 +209,17 @@ export async function runAuditDeviceMatrix(options: AuditOptions): Promise<{ fai
     });
   }
   const summaryPath = path.join(baseOutputDir, "a11y-device-audit.md");
+  const jsonSummaryPath = path.join(baseOutputDir, "a11y-device-audit.json");
   await fs.mkdir(baseOutputDir, { recursive: true });
   await fs.writeFile(summaryPath, formatAuditDeviceMatrixSummary(results), "utf8");
+  await fs.writeFile(jsonSummaryPath, `${JSON.stringify(createAuditDeviceMatrixReport(results), null, 2)}\n`, "utf8");
 
   if (!options.quiet) {
     console.log([
       "a11y-shiftleft device audit",
       ...results.map((result) => `${result.failed ? "failed" : "completed"} ${result.target.label}: ${result.outputDir}/a11y-report.html`),
-      `Summary: ${summaryPath}`
+      `Summary: ${summaryPath}`,
+      `JSON summary: ${jsonSummaryPath}`
     ].join("\n"));
   }
 
@@ -209,6 +227,45 @@ export async function runAuditDeviceMatrix(options: AuditOptions): Promise<{ fai
     failed: results.some((result) => result.failed),
     outputDir: baseOutputDir
   };
+}
+
+export function createAuditDeviceMatrixReport(
+  results: Array<{ target: AuditDeviceTarget; failed: boolean; outputDir: string; summary?: AuditDeviceSummary }>,
+  generatedAt = new Date().toISOString()
+): AuditDeviceMatrixReport {
+  return {
+    generatedAt,
+    profiles: results.map((result) => ({
+      label: result.target.label,
+      slug: result.target.slug,
+      ...(result.target.device ? { device: result.target.device } : {}),
+      status: result.failed ? "failed" : "completed",
+      outputDir: result.outputDir,
+      htmlReport: path.join(result.outputDir, "a11y-report.html"),
+      jsonReport: path.join(result.outputDir, "a11y-report.json"),
+      ...(result.summary ? { summary: result.summary } : {})
+    })),
+    totals: summarizeAuditDeviceMatrix(results)
+  };
+}
+
+function summarizeAuditDeviceMatrix(results: Array<{ summary?: AuditDeviceSummary }>): AuditDeviceSummary {
+  return results.reduce<AuditDeviceSummary>((totals, result) => {
+    if (!result.summary) return totals;
+    return {
+      total: totals.total + result.summary.total,
+      critical: totals.critical + result.summary.critical,
+      warning: totals.warning + result.summary.warning,
+      info: totals.info + result.summary.info,
+      states: (totals.states || 0) + (result.summary.states || 0)
+    };
+  }, {
+    total: 0,
+    critical: 0,
+    warning: 0,
+    info: 0,
+    states: 0
+  });
 }
 
 export function formatAuditDeviceMatrixSummary(results: Array<{ target: AuditDeviceTarget; failed: boolean; outputDir: string; summary?: AuditDeviceSummary }>): string {

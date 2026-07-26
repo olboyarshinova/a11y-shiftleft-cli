@@ -335,7 +335,8 @@ default tablet audit, or `--device "<Playwright device>"` when you need an exact
 Playwright preset. Use `--devices desktop mobile tablet` when you want separate
 reports for several responsive profiles in one command; each profile is written
 to its own subfolder under `--out`, with a local summary at
-`<out>/a11y-device-audit.md` that compares finding counts and explored states.
+`<out>/a11y-device-audit.md` and machine-readable
+`<out>/a11y-device-audit.json` that compare finding counts and explored states.
 
 Install the browser engine before using it, for example:
 

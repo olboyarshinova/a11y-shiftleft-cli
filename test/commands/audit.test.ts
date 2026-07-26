@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createProgram } from "../../dist/cli.js";
-import { formatAuditDeviceMatrixSummary, hasAuditDeviceMatrix, normalizeAuditUrl, resolveAuditDepthOption, resolveAuditDeviceTargets, resolveAuditProfileOptions } from "../../dist/commands/audit.js";
+import { createAuditDeviceMatrixReport, formatAuditDeviceMatrixSummary, hasAuditDeviceMatrix, normalizeAuditUrl, resolveAuditDepthOption, resolveAuditDeviceTargets, resolveAuditProfileOptions } from "../../dist/commands/audit.js";
 
 test("audit is the unified visual report command with optional extra formats", () => {
   const audit = createProgram().commands.find((command) => command.name() === "audit");
@@ -165,4 +165,58 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
   assert.match(markdown, /\| Device profile \| Status \| Findings \| States \| Report \|/);
   assert.match(markdown, /desktop \| completed \| 3 total \(1 critical, 2 warning, 0 info\) \| 4 \| \[Open report\]\(reports\/devices\/desktop\/a11y-report\.html\)/);
   assert.match(markdown, /mobile \(iPhone 13\) \| failed \| not available \| not available \| \[Open report\]\(reports\/devices\/mobile\/a11y-report\.html\)/);
+});
+
+test("createAuditDeviceMatrixReport exports machine-readable device results", () => {
+  const report = createAuditDeviceMatrixReport([
+    {
+      target: { label: "desktop", slug: "desktop" },
+      failed: false,
+      outputDir: "reports/devices/desktop",
+      summary: {
+        total: 3,
+        critical: 1,
+        warning: 2,
+        info: 0,
+        states: 4
+      }
+    },
+    {
+      target: { label: "mobile (iPhone 13)", slug: "mobile", device: "iPhone 13" },
+      failed: true,
+      outputDir: "reports/devices/mobile",
+      summary: {
+        total: 2,
+        critical: 0,
+        warning: 1,
+        info: 1,
+        states: 3
+      }
+    }
+  ], "2026-07-26T00:00:00.000Z");
+
+  assert.equal(report.generatedAt, "2026-07-26T00:00:00.000Z");
+  assert.deepEqual(report.totals, {
+    total: 5,
+    critical: 1,
+    warning: 3,
+    info: 1,
+    states: 7
+  });
+  assert.deepEqual(report.profiles[1], {
+    label: "mobile (iPhone 13)",
+    slug: "mobile",
+    device: "iPhone 13",
+    status: "failed",
+    outputDir: "reports/devices/mobile",
+    htmlReport: "reports/devices/mobile/a11y-report.html",
+    jsonReport: "reports/devices/mobile/a11y-report.json",
+    summary: {
+      total: 2,
+      critical: 0,
+      warning: 1,
+      info: 1,
+      states: 3
+    }
+  });
 });
