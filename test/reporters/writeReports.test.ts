@@ -843,7 +843,7 @@ test("writeReports supports a compact audit profile without legacy or duplicate 
   assert.match(markdown, /Not reviewed \| 1/);
   assert.match(markdown, /Structured fields available per item: tester, tested date, environment, per-step status, task outcome, first blocker, blocker severity, missing states, task evidence attachments, retest date, notes, evidence links, and remediation owner\./);
   assert.match(markdown, /## Audit Coverage/);
-  assert.match(markdown, /Screen reader \| Human review required/);
+  assert.match(markdown, /Screen reader \| \[Checklist ready\]\(#manual-review-checklist\)/);
   assert.match(markdown, /Dynamic announcements/);
   assert.match(markdown, /Form error states/);
   assert.match(markdown, /Image alternatives/);
@@ -856,6 +856,7 @@ test("writeReports supports a compact audit profile without legacy or duplicate 
   assert.match(markdown, /Embedded content/);
   assert.match(markdown, /Embedded content and complex graphics \| No iframe or canvas observed/);
   assert.match(markdown, /\[Checklist ready\]\(#manual-review-checklist\)/);
+  assert.match(markdown, /<a id="manual-checklist-item-manual-keyboard"><\/a>\*\*Complete the primary task with a keyboard\*\*/);
   assert.match(markdown, /Complete the primary task with a keyboard/);
   assert.equal(await exists(path.join(outputDir, "a11y-summary.csv")), true);
   assert.equal(await exists(path.join(outputDir, "a11y-pages.csv")), true);
@@ -863,6 +864,42 @@ test("writeReports supports a compact audit profile without legacy or duplicate 
   assert.equal(await exists(path.join(outputDir, "a11y-findings.csv")), true);
   assert.equal(await exists(path.join(outputDir, "a11y-metrics.csv")), false);
   assert.equal(await exists(path.join(outputDir, "a11y-remediation.csv")), false);
+});
+
+test("writeReports links Markdown coverage rows to matching checklist items", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-checklist-links-"));
+  const manualChecklist: ManualChecklist = {
+    generatedAt: "2026-06-21T00:00:00.000Z",
+    framework: "unknown",
+    urls: ["http://localhost:3000"],
+    items: [{
+      id: "screen-reader-smoke",
+      title: "Screen reader smoke test",
+      principle: "operable",
+      wcag: ["4.1.2"],
+      whyManual: "Screen-reader announcements require assistive technology review.",
+      steps: ["Complete one representative task with a screen reader."],
+      evidence: ["Screen-reader notes"],
+      review: {
+        status: "not-reviewed",
+        tester: "",
+        testedAt: "",
+        environment: "",
+        notes: "",
+        evidenceLinks: []
+      }
+    }]
+  };
+
+  await writeReports(outputDir, [], { framework: "unknown" }, {
+    formats: ["markdown"],
+    manualChecklist
+  });
+
+  const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+
+  assert.match(markdown, /Screen reader \| \[Checklist ready\]\(#manual-checklist-item-screen-reader-smoke\)/);
+  assert.match(markdown, /<a id="manual-checklist-item-screen-reader-smoke"><\/a>\*\*Screen reader smoke test\*\*/);
 });
 
 test("writeReports includes structured contrast evidence in JSON and Markdown", async () => {

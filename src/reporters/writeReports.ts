@@ -1044,6 +1044,7 @@ function formatCoverageMatrix(report: A11yReport): string {
     issue.ruleId === "label-content-name-mismatch" ||
     issue.ruleId === "control-name-inconsistent"
   )).length;
+  const manualChecklistItemIds = new Set(report.manualChecklist?.items.map((item) => item.id) || []);
   return `## Audit Coverage
 
 | Area | Status | Evidence or next step |
@@ -1056,15 +1057,39 @@ function formatCoverageMatrix(report: A11yReport): string {
 | Modal focus behavior | ${modalCount > 0 ? "Heuristic evidence collected" : "No opened modal observed"} | ${modalCount} state${modalCount === 1 ? "" : "s"} checked for name, initial focus, Escape, and restoration |
 | Dynamic announcements | ${announcementStates.length > 0 ? "Mutation evidence collected" : "No action evidence"} | ${announcementUpdates} meaningful live-region update${announcementUpdates === 1 ? "" : "s"} observed after ${announcementStates.length} action${announcementStates.length === 1 ? "" : "s"} |
 | Form error states | ${formStates.length > 0 ? "Rendered-state evidence collected" : "No forms observed"} | ${invalidFields} explicit invalid field${invalidFields === 1 ? "" : "s"}; ${unassociatedInvalidFields} without an exposed associated error |
-| Time limits and recovery | Human review required | Review timeout warnings, session extension, interrupted tasks, data preservation, and legal/financial/data-change confirmation |
-| Predictable actions and calm recovery | Human review required | Review task copy, button labels, errors, recovery paths, help access, and multi-step form clarity |
+| Time limits and recovery | ${manualChecklistStatus("time-limits-recovery", manualChecklistItemIds, report.manualChecklist)} | Review timeout warnings, session extension, interrupted tasks, data preservation, and legal/financial/data-change confirmation |
+| Predictable actions and calm recovery | ${manualChecklistStatus("cognitive-clarity", manualChecklistItemIds, report.manualChecklist)} | Review task copy, button labels, errors, recovery paths, help access, and multi-step form clarity |
 | Image alternatives | ${imageStates.length > 0 ? "Quality heuristics collected" : "No images observed"} | ${suspiciousImages} alternative${suspiciousImages === 1 ? "" : "s"} flagged for contextual human review |
 | Media and motion | ${mediaFindings > 0 ? "Automated findings plus manual review" : mediaStates.length > 0 ? "Manual review required" : "No media or active motion observed"} | ${mediaElements} audio/video element${mediaElements === 1 ? "" : "s"}; ${autoplayRisks} autoplay control risk${autoplayRisks === 1 ? "" : "s"} |
 | Voice and switch control readiness | Automated signals plus human review | ${voiceControlSignals} label-in-name or same-purpose naming signal${voiceControlSignals === 1 ? "" : "s"}; confirm representative tasks manually |
 | Embedded content and complex graphics | ${embeddedFindings > 0 || inaccessibleFrames > 0 ? "Automated findings plus owner review" : embeddedStates.length > 0 ? "Owner review recommended" : "No iframe or canvas observed"} | ${iframeCount} iframe${iframeCount === 1 ? "" : "s"}; ${inaccessibleFrames} unavailable; ${canvasGaps} canvas alternative gap${canvasGaps === 1 ? "" : "s"} |
-| Screen reader | Human review required | Test representative tasks with NVDA, JAWS, or VoiceOver |
-| Task completion worksheet | Human review required | Record task, environment, input method, inclusive constraint, outcome, blocker, owner, and retest date without unnecessary personal data |
-| Content and task usability | ${report.manualChecklist ? "[Checklist ready](#manual-review-checklist)" : "Not included"} | Record human evidence and outcome |`;
+| Screen reader | ${manualChecklistStatus("screen-reader", manualChecklistItemIds, report.manualChecklist)} | Test representative tasks with NVDA, JAWS, or VoiceOver |
+| Task completion worksheet | ${manualChecklistStatus("task-completion-worksheet", manualChecklistItemIds, report.manualChecklist)} | Record task, environment, input method, inclusive constraint, outcome, blocker, owner, and retest date without unnecessary personal data |
+| Content and task usability | ${manualChecklistStatus("content-usability", manualChecklistItemIds, report.manualChecklist, "Not included")} | Record human evidence and outcome |`;
+}
+
+function manualChecklistStatus(
+  coverageId: string,
+  manualChecklistItemIds: Set<string>,
+  checklist: A11yReport["manualChecklist"],
+  fallback = "Human review required"
+): string {
+  if (!checklist) return fallback;
+  return `[Checklist ready](#${manualChecklistAnchorForCoverage(coverageId, manualChecklistItemIds)})`;
+}
+
+function manualChecklistAnchorForCoverage(coverageId: string, manualChecklistItemIds: Set<string>): string {
+  const itemIdByCoverageId: Record<string, string> = {
+    "time-limits-recovery": "time-limits-recovery",
+    "cognitive-clarity": "cognitive-clarity",
+    "screen-reader": "screen-reader-smoke",
+    "task-completion-worksheet": "task-completion-worksheet",
+    "content-usability": "representative-user-test"
+  };
+  const itemId = itemIdByCoverageId[coverageId];
+  return itemId && manualChecklistItemIds.has(itemId)
+    ? `manual-checklist-item-${itemId}`
+    : "manual-review-checklist";
 }
 
 function formatManualReviewSummary(report: A11yReport): string {
@@ -1072,7 +1097,7 @@ function formatManualReviewSummary(report: A11yReport): string {
   if (!checklist) return "";
   const summary = summarizeManualReviewRecords(checklist);
   const items = checklist.items.map((item) =>
-    `- [ ] **${markdownInline(item.title)}** (WCAG ${markdownInline(item.wcag.join(", "))})`
+    `- [ ] <a id="manual-checklist-item-${markdownAnchorId(item.id)}"></a>**${markdownInline(item.title)}** (WCAG ${markdownInline(item.wcag.join(", "))})`
   ).join("\n");
 
   return `## Manual Review Checklist
@@ -1103,6 +1128,10 @@ function shellQuoteMarkdown(value: string): string {
 
 function markdownInline(value: string): string {
   return value.replace(/[\r\n]+/g, " ").replace(/\*/g, "\\*").trim();
+}
+
+function markdownAnchorId(value: string): string {
+  return value.replace(/[^A-Za-z0-9_-]/g, "-");
 }
 
 function countBy(items: DedupedIssue[], field: "source" | "severity" | "confidence" | "findingType" | "category"): Record<string, number> {
