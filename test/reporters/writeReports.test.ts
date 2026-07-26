@@ -846,9 +846,14 @@ test("writeReports supports a compact audit profile without legacy or duplicate 
   assert.match(markdown, /Screen reader \| \[Checklist ready\]\(#manual-review-checklist\)/);
   assert.match(markdown, /Dynamic announcements/);
   assert.match(markdown, /Form error states/);
+  assert.match(markdown, /Sensory and color-only instructions/);
+  assert.match(markdown, /Text spacing resilience/);
+  assert.match(markdown, /Account and authentication flow/);
   assert.match(markdown, /Image alternatives/);
   assert.match(markdown, /Media and motion/);
   assert.match(markdown, /Media and motion \| No media or active motion observed/);
+  assert.match(markdown, /Hover\/focus content/);
+  assert.match(markdown, /Pointer and dragging alternatives/);
   assert.match(markdown, /Time limits and recovery/);
   assert.match(markdown, /Predictable actions and calm recovery/);
   assert.match(markdown, /Voice and switch control readiness/);
@@ -900,6 +905,42 @@ test("writeReports links Markdown coverage rows to matching checklist items", as
 
   assert.match(markdown, /Screen reader \| \[Checklist ready\]\(#manual-checklist-item-screen-reader-smoke\)/);
   assert.match(markdown, /<a id="manual-checklist-item-screen-reader-smoke"><\/a>\*\*Screen reader smoke test\*\*/);
+});
+
+test("writeReports links new manual coverage rows to matching checklist items", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-expanded-checklist-links-"));
+  const manualChecklist: ManualChecklist = {
+    generatedAt: "2026-06-21T00:00:00.000Z",
+    framework: "unknown",
+    urls: ["http://localhost:3000"],
+    items: [{
+      id: "text-spacing-resilience",
+      title: "Text spacing resilience",
+      principle: "perceivable",
+      wcag: ["1.4.12"],
+      whyManual: "Text spacing requires visual review of real content.",
+      steps: ["Apply text spacing overrides and inspect the page."],
+      evidence: ["Text-spacing screenshot notes"],
+      review: {
+        status: "not-reviewed",
+        tester: "",
+        testedAt: "",
+        environment: "",
+        notes: "",
+        evidenceLinks: []
+      }
+    }]
+  };
+
+  await writeReports(outputDir, [], { framework: "unknown" }, {
+    formats: ["markdown"],
+    manualChecklist
+  });
+
+  const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+
+  assert.match(markdown, /Text spacing resilience \| \[Checklist ready\]\(#manual-checklist-item-text-spacing-resilience\)/);
+  assert.match(markdown, /Sensory and color-only instructions \| \[Checklist ready\]\(#manual-review-checklist\)/);
 });
 
 test("writeReports includes structured contrast evidence in JSON and Markdown", async () => {

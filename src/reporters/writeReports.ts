@@ -1057,10 +1057,15 @@ function formatCoverageMatrix(report: A11yReport): string {
 | Modal focus behavior | ${modalCount > 0 ? "Heuristic evidence collected" : "No opened modal observed"} | ${modalCount} state${modalCount === 1 ? "" : "s"} checked for name, initial focus, Escape, and restoration |
 | Dynamic announcements | ${announcementStates.length > 0 ? "Mutation evidence collected" : "No action evidence"} | ${announcementUpdates} meaningful live-region update${announcementUpdates === 1 ? "" : "s"} observed after ${announcementStates.length} action${announcementStates.length === 1 ? "" : "s"} |
 | Form error states | ${formStates.length > 0 ? "Rendered-state evidence collected" : "No forms observed"} | ${invalidFields} explicit invalid field${invalidFields === 1 ? "" : "s"}; ${unassociatedInvalidFields} without an exposed associated error |
+| Sensory and color-only instructions | ${manualChecklistStatus("sensory-color-instructions", manualChecklistItemIds, report.manualChecklist)} | Review instructions, legends, charts, filters, and validation copy for color-only, position-only, sound-only, or shape-only cues |
+| Text spacing resilience | ${manualChecklistStatus("text-spacing", manualChecklistItemIds, report.manualChecklist)} | Apply text-spacing overrides and confirm content, controls, and errors do not clip, overlap, or disappear |
+| Account and authentication flow | ${manualChecklistStatus("account-authentication-flow", manualChecklistItemIds, report.manualChecklist)} | Review login, checkout, account recovery, and multi-step forms for redundant entry and cognitive authentication barriers |
 | Time limits and recovery | ${manualChecklistStatus("time-limits-recovery", manualChecklistItemIds, report.manualChecklist)} | Review timeout warnings, session extension, interrupted tasks, data preservation, and legal/financial/data-change confirmation |
 | Predictable actions and calm recovery | ${manualChecklistStatus("cognitive-clarity", manualChecklistItemIds, report.manualChecklist)} | Review task copy, button labels, errors, recovery paths, help access, and multi-step form clarity |
 | Image alternatives | ${imageStates.length > 0 ? "Quality heuristics collected" : "No images observed"} | ${suspiciousImages} alternative${suspiciousImages === 1 ? "" : "s"} flagged for contextual human review |
 | Media and motion | ${mediaFindings > 0 ? "Automated findings plus manual review" : mediaStates.length > 0 ? "Manual review required" : "No media or active motion observed"} | ${mediaElements} audio/video element${mediaElements === 1 ? "" : "s"}; ${autoplayRisks} autoplay control risk${autoplayRisks === 1 ? "" : "s"} |
+| Hover/focus content | ${manualChecklistStatus("hover-focus-content", manualChecklistItemIds, report.manualChecklist)} | Review tooltips, menus, popovers, and disclosures for dismissible, hoverable, and persistent behavior |
+| Pointer and dragging alternatives | ${manualChecklistStatus("pointer-dragging", manualChecklistItemIds, report.manualChecklist)} | Review sliders, maps, carousels, drag-and-drop, swipe, and pointer-heavy controls for cancellation and non-drag alternatives |
 | Voice and switch control readiness | Automated signals plus human review | ${voiceControlSignals} label-in-name or same-purpose naming signal${voiceControlSignals === 1 ? "" : "s"}; confirm representative tasks manually |
 | Embedded content and complex graphics | ${embeddedFindings > 0 || inaccessibleFrames > 0 ? "Automated findings plus owner review" : embeddedStates.length > 0 ? "Owner review recommended" : "No iframe or canvas observed"} | ${iframeCount} iframe${iframeCount === 1 ? "" : "s"}; ${inaccessibleFrames} unavailable; ${canvasGaps} canvas alternative gap${canvasGaps === 1 ? "" : "s"} |
 | Screen reader | ${manualChecklistStatus("screen-reader", manualChecklistItemIds, report.manualChecklist)} | Test representative tasks with NVDA, JAWS, or VoiceOver |
@@ -1080,8 +1085,13 @@ function manualChecklistStatus(
 
 function manualChecklistAnchorForCoverage(coverageId: string, manualChecklistItemIds: Set<string>): string {
   const itemIdByCoverageId: Record<string, string> = {
+    "sensory-color-instructions": "sensory-color-instructions",
+    "text-spacing": "text-spacing-resilience",
+    "account-authentication-flow": "account-authentication-flow",
     "time-limits-recovery": "time-limits-recovery",
     "cognitive-clarity": "cognitive-clarity",
+    "hover-focus-content": "hover-focus-content",
+    "pointer-dragging": "pointer-dragging-alternatives",
     "screen-reader": "screen-reader-smoke",
     "task-completion-worksheet": "task-completion-worksheet",
     "content-usability": "representative-user-test"
