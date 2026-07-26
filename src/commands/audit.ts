@@ -368,14 +368,18 @@ export async function runAuditBrowserMatrix(options: AuditOptions): Promise<{ fa
 
   const summaryPath = path.join(baseOutputDir, "a11y-browser-audit.md");
   const jsonSummaryPath = path.join(baseOutputDir, "a11y-browser-audit.json");
+  const htmlSummaryPath = path.join(baseOutputDir, "a11y-browser-audit.html");
+  const matrixReport = createAuditBrowserMatrixReport(results, undefined, options);
   await fs.mkdir(baseOutputDir, { recursive: true });
   await fs.writeFile(summaryPath, formatAuditBrowserMatrixSummary(results, options), "utf8");
-  await fs.writeFile(jsonSummaryPath, `${JSON.stringify(createAuditBrowserMatrixReport(results, undefined, options), null, 2)}\n`, "utf8");
+  await fs.writeFile(jsonSummaryPath, `${JSON.stringify(matrixReport, null, 2)}\n`, "utf8");
+  await fs.writeFile(htmlSummaryPath, renderAuditMatrixHtmlSummary("Browser Audit Summary", "browser engine", matrixReport, baseOutputDir), "utf8");
 
   if (!options.quiet) {
     console.log([
       "a11y-shiftleft browser audit",
       ...results.map((result) => `${result.failed ? "failed" : "completed"} ${result.target.label}: ${result.outputDir}/a11y-report.html`),
+      `Visual summary: ${htmlSummaryPath}`,
       `Summary: ${summaryPath}`,
       `JSON summary: ${jsonSummaryPath}`
     ].join("\n"));
@@ -515,14 +519,18 @@ export async function runAuditDeviceMatrix(options: AuditOptions): Promise<{ fai
   }
   const summaryPath = path.join(baseOutputDir, "a11y-device-audit.md");
   const jsonSummaryPath = path.join(baseOutputDir, "a11y-device-audit.json");
+  const htmlSummaryPath = path.join(baseOutputDir, "a11y-device-audit.html");
+  const matrixReport = createAuditDeviceMatrixReport(results, undefined, options);
   await fs.mkdir(baseOutputDir, { recursive: true });
   await fs.writeFile(summaryPath, formatAuditDeviceMatrixSummary(results, options), "utf8");
-  await fs.writeFile(jsonSummaryPath, `${JSON.stringify(createAuditDeviceMatrixReport(results, undefined, options), null, 2)}\n`, "utf8");
+  await fs.writeFile(jsonSummaryPath, `${JSON.stringify(matrixReport, null, 2)}\n`, "utf8");
+  await fs.writeFile(htmlSummaryPath, renderAuditMatrixHtmlSummary("Device Audit Summary", "device profile", matrixReport, baseOutputDir), "utf8");
 
   if (!options.quiet) {
     console.log([
       "a11y-shiftleft device audit",
       ...results.map((result) => `${result.failed ? "failed" : "completed"} ${result.target.label}: ${result.outputDir}/a11y-report.html`),
+      `Visual summary: ${htmlSummaryPath}`,
       `Summary: ${summaryPath}`,
       `JSON summary: ${jsonSummaryPath}`
     ].join("\n"));
@@ -1153,6 +1161,168 @@ function formatVisualComparisonQueue(queue: AuditMatrixVisualComparison[]): stri
   ].join("\n");
 }
 
+export function renderAuditMatrixHtmlSummary(
+  title: string,
+  profileKind: string,
+  report: Pick<AuditBrowserMatrixReport | AuditDeviceMatrixReport, "generatedAt" | "profiles" | "totals" | "comparison">,
+  baseOutputDir = "."
+): string {
+  const visualQueue = report.comparison.visualComparisonQueue;
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${escapeHtml(title)}</title>
+  <style>
+    :root { color-scheme: light; --bg: #f6f8fb; --panel: #ffffff; --text: #172033; --muted: #526071; --border: #d8e0eb; --critical: #e0002a; --warning: #c84f00; --info: #075dc8; --ok: #0b7a4b; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    main { width: min(1180px, calc(100vw - 32px)); margin: 0 auto; padding: 28px 0 40px; }
+    h1 { margin: 0 0 8px; font-size: 30px; line-height: 1.15; }
+    h2 { margin: 0 0 12px; font-size: 20px; }
+    h3 { margin: 0 0 8px; font-size: 16px; }
+    a { color: #075dc8; }
+    .muted { color: var(--muted); }
+    .meta { margin: 0 0 20px; color: var(--muted); }
+    .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 18px 0; }
+    .summary-card, .panel, .evidence-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; }
+    .summary-card { padding: 12px 14px; }
+    .summary-card strong { display: block; font-size: 22px; line-height: 1.1; }
+    .critical { color: var(--critical); }
+    .warning { color: var(--warning); }
+    .info { color: var(--info); }
+    .ok { color: var(--ok); }
+    .panel { padding: 16px; margin-top: 16px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-top: 1px solid var(--border); padding: 8px; text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-weight: 700; }
+    .comparison-card { display: grid; gap: 12px; }
+    .comparison-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+    .evidence-card { overflow: hidden; }
+    .evidence-card header { display: flex; justify-content: space-between; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    .evidence-card img { display: block; width: 100%; max-height: 460px; object-fit: contain; background: #eef2f7; border-bottom: 1px solid var(--border); }
+    .evidence-card dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 10px; margin: 0; padding: 10px 12px 12px; }
+    .evidence-card dt { color: var(--muted); }
+    .evidence-card dd { margin: 0; overflow-wrap: anywhere; }
+    .empty { padding: 16px; background: #fffdf4; border: 1px solid #f4d28e; border-radius: 8px; color: #6d3a00; }
+    @media (max-width: 760px) {
+      main { width: min(100vw - 20px, 1180px); padding-top: 18px; }
+      .summary-grid, .comparison-grid { grid-template-columns: 1fr; }
+      table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>${escapeHtml(title)}</h1>
+    <p class="meta">Generated <time datetime="${escapeAttribute(report.generatedAt)}">${escapeHtml(report.generatedAt)}</time>. Use this local page to compare ${escapeHtml(profileKind)} visual evidence side by side.</p>
+    ${renderAuditMatrixHtmlTotals(report.totals)}
+    ${renderAuditMatrixHtmlProfiles(report.profiles, profileKind, baseOutputDir)}
+    ${renderAuditMatrixHtmlVisualQueue(visualQueue, report.profiles, baseOutputDir)}
+  </main>
+</body>
+</html>
+`;
+}
+
+function renderAuditMatrixHtmlTotals(totals: AuditDeviceSummary): string {
+  return `<section class="summary-grid" aria-label="Summary totals">
+    <div class="summary-card"><strong>${totals.total}</strong><span>Total findings</span></div>
+    <div class="summary-card"><strong class="${totals.critical ? "critical" : "ok"}">${totals.critical}</strong><span>Critical</span></div>
+    <div class="summary-card"><strong class="${totals.warning ? "warning" : "ok"}">${totals.warning}</strong><span>Warning</span></div>
+    <div class="summary-card"><strong class="${totals.info ? "info" : "ok"}">${totals.info}</strong><span>Info</span></div>
+  </section>`;
+}
+
+function renderAuditMatrixHtmlProfiles(
+  profiles: Array<{ label: string; status: string; outputDir: string; htmlReport: string; summary?: AuditDeviceSummary }>,
+  profileKind: string,
+  baseOutputDir: string
+): string {
+  return `<section class="panel">
+    <h2>${escapeHtml(capitalizeWords(profileKind))} Reports</h2>
+    <table aria-label="${escapeAttribute(profileKind)} reports">
+      <thead><tr><th>${escapeHtml(capitalizeWords(profileKind))}</th><th>Status</th><th>Findings</th><th>States</th><th>Report</th></tr></thead>
+      <tbody>${profiles.map((profile) => `<tr>
+        <th scope="row">${escapeHtml(profile.label)}</th>
+        <td>${escapeHtml(profile.status)}</td>
+        <td>${escapeHtml(formatDeviceSummaryCounts(profile))}</td>
+        <td>${escapeHtml(formatDeviceSummaryStates(profile))}</td>
+        <td><a href="${escapeAttribute(relativeMatrixPath(baseOutputDir, profile.htmlReport))}">Open report</a></td>
+      </tr>`).join("")}</tbody>
+    </table>
+  </section>`;
+}
+
+function renderAuditMatrixHtmlVisualQueue(
+  queue: AuditMatrixVisualComparison[],
+  profiles: Array<{ label: string; outputDir: string }>,
+  baseOutputDir: string
+): string {
+  if (queue.length === 0) {
+    return `<section class="panel"><h2>Side-by-side Review</h2><p class="empty">No shared states with different finding counts were available for visual comparison.</p></section>`;
+  }
+  return `<section class="panel">
+    <h2>Side-by-side Review</h2>
+    ${queue.map((item) => `<article class="comparison-card" aria-labelledby="comparison-${escapeAttribute(slugifyMatrixId(item.stateKey))}">
+      <div>
+        <h3 id="comparison-${escapeAttribute(slugifyMatrixId(item.stateKey))}">${escapeHtml(item.label)}</h3>
+        <p class="muted">${escapeHtml(item.compare)} · ${escapeHtml(`${item.spread} finding spread at depth ${item.depth}`)}<br>${escapeHtml(item.screenshotReview)}</p>
+      </div>
+      <div class="comparison-grid">
+        ${item.visualEvidence.map((evidence) => renderAuditMatrixHtmlEvidenceCard(evidence, profiles, baseOutputDir, item.label)).join("")}
+      </div>
+    </article>`).join("")}
+  </section>`;
+}
+
+function renderAuditMatrixHtmlEvidenceCard(
+  evidence: AuditMatrixVisualEvidence,
+  profiles: Array<{ label: string; outputDir: string }>,
+  baseOutputDir: string,
+  stateLabel: string
+): string {
+  const screenshotSrc = evidence.screenshot ? resolveAuditMatrixScreenshotSrc(evidence, profiles, baseOutputDir) : undefined;
+  return `<article class="evidence-card">
+    <header>
+      <strong>${escapeHtml(evidence.label)}</strong>
+      <a href="${escapeAttribute(relativeMatrixPath(baseOutputDir, evidence.report))}">Open state</a>
+    </header>
+    ${screenshotSrc ? `<a href="${escapeAttribute(screenshotSrc)}"><img src="${escapeAttribute(screenshotSrc)}" alt="${escapeAttribute(`${evidence.label} screenshot evidence for ${stateLabel}`)}" loading="lazy"></a>` : `<p class="empty">No screenshot image was captured for this profile.</p>`}
+    <dl>
+      <dt>Findings</dt><dd>${evidence.count}</dd>
+      <dt>Screenshot</dt><dd>${escapeHtml(evidence.screenshotMode)}</dd>
+      <dt>Focused evidence</dt><dd>${evidence.screenshotEvidenceCount}</dd>
+      ${evidence.visualDuplicateOf ? `<dt>Reuse</dt><dd>${escapeHtml(evidence.visualDuplicateOf)}</dd>` : ""}
+    </dl>
+  </article>`;
+}
+
+function resolveAuditMatrixScreenshotSrc(
+  evidence: AuditMatrixVisualEvidence,
+  profiles: Array<{ label: string; outputDir: string }>,
+  baseOutputDir: string
+): string {
+  const profile = profiles.find((candidate) => candidate.label === evidence.label);
+  if (!profile || !evidence.screenshot) return evidence.screenshot || "";
+  return relativeMatrixPath(baseOutputDir, path.join(profile.outputDir, evidence.screenshot));
+}
+
+function relativeMatrixPath(baseOutputDir: string, targetPath: string): string {
+  const [filePath, hash = ""] = targetPath.split("#", 2);
+  const relative = path.relative(baseOutputDir, filePath).replace(/\\/g, "/") || path.basename(filePath);
+  return `${relative}${hash ? `#${hash}` : ""}`;
+}
+
+function slugifyMatrixId(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "state";
+}
+
+function capitalizeWords(value: string): string {
+  return value.replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 function formatAuditMatrixRuleTable(rules: AuditMatrixRuleDifference[]): string {
   if (rules.length === 0) return "No rule-level differences found in the available summaries.";
   return [
@@ -1335,6 +1505,19 @@ function escapeMarkdownTableCell(value: string): string {
 
 function escapeMarkdownLink(value: string): string {
   return value.replace(/\)/g, "%29").replace(/[\r\n]+/g, "");
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function escapeAttribute(value: string): string {
+  return escapeHtml(value).replace(/`/g, "&#96;");
 }
 
 export function hasAuditDeviceMatrix(options: Pick<AuditOptions, "devices">): boolean {

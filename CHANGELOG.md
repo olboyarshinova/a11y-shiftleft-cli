@@ -28,6 +28,8 @@
   full-page/viewport hints and duplicate-screenshot reuse signals.
 - Added screenshot review notes and machine-readable visual evidence pairs to
   matrix comparison queues.
+- Added local HTML summaries for device and browser matrix audits with
+  side-by-side visual evidence cards.
 
 ## 0.9.0
 

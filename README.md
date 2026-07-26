@@ -336,15 +336,13 @@ default tablet audit, or `--device "<Playwright device>"` when you need an exact
 Playwright preset. Use `--devices desktop mobile tablet` when you want separate
 reports for several responsive profiles in one command; each profile is written
 to its own subfolder under `--out`, with a local summary at
-`<out>/a11y-device-audit.md` and machine-readable
-`<out>/a11y-device-audit.json` that compare finding counts, explored states,
-rule differences, and the highest-priority page/state to review in each
-profile. The summary also calls out profile-specific rule signals and includes
-coverage-overlap counts, profile-specific page/state signals, and copy-paste
-commands with reproduction notes to rerun and confirm one profile. It also
-highlights shared UI states whose finding counts differ between profiles, with
-direct links to the matching visual evidence, screenshot hints, screenshot
-review notes, and a short comparison queue.
+`<out>/a11y-device-audit.html`, plus Markdown and JSON summaries. These compare
+finding counts, explored states, rule differences, and the highest-priority
+page/state to review in each profile. The summary also calls out
+profile-specific rule signals and includes coverage-overlap counts,
+profile-specific page/state signals, copy-paste commands, direct links to
+matching visual evidence, screenshot hints, screenshot review notes, and a short
+side-by-side comparison queue.
 
 Install the browser engine before using it, for example:
 
@@ -354,14 +352,12 @@ npx playwright install webkit
 
 Use `--browsers chromium firefox webkit` when you want separate reports for
 several browser engines in one command. This writes one report per browser plus
-local Markdown and JSON summaries under `--out`, including a difference review
-for browser-specific rule signals and the first page/state to inspect in each
-browser report. The summary also calls out browser-only rule signals and
-coverage-overlap counts, browser-only page/state signals, and copy-paste
-commands with reproduction notes to rerun and confirm one browser engine. It
-also highlights shared UI states whose finding counts differ between browsers,
-with direct links to the matching visual evidence, screenshot hints, screenshot
-review notes, and a short comparison queue.
+local HTML, Markdown, and JSON summaries under `--out`, including a difference
+review for browser-specific rule signals and the first page/state to inspect in
+each browser report. The summary also calls out browser-only rule signals and
+coverage-overlap counts, browser-only page/state signals, copy-paste commands,
+direct links to matching visual evidence, screenshot hints, screenshot review
+notes, and a short side-by-side comparison queue.
 
 Audit profiles are shortcuts:
 

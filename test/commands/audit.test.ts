@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createProgram } from "../../dist/cli.js";
-import { createAuditBrowserMatrixReport, createAuditDeviceMatrixReport, formatAuditBrowserMatrixSummary, formatAuditDeviceMatrixSummary, hasAuditBrowserMatrix, hasAuditDeviceMatrix, normalizeAuditUrl, resolveAuditBrowserTargets, resolveAuditDepthOption, resolveAuditDeviceTargets, resolveAuditProfileOptions } from "../../dist/commands/audit.js";
+import { createAuditBrowserMatrixReport, createAuditDeviceMatrixReport, formatAuditBrowserMatrixSummary, formatAuditDeviceMatrixSummary, hasAuditBrowserMatrix, hasAuditDeviceMatrix, normalizeAuditUrl, renderAuditMatrixHtmlSummary, resolveAuditBrowserTargets, resolveAuditDepthOption, resolveAuditDeviceTargets, resolveAuditProfileOptions } from "../../dist/commands/audit.js";
 
 test("audit is the unified visual report command with optional extra formats", () => {
   const audit = createProgram().commands.find((command) => command.name() === "audit");
@@ -416,6 +416,63 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
       ]
     }
   });
+});
+
+test("renderAuditMatrixHtmlSummary creates side-by-side visual evidence links", () => {
+  const report = createAuditDeviceMatrixReport([
+    {
+      target: { label: "desktop", slug: "desktop" },
+      failed: false,
+      outputDir: "reports/devices/desktop",
+      summary: {
+        total: 3,
+        critical: 1,
+        warning: 2,
+        info: 0,
+        states: 4,
+        topRules: [
+          { ruleId: "color-contrast", severity: "critical", count: 2 }
+        ],
+        topStates: [
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 2, screenshot: "screenshots/state-1.png", screenshotEvidenceCount: 1, screenshotFullPage: true }
+        ],
+        topPages: [
+          { page: "https://example.com/", total: 3, critical: 1, warning: 2, info: 0 }
+        ]
+      }
+    },
+    {
+      target: { label: "mobile (iPhone 13)", slug: "mobile", device: "iPhone 13" },
+      failed: false,
+      outputDir: "reports/devices/mobile",
+      summary: {
+        total: 1,
+        critical: 0,
+        warning: 1,
+        info: 0,
+        states: 3,
+        topRules: [
+          { ruleId: "target-size", severity: "warning", count: 1 }
+        ],
+        topStates: [
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 1, screenshot: "screenshots/state-1-mobile.png", screenshotEvidenceCount: 1, screenshotFullPage: false }
+        ],
+        topPages: [
+          { page: "https://example.com/", total: 1, critical: 0, warning: 1, info: 0 }
+        ]
+      }
+    }
+  ], "2026-07-26T00:00:00.000Z");
+
+  const html = renderAuditMatrixHtmlSummary("Device Audit Summary", "device profile", report, "reports/devices");
+
+  assert.match(html, /<title>Device Audit Summary<\/title>/);
+  assert.match(html, /Side-by-side Review/);
+  assert.match(html, /desktop\/a11y-report\.html#state-1/);
+  assert.match(html, /mobile\/a11y-report\.html#state-1/);
+  assert.match(html, /desktop\/screenshots\/state-1\.png/);
+  assert.match(html, /mobile\/screenshots\/state-1-mobile\.png/);
+  assert.match(html, /Screenshot capture modes differ; compare the linked full-page and viewport evidence carefully/);
 });
 
 test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
