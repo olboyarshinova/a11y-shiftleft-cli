@@ -116,10 +116,12 @@ Generated Markdown reports summarize manual review status counts (`not-reviewed`
 `pass`, `fail`, and `not-applicable`) so teams can track follow-up work without
 sending review evidence to an external service.
 
-Each explored state also receives a bounded 400% reflow proxy at 320 CSS pixels. It
-records document width, horizontal overflow, and text containers that appear to
-clip meaningful content. These are heuristic WCAG 1.4.10 signals: confirm them
-at 400% zoom before treating intentional truncation as a defect.
+Each explored state also receives bounded zoom and reflow evidence. The report
+compares a 200% resize-text proxy with a 400% reflow proxy at 320 CSS pixels,
+then records document width, horizontal overflow, clipped text candidates, and
+fixed or sticky overlap candidates. These are heuristic WCAG 1.4.4 and 1.4.10
+signals: confirm them manually before treating intentional truncation or sticky
+overlap as a defect.
 
 For modals reached through safe exploration, the report records the dialog
 name, initial focused element, isolated Escape result, and focus restoration to

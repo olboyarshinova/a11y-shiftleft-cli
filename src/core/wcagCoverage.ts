@@ -144,6 +144,9 @@ function collectHeuristicEvidence(options: WcagCoverageOptions): Map<string, str
   const states = options.exploration?.states || [];
 
   if (states.some((state) => state.reflow)) addEvidence(evidence, ["1.4.10"], "400% reflow and sticky-overlap heuristic");
+  if (states.some((state) => state.reflow?.zoomChecks?.some((check) => check.zoom === "200%"))) {
+    addEvidence(evidence, ["1.4.4"], "200% resize-text heuristic");
+  }
   if (states.some((state) => state.forcedColors)) {
     addEvidence(evidence, ["1.4.1", "1.4.11", "2.4.7", "2.4.11"], "forced-colors heuristic");
   }

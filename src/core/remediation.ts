@@ -272,6 +272,18 @@ const RULE_HINTS: Record<string, RemediationHint> = {
       "https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html"
     ]
   },
+  "resize-text-200-risk": {
+    summary: "Review whether content remains readable and operable when text or page zoom reaches 200%.",
+    howToFix: [
+      "Avoid fixed-height text containers, fixed-width cards, and clipped controls that break when text size increases.",
+      "Let text wrap, increase available line height, and allow containers to grow without hiding labels, errors, or actions.",
+      "Confirm manually at 200% browser zoom or equivalent text-size settings because automated checks can only flag layout risk signals."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/resize-text.html",
+      "https://www.w3.org/WAI/WCAG22/Understanding/reflow.html"
+    ]
+  },
   "forced-colors-focus-indicator-risk": {
     summary: "Make the focused control visible when system forced-colors or high-contrast mode is active.",
     howToFix: [

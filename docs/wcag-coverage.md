@@ -68,13 +68,13 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
 | 1.4.1 Use of Color | A | Automated + mapped | axe `link-in-text-block` detects only a subset |
 | 1.4.2 Audio Control | A | Automated + rendered evidence | axe `no-autoplay-audio` plus autoplay, muted, and controls state without duplicate findings |
 | 1.4.3 Contrast (Minimum) | AA | Automated + mapped | axe `color-contrast` with measured and required ratios |
-| 1.4.4 Resize Text | AA | Automated + mapped; manual checklist | axe viewport signal plus 200% zoom review |
+| 1.4.4 Resize Text | AA | Automated + heuristic + manual checklist | axe viewport signal plus 200% zoom comparison for overflow, clipped text, and overlap review |
 | 1.4.5 Images of Text | AA | Gap | Image purpose and rendered text require review |
 | 1.4.6 Contrast (Enhanced) | AAA | Automated, metadata gap | axe `color-contrast-enhanced`; outside current target |
 | 1.4.7 Low or No Background Audio | AAA | Gap | Outside current target |
 | 1.4.8 Visual Presentation | AAA | Gap | Outside current target |
 | 1.4.9 Images of Text (No Exception) | AAA | Gap | Outside current target |
-| 1.4.10 Reflow | AA | Manual checklist | 320 CSS pixel and zoom review; no automated viewport assertion |
+| 1.4.10 Reflow | AA | Heuristic + manual checklist | 400% / 320 CSS pixel evidence for overflow, clipped text, and fixed or sticky overlap |
 | 1.4.11 Non-text Contrast | AA | Gap | No reliable control, focus-indicator, or graphical-object contrast check |
 | 1.4.12 Text Spacing | AA | Automated + mapped | axe `avoid-inline-spacing` is only a limited signal |
 | 1.4.13 Content on Hover or Focus | AA | Gap | Hover/focus dismissal, persistence, and pointer movement are not exercised |

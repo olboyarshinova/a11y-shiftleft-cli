@@ -92,10 +92,11 @@ Section 508 certification.
   WCAG Evidence Gaps table, and the visual report now shows a compact
   WCAG Evidence Gaps panel. Next, keep the full JSON matrix complete while
   validating the visual wording in real reviews.
-- Continue extending reflow evidence beyond the current 400% / 320 CSS px
-  simulation. Current evidence includes horizontal overflow, clipped text, and
-  bounded fixed/sticky overlap candidates; next, add explicit 200% zoom
-  comparison without making the scan too slow.
+- Continue extending reflow and resize-text evidence beyond the current 200%
+  zoom and 400% / 320 CSS px simulation. Current evidence includes horizontal
+  overflow, clipped text, bounded fixed/sticky overlap candidates, and compact
+  200% vs 400% comparison rows; next, validate speed and false-positive wording
+  in real responsive layouts.
 - Continue cross-browser evidence beyond the current `--browser` and
   `--browsers` profile runs. Current matrix summaries include rule-level
   difference review and profile-specific review hotspots across generated

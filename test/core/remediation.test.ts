@@ -152,6 +152,7 @@ test("getRemediationHint explains reflow and clipped text findings", () => {
   const overflow = getRemediationHint("layout-horizontal-overflow", getWcagCriteria(["1.4.10"]), "react");
   const clipped = getRemediationHint("layout-clipped-text", getWcagCriteria(["1.4.10"]), "unknown");
   const overlap = getRemediationHint("layout-fixed-sticky-overlap", getWcagCriteria(["1.4.10"]), "unknown");
+  const resizeText = getRemediationHint("resize-text-200-risk", getWcagCriteria(["1.4.4"]), "unknown");
 
   assert.match(overflow.summary, /320 CSS pixel/);
   assert.equal(overflow.docs.some((url) => url.includes("reflow")), true);
@@ -159,6 +160,8 @@ test("getRemediationHint explains reflow and clipped text findings", () => {
   assert.equal(clipped.howToFix.some((step) => step.includes("fixed heights")), true);
   assert.match(overlap.summary, /fixed or sticky/);
   assert.equal(overlap.howToFix.some((step) => step.includes("scroll-margin")), true);
+  assert.match(resizeText.summary, /200%/);
+  assert.equal(resizeText.docs.some((url) => url.includes("resize-text")), true);
 });
 
 test("getRemediationHint explains invalid field error association", () => {

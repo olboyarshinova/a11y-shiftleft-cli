@@ -965,6 +965,17 @@ export interface ReflowOverlapElement {
   text?: string;
 }
 
+export interface ReflowZoomCheck {
+  label: string;
+  zoom: "200%" | "400%";
+  viewportWidth: number;
+  viewportHeight: number;
+  documentWidth: number;
+  horizontalOverflowPx: number;
+  clippedTextCount: number;
+  fixedStickyOverlapCount: number;
+}
+
 export interface ReflowEvidence {
   viewportWidth: number;
   viewportHeight: number;
@@ -974,6 +985,7 @@ export interface ReflowEvidence {
   clippedTextSample: ReflowClippedElement[];
   fixedStickyOverlapCount?: number;
   fixedStickyOverlapSample?: ReflowOverlapElement[];
+  zoomChecks?: ReflowZoomCheck[];
 }
 
 export type ForcedColorsConcern =

@@ -36,7 +36,17 @@ test("summarizeWcagCoverage separates automated, heuristic, and manual evidence"
           documentWidth: 360,
           horizontalOverflowPx: 40,
           clippedTextCount: 0,
-          clippedTextSample: []
+          clippedTextSample: [],
+          zoomChecks: [{
+            label: "200% resize text comparison",
+            zoom: "200%",
+            viewportWidth: 640,
+            viewportHeight: 800,
+            documentWidth: 660,
+            horizontalOverflowPx: 20,
+            clippedTextCount: 0,
+            fixedStickyOverlapCount: 0
+          }]
         }
       }],
       edges: [],
@@ -71,6 +81,10 @@ test("summarizeWcagCoverage separates automated, heuristic, and manual evidence"
   assert.equal(reflow?.status, "heuristic");
   assert.equal(reflow?.findingCount, 1);
   assert.deepEqual(reflow?.evidenceSources.includes("400% reflow and sticky-overlap heuristic"), true);
+
+  const resizeText = coverage.criteria.find((criterion) => criterion.id === "1.4.4");
+  assert.equal(resizeText?.status, "automated");
+  assert.deepEqual(resizeText?.evidenceSources.includes("200% resize-text heuristic"), true);
 
   const errorSuggestion = coverage.criteria.find((criterion) => criterion.id === "3.3.3");
   assert.equal(errorSuggestion?.status, "manual-required");

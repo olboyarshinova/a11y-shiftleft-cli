@@ -53,6 +53,25 @@ const graph = {
           position: "sticky",
           overlapAreaPx: 240,
           text: "Checkout"
+        }],
+        zoomChecks: [{
+          label: "200% resize text comparison",
+          zoom: "200%",
+          viewportWidth: 640,
+          viewportHeight: 800,
+          documentWidth: 660,
+          horizontalOverflowPx: 20,
+          clippedTextCount: 1,
+          fixedStickyOverlapCount: 0
+        }, {
+          label: "400% reflow comparison",
+          zoom: "400%",
+          viewportWidth: 320,
+          viewportHeight: 800,
+          documentWidth: 360,
+          horizontalOverflowPx: 40,
+          clippedTextCount: 1,
+          fixedStickyOverlapCount: 1
         }]
       },
       modalFocus: {
@@ -2254,7 +2273,9 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /class="coverage-findings">0<\/td>/);
   assert.match(html, /Accessibility tree evidence/);
   assert.match(html, /Unnamed interactive/);
-  assert.match(html, /Reflow evidence at 400% \(320 CSS px simulation\)/);
+  assert.match(html, /Reflow and zoom evidence \(320 CSS px 400% simulation\)/);
+  assert.match(html, /Zoom comparison/);
+  assert.match(html, /<strong>200%<\/strong> \(640 CSS px\): 20px overflow, 1 clipped text candidate, 0 fixed\/sticky overlap candidates/);
   assert.match(html, /Clipped account instructions/);
   assert.match(html, /Fixed\/sticky overlap candidates/);
   assert.match(html, /Fixed or sticky overlap candidates/);
@@ -2339,7 +2360,19 @@ test("renderExplorationHtml hides successful per-state diagnostic details", () =
         documentWidth: 320,
         horizontalOverflowPx: 0,
         clippedTextCount: 0,
-        clippedTextSample: []
+        clippedTextSample: [],
+        fixedStickyOverlapCount: 0,
+        fixedStickyOverlapSample: [],
+        zoomChecks: [{
+          label: "200% resize text comparison",
+          zoom: "200%" as const,
+          viewportWidth: 640,
+          viewportHeight: 800,
+          documentWidth: 640,
+          horizontalOverflowPx: 0,
+          clippedTextCount: 0,
+          fixedStickyOverlapCount: 0
+        }]
       },
       formErrors: {
         ...graph.states[0].formErrors,
@@ -2361,11 +2394,11 @@ test("renderExplorationHtml hides successful per-state diagnostic details", () =
   const html = renderExplorationHtml(cleanGraph, []);
 
   assert.doesNotMatch(html, /<summary>Accessibility tree evidence<\/summary>/);
-  assert.doesNotMatch(html, /<summary>Reflow evidence at 400% \(320 CSS px simulation\)<\/summary>/);
+  assert.doesNotMatch(html, /<summary>Reflow and zoom evidence \(320 CSS px 400% simulation\)<\/summary>/);
   assert.doesNotMatch(html, /<summary>Form error evidence<\/summary>/);
   assert.doesNotMatch(html, /<summary>Image alternative-text evidence<\/summary>/);
   assert.match(html, /Audit Coverage/);
-  assert.match(html, /1 state checked for overflow, clipped text, and fixed or sticky overlap/);
+  assert.match(html, /1 state checked for 200% zoom, 400% reflow, clipped text, and fixed or sticky overlap/);
   assert.match(html, /0 image alternatives flagged for human review/);
   assert.match(html, /coverage-row-state-needs-review" data-coverage-review="media-motion"[\s\S]*?Media and motion[\s\S]*?Manual review required/);
   assert.match(html, /coverage-row-state-needs-review" data-coverage-review="embedded-content"[\s\S]*?Embedded content and complex graphics[\s\S]*?Owner review recommended/);

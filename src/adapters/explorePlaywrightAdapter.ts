@@ -1863,12 +1863,16 @@ async function auditReflow(
   }
 ): Promise<{ evidence: ReflowEvidence; issues: Issue[] }> {
   const originalViewport = page.viewportSize() || { width: 1280, height: 720 };
-  const viewport = { width: 320, height: 800 };
+  const resizeTextViewport = { width: 640, height: 800 };
+  const reflowViewport = { width: 320, height: 800 };
 
   try {
-    await page.setViewportSize(viewport);
-    await page.waitForTimeout(100);
-    const measuredEvidence = await page.evaluate(({ viewportWidth, viewportHeight, interactiveSelector }) => {
+    const measureAtViewport = async (
+      viewport: { width: number; height: number }
+    ): Promise<Omit<ReflowEvidence, "zoomChecks">> => {
+      await page.setViewportSize(viewport);
+      await page.waitForTimeout(100);
+      const measuredEvidence = await page.evaluate(({ viewportWidth, viewportHeight, interactiveSelector }) => {
       function selectorFor(element: Element): string {
         const id = element.getAttribute("id");
         if (id) return `[id="${id.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"]`;
@@ -2005,10 +2009,20 @@ async function auditReflow(
         fixedStickyOverlapCount: overlapCandidates.length,
         fixedStickyOverlapSample: overlapCandidates
       };
-    }, { viewportWidth: viewport.width, viewportHeight: viewport.height, interactiveSelector: INTERACTIVE_SELECTOR });
-    const evidence = {
+      }, { viewportWidth: viewport.width, viewportHeight: viewport.height, interactiveSelector: INTERACTIVE_SELECTOR });
+      return {
       ...measuredEvidence,
       horizontalOverflowPx: normalizeReflowOverflow(measuredEvidence.horizontalOverflowPx)
+    };
+    };
+    const resizeTextEvidence = await measureAtViewport(resizeTextViewport);
+    const measuredEvidence = await measureAtViewport(reflowViewport);
+    const evidence: ReflowEvidence = {
+      ...measuredEvidence,
+      zoomChecks: [
+        reflowZoomCheck("200% resize text comparison", "200%", resizeTextEvidence),
+        reflowZoomCheck("400% reflow comparison", "400%", measuredEvidence)
+      ]
     };
     const common = {
       source: "layout",
@@ -2034,6 +2048,30 @@ async function auditReflow(
         selector: "html",
         confidenceReason: "The rendered document exceeded a 320 CSS pixel viewport; horizontally scrolling content can indicate a WCAG 1.4.10 reflow failure.",
         message: `Page content is ${evidence.horizontalOverflowPx}px wider than the 320px reflow viewport.`
+      });
+    }
+
+    const resizeTextCheck = evidence.zoomChecks?.find((check) => check.zoom === "200%");
+    if (resizeTextCheck && (
+      resizeTextCheck.horizontalOverflowPx > 1 ||
+      resizeTextCheck.clippedTextCount > 0 ||
+      resizeTextCheck.fixedStickyOverlapCount > 0
+    )) {
+      const signals = [
+        resizeTextCheck.horizontalOverflowPx > 1 ? `${resizeTextCheck.horizontalOverflowPx}px horizontal overflow` : "",
+        resizeTextCheck.clippedTextCount > 0 ? `${resizeTextCheck.clippedTextCount} clipped text candidate${resizeTextCheck.clippedTextCount === 1 ? "" : "s"}` : "",
+        resizeTextCheck.fixedStickyOverlapCount > 0 ? `${resizeTextCheck.fixedStickyOverlapCount} fixed/sticky overlap candidate${resizeTextCheck.fixedStickyOverlapCount === 1 ? "" : "s"}` : ""
+      ].filter(Boolean).join(", ");
+      issues.push({
+        ...common,
+        ruleId: "resize-text-200-risk",
+        wcag: ["1.4.4"],
+        tags: ["wcag144", "heuristic", "needs-review"],
+        selector: "html",
+        confidenceScore: 60,
+        confidenceReason: "The page showed layout risk signals at an estimated 200% text-resize viewport; confirm manually with browser zoom or text-size settings before treating it as a WCAG 1.4.4 failure.",
+        findingType: "needs-review",
+        message: `Review 200% resize-text behavior: ${signals}.`
       });
     }
 
@@ -2064,6 +2102,23 @@ async function auditReflow(
     await page.setViewportSize(originalViewport).catch(() => undefined);
     await page.waitForTimeout(50).catch(() => undefined);
   }
+}
+
+function reflowZoomCheck(
+  label: string,
+  zoom: "200%" | "400%",
+  evidence: Omit<ReflowEvidence, "zoomChecks">
+): NonNullable<ReflowEvidence["zoomChecks"]>[number] {
+  return {
+    label,
+    zoom,
+    viewportWidth: evidence.viewportWidth,
+    viewportHeight: evidence.viewportHeight,
+    documentWidth: evidence.documentWidth,
+    horizontalOverflowPx: evidence.horizontalOverflowPx,
+    clippedTextCount: evidence.clippedTextCount,
+    fixedStickyOverlapCount: evidence.fixedStickyOverlapCount || 0
+  };
 }
 
 export function normalizeReflowOverflow(

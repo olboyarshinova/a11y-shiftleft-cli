@@ -48,6 +48,7 @@ test("mapRuleToWcag maps exact known rules", () => {
   assert.deepEqual(mapRuleToWcag("layout-horizontal-overflow"), ["1.4.10"]);
   assert.deepEqual(mapRuleToWcag("layout-clipped-text"), ["1.4.10"]);
   assert.deepEqual(mapRuleToWcag("layout-fixed-sticky-overlap"), ["1.4.10"]);
+  assert.deepEqual(mapRuleToWcag("resize-text-200-risk"), ["1.4.4"]);
   assert.deepEqual(mapRuleToWcag("modal-accessible-name-missing"), ["4.1.2"]);
   assert.deepEqual(mapRuleToWcag("modal-initial-focus-outside"), ["2.4.3"]);
   assert.deepEqual(mapRuleToWcag("modal-focus-not-restored"), ["2.4.3"]);

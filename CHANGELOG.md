@@ -2,8 +2,9 @@
 
 ## Unreleased
 
-- Added fixed/sticky overlap candidates to 400% reflow evidence so visual and
-  Markdown reports flag content or controls that may be covered at 320 CSS px.
+- Added 200% zoom comparison and fixed/sticky overlap candidates to reflow
+  evidence so visual and Markdown reports flag resize-text and 400% reflow
+  risks without extra screenshots.
 - Added a compact WCAG Evidence Gaps panel to visual HTML reports so reviewers
   can see finding-backed criteria and manual-review gaps without opening JSON.
 - Added screenshot-difference hotspots to device and browser matrix HTML
