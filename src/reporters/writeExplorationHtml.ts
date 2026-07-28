@@ -5,7 +5,7 @@ import { compareLighthouseWithFindings } from "../core/lighthouseComparison.js";
 import { summarizeManualReviewRecords } from "../core/manualChecklist.js";
 import { formatReportDateUtc } from "../core/reportDate.js";
 import { getRemediationHint } from "../core/remediation.js";
-import type { DedupedIssue, ElementBounds, ExplorationGraph, ExplorationState, ExploreSkippedAction, IgnoreSummary, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, RemediationHint, ReportRetentionEvidence, Severity } from "../types.js";
+import type { DedupedIssue, ElementBounds, ExplorationGraph, ExplorationState, ExploreSkippedAction, IgnoreSummary, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, RemediationHint, ReportRetentionEvidence, Severity, WcagCoverageCriterionSummary, WcagCoverageStatus, WcagCoverageSummary } from "../types.js";
 
 interface StateViewModel extends ExplorationState {
   issues: DedupedIssue[];
@@ -21,6 +21,7 @@ interface ExplorationHtmlOptions {
   lighthouse?: LighthouseAuditResult[];
   ignore?: IgnoreSummary;
   retention?: ReportRetentionEvidence;
+  wcagCoverage?: WcagCoverageSummary;
 }
 
 interface CoverageMatrixRow {
@@ -964,6 +965,63 @@ export function renderExplorationHtml(
 
     .coverage-progress-complete {
       color: var(--ok);
+    }
+
+    .wcag-gaps {
+      display: grid;
+      gap: 10px;
+    }
+
+    .wcag-gap-list {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+
+    .wcag-gap-card {
+      display: grid;
+      gap: 5px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--warning-marker);
+      border-radius: 8px;
+      background: #fffaf2;
+    }
+
+    .wcag-gap-card[data-status="automated"] {
+      border-left-color: var(--critical);
+      background: #fff5f6;
+    }
+
+    .wcag-gap-card[data-status="not-covered"] {
+      border-left-color: #64748b;
+      background: #f8fafc;
+    }
+
+    .wcag-gap-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: start;
+      font-weight: 800;
+    }
+
+    .wcag-gap-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .wcag-gap-status {
+      width: fit-content;
+      padding: 2px 7px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
     }
 
     .visually-hidden {
@@ -2213,6 +2271,8 @@ export function renderExplorationHtml(
 
     ${renderCoverageMatrix(graph, options, reportIssues)}
 
+    ${renderWcagEvidenceGaps(options.wcagCoverage)}
+
     ${renderIgnoreCleanup(options.ignore)}
 
     ${renderReportRetention(options.retention)}
@@ -2939,6 +2999,66 @@ function renderCoverageMatrix(
       </table>
     </div>
   </section>`;
+}
+
+function renderWcagEvidenceGaps(coverage?: WcagCoverageSummary): string {
+  if (!coverage) return "";
+  const rows = coverage.criteria
+    .filter((criterion) => criterion.findingCount > 0 || criterion.status !== "automated")
+    .sort(compareWcagCoverageRows);
+  const visibleRows = rows.slice(0, 6);
+  if (visibleRows.length === 0) return "";
+
+  const hiddenCount = rows.length - visibleRows.length;
+  return `<section class="panel panel-full-width wcag-gaps" aria-label="WCAG evidence gaps">
+    <h2>WCAG Evidence Gaps</h2>
+    <p class="muted">Evidence coverage shows what this run observed and what still needs manual review. It is not a conformance claim.</p>
+    <div class="wcag-gap-list">
+      ${visibleRows.map(renderWcagEvidenceGapCard).join("\n")}
+    </div>
+    ${hiddenCount > 0 ? `<p class="muted">Showing ${visibleRows.length} of ${rows.length} criteria with findings or manual-review gaps. The complete evidence matrix is available in <code>a11y-report.json</code>.</p>` : ""}
+  </section>`;
+}
+
+function renderWcagEvidenceGapCard(criterion: WcagCoverageCriterionSummary): string {
+  return `<article class="wcag-gap-card" data-status="${escapeAttribute(criterion.status)}">
+    <div class="wcag-gap-title">
+      <a href="${escapeAttribute(criterion.url)}" target="_blank" rel="noopener noreferrer">WCAG ${escapeHtml(criterion.id)} ${escapeHtml(criterion.title)}</a>
+      <span class="wcag-gap-status">${escapeHtml(formatWcagCoverageStatus(criterion.status))}</span>
+    </div>
+    <div class="wcag-gap-meta">
+      <span>Level ${escapeHtml(criterion.level)}</span>
+      <span>${criterion.findingCount} finding${criterion.findingCount === 1 ? "" : "s"}</span>
+      <span>${escapeHtml(formatWcagCoverageSources(criterion))}</span>
+    </div>
+    <p>${escapeHtml(criterion.nextStep)}</p>
+  </article>`;
+}
+
+function compareWcagCoverageRows(
+  left: WcagCoverageCriterionSummary,
+  right: WcagCoverageCriterionSummary
+): number {
+  return right.findingCount - left.findingCount
+    || wcagCoverageStatusRank(left.status) - wcagCoverageStatusRank(right.status)
+    || left.id.localeCompare(right.id, undefined, { numeric: true });
+}
+
+function wcagCoverageStatusRank(status: WcagCoverageStatus): number {
+  if (status === "heuristic") return 1;
+  if (status === "manual-required") return 2;
+  if (status === "not-covered") return 3;
+  return 4;
+}
+
+function formatWcagCoverageStatus(status: WcagCoverageStatus): string {
+  if (status === "manual-required") return "manual required";
+  if (status === "not-covered") return "not covered";
+  return status;
+}
+
+function formatWcagCoverageSources(criterion: WcagCoverageCriterionSummary): string {
+  return criterion.evidenceSources.join("; ") || "none recorded";
 }
 
 function countCoverageStates(rows: CoverageMatrixRow[]): CoverageStateCounts {

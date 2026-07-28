@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added a compact WCAG Evidence Gaps panel to visual HTML reports so reviewers
+  can see finding-backed criteria and manual-review gaps without opening JSON.
 - Added screenshot-difference hotspots to device and browser matrix HTML
   summaries so reviewers can see the most changed regions in side-by-side
   comparisons.

@@ -2321,7 +2321,8 @@ export async function runAudit(options: AuditOptions): Promise<{ failed: boolean
     keyboard,
     manualChecklist,
     lighthouse,
-    ignore: report.summary.ignore
+    ignore: report.summary.ignore,
+    wcagCoverage: report.summary.wcagCoverage
   });
   if (options.pdf) await writeExplorationPdf(effectiveConfig.outputDir, "a11y-report");
 

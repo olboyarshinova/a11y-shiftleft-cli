@@ -391,7 +391,8 @@ export function registerExploreCommand(program: Command): void {
       });
       if (options.html !== false) {
         await writeExplorationHtml(effectiveConfig.outputDir, exploration.graph, report.issues, {
-          retention: retentionSummary.enabled ? retentionSummary : undefined
+          retention: retentionSummary.enabled ? retentionSummary : undefined,
+          wcagCoverage: report.summary.wcagCoverage
         });
       }
       if (options.pdf) {

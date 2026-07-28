@@ -2063,7 +2063,40 @@ test("writeExplorationHtml can create a unified audit report", async () => {
       }],
       notApplicableAudits: 3,
       durationMs: 1500
-    }]
+    }],
+    wcagCoverage: {
+      label: "Tracked WCAG evidence coverage",
+      targetVersion: "2.2",
+      targetLevel: "AA",
+      totalCriteria: 2,
+      automatedCriteria: 1,
+      heuristicCriteria: 0,
+      manualCriteria: 0,
+      notCoveredCriteria: 1,
+      automatedCoverage: 50,
+      assistedCoverage: 50,
+      criteria: [{
+        id: "4.1.2",
+        title: "Name, Role, Value",
+        level: "A",
+        principle: "robust",
+        url: "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html",
+        status: "automated",
+        evidenceSources: ["browser automation", "axe"],
+        findingCount: 1,
+        nextStep: "Review findings and confirm representative states."
+      }, {
+        id: "1.4.12",
+        title: "Text Spacing",
+        level: "AA",
+        principle: "perceivable",
+        url: "https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html",
+        status: "not-covered",
+        evidenceSources: [],
+        findingCount: 0,
+        nextStep: "Add automated evidence or record manual review."
+      }]
+    }
   });
 
   const html = await fs.readFile(path.join(outputDir, "a11y-report.html"), "utf8");
@@ -2151,6 +2184,14 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.doesNotMatch(html, /Tracked WCAG Coverage/);
   assert.doesNotMatch(html, /Tracked WCAG evidence coverage/);
   assert.doesNotMatch(html, /not a WCAG conformance score/);
+  assert.match(html, /WCAG Evidence Gaps/);
+  assert.match(html, /aria-label="WCAG evidence gaps"/);
+  assert.match(html, /WCAG 4\.1\.2 Name, Role, Value/);
+  assert.match(html, /data-status="automated"/);
+  assert.match(html, /browser automation; axe/);
+  assert.match(html, /WCAG 1\.4\.12 Text Spacing/);
+  assert.match(html, /data-status="not-covered"/);
+  assert.match(html, /none recorded/);
   assert.match(html, /Lighthouse Comparison/);
   assert.match(html, /Lighthouse is a score-oriented comparison signal/);
   assert.match(html, /Average score[\s\S]*?91/);

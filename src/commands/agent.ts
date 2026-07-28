@@ -245,7 +245,8 @@ async function refreshVisualHtmlReport(options: {
     manualChecklist: options.report.manualChecklist,
     lighthouse: options.report.lighthouse,
     ignore: options.report.summary.ignore,
-    retention: options.report.summary.retention
+    retention: options.report.summary.retention,
+    wcagCoverage: options.report.summary.wcagCoverage
   });
 
   return {
