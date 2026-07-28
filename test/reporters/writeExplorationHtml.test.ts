@@ -99,6 +99,22 @@ const graph = {
           cues: ["color", "position"]
         }]
       },
+      contextChanges: {
+        sampleCount: 1,
+        focusTriggeredCount: 0,
+        inputTriggeredCount: 1,
+        navigationRiskCount: 1,
+        submissionRiskCount: 0,
+        samples: [{
+          selector: "select[name=\"country\"]",
+          tagName: "select",
+          label: "Country",
+          triggerKinds: ["change-handler"],
+          eventAttributes: ["onchange"],
+          risk: "navigation",
+          codeSample: "location.href=this.value"
+        }]
+      },
       modalFocus: {
         dialogCount: 1,
         dialogSelector: "[role=\"dialog\"]",
@@ -467,6 +483,11 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /1 instruction sample with 2 color, position, shape, icon, or sound cues found for manual review/);
   assert.match(html, /Sensory instruction evidence/);
   assert.match(html, /Select the red option on the right to continue/);
+  assert.match(html, /Context changes on focus or input/);
+  assert.match(html, /1 focus\/input trigger found; 1 navigation risk; 0 submission risks/);
+  assert.match(html, /Context-change evidence on focus\/input/);
+  assert.match(html, /select\[name="country"\]/);
+  assert.match(html, /location\.href=this\.value/);
   assert.match(html, /Text spacing resilience/);
   assert.match(html, /1 state checked with WCAG text-spacing overrides; 1 clipped text candidate; 1 overflow state/);
   assert.match(html, /Text spacing evidence/);

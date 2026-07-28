@@ -150,6 +150,22 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
     ]
   },
   {
+    id: "context-change-control",
+    title: "No unexpected context changes on focus or input",
+    principle: "understandable",
+    wcag: ["3.2.1", "3.2.2"],
+    whyManual: "Automated scans can detect risky handlers, but only a person can confirm whether focus or input unexpectedly changes page, submits data, opens a new window, or moves the user without warning.",
+    steps: [
+      "Move focus through controls without activating them and confirm focus alone does not navigate, submit, open windows, or change task context.",
+      "Change representative select boxes, radio groups, checkboxes, and text fields and confirm users are warned before major context changes.",
+      "Prefer explicit submit/apply buttons for navigation, filtering, checkout, account changes, and irreversible actions."
+    ],
+    evidence: [
+      "Keyboard and form interaction notes",
+      "Examples of controls that changed context unexpectedly or were corrected"
+    ]
+  },
+  {
     id: "screen-reader-smoke",
     title: "Screen reader navigation and task smoke test",
     principle: "robust",
@@ -688,6 +704,7 @@ function collectManualReviewTargets(
     addReflowTargets(targets, state);
     addTextSpacingTargets(targets, state);
     addSensoryInstructionTargets(targets, state);
+    addContextChangeTargets(targets, state);
     addHoverFocusTargets(targets, state);
     addPointerTargets(targets, state);
   }
@@ -823,6 +840,15 @@ function addSensoryInstructionTargets(targets: Map<string, ManualReviewTarget[]>
   for (const sample of evidence.samples) {
     addTarget(targets, "sensory-color-instructions", targetFor(state, "sensory", sample.text, sample.selector,
       `${sample.cues.join(", ")} cue(s) detected in visible instruction text`));
+  }
+}
+
+function addContextChangeTargets(targets: Map<string, ManualReviewTarget[]>, state: ExplorationState): void {
+  const evidence = state.contextChanges;
+  if (!evidence || evidence.sampleCount === 0) return;
+  for (const sample of evidence.samples) {
+    addTarget(targets, "context-change-control", targetFor(state, "context-change", sample.label || sample.selector, sample.selector,
+      `${sample.triggerKinds.join(", ")} trigger; risk ${sample.risk}; attributes ${sample.eventAttributes.join(", ")}`));
   }
 }
 

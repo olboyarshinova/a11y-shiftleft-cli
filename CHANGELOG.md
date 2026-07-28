@@ -19,6 +19,11 @@
   reports, WCAG evidence summaries, and the manual checklist so instructions
   that appear to rely on color, position, shape, icon, or sound cues are
   surfaced for WCAG 1.3.3, 1.4.1, and 3.3.2 review.
+- Added focus/input context-change heuristics to exploration, visual reports,
+  Markdown reports, WCAG evidence summaries, remediation hints, and the manual
+  checklist so inline focus, blur, input, change, select, and autofocus triggers
+  are surfaced for WCAG 3.2.1 and 3.2.2 review without executing risky
+  navigation or submission behavior.
 - Added 200% zoom comparison and fixed/sticky overlap candidates to reflow
   evidence so visual and Markdown reports flag resize-text and 400% reflow
   risks without extra screenshots.

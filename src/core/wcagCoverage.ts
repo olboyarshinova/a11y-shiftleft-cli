@@ -153,6 +153,9 @@ function collectHeuristicEvidence(options: WcagCoverageOptions): Map<string, str
   if (states.some((state) => state.sensoryInstructions)) {
     addEvidence(evidence, ["1.3.3", "1.4.1", "3.3.2"], "sensory-instruction heuristic");
   }
+  if (states.some((state) => state.contextChanges)) {
+    addEvidence(evidence, ["3.2.1", "3.2.2"], "focus/input context-change heuristic");
+  }
   if (states.some((state) => state.forcedColors)) {
     addEvidence(evidence, ["1.4.1", "1.4.11", "2.4.7", "2.4.11"], "forced-colors heuristic");
   }

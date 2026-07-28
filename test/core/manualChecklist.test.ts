@@ -190,6 +190,22 @@ test("createManualChecklist creates an assisted queue from exploration evidence"
             cues: ["color", "position"]
           }]
         },
+        contextChanges: {
+          sampleCount: 1,
+          focusTriggeredCount: 0,
+          inputTriggeredCount: 1,
+          navigationRiskCount: 1,
+          submissionRiskCount: 0,
+          samples: [{
+            selector: "select[name=\"country\"]",
+            tagName: "select",
+            label: "Country",
+            triggerKinds: ["change-handler"],
+            eventAttributes: ["onchange"],
+            risk: "navigation",
+            codeSample: "location.href=this.value"
+          }]
+        },
         hoverFocus: {
           triggerCount: 1,
           titleTriggerCount: 0,
@@ -241,6 +257,7 @@ test("createManualChecklist creates an assisted queue from exploration evidence"
   const imageReview = checklist.items.find((item) => item.id === "alternative-text-quality");
   const textSpacingReview = checklist.items.find((item) => item.id === "text-spacing-resilience");
   const sensoryReview = checklist.items.find((item) => item.id === "sensory-color-instructions");
+  const contextChangeReview = checklist.items.find((item) => item.id === "context-change-control");
   const hoverFocusReview = checklist.items.find((item) => item.id === "hover-focus-content");
   const pointerReview = checklist.items.find((item) => item.id === "pointer-dragging-alternatives");
   assert.equal(formReview?.targets?.[0].selector, "#email");
@@ -250,6 +267,8 @@ test("createManualChecklist creates an assisted queue from exploration evidence"
   assert.equal(textSpacingReview?.targets?.[0].kind, "text-spacing");
   assert.equal(sensoryReview?.targets?.[0].kind, "sensory");
   assert.equal(sensoryReview?.targets?.[0].selector, "#instructions");
+  assert.equal(contextChangeReview?.targets?.[0].kind, "context-change");
+  assert.equal(contextChangeReview?.targets?.[0].selector, "select[name=\"country\"]");
   assert.equal(hoverFocusReview?.targets?.[0].kind, "hover-focus");
   assert.equal(hoverFocusReview?.targets?.[0].selector, "#help");
   assert.equal(pointerReview?.targets?.[0].kind, "pointer");
@@ -260,6 +279,7 @@ test("createManualChecklist creates an assisted queue from exploration evidence"
   assert.match(toManualChecklistMarkdown(checklist), /hover-focus: Help/);
   assert.match(toManualChecklistMarkdown(checklist), /text-spacing: Text-spacing findings require review/);
   assert.match(toManualChecklistMarkdown(checklist), /sensory: Click the green button below to continue/);
+  assert.match(toManualChecklistMarkdown(checklist), /context-change: Country/);
   assert.match(toManualChecklistMarkdown(checklist), /pointer: Move item/);
 });
 
@@ -471,7 +491,7 @@ test("toManualChecklistMarkdown renders actionable Markdown checkboxes", () => {
   assert.match(markdown, /Automated accessibility tools do not prove full WCAG conformance/);
   assert.match(markdown, /Status: `not-reviewed`/);
   assert.match(markdown, /## Review Status/);
-  assert.match(markdown, /Not reviewed \| 24/);
+  assert.match(markdown, /Not reviewed \| 25/);
   assert.match(markdown, /Step records \| \d+/);
   assert.match(markdown, /Task evidence attachments \| 0/);
   assert.match(markdown, /Environment summary:/);

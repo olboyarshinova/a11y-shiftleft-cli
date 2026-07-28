@@ -395,6 +395,18 @@ const RULE_HINTS: Record<string, RemediationHint> = {
       "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/title"
     ]
   },
+  "context-change-on-focus-input-risk": {
+    summary: "Avoid changing context unexpectedly when a control receives focus or when a user changes an input.",
+    howToFix: [
+      "Do not navigate, submit, open a new window, or move focus only because an element receives focus.",
+      "When a select, checkbox, radio group, or text field changes page context, warn users before the control or provide an explicit Apply, Search, Continue, or Submit button.",
+      "Keep auto-formatting and inline validation local to the field unless the user intentionally activates a control that changes the page or task."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/on-focus.html",
+      "https://www.w3.org/WAI/WCAG22/Understanding/on-input.html"
+    ]
+  },
   "control-name-inconsistent": {
     summary: "Use consistent accessible names for controls that perform the same function.",
     howToFix: [

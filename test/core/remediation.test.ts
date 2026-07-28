@@ -320,6 +320,19 @@ test("getRemediationHint explains cross-page title findings", () => {
   assert.match(placeholderHint.howToFix[0], /Vite \+ React/);
 });
 
+test("getRemediationHint explains focus and input context-change risks", () => {
+  const hint = getRemediationHint(
+    "context-change-on-focus-input-risk",
+    getWcagCriteria(["3.2.1", "3.2.2"]),
+    "unknown"
+  );
+
+  assert.match(hint.summary, /focus or when a user changes an input/);
+  assert.equal(hint.howToFix.some((step) => step.includes("explicit Apply")), true);
+  assert.equal(hint.docs.some((url) => url.includes("on-focus")), true);
+  assert.equal(hint.docs.some((url) => url.includes("on-input")), true);
+});
+
 test("getRemediationHint explains cross-page control naming findings", () => {
   const hint = getRemediationHint(
     "control-name-inconsistent",

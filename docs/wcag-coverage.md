@@ -128,8 +128,8 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
 | 3.1.4 Abbreviations | AAA | Gap | Outside current target |
 | 3.1.5 Reading Level | AAA | Manual checklist | Plain-language review; outside current target |
 | 3.1.6 Pronunciation | AAA | Gap | Outside current target |
-| 3.2.1 On Focus | A | Gap | Focus-triggered context changes are not exercised |
-| 3.2.2 On Input | A | Gap | Input-triggered context changes are not exercised |
+| 3.2.1 On Focus | A | Heuristic + manual checklist | Inline focus/blur/autofocus handlers are inventoried for context-change review; behavior confirmation remains manual |
+| 3.2.2 On Input | A | Heuristic + manual checklist | Inline input/change/select handlers are inventoried for context-change review; behavior confirmation remains manual |
 | 3.2.3 Consistent Navigation | AA | Gap | Exploration does not compare repeated navigation order across pages |
 | 3.2.4 Consistent Identification | AA | Gap | Same-purpose component naming is not compared across pages |
 | 3.2.5 Change on Request | AAA | Automated, metadata gap | axe meta-refresh signal only; outside current target |

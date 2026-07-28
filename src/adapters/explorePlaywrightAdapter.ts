@@ -19,6 +19,7 @@ import type {
   A11yConfig,
   AccessibilityTreeEvidence,
   BrowserEvidence,
+  ContextChangeEvidence,
   DynamicAnnouncementEvidence,
   EmbeddedContentEvidence,
   ExplorationGraph,
@@ -512,6 +513,11 @@ export async function runExplorePlaywrightAdapter(
           stateLabel: actionLabel,
           colorScheme: reportedColorScheme
         });
+        const contextChanges = await auditContextChangeTriggers(page, config, {
+          stateId,
+          stateLabel: actionLabel,
+          colorScheme: reportedColorScheme
+        });
         const formErrors = await auditFormErrors(page, config, {
           stateId,
           stateLabel: actionLabel,
@@ -538,7 +544,8 @@ export async function runExplorePlaywrightAdapter(
           ...imageAlternatives.issues,
           ...media.issues,
           ...embeddedContent.issues,
-          ...sensoryInstructions.issues
+          ...sensoryInstructions.issues,
+          ...contextChanges.issues
         ];
         const visualEvidence = screenshots
           ? await captureStateVisualEvidence(page, renderedIssues, {
@@ -638,6 +645,7 @@ export async function runExplorePlaywrightAdapter(
           reflow: reflow.evidence,
           textSpacing: reflow.textSpacing,
           sensoryInstructions: sensoryInstructions.evidence,
+          contextChanges: contextChanges.evidence,
           forcedColors: forcedColors.evidence,
           modalFocus,
           dynamicAnnouncements,
@@ -2234,6 +2242,196 @@ async function auditSensoryInstructions(
       stateLabel: state.stateLabel,
       colorScheme: state.colorScheme,
       message: `Review instructions that may rely on sensory cues: ${cueSummary}.`
+    });
+  }
+
+  return { evidence, issues };
+}
+
+async function auditContextChangeTriggers(
+  page: Page,
+  config: A11yConfig,
+  state: {
+    stateId: string;
+    stateLabel: string;
+    colorScheme: Issue["colorScheme"];
+  }
+): Promise<{ evidence: ContextChangeEvidence; issues: Issue[] }> {
+  const evidence = await page.evaluate(() => {
+    type TriggerKind =
+      | "focus-handler"
+      | "blur-handler"
+      | "input-handler"
+      | "change-handler"
+      | "select-handler"
+      | "autofocus";
+    type Risk = "navigation" | "submission" | "state-change" | "unknown";
+    type Sample = {
+      selector: string;
+      tagName: string;
+      label?: string;
+      triggerKinds: TriggerKind[];
+      eventAttributes: string[];
+      risk: Risk;
+      codeSample?: string;
+    };
+
+    function clean(value: string | null | undefined): string {
+      return (value || "").replace(/\s+/g, " ").trim();
+    }
+
+    function isVisible(element: Element): boolean {
+      const htmlElement = element as HTMLElement;
+      const rect = htmlElement.getBoundingClientRect();
+      const style = window.getComputedStyle(htmlElement);
+      return rect.width > 0 &&
+        rect.height > 0 &&
+        style.display !== "none" &&
+        style.visibility !== "hidden";
+    }
+
+    function attrSelector(name: string, value: string): string {
+      return `[${name}="${value.replace(/\\/g, "\\\\").replace(/"/g, "\\\"")}"]`;
+    }
+
+    function selectorFor(element: Element): string {
+      const testId = element.getAttribute("data-testid");
+      if (testId) return attrSelector("data-testid", testId);
+
+      const id = element.getAttribute("id");
+      if (id) return attrSelector("id", id);
+
+      const name = element.getAttribute("name");
+      if (name) return `${element.tagName.toLowerCase()}${attrSelector("name", name)}`;
+
+      const ariaLabel = element.getAttribute("aria-label");
+      if (ariaLabel) return attrSelector("aria-label", ariaLabel);
+
+      const tag = element.tagName.toLowerCase();
+      const parent = element.parentElement;
+      if (!parent) return tag;
+
+      const sameTagSiblings = Array.from(parent.children).filter((sibling) => (
+        sibling.tagName === element.tagName
+      ));
+      const index = sameTagSiblings.indexOf(element) + 1;
+      return `${parent.tagName.toLowerCase()} > ${tag}:nth-of-type(${Math.max(index, 1)})`;
+    }
+
+    function labelFor(element: Element): string | undefined {
+      const ariaLabel = clean(element.getAttribute("aria-label"));
+      if (ariaLabel) return ariaLabel.slice(0, 120);
+
+      const labelledBy = clean(element.getAttribute("aria-labelledby"));
+      if (labelledBy) {
+        const text = labelledBy.split(/\s+/)
+          .map((id) => clean(document.getElementById(id)?.textContent))
+          .filter(Boolean)
+          .join(" ");
+        if (text) return text.slice(0, 120);
+      }
+
+      const id = element.getAttribute("id");
+      if (id) {
+        const label = document.querySelector(`label[for="${id.replace(/\\/g, "\\\\").replace(/"/g, "\\\"")}"]`);
+        const text = clean(label?.textContent);
+        if (text) return text.slice(0, 120);
+      }
+
+      const text = clean(element.textContent);
+      return text ? text.slice(0, 120) : undefined;
+    }
+
+    function riskFor(code: string): Risk {
+      if (/\b(location|assign|replace|href|open|history\.(?:pushState|replaceState)|window\.open|document\.location)\b/i.test(code)) {
+        return "navigation";
+      }
+      if (/\b(submit|requestSubmit)\s*\(/i.test(code)) return "submission";
+      if (/\b(click|dispatchEvent|checked\s*=|selectedIndex\s*=|value\s*=|classList\.(?:add|remove|toggle))\b/i.test(code)) {
+        return "state-change";
+      }
+      return "unknown";
+    }
+
+    const candidates = Array.from(document.querySelectorAll("[onfocus], [onblur], [oninput], [onchange], [onselect], [autofocus]"))
+      .filter((element) => isVisible(element));
+    const samples: Sample[] = [];
+
+    for (const element of candidates) {
+      const eventAttributes = [
+        element.hasAttribute("onfocus") ? "onfocus" : "",
+        element.hasAttribute("onblur") ? "onblur" : "",
+        element.hasAttribute("oninput") ? "oninput" : "",
+        element.hasAttribute("onchange") ? "onchange" : "",
+        element.hasAttribute("onselect") ? "onselect" : "",
+        element.hasAttribute("autofocus") ? "autofocus" : ""
+      ].filter(Boolean);
+      if (eventAttributes.length === 0) continue;
+
+      const triggerKinds = [
+        element.hasAttribute("onfocus") ? "focus-handler" : "",
+        element.hasAttribute("onblur") ? "blur-handler" : "",
+        element.hasAttribute("oninput") ? "input-handler" : "",
+        element.hasAttribute("onchange") ? "change-handler" : "",
+        element.hasAttribute("onselect") ? "select-handler" : "",
+        element.hasAttribute("autofocus") ? "autofocus" : ""
+      ].filter(Boolean) as TriggerKind[];
+      const code = eventAttributes
+        .map((attribute) => clean(element.getAttribute(attribute)))
+        .filter(Boolean)
+        .join("; ");
+      const risk = riskFor(code);
+
+      samples.push({
+        selector: selectorFor(element),
+        tagName: element.tagName.toLowerCase(),
+        label: labelFor(element),
+        triggerKinds,
+        eventAttributes,
+        risk,
+        ...(code ? { codeSample: code.slice(0, 180) } : {})
+      });
+      if (samples.length >= 12) break;
+    }
+
+    return {
+      sampleCount: samples.length,
+      focusTriggeredCount: samples.filter((sample) => (
+        sample.triggerKinds.includes("focus-handler") ||
+        sample.triggerKinds.includes("blur-handler") ||
+        sample.triggerKinds.includes("autofocus")
+      )).length,
+      inputTriggeredCount: samples.filter((sample) => (
+        sample.triggerKinds.includes("input-handler") ||
+        sample.triggerKinds.includes("change-handler") ||
+        sample.triggerKinds.includes("select-handler")
+      )).length,
+      navigationRiskCount: samples.filter((sample) => sample.risk === "navigation").length,
+      submissionRiskCount: samples.filter((sample) => sample.risk === "submission").length,
+      samples
+    };
+  });
+  const issues: Issue[] = [];
+
+  if (evidence.sampleCount > 0) {
+    issues.push({
+      source: "predictability",
+      framework: config.framework,
+      ruleId: "context-change-on-focus-input-risk",
+      selector: evidence.samples[0]?.selector || "body",
+      wcag: ["3.2.1", "3.2.2"],
+      tags: ["wcag321", "wcag322", "heuristic", "needs-review"],
+      severity: "warning",
+      confidence: "low",
+      confidenceScore: 50,
+      confidenceReason: "Inline focus or input handlers can trigger navigation, submission, or state changes; confirm manually because handler code may be harmless or guarded.",
+      category: "other",
+      findingType: "needs-review",
+      url: page.url(),
+      stateId: state.stateId,
+      stateLabel: state.stateLabel,
+      colorScheme: state.colorScheme,
+      message: `Review ${evidence.sampleCount} possible focus/input context-change trigger${evidence.sampleCount === 1 ? "" : "s"} before treating this as a WCAG failure.`
     });
   }
 

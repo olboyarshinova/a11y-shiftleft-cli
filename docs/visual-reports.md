@@ -138,6 +138,12 @@ signals: confirm manually whether the same instruction is also available
 through text labels, programmatic relationships, visible names, or another
 non-sensory cue.
 
+Each explored state can also include focus/input context-change evidence. The
+scanner inventories inline `onfocus`, `onblur`, `oninput`, `onchange`,
+`onselect`, and `autofocus` triggers that may navigate, submit, open a new
+window, or change task context. These are low-confidence WCAG 3.2.1 and 3.2.2
+review signals: the audit records the risk without executing the handler.
+
 For modals reached through safe exploration, the report records the dialog
 name, initial focused element, isolated Escape result, and focus restoration to
 the trigger. The isolated page prevents the close test from changing the main

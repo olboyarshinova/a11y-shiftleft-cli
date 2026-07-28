@@ -136,9 +136,12 @@ Section 508 certification.
   complex-image review.
 - Extend rendered form evidence with safe validation-state correlation and
   non-sensitive correction workflows that never submit data.
-- Add safe diagnostics for unexpected context changes on focus or input while
-  blocking navigation, submission, downloads, and other destructive effects by
-  default.
+- Continue safe diagnostics for unexpected context changes beyond the current
+  inline focus/input handler inventory. Current evidence records focus, blur,
+  input, change, select, and autofocus triggers for manual review while blocking
+  navigation, submission, downloads, and other destructive effects by default.
+  Next, validate false-positive wording in real forms, filters, search pages,
+  and account settings.
 - Continue hover/focus content support beyond the current trigger inventory.
   Current exploration evidence records visible `title`, `aria-describedby`,
   `aria-haspopup`, `aria-expanded`, popover, details/summary, and common

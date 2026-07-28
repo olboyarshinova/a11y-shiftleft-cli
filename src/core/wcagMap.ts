@@ -11,6 +11,7 @@ const RULE_TO_WCAG: Record<string, string[]> = {
   "bypass": ["2.4.1"],
   "canvas-alternative-not-detected": ["1.1.1"],
   "color-contrast": ["1.4.3"],
+  "context-change-on-focus-input-risk": ["3.2.1", "3.2.2"],
   "control-name-inconsistent": ["3.2.4"],
   "css-orientation-lock": ["1.3.4"],
   "document-title": ["2.4.2"],
@@ -317,6 +318,22 @@ const WCAG_CRITERIA: Record<string, WcagCriterion> = {
     principle: "understandable",
     introducedIn: "2.0",
     url: "https://www.w3.org/WAI/WCAG22/Understanding/language-of-parts.html"
+  },
+  "3.2.1": {
+    id: "3.2.1",
+    title: "On Focus",
+    level: "A",
+    principle: "understandable",
+    introducedIn: "2.0",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/on-focus.html"
+  },
+  "3.2.2": {
+    id: "3.2.2",
+    title: "On Input",
+    level: "A",
+    principle: "understandable",
+    introducedIn: "2.0",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/on-input.html"
   },
   "3.2.3": {
     id: "3.2.3",

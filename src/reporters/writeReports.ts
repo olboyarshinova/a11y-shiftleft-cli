@@ -1035,6 +1035,10 @@ function formatCoverageMatrix(report: A11yReport): string {
     (state.sensoryInstructions?.shapeCueCount || 0) +
     (state.sensoryInstructions?.soundCueCount || 0)
   ), 0);
+  const contextChangeStates = report.exploration?.states.filter((state) => state.contextChanges) || [];
+  const contextChangeSamples = contextChangeStates.reduce((total, state) => total + (state.contextChanges?.sampleCount || 0), 0);
+  const contextNavigationRisks = contextChangeStates.reduce((total, state) => total + (state.contextChanges?.navigationRiskCount || 0), 0);
+  const contextSubmissionRisks = contextChangeStates.reduce((total, state) => total + (state.contextChanges?.submissionRiskCount || 0), 0);
   const modalCount = report.exploration?.states.filter((state) => state.modalFocus).length || 0;
   const announcementStates = report.exploration?.states.filter((state) => state.dynamicAnnouncements) || [];
   const announcementUpdates = announcementStates.reduce((total, state) => total + (state.dynamicAnnouncements?.meaningfulUpdates || 0), 0);
@@ -1081,6 +1085,7 @@ function formatCoverageMatrix(report: A11yReport): string {
 | Text spacing resilience | ${textSpacingStates.length > 0 ? "Automated heuristic plus manual review" : manualChecklistStatus("text-spacing", manualChecklistItemIds, report.manualChecklist)} | ${textSpacingStates.length > 0 ? `${textSpacingStates.length} state${textSpacingStates.length === 1 ? "" : "s"} checked with WCAG text-spacing overrides; ${textSpacingClipped} clipped text candidate${textSpacingClipped === 1 ? "" : "s"}; ${textSpacingOverflowStates} overflow state${textSpacingOverflowStates === 1 ? "" : "s"}` : "Apply text-spacing overrides and confirm content, controls, and errors do not clip, overlap, or disappear"} |
 | Account and authentication flow | ${manualChecklistStatus("account-authentication-flow", manualChecklistItemIds, report.manualChecklist)} | Review login, checkout, account recovery, and multi-step forms for redundant entry and cognitive authentication barriers |
 | Time limits and recovery | ${manualChecklistStatus("time-limits-recovery", manualChecklistItemIds, report.manualChecklist)} | Review timeout warnings, session extension, interrupted tasks, data preservation, and legal/financial/data-change confirmation |
+| Context changes on focus or input | ${contextChangeSamples > 0 ? "Automated heuristic plus manual review" : manualChecklistStatus("context-change-control", manualChecklistItemIds, report.manualChecklist)} | ${contextChangeSamples > 0 ? `${contextChangeSamples} focus/input trigger${contextChangeSamples === 1 ? "" : "s"} found; ${contextNavigationRisks} navigation risk${contextNavigationRisks === 1 ? "" : "s"}; ${contextSubmissionRisks} submission risk${contextSubmissionRisks === 1 ? "" : "s"}` : "Review focus and input changes so users are warned before navigation, submission, new windows, or major task-context changes"} |
 | Predictable actions and calm recovery | ${manualChecklistStatus("cognitive-clarity", manualChecklistItemIds, report.manualChecklist)} | Review task copy, button labels, errors, recovery paths, help access, and multi-step form clarity |
 | Image alternatives | ${imageStates.length > 0 ? "Quality heuristics collected" : "No images observed"} | ${suspiciousImages} alternative${suspiciousImages === 1 ? "" : "s"} flagged for contextual human review |
 | Media and motion | ${mediaFindings > 0 ? "Automated findings plus manual review" : mediaStates.length > 0 ? "Manual review required" : "No media or active motion observed"} | ${mediaElements} audio/video element${mediaElements === 1 ? "" : "s"}; ${autoplayRisks} autoplay control risk${autoplayRisks === 1 ? "" : "s"} |
@@ -1109,6 +1114,7 @@ function manualChecklistAnchorForCoverage(coverageId: string, manualChecklistIte
     "text-spacing": "text-spacing-resilience",
     "account-authentication-flow": "account-authentication-flow",
     "time-limits-recovery": "time-limits-recovery",
+    "context-change-control": "context-change-control",
     "cognitive-clarity": "cognitive-clarity",
     "hover-focus-content": "hover-focus-content",
     "pointer-dragging": "pointer-dragging-alternatives",

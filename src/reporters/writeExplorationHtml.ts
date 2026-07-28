@@ -2905,6 +2905,10 @@ function renderCoverageMatrix(
     (state.sensoryInstructions?.shapeCueCount || 0) +
     (state.sensoryInstructions?.soundCueCount || 0)
   ), 0);
+  const contextChangeStates = graph.states.filter((state) => state.contextChanges);
+  const contextChangeSamples = contextChangeStates.reduce((total, state) => total + (state.contextChanges?.sampleCount || 0), 0);
+  const contextNavigationRisks = contextChangeStates.reduce((total, state) => total + (state.contextChanges?.navigationRiskCount || 0), 0);
+  const contextSubmissionRisks = contextChangeStates.reduce((total, state) => total + (state.contextChanges?.submissionRiskCount || 0), 0);
   const modalStates = graph.states.filter((state) => state.modalFocus);
   const announcementStates = graph.states.filter((state) => state.dynamicAnnouncements);
   const announcementUpdates = announcementStates.reduce((total, state) => (
@@ -2990,6 +2994,7 @@ function renderCoverageMatrix(
     coverageRow("text-spacing", "Text spacing resilience", textSpacingStates.length > 0 ? evidenceState(textSpacingClipped + textSpacingOverflowStates) : "needs-review", textSpacingStates.length > 0 ? "Automated heuristic + manual review" : options.manualChecklist ? "Checklist ready" : "Human review required", textSpacingStates.length > 0 ? `${textSpacingStates.length} state${textSpacingStates.length === 1 ? "" : "s"} checked with WCAG text-spacing overrides; ${textSpacingClipped} clipped text candidate${textSpacingClipped === 1 ? "" : "s"}; ${textSpacingOverflowStates} overflow state${textSpacingOverflowStates === 1 ? "" : "s"}` : "Apply text-spacing overrides and confirm content, controls, and errors do not clip, overlap, or disappear", textSpacingStates.length > 0, textSpacingStates.length > 0 ? textSpacingClipped + textSpacingOverflowStates : undefined, manualChecklistItemIds),
     coverageRow("account-authentication-flow", "Account and authentication flow", "needs-review", options.manualChecklist ? "Checklist ready" : "Human review required", "Review login, checkout, account recovery, and multi-step forms for redundant entry and cognitive authentication barriers", false, undefined, manualChecklistItemIds),
     coverageRow("time-limits-recovery", "Time limits and recovery", "needs-review", options.manualChecklist ? "Checklist ready" : "Human review required", "Review timeout warnings, session extension, interrupted tasks, data preservation, and legal/financial/data-change confirmation", false, undefined, manualChecklistItemIds),
+    coverageRow("context-change-control", "Context changes on focus or input", "needs-review", contextChangeSamples > 0 ? "Automated heuristic + manual review" : options.manualChecklist ? "Checklist ready" : "Human review required", contextChangeSamples > 0 ? `${contextChangeSamples} focus/input trigger${contextChangeSamples === 1 ? "" : "s"} found; ${contextNavigationRisks} navigation risk${contextNavigationRisks === 1 ? "" : "s"}; ${contextSubmissionRisks} submission risk${contextSubmissionRisks === 1 ? "" : "s"}` : "Review focus and input changes so users are warned before navigation, submission, new windows, or major task-context changes", false, contextChangeSamples > 0 ? contextChangeSamples : undefined, manualChecklistItemIds),
     coverageRow("cognitive-clarity", "Predictable actions and calm recovery", "needs-review", options.manualChecklist ? "Checklist ready" : "Human review required", "Review task copy, button labels, errors, recovery paths, help access, and multi-step form clarity", false, undefined, manualChecklistItemIds),
     coverageRow("image-alternatives", "Image alternatives", evidenceState(countIssues((issue) => issue.category === "images")), imageStates.length > 0 ? "Automated heuristics" : "No images observed", `${suspiciousImages} image alternative${suspiciousImages === 1 ? "" : "s"} flagged for human review across ${imageStates.length} state${imageStates.length === 1 ? "" : "s"}`, true, countIssues((issue) => issue.category === "images"), manualChecklistItemIds),
     coverageRow("media-motion", "Media and motion", mediaCoverageState, mediaFindingCount > 0 ? "Automated findings + manual review" : mediaStates.length > 0 ? "Manual review required" : "Review if applicable", mediaStates.length > 0 ? `${mediaElements} audio/video element${mediaElements === 1 ? "" : "s"}; ${autoplayRisks} autoplay control risk${autoplayRisks === 1 ? "" : "s"}; ${activeAnimations} active animation${activeAnimations === 1 ? "" : "s"}; reduced-motion CSS in ${reducedMotionStates}/${mediaStates.length} state${mediaStates.length === 1 ? "" : "s"}` : "Review captions, transcripts, autoplay, flashing, and reduced-motion behavior when media or animation is present", mediaFindingCount > 0, mediaStates.length > 0 ? mediaFindingCount : undefined, manualChecklistItemIds),
@@ -3160,6 +3165,7 @@ function manualChecklistAnchorForCoverage(id: string, manualChecklistItemIds: Se
     "text-spacing": "text-spacing-resilience",
     "account-authentication-flow": "account-authentication-flow",
     "time-limits-recovery": "time-limits-recovery",
+    "context-change-control": "context-change-control",
     "cognitive-clarity": "cognitive-clarity",
     "hover-focus-content": "hover-focus-content",
     "pointer-dragging": "pointer-dragging-alternatives",
@@ -3281,6 +3287,7 @@ function renderState(state: StateViewModel): string {
     ${renderReflowEvidence(state)}
     ${renderTextSpacingEvidence(state)}
     ${renderSensoryInstructionEvidence(state)}
+    ${renderContextChangeEvidence(state)}
     ${renderForcedColorsEvidence(state)}
     ${renderModalFocusEvidence(state)}
     ${renderDynamicAnnouncementEvidence(state)}
@@ -3536,6 +3543,23 @@ function renderSensoryInstructionEvidence(state: ExplorationState): string {
     </div>
     <ul>${evidence.samples.map((sample) => `<li><code>${escapeHtml(sample.selector)}</code>: ${escapeHtml(sample.cues.join(", "))} · ${escapeHtml(sample.text)}</li>`).join("")}</ul>
     <p class="muted">Confirm manually whether the instruction also has text labels, programmatic relationships, visible names, or non-sensory alternatives. Natural-language matching is intentionally conservative evidence, not an automatic WCAG failure.</p>
+  </details>`;
+}
+
+function renderContextChangeEvidence(state: ExplorationState): string {
+  const evidence = state.contextChanges;
+  if (!evidence || evidence.sampleCount === 0) return "";
+  return `<details>
+    <summary>Context-change evidence on focus/input</summary>
+    <div class="summary">
+      ${metric("Potential triggers", evidence.sampleCount, "warning")}
+      ${metric("Focus-triggered", evidence.focusTriggeredCount)}
+      ${metric("Input-triggered", evidence.inputTriggeredCount)}
+      ${metric("Navigation risks", evidence.navigationRiskCount, evidence.navigationRiskCount > 0 ? "warning" : undefined)}
+      ${metric("Submission risks", evidence.submissionRiskCount, evidence.submissionRiskCount > 0 ? "warning" : undefined)}
+    </div>
+    <table aria-label="Context-change evidence"><thead><tr><th>Element</th><th>Label</th><th>Trigger</th><th>Risk</th><th>Code sample</th></tr></thead><tbody>${evidence.samples.map((sample) => `<tr><td><code>${escapeHtml(sample.selector)}</code></td><td>${escapeHtml(sample.label || "unnamed")}</td><td>${escapeHtml(sample.triggerKinds.join(", "))}</td><td>${escapeHtml(sample.risk)}</td><td>${sample.codeSample ? `<code>${escapeHtml(sample.codeSample)}</code>` : "none"}</td></tr>`).join("")}</tbody></table>
+    <p class="muted">Confirm manually whether focus or input changes context without advance warning. The audit records inline handlers and autofocus evidence only; it does not execute risky navigation, submission, download, or account-changing behavior.</p>
   </details>`;
 }
 

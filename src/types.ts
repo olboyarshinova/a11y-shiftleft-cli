@@ -746,7 +746,7 @@ export interface ManualReviewRecord {
 
 export interface ManualReviewTarget {
   id: string;
-  kind: "dialog" | "form" | "image" | "live-region" | "media" | "embedded-content" | "landmark" | "reflow" | "text-spacing" | "sensory" | "hover-focus" | "pointer" | "journey";
+  kind: "dialog" | "form" | "image" | "live-region" | "media" | "embedded-content" | "landmark" | "reflow" | "text-spacing" | "sensory" | "context-change" | "hover-focus" | "pointer" | "journey";
   label: string;
   url: string;
   stateId: string;
@@ -915,6 +915,7 @@ export interface ExplorationState {
   reflow?: ReflowEvidence;
   textSpacing?: TextSpacingEvidence;
   sensoryInstructions?: SensoryInstructionEvidence;
+  contextChanges?: ContextChangeEvidence;
   forcedColors?: ForcedColorsEvidence;
   modalFocus?: ModalFocusEvidence;
   dynamicAnnouncements?: DynamicAnnouncementEvidence;
@@ -1073,6 +1074,33 @@ export interface SensoryInstructionEvidence {
   shapeCueCount: number;
   soundCueCount: number;
   samples: SensoryInstructionSample[];
+}
+
+export type ContextChangeTriggerKind =
+  | "focus-handler"
+  | "blur-handler"
+  | "input-handler"
+  | "change-handler"
+  | "select-handler"
+  | "autofocus";
+
+export interface ContextChangeSample {
+  selector: string;
+  tagName: string;
+  label?: string;
+  triggerKinds: ContextChangeTriggerKind[];
+  eventAttributes: string[];
+  risk: "navigation" | "submission" | "state-change" | "unknown";
+  codeSample?: string;
+}
+
+export interface ContextChangeEvidence {
+  sampleCount: number;
+  focusTriggeredCount: number;
+  inputTriggeredCount: number;
+  navigationRiskCount: number;
+  submissionRiskCount: number;
+  samples: ContextChangeSample[];
 }
 
 export type ForcedColorsConcern =

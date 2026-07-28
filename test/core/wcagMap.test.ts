@@ -29,6 +29,7 @@ test("mapRuleToWcag maps exact known rules", () => {
   assert.deepEqual(mapRuleToWcag("document-title"), ["2.4.2"]);
   assert.deepEqual(mapRuleToWcag("page-title-duplicate"), ["2.4.2"]);
   assert.deepEqual(mapRuleToWcag("page-title-placeholder"), ["2.4.2"]);
+  assert.deepEqual(mapRuleToWcag("context-change-on-focus-input-risk"), ["3.2.1", "3.2.2"]);
   assert.deepEqual(mapRuleToWcag("control-name-inconsistent"), ["3.2.4"]);
   assert.deepEqual(mapRuleToWcag("navigation-order-inconsistent"), ["3.2.3"]);
   assert.deepEqual(mapRuleToWcag("help-mechanism-inconsistent"), ["3.2.6"]);
@@ -145,6 +146,17 @@ test("getWcagCriteria includes sensory characteristics", () => {
   assert.equal(criterion.title, "Sensory Characteristics");
   assert.equal(criterion.level, "A");
   assert.equal(criterion.introducedIn, "2.0");
+});
+
+test("getWcagCriteria includes focus and input context-change criteria", () => {
+  const [focus, input] = getWcagCriteria(["3.2.1", "3.2.2"]);
+
+  assert.equal(focus.title, "On Focus");
+  assert.equal(focus.level, "A");
+  assert.equal(focus.principle, "understandable");
+  assert.equal(input.title, "On Input");
+  assert.equal(input.level, "A");
+  assert.equal(input.principle, "understandable");
 });
 
 test("getWcagCriteria includes WCAG 2.2 redundant entry criteria", () => {

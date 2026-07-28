@@ -52,6 +52,10 @@ This creates separate visual reports for each browser engine plus:
   checklist outputs. The scanner now surfaces visible instructions that appear
   to rely on color, position, shape, icon, or sound cues for manual WCAG 1.3.3,
   1.4.1, and 3.3.2 review.
+- Focus/input context-change evidence in visual, Markdown, WCAG evidence, and
+  manual checklist outputs. The scanner now inventories inline focus, blur,
+  input, change, select, and autofocus triggers for WCAG 3.2.1 and 3.2.2
+  review without executing risky navigation or submission behavior.
 
 ## Changed
 
