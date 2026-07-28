@@ -153,13 +153,14 @@ Section 508 certification.
   outputs. Next, collect bounded interaction evidence for pointer cancellation
   and non-drag alternatives without triggering destructive or account-changing
   actions.
-- Continue sensory/color-only instruction support beyond the current manual
-  checklist row by collecting bounded evidence for instruction copy, legends,
-  charts, validation text, and non-text cues without creating noisy content
-  false positives. Text-spacing support now applies WCAG spacing overrides and
-  records clipped-text and overflow candidates in visual, Markdown, checklist,
-  and WCAG evidence outputs; next, validate false-positive wording in real
-  translated and content-heavy layouts.
+- Continue sensory/color-only instruction support beyond the current text
+  heuristic. Current exploration evidence records bounded visible instruction
+  samples that mention color, position, shape, icon, or sound cues in visual,
+  Markdown, checklist, and WCAG evidence outputs. Text-spacing support now
+  applies WCAG spacing overrides and records clipped-text and overflow
+  candidates in visual, Markdown, checklist, and WCAG evidence outputs. Next,
+  validate false-positive wording in real translated, chart-heavy, validation,
+  and content-heavy layouts.
 - Extend account/authentication support beyond the current manual checklist row:
   collect bounded evidence for redundant entry and accessible authentication in
   dedicated test accounts without recording credentials, personal data, orders,

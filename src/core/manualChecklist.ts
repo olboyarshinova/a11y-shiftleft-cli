@@ -687,6 +687,7 @@ function collectManualReviewTargets(
     addLandmarkTargets(targets, state);
     addReflowTargets(targets, state);
     addTextSpacingTargets(targets, state);
+    addSensoryInstructionTargets(targets, state);
     addHoverFocusTargets(targets, state);
     addPointerTargets(targets, state);
   }
@@ -814,6 +815,15 @@ function addTextSpacingTargets(targets: Map<string, ManualReviewTarget[]>, state
     : "Text-spacing sample";
   addTarget(targets, "text-spacing-resilience", targetFor(state, "text-spacing", label, undefined,
     `${evidence.horizontalOverflowPx}px horizontal overflow; ${evidence.clippedTextCount} clipped-text candidate(s) after WCAG text-spacing overrides`));
+}
+
+function addSensoryInstructionTargets(targets: Map<string, ManualReviewTarget[]>, state: ExplorationState): void {
+  const evidence = state.sensoryInstructions;
+  if (!evidence || evidence.sampleCount === 0) return;
+  for (const sample of evidence.samples) {
+    addTarget(targets, "sensory-color-instructions", targetFor(state, "sensory", sample.text, sample.selector,
+      `${sample.cues.join(", ")} cue(s) detected in visible instruction text`));
+  }
 }
 
 function addHoverFocusTargets(targets: Map<string, ManualReviewTarget[]>, state: ExplorationState): void {

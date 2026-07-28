@@ -1026,6 +1026,15 @@ function formatCoverageMatrix(report: A11yReport): string {
   const textSpacingStates = report.exploration?.states.filter((state) => state.textSpacing) || [];
   const textSpacingClipped = textSpacingStates.reduce((total, state) => total + (state.textSpacing?.clippedTextCount || 0), 0);
   const textSpacingOverflowStates = textSpacingStates.filter((state) => (state.textSpacing?.horizontalOverflowPx || 0) > 1).length;
+  const sensoryStates = report.exploration?.states.filter((state) => state.sensoryInstructions) || [];
+  const sensorySamples = sensoryStates.reduce((total, state) => total + (state.sensoryInstructions?.sampleCount || 0), 0);
+  const sensoryCueCount = sensoryStates.reduce((total, state) => (
+    total +
+    (state.sensoryInstructions?.colorCueCount || 0) +
+    (state.sensoryInstructions?.positionCueCount || 0) +
+    (state.sensoryInstructions?.shapeCueCount || 0) +
+    (state.sensoryInstructions?.soundCueCount || 0)
+  ), 0);
   const modalCount = report.exploration?.states.filter((state) => state.modalFocus).length || 0;
   const announcementStates = report.exploration?.states.filter((state) => state.dynamicAnnouncements) || [];
   const announcementUpdates = announcementStates.reduce((total, state) => total + (state.dynamicAnnouncements?.meaningfulUpdates || 0), 0);
@@ -1068,7 +1077,7 @@ function formatCoverageMatrix(report: A11yReport): string {
 | Modal focus behavior | ${modalCount > 0 ? "Heuristic evidence collected" : "No opened modal observed"} | ${modalCount} state${modalCount === 1 ? "" : "s"} checked for name, initial focus, Escape, and restoration |
 | Dynamic announcements | ${announcementStates.length > 0 ? "Mutation evidence collected" : "No action evidence"} | ${announcementUpdates} meaningful live-region update${announcementUpdates === 1 ? "" : "s"} observed after ${announcementStates.length} action${announcementStates.length === 1 ? "" : "s"} |
 | Form error states | ${formStates.length > 0 ? "Rendered-state evidence collected" : "No forms observed"} | ${invalidFields} explicit invalid field${invalidFields === 1 ? "" : "s"}; ${unassociatedInvalidFields} without an exposed associated error |
-| Sensory and color-only instructions | ${manualChecklistStatus("sensory-color-instructions", manualChecklistItemIds, report.manualChecklist)} | Review instructions, legends, charts, filters, and validation copy for color-only, position-only, sound-only, or shape-only cues |
+| Sensory and color-only instructions | ${sensorySamples > 0 ? "Automated heuristic plus manual review" : manualChecklistStatus("sensory-color-instructions", manualChecklistItemIds, report.manualChecklist)} | ${sensorySamples > 0 ? `${sensorySamples} instruction sample${sensorySamples === 1 ? "" : "s"} with ${sensoryCueCount} color, position, shape, icon, or sound cue${sensoryCueCount === 1 ? "" : "s"} found for manual review` : "Review instructions, legends, charts, filters, and validation copy for color-only, position-only, sound-only, or shape-only cues"} |
 | Text spacing resilience | ${textSpacingStates.length > 0 ? "Automated heuristic plus manual review" : manualChecklistStatus("text-spacing", manualChecklistItemIds, report.manualChecklist)} | ${textSpacingStates.length > 0 ? `${textSpacingStates.length} state${textSpacingStates.length === 1 ? "" : "s"} checked with WCAG text-spacing overrides; ${textSpacingClipped} clipped text candidate${textSpacingClipped === 1 ? "" : "s"}; ${textSpacingOverflowStates} overflow state${textSpacingOverflowStates === 1 ? "" : "s"}` : "Apply text-spacing overrides and confirm content, controls, and errors do not clip, overlap, or disappear"} |
 | Account and authentication flow | ${manualChecklistStatus("account-authentication-flow", manualChecklistItemIds, report.manualChecklist)} | Review login, checkout, account recovery, and multi-step forms for redundant entry and cognitive authentication barriers |
 | Time limits and recovery | ${manualChecklistStatus("time-limits-recovery", manualChecklistItemIds, report.manualChecklist)} | Review timeout warnings, session extension, interrupted tasks, data preservation, and legal/financial/data-change confirmation |

@@ -279,6 +279,19 @@ test("getRemediationHint explains pointer and target-size findings", () => {
   assert.equal(dragging.docs.some((url) => url.includes("dragging-movements")), true);
 });
 
+test("getRemediationHint explains sensory-only instruction risks", () => {
+  const hint = getRemediationHint(
+    "sensory-instruction-risk",
+    getWcagCriteria(["1.3.3", "1.4.1", "3.3.2"]),
+    "unknown"
+  );
+
+  assert.match(hint.summary, /color, position, shape, icon, or sound/);
+  assert.equal(hint.howToFix.some((step) => step.includes("Select Continue")), true);
+  assert.equal(hint.docs.some((url) => url.includes("sensory-characteristics")), true);
+  assert.equal(hint.docs.some((url) => url.includes("use-of-color")), true);
+});
+
 test("getRemediationHint explains document metadata findings", () => {
   const titleHint = getRemediationHint("document-title", getWcagCriteria(["2.4.2"]), "react");
   const langHint = getRemediationHint("html-has-lang", getWcagCriteria(["3.1.1"]), "react");

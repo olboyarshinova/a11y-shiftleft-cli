@@ -61,11 +61,11 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
 | 1.2.9 Audio-only (Live) | AAA | Gap | Outside current target |
 | 1.3.1 Info and Relationships | A | Automated + mapped; manual checklist | axe structure/table/list rules, labels, landmarks, form review |
 | 1.3.2 Meaningful Sequence | A | Manual checklist | Logical reading and navigation order review |
-| 1.3.3 Sensory Characteristics | A | Gap | Instructions referring only to shape, position, sound, or color are not reviewed |
+| 1.3.3 Sensory Characteristics | A | Heuristic + manual checklist | Visible instruction-text heuristic for color, position, shape, icon, and sound cues; context and sufficiency require manual review |
 | 1.3.4 Orientation | AA | Automated + mapped | axe `css-orientation-lock` |
 | 1.3.5 Identify Input Purpose | AA | Automated + mapped | axe `autocomplete-valid` |
 | 1.3.6 Identify Purpose | AAA | Gap | Outside current target |
-| 1.4.1 Use of Color | A | Automated + mapped | axe `link-in-text-block` detects only a subset |
+| 1.4.1 Use of Color | A | Automated + mapped; heuristic + manual checklist | axe `link-in-text-block` plus visible instruction-text heuristic; context and sufficiency require manual review |
 | 1.4.2 Audio Control | A | Automated + rendered evidence | axe `no-autoplay-audio` plus autoplay, muted, and controls state without duplicate findings |
 | 1.4.3 Contrast (Minimum) | AA | Automated + mapped | axe `color-contrast` with measured and required ratios |
 | 1.4.4 Resize Text | AA | Automated + heuristic + manual checklist | axe viewport signal plus 200% zoom comparison for overflow, clipped text, and overlap review |

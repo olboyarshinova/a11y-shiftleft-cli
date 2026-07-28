@@ -48,6 +48,10 @@ This creates separate visual reports for each browser engine plus:
   checklist outputs. The scanner now temporarily applies WCAG text-spacing
   overrides and records overflow or clipped-text candidates for WCAG 1.4.12
   review.
+- Sensory-instruction evidence in visual, Markdown, WCAG evidence, and manual
+  checklist outputs. The scanner now surfaces visible instructions that appear
+  to rely on color, position, shape, icon, or sound cues for manual WCAG 1.3.3,
+  1.4.1, and 3.3.2 review.
 
 ## Changed
 

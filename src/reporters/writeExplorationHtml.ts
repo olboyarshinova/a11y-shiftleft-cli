@@ -2896,6 +2896,15 @@ function renderCoverageMatrix(
   const textSpacingStates = graph.states.filter((state) => state.textSpacing);
   const textSpacingClipped = textSpacingStates.reduce((total, state) => total + (state.textSpacing?.clippedTextCount || 0), 0);
   const textSpacingOverflowStates = textSpacingStates.filter((state) => (state.textSpacing?.horizontalOverflowPx || 0) > 1).length;
+  const sensoryStates = graph.states.filter((state) => state.sensoryInstructions);
+  const sensorySamples = sensoryStates.reduce((total, state) => total + (state.sensoryInstructions?.sampleCount || 0), 0);
+  const sensoryCueCount = sensoryStates.reduce((total, state) => (
+    total +
+    (state.sensoryInstructions?.colorCueCount || 0) +
+    (state.sensoryInstructions?.positionCueCount || 0) +
+    (state.sensoryInstructions?.shapeCueCount || 0) +
+    (state.sensoryInstructions?.soundCueCount || 0)
+  ), 0);
   const modalStates = graph.states.filter((state) => state.modalFocus);
   const announcementStates = graph.states.filter((state) => state.dynamicAnnouncements);
   const announcementUpdates = announcementStates.reduce((total, state) => (
@@ -2977,7 +2986,7 @@ function renderCoverageMatrix(
     coverageRow("modal-focus", "Modal focus behavior", modalStates.length > 0 ? evidenceState(countIssues((issue) => issue.source === "modal")) : "needs-review", modalStates.length > 0 ? "Automated evidence" : "Review if applicable", modalStates.length > 0 ? `${modalStates.length} state${modalStates.length === 1 ? "" : "s"} checked for name, initial focus, Escape, and focus restoration` : "No modal opened during this audit; open any dialog and check initial focus, Escape, and focus return manually.", modalStates.length > 0, modalStates.length > 0 ? countIssues((issue) => issue.source === "modal") : undefined, manualChecklistItemIds),
     coverageRow("announcements", "Status messages / live updates", announcementStates.length > 0 ? "passed" : "needs-review", announcementStates.length > 0 ? "Mutation evidence" : "Human review required", announcementStates.length > 0 ? `${announcementUpdates} meaningful live-region update${announcementUpdates === 1 ? "" : "s"} observed after ${announcementStates.length} action${announcementStates.length === 1 ? "" : "s"}; confirm announcement quality manually` : "Trigger loading, success, error, cart, search-result, and validation updates with a screen reader", announcementStates.length > 0, announcementStates.length > 0 ? 0 : undefined, manualChecklistItemIds),
     coverageRow("form-errors", "Form error states", formStates.length > 0 ? evidenceState(countIssues((issue) => issue.category === "forms")) : "needs-review", formStates.length > 0 ? "Automated evidence" : "Review if applicable", formStates.length > 0 ? `${invalidFields} explicit invalid field${invalidFields === 1 ? "" : "s"}; ${unassociatedInvalidFields} without an exposed associated error` : "No rendered form error state was observed", formStates.length > 0, formStates.length > 0 ? countIssues((issue) => issue.category === "forms") : undefined, manualChecklistItemIds),
-    coverageRow("sensory-color-instructions", "Sensory and color-only instructions", "needs-review", options.manualChecklist ? "Checklist ready" : "Human review required", "Review instructions, legends, charts, filters, and validation copy for color-only, position-only, sound-only, or shape-only cues", false, undefined, manualChecklistItemIds),
+    coverageRow("sensory-color-instructions", "Sensory and color-only instructions", "needs-review", sensorySamples > 0 ? "Automated heuristic + manual review" : options.manualChecklist ? "Checklist ready" : "Human review required", sensorySamples > 0 ? `${sensorySamples} instruction sample${sensorySamples === 1 ? "" : "s"} with ${sensoryCueCount} color, position, shape, icon, or sound cue${sensoryCueCount === 1 ? "" : "s"} found for manual review` : "Review instructions, legends, charts, filters, and validation copy for color-only, position-only, sound-only, or shape-only cues", false, sensorySamples > 0 ? sensorySamples : undefined, manualChecklistItemIds),
     coverageRow("text-spacing", "Text spacing resilience", textSpacingStates.length > 0 ? evidenceState(textSpacingClipped + textSpacingOverflowStates) : "needs-review", textSpacingStates.length > 0 ? "Automated heuristic + manual review" : options.manualChecklist ? "Checklist ready" : "Human review required", textSpacingStates.length > 0 ? `${textSpacingStates.length} state${textSpacingStates.length === 1 ? "" : "s"} checked with WCAG text-spacing overrides; ${textSpacingClipped} clipped text candidate${textSpacingClipped === 1 ? "" : "s"}; ${textSpacingOverflowStates} overflow state${textSpacingOverflowStates === 1 ? "" : "s"}` : "Apply text-spacing overrides and confirm content, controls, and errors do not clip, overlap, or disappear", textSpacingStates.length > 0, textSpacingStates.length > 0 ? textSpacingClipped + textSpacingOverflowStates : undefined, manualChecklistItemIds),
     coverageRow("account-authentication-flow", "Account and authentication flow", "needs-review", options.manualChecklist ? "Checklist ready" : "Human review required", "Review login, checkout, account recovery, and multi-step forms for redundant entry and cognitive authentication barriers", false, undefined, manualChecklistItemIds),
     coverageRow("time-limits-recovery", "Time limits and recovery", "needs-review", options.manualChecklist ? "Checklist ready" : "Human review required", "Review timeout warnings, session extension, interrupted tasks, data preservation, and legal/financial/data-change confirmation", false, undefined, manualChecklistItemIds),
@@ -3271,6 +3280,7 @@ function renderState(state: StateViewModel): string {
     ${renderAccessibilityTreeEvidence(state)}
     ${renderReflowEvidence(state)}
     ${renderTextSpacingEvidence(state)}
+    ${renderSensoryInstructionEvidence(state)}
     ${renderForcedColorsEvidence(state)}
     ${renderModalFocusEvidence(state)}
     ${renderDynamicAnnouncementEvidence(state)}
@@ -3509,6 +3519,23 @@ function renderTextSpacingEvidence(state: ExplorationState): string {
       ? `<ul>${evidence.clippedTextSample.map((item) => `<li><code>${escapeHtml(item.selector)}</code>: ${escapeHtml(item.text || "unnamed text")} (${item.horizontalOverflowPx}px horizontal, ${item.verticalOverflowPx}px vertical overflow)</li>`).join("")}</ul>`
       : '<p class="muted">No clipped text candidates were detected after WCAG text-spacing overrides.</p>'}
     <p class="muted">Confirm manually with user text-spacing settings or a browser stylesheet. The heuristic applies line-height, letter-spacing, word-spacing, and paragraph spacing overrides, then checks for clipped or horizontally overflowing content.</p>
+  </details>`;
+}
+
+function renderSensoryInstructionEvidence(state: ExplorationState): string {
+  const evidence = state.sensoryInstructions;
+  if (!evidence || evidence.sampleCount === 0) return "";
+  return `<details>
+    <summary>Sensory instruction evidence</summary>
+    <div class="summary">
+      ${metric("Instruction samples", evidence.sampleCount, "warning")}
+      ${metric("Color cues", evidence.colorCueCount)}
+      ${metric("Position cues", evidence.positionCueCount)}
+      ${metric("Shape/icon cues", evidence.shapeCueCount)}
+      ${metric("Sound cues", evidence.soundCueCount)}
+    </div>
+    <ul>${evidence.samples.map((sample) => `<li><code>${escapeHtml(sample.selector)}</code>: ${escapeHtml(sample.cues.join(", "))} · ${escapeHtml(sample.text)}</li>`).join("")}</ul>
+    <p class="muted">Confirm manually whether the instruction also has text labels, programmatic relationships, visible names, or non-sensory alternatives. Natural-language matching is intentionally conservative evidence, not an automatic WCAG failure.</p>
   </details>`;
 }
 

@@ -130,6 +130,14 @@ clipped-text candidates. These are heuristic WCAG 1.4.12 signals: confirm them
 manually with real user styles before treating intentional truncation as a
 defect.
 
+Each explored state can also include sensory-instruction evidence. The scanner
+looks for visible instruction text that appears to depend on color, position,
+shape, icon, or sound cues, such as "select the red option" or "use the button
+on the right." These are low-confidence WCAG 1.3.3, 1.4.1, and 3.3.2 review
+signals: confirm manually whether the same instruction is also available
+through text labels, programmatic relationships, visible names, or another
+non-sensory cue.
+
 For modals reached through safe exploration, the report records the dialog
 name, initial focused element, isolated Escape result, and focus restoration to
 the trigger. The isolated page prevents the close test from changing the main

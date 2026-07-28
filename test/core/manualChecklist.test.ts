@@ -178,6 +178,18 @@ test("createManualChecklist creates an assisted queue from exploration evidence"
             verticalOverflowPx: 12
           }]
         },
+        sensoryInstructions: {
+          sampleCount: 1,
+          colorCueCount: 1,
+          positionCueCount: 1,
+          shapeCueCount: 0,
+          soundCueCount: 0,
+          samples: [{
+            selector: "#instructions",
+            text: "Click the green button below to continue.",
+            cues: ["color", "position"]
+          }]
+        },
         hoverFocus: {
           triggerCount: 1,
           titleTriggerCount: 0,
@@ -228,6 +240,7 @@ test("createManualChecklist creates an assisted queue from exploration evidence"
   const statusReview = checklist.items.find((item) => item.id === "status-messages-live-updates");
   const imageReview = checklist.items.find((item) => item.id === "alternative-text-quality");
   const textSpacingReview = checklist.items.find((item) => item.id === "text-spacing-resilience");
+  const sensoryReview = checklist.items.find((item) => item.id === "sensory-color-instructions");
   const hoverFocusReview = checklist.items.find((item) => item.id === "hover-focus-content");
   const pointerReview = checklist.items.find((item) => item.id === "pointer-dragging-alternatives");
   assert.equal(formReview?.targets?.[0].selector, "#email");
@@ -235,6 +248,8 @@ test("createManualChecklist creates an assisted queue from exploration evidence"
   assert.equal(formReview?.targets?.[0].stateId, "state-2");
   assert.equal(imageReview?.targets?.[0].kind, "image");
   assert.equal(textSpacingReview?.targets?.[0].kind, "text-spacing");
+  assert.equal(sensoryReview?.targets?.[0].kind, "sensory");
+  assert.equal(sensoryReview?.targets?.[0].selector, "#instructions");
   assert.equal(hoverFocusReview?.targets?.[0].kind, "hover-focus");
   assert.equal(hoverFocusReview?.targets?.[0].selector, "#help");
   assert.equal(pointerReview?.targets?.[0].kind, "pointer");
@@ -244,6 +259,7 @@ test("createManualChecklist creates an assisted queue from exploration evidence"
   assert.match(toManualChecklistMarkdown(checklist), /state-2, #email/);
   assert.match(toManualChecklistMarkdown(checklist), /hover-focus: Help/);
   assert.match(toManualChecklistMarkdown(checklist), /text-spacing: Text-spacing findings require review/);
+  assert.match(toManualChecklistMarkdown(checklist), /sensory: Click the green button below to continue/);
   assert.match(toManualChecklistMarkdown(checklist), /pointer: Move item/);
 });
 

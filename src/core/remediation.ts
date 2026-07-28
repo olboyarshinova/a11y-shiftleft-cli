@@ -284,6 +284,19 @@ const RULE_HINTS: Record<string, RemediationHint> = {
       "https://www.w3.org/WAI/WCAG22/Understanding/reflow.html"
     ]
   },
+  "sensory-instruction-risk": {
+    summary: "Review instructions that may rely only on color, position, shape, icon, or sound cues.",
+    howToFix: [
+      "Rewrite instructions so the action is identifiable without sensory-only language such as color, shape, position, or sound.",
+      "Name the target control or field directly, for example use \"Select Continue\" instead of \"Select the green button on the right.\"",
+      "For errors, status, charts, and legends, pair color or icon cues with visible text and programmatic relationships such as labels, descriptions, or aria-describedby."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/sensory-characteristics.html",
+      "https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html",
+      "https://www.w3.org/WAI/WCAG22/Understanding/labels-or-instructions.html"
+    ]
+  },
   "forced-colors-focus-indicator-risk": {
     summary: "Make the focused control visible when system forced-colors or high-contrast mode is active.",
     howToFix: [

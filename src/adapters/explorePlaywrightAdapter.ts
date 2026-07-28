@@ -39,6 +39,7 @@ import type {
   ModalFocusEvidence,
   PointerInteractionEvidence,
   ReflowEvidence,
+  SensoryInstructionEvidence,
   TextSpacingEvidence
 } from "../types.js";
 import type { ElementBounds } from "../types.js";
@@ -506,6 +507,11 @@ export async function runExplorePlaywrightAdapter(
         const interactiveControls = await captureInteractiveControls(page);
         const hoverFocus = await auditHoverFocusContent(page);
         const pointerInteractions = await auditPointerInteractions(page);
+        const sensoryInstructions = await auditSensoryInstructions(page, config, {
+          stateId,
+          stateLabel: actionLabel,
+          colorScheme: reportedColorScheme
+        });
         const formErrors = await auditFormErrors(page, config, {
           stateId,
           stateLabel: actionLabel,
@@ -531,7 +537,8 @@ export async function runExplorePlaywrightAdapter(
           ...formErrors.issues,
           ...imageAlternatives.issues,
           ...media.issues,
-          ...embeddedContent.issues
+          ...embeddedContent.issues,
+          ...sensoryInstructions.issues
         ];
         const visualEvidence = screenshots
           ? await captureStateVisualEvidence(page, renderedIssues, {
@@ -630,6 +637,7 @@ export async function runExplorePlaywrightAdapter(
           accessibilityTree,
           reflow: reflow.evidence,
           textSpacing: reflow.textSpacing,
+          sensoryInstructions: sensoryInstructions.evidence,
           forcedColors: forcedColors.evidence,
           modalFocus,
           dynamicAnnouncements,
@@ -2097,6 +2105,139 @@ async function auditPointerInteractions(page: Page): Promise<PointerInteractionE
       samples
     };
   });
+}
+
+async function auditSensoryInstructions(
+  page: Page,
+  config: A11yConfig,
+  state: {
+    stateId: string;
+    stateLabel: string;
+    colorScheme: Issue["colorScheme"];
+  }
+): Promise<{ evidence: SensoryInstructionEvidence; issues: Issue[] }> {
+  const evidence = await page.evaluate(() => {
+    type Cue = "color" | "position" | "shape" | "sound";
+    type Sample = {
+      selector: string;
+      text: string;
+      cues: Cue[];
+    };
+
+    function clean(value: string | null | undefined): string {
+      return (value || "").replace(/\s+/g, " ").trim();
+    }
+
+    function isVisible(element: Element): boolean {
+      const htmlElement = element as HTMLElement;
+      const rect = htmlElement.getBoundingClientRect();
+      const style = window.getComputedStyle(htmlElement);
+      return rect.width > 0 &&
+        rect.height > 0 &&
+        style.display !== "none" &&
+        style.visibility !== "hidden" &&
+        style.opacity !== "0";
+    }
+
+    function attrSelector(name: string, value: string): string {
+      return `[${name}="${value.replace(/\\/g, "\\\\").replace(/"/g, "\\\"")}"]`;
+    }
+
+    function selectorFor(element: Element): string {
+      const testId = element.getAttribute("data-testid");
+      if (testId) return attrSelector("data-testid", testId);
+
+      const id = element.getAttribute("id");
+      if (id) return attrSelector("id", id);
+
+      const ariaLabel = element.getAttribute("aria-label");
+      if (ariaLabel) return attrSelector("aria-label", ariaLabel);
+
+      const tag = element.tagName.toLowerCase();
+      const parent = element.parentElement;
+      if (!parent) return tag;
+
+      const sameTagSiblings = Array.from(parent.children).filter((sibling) => (
+        sibling.tagName === element.tagName
+      ));
+      const index = sameTagSiblings.indexOf(element) + 1;
+      return `${parent.tagName.toLowerCase()} > ${tag}:nth-of-type(${Math.max(index, 1)})`;
+    }
+
+    const instructionPattern = /\b(click|tap|press|select|choose|use|open|close|see|look|find|enter|fill|required|error|warning|success|status|field|button|link|item|option|icon|indicator)\b/i;
+    const colorPattern = /\b(red|green|blue|yellow|orange|purple|pink|gray|grey|black|white|colored|colour|color)\b/i;
+    const positionPattern = /\b(left|right|above|below|top|bottom|upper|lower|next to|beside|near|under|over)\b/i;
+    const shapePattern = /\b(circle|square|triangle|star|diamond|arrow|dot|checkmark|cross|plus|minus|icon|shape)\b/i;
+    const soundPattern = /\b(beep|sound|tone|chime|audio cue|hear|heard)\b/i;
+    const properNameNoise = /\b(red hat|green street|black friday|white house|blue cross|yellow pages)\b/i;
+    const textElements = Array.from(document.body?.querySelectorAll("p, li, label, legend, figcaption, caption, th, td, summary, button, a, [role='alert'], [role='status'], [aria-live], [data-testid], .error, .warning, .success, .hint, .help") || [])
+      .filter((element) => isVisible(element));
+    const samples: Sample[] = [];
+
+    for (const element of textElements) {
+      const text = clean(element.textContent);
+      if (text.length < 8 || text.length > 280) continue;
+      if (!instructionPattern.test(text)) continue;
+      if (properNameNoise.test(text)) continue;
+
+      const cues = [
+        colorPattern.test(text) ? "color" : "",
+        positionPattern.test(text) ? "position" : "",
+        shapePattern.test(text) ? "shape" : "",
+        soundPattern.test(text) ? "sound" : ""
+      ].filter(Boolean) as Cue[];
+      if (cues.length === 0) continue;
+
+      samples.push({
+        selector: selectorFor(element),
+        text: text.slice(0, 180),
+        cues
+      });
+      if (samples.length >= 12) break;
+    }
+
+    const countCue = (cue: Cue) => samples.filter((sample) => sample.cues.includes(cue)).length;
+
+    return {
+      sampleCount: samples.length,
+      colorCueCount: countCue("color"),
+      positionCueCount: countCue("position"),
+      shapeCueCount: countCue("shape"),
+      soundCueCount: countCue("sound"),
+      samples
+    };
+  });
+  const issues: Issue[] = [];
+
+  if (evidence.sampleCount > 0) {
+    const cueSummary = [
+      evidence.colorCueCount > 0 ? `${evidence.colorCueCount} color cue${evidence.colorCueCount === 1 ? "" : "s"}` : "",
+      evidence.positionCueCount > 0 ? `${evidence.positionCueCount} position cue${evidence.positionCueCount === 1 ? "" : "s"}` : "",
+      evidence.shapeCueCount > 0 ? `${evidence.shapeCueCount} shape/icon cue${evidence.shapeCueCount === 1 ? "" : "s"}` : "",
+      evidence.soundCueCount > 0 ? `${evidence.soundCueCount} sound cue${evidence.soundCueCount === 1 ? "" : "s"}` : ""
+    ].filter(Boolean).join(", ");
+    issues.push({
+      source: "content",
+      framework: config.framework,
+      ruleId: "sensory-instruction-risk",
+      selector: evidence.samples[0]?.selector || "body",
+      wcag: ["1.3.3", "1.4.1", "3.3.2"],
+      tags: ["wcag133", "wcag141", "wcag332", "heuristic", "needs-review"],
+      severity: "warning",
+      confidence: "low",
+      confidenceScore: 55,
+      confidenceReason: "Visible instruction text appears to rely on color, position, shape, icon, or sound cues; confirm manually because natural language can be ambiguous.",
+      category: "other",
+      findingType: "needs-review",
+      url: page.url(),
+      stateId: state.stateId,
+      stateLabel: state.stateLabel,
+      colorScheme: state.colorScheme,
+      message: `Review instructions that may rely on sensory cues: ${cueSummary}.`
+    });
+  }
+
+  return { evidence, issues };
 }
 
 async function auditReflow(

@@ -15,6 +15,10 @@
   Markdown reports, WCAG evidence summaries, and the manual checklist so WCAG
   1.4.12 clipping and overflow risks are surfaced without requiring a separate
   browser bookmarklet pass.
+- Added sensory-instruction heuristics to exploration, visual reports, Markdown
+  reports, WCAG evidence summaries, and the manual checklist so instructions
+  that appear to rely on color, position, shape, icon, or sound cues are
+  surfaced for WCAG 1.3.3, 1.4.1, and 3.3.2 review.
 - Added 200% zoom comparison and fixed/sticky overlap candidates to reflow
   evidence so visual and Markdown reports flag resize-text and 400% reflow
   risks without extra screenshots.

@@ -87,6 +87,18 @@ const graph = {
           verticalOverflowPx: 18
         }]
       },
+      sensoryInstructions: {
+        sampleCount: 1,
+        colorCueCount: 1,
+        positionCueCount: 1,
+        shapeCueCount: 0,
+        soundCueCount: 0,
+        samples: [{
+          selector: "#checkout-help",
+          text: "Select the red option on the right to continue.",
+          cues: ["color", "position"]
+        }]
+      },
       modalFocus: {
         dialogCount: 1,
         dialogSelector: "[role=\"dialog\"]",
@@ -452,7 +464,9 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /\.metric-zero strong \{[\s\S]*?color: var\(--ok\)/);
   assert.doesNotMatch(html, /\.metric-wcag \{[\s\S]*?background:/);
   assert.match(html, /Sensory and color-only instructions/);
-  assert.match(html, /Review instructions, legends, charts, filters/);
+  assert.match(html, /1 instruction sample with 2 color, position, shape, icon, or sound cues found for manual review/);
+  assert.match(html, /Sensory instruction evidence/);
+  assert.match(html, /Select the red option on the right to continue/);
   assert.match(html, /Text spacing resilience/);
   assert.match(html, /1 state checked with WCAG text-spacing overrides; 1 clipped text candidate; 1 overflow state/);
   assert.match(html, /Text spacing evidence/);
@@ -2379,7 +2393,14 @@ test("writeExplorationHtml can create a unified audit report", async () => {
 });
 
 test("renderExplorationHtml links coverage rows to matching manual checklist items", () => {
-  const html = renderExplorationHtml(graph, issues, {
+  const graphWithoutSensoryEvidence = {
+    ...graph,
+    states: graph.states.map((state) => ({
+      ...state,
+      sensoryInstructions: undefined
+    }))
+  };
+  const html = renderExplorationHtml(graphWithoutSensoryEvidence, issues, {
     manualChecklist: {
       generatedAt: "2026-06-21T00:00:00.000Z",
       framework: "react",

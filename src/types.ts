@@ -746,7 +746,7 @@ export interface ManualReviewRecord {
 
 export interface ManualReviewTarget {
   id: string;
-  kind: "dialog" | "form" | "image" | "live-region" | "media" | "embedded-content" | "landmark" | "reflow" | "text-spacing" | "hover-focus" | "pointer" | "journey";
+  kind: "dialog" | "form" | "image" | "live-region" | "media" | "embedded-content" | "landmark" | "reflow" | "text-spacing" | "sensory" | "hover-focus" | "pointer" | "journey";
   label: string;
   url: string;
   stateId: string;
@@ -914,6 +914,7 @@ export interface ExplorationState {
   accessibilityTree?: AccessibilityTreeEvidence;
   reflow?: ReflowEvidence;
   textSpacing?: TextSpacingEvidence;
+  sensoryInstructions?: SensoryInstructionEvidence;
   forcedColors?: ForcedColorsEvidence;
   modalFocus?: ModalFocusEvidence;
   dynamicAnnouncements?: DynamicAnnouncementEvidence;
@@ -1055,6 +1056,23 @@ export interface TextSpacingEvidence {
   horizontalOverflowPx: number;
   clippedTextCount: number;
   clippedTextSample: ReflowClippedElement[];
+}
+
+export type SensoryInstructionCue = "color" | "position" | "shape" | "sound";
+
+export interface SensoryInstructionSample {
+  selector: string;
+  text: string;
+  cues: SensoryInstructionCue[];
+}
+
+export interface SensoryInstructionEvidence {
+  sampleCount: number;
+  colorCueCount: number;
+  positionCueCount: number;
+  shapeCueCount: number;
+  soundCueCount: number;
+  samples: SensoryInstructionSample[];
 }
 
 export type ForcedColorsConcern =
