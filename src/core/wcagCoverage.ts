@@ -143,7 +143,7 @@ function collectHeuristicEvidence(options: WcagCoverageOptions): Map<string, str
   const evidence = new Map<string, string[]>();
   const states = options.exploration?.states || [];
 
-  if (states.some((state) => state.reflow)) addEvidence(evidence, ["1.4.10"], "400% reflow heuristic");
+  if (states.some((state) => state.reflow)) addEvidence(evidence, ["1.4.10"], "400% reflow and sticky-overlap heuristic");
   if (states.some((state) => state.forcedColors)) {
     addEvidence(evidence, ["1.4.1", "1.4.11", "2.4.7", "2.4.11"], "forced-colors heuristic");
   }

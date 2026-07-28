@@ -170,3 +170,37 @@ test("dedupeIssues preserves browser evidence from a later duplicate", () => {
   });
   assert.deepEqual(issues[0].sources?.sort(), ["axe", "eslint"]);
 });
+
+test("dedupeIssues preserves richer ownership context from a later duplicate", () => {
+  const issues = dedupeIssues([
+    {
+      source: "axe",
+      ruleId: "aria-prohibited-attr",
+      selector: "iframe",
+      url: "https://example.com/talk",
+      severity: "critical",
+      ownership: {
+        kind: "third-party-embed",
+        label: "Third-party embedded content"
+      }
+    },
+    {
+      source: "axe",
+      ruleId: "aria-prohibited-attr",
+      selector: "iframe",
+      url: "https://example.com/talk",
+      severity: "critical",
+      ownership: {
+        kind: "third-party-embed",
+        label: "Third-party embedded content",
+        source: "youtube.com",
+        url: "https://www.youtube.com/",
+        note: "Third-party embedded content. Manual verification recommended."
+      }
+    }
+  ]);
+
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].ownership?.source, "youtube.com");
+  assert.equal(issues[0].ownership?.note, "Third-party embedded content. Manual verification recommended.");
+});

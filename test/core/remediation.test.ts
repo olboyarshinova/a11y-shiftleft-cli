@@ -151,11 +151,14 @@ test("getRemediationHint explains page heading best-practice rules", () => {
 test("getRemediationHint explains reflow and clipped text findings", () => {
   const overflow = getRemediationHint("layout-horizontal-overflow", getWcagCriteria(["1.4.10"]), "react");
   const clipped = getRemediationHint("layout-clipped-text", getWcagCriteria(["1.4.10"]), "unknown");
+  const overlap = getRemediationHint("layout-fixed-sticky-overlap", getWcagCriteria(["1.4.10"]), "unknown");
 
   assert.match(overflow.summary, /320 CSS pixel/);
   assert.equal(overflow.docs.some((url) => url.includes("reflow")), true);
   assert.match(clipped.summary, /clipped/);
   assert.equal(clipped.howToFix.some((step) => step.includes("fixed heights")), true);
+  assert.match(overlap.summary, /fixed or sticky/);
+  assert.equal(overlap.howToFix.some((step) => step.includes("scroll-margin")), true);
 });
 
 test("getRemediationHint explains invalid field error association", () => {

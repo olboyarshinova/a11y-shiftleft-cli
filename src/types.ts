@@ -957,6 +957,14 @@ export interface ReflowClippedElement {
   verticalOverflowPx: number;
 }
 
+export interface ReflowOverlapElement {
+  selector: string;
+  overlappedSelector: string;
+  position: "fixed" | "sticky";
+  overlapAreaPx: number;
+  text?: string;
+}
+
 export interface ReflowEvidence {
   viewportWidth: number;
   viewportHeight: number;
@@ -964,6 +972,8 @@ export interface ReflowEvidence {
   horizontalOverflowPx: number;
   clippedTextCount: number;
   clippedTextSample: ReflowClippedElement[];
+  fixedStickyOverlapCount?: number;
+  fixedStickyOverlapSample?: ReflowOverlapElement[];
 }
 
 export type ForcedColorsConcern =

@@ -56,6 +56,7 @@ const RULE_TO_WCAG: Record<string, string[]> = {
   "link-in-text-block": ["1.4.1"],
   "layout-horizontal-overflow": ["1.4.10"],
   "layout-clipped-text": ["1.4.10"],
+  "layout-fixed-sticky-overlap": ["1.4.10"],
   "link-name": ["2.4.4", "4.1.2"],
   "marquee": ["2.2.2"],
   "media-video-captions-not-detected": ["1.2.2"],

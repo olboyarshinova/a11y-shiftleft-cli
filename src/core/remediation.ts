@@ -260,6 +260,18 @@ const RULE_HINTS: Record<string, RemediationHint> = {
       "https://www.w3.org/WAI/WCAG22/Understanding/resize-text.html"
     ]
   },
+  "layout-fixed-sticky-overlap": {
+    summary: "Keep fixed or sticky UI from covering meaningful content or controls at a narrow reflow viewport.",
+    howToFix: [
+      "Reserve space for sticky headers, bottom bars, chat widgets, and floating controls so they do not cover content after reflow.",
+      "Use responsive offsets, scroll-padding, scroll-margin, and safe-area spacing for sticky regions.",
+      "Retest the affected task at 320 CSS pixels, 200% zoom, and 400% zoom with keyboard focus visible."
+    ],
+    docs: [
+      "https://www.w3.org/WAI/WCAG22/Understanding/reflow.html",
+      "https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html"
+    ]
+  },
   "forced-colors-focus-indicator-risk": {
     summary: "Make the focused control visible when system forced-colors or high-contrast mode is active.",
     howToFix: [

@@ -45,6 +45,14 @@ const graph = {
           text: "Clipped account instructions",
           horizontalOverflowPx: 24,
           verticalOverflowPx: 0
+        }],
+        fixedStickyOverlapCount: 1,
+        fixedStickyOverlapSample: [{
+          selector: "[id=\"sticky-header\"]",
+          overlappedSelector: "[id=\"checkout\"]",
+          position: "sticky",
+          overlapAreaPx: 240,
+          text: "Checkout"
         }]
       },
       modalFocus: {
@@ -2248,6 +2256,9 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /Unnamed interactive/);
   assert.match(html, /Reflow evidence at 400% \(320 CSS px simulation\)/);
   assert.match(html, /Clipped account instructions/);
+  assert.match(html, /Fixed\/sticky overlap candidates/);
+  assert.match(html, /Fixed or sticky overlap candidates/);
+  assert.match(html, /\[id="sticky-header"\][\s\S]*?overlaps[\s\S]*?\[id="checkout"\]/);
   assert.match(html, /Modal focus evidence/);
   assert.match(html, /Account settings/);
   assert.match(html, /returned to trigger/);
@@ -2354,7 +2365,7 @@ test("renderExplorationHtml hides successful per-state diagnostic details", () =
   assert.doesNotMatch(html, /<summary>Form error evidence<\/summary>/);
   assert.doesNotMatch(html, /<summary>Image alternative-text evidence<\/summary>/);
   assert.match(html, /Audit Coverage/);
-  assert.match(html, /1 state checked for overflow and clipped text/);
+  assert.match(html, /1 state checked for overflow, clipped text, and fixed or sticky overlap/);
   assert.match(html, /0 image alternatives flagged for human review/);
   assert.match(html, /coverage-row-state-needs-review" data-coverage-review="media-motion"[\s\S]*?Media and motion[\s\S]*?Manual review required/);
   assert.match(html, /coverage-row-state-needs-review" data-coverage-review="embedded-content"[\s\S]*?Embedded content and complex graphics[\s\S]*?Owner review recommended/);

@@ -1868,7 +1868,7 @@ async function auditReflow(
   try {
     await page.setViewportSize(viewport);
     await page.waitForTimeout(100);
-    const measuredEvidence = await page.evaluate(({ viewportWidth, viewportHeight }) => {
+    const measuredEvidence = await page.evaluate(({ viewportWidth, viewportHeight, interactiveSelector }) => {
       function selectorFor(element: Element): string {
         const id = element.getAttribute("id");
         if (id) return `[id="${id.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"]`;
@@ -1923,15 +1923,89 @@ async function auditReflow(
         };
       });
 
+      function isVisibleElement(element: Element): boolean {
+        const htmlElement = element as HTMLElement;
+        const rect = htmlElement.getBoundingClientRect();
+        const style = window.getComputedStyle(htmlElement);
+        return rect.width > 0 &&
+          rect.height > 0 &&
+          style.visibility !== "hidden" &&
+          style.display !== "none" &&
+          style.opacity !== "0";
+      }
+
+      function overlapArea(left: DOMRect, right: DOMRect): number {
+        const width = Math.max(0, Math.min(left.right, right.right) - Math.max(left.left, right.left));
+        const height = Math.max(0, Math.min(left.bottom, right.bottom) - Math.max(left.top, right.top));
+        return Math.round(width * height);
+      }
+
+      const positionedElements = Array.from(document.body?.querySelectorAll("*") || [])
+        .filter((element) => {
+          if (element === document.body || element === document.documentElement) return false;
+          if (!isVisibleElement(element)) return false;
+          const style = window.getComputedStyle(element as HTMLElement);
+          const rect = (element as HTMLElement).getBoundingClientRect();
+          const position = style.position;
+          const inViewport = rect.bottom > 0 && rect.right > 0 && rect.top < viewportHeight && rect.left < viewportWidth;
+          return (position === "fixed" || position === "sticky") && inViewport && rect.width * rect.height >= 64;
+        });
+
+      const overlappableSelector = [
+        interactiveSelector,
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "p",
+        "li",
+        "label",
+        "[role='heading']"
+      ].join(", ");
+      const overlapCandidates: Array<{
+        selector: string;
+        overlappedSelector: string;
+        position: "fixed" | "sticky";
+        overlapAreaPx: number;
+        text?: string;
+      }> = [];
+      const targetElements = Array.from(document.body?.querySelectorAll(overlappableSelector) || [])
+        .filter((element) => isVisibleElement(element));
+
+      for (const positioned of positionedElements) {
+        const positionedRect = (positioned as HTMLElement).getBoundingClientRect();
+        const position = window.getComputedStyle(positioned as HTMLElement).position as "fixed" | "sticky";
+        for (const target of targetElements) {
+          if (positioned === target || positioned.contains(target) || target.contains(positioned)) continue;
+          const targetRect = (target as HTMLElement).getBoundingClientRect();
+          const area = overlapArea(positionedRect, targetRect);
+          if (area < 48) continue;
+          const targetText = (target.textContent || "").replace(/\s+/g, " ").trim().slice(0, 80);
+          overlapCandidates.push({
+            selector: selectorFor(positioned),
+            overlappedSelector: selectorFor(target),
+            position,
+            overlapAreaPx: area,
+            ...(targetText ? { text: targetText } : {})
+          });
+          if (overlapCandidates.length >= 8) break;
+        }
+        if (overlapCandidates.length >= 8) break;
+      }
+
       return {
         viewportWidth,
         viewportHeight,
         documentWidth,
         horizontalOverflowPx: Math.max(0, documentWidth - root.clientWidth),
         clippedTextCount: candidates.length,
-        clippedTextSample: candidates
+        clippedTextSample: candidates,
+        fixedStickyOverlapCount: overlapCandidates.length,
+        fixedStickyOverlapSample: overlapCandidates
       };
-    }, { viewportWidth: viewport.width, viewportHeight: viewport.height });
+    }, { viewportWidth: viewport.width, viewportHeight: viewport.height, interactiveSelector: INTERACTIVE_SELECTOR });
     const evidence = {
       ...measuredEvidence,
       horizontalOverflowPx: normalizeReflowOverflow(measuredEvidence.horizontalOverflowPx)
@@ -1971,6 +2045,17 @@ async function auditReflow(
         confidenceScore: 70,
         confidenceReason: "Rendered text exceeded an element that clips overflow at 320 CSS pixels; review whether meaningful content becomes unavailable.",
         message: `Text may be clipped at 320px: "${clipped.text || clipped.selector}"`
+      });
+    }
+
+    for (const overlap of evidence.fixedStickyOverlapSample || []) {
+      issues.push({
+        ...common,
+        ruleId: "layout-fixed-sticky-overlap",
+        selector: overlap.overlappedSelector,
+        confidenceScore: 65,
+        confidenceReason: "A fixed or sticky element visually overlapped content or controls at the 320 CSS pixel reflow viewport; review whether important content or focus targets become obscured.",
+        message: `${overlap.position} element ${overlap.selector} overlaps ${overlap.overlappedSelector} at 320px.`
       });
     }
 

@@ -70,7 +70,7 @@ test("summarizeWcagCoverage separates automated, heuristic, and manual evidence"
   const reflow = coverage.criteria.find((criterion) => criterion.id === "1.4.10");
   assert.equal(reflow?.status, "heuristic");
   assert.equal(reflow?.findingCount, 1);
-  assert.deepEqual(reflow?.evidenceSources.includes("400% reflow heuristic"), true);
+  assert.deepEqual(reflow?.evidenceSources.includes("400% reflow and sticky-overlap heuristic"), true);
 
   const errorSuggestion = coverage.criteria.find((criterion) => criterion.id === "3.3.3");
   assert.equal(errorSuggestion?.status, "manual-required");

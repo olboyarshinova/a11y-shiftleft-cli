@@ -36,6 +36,15 @@ function preserveVisualEvidence(existing: DedupedIssue, duplicate: TriagedIssue)
   if (!existing.url && duplicate.url) existing.url = duplicate.url;
   if (!existing.helpUrl && duplicate.helpUrl) existing.helpUrl = duplicate.helpUrl;
   if (!existing.ownership && duplicate.ownership) existing.ownership = duplicate.ownership;
+  if (existing.ownership && duplicate.ownership) {
+    existing.ownership = {
+      ...duplicate.ownership,
+      ...existing.ownership,
+      source: existing.ownership.source || duplicate.ownership.source,
+      url: existing.ownership.url || duplicate.ownership.url,
+      note: existing.ownership.note || duplicate.ownership.note
+    };
+  }
 }
 
 function createFingerprint(issue: TriagedIssue): string {
