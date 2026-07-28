@@ -257,6 +257,7 @@ export interface AuditMatrixVisualComparison {
   spread: number;
   compare: string;
   screenshotReview: string;
+  reviewPriority?: AuditMatrixReviewPriority;
   screenshotDiff?: AuditMatrixScreenshotDiff;
   pixelDiff?: AuditMatrixPixelDiff;
   visualEvidence: AuditMatrixVisualEvidence[];
@@ -268,6 +269,11 @@ export interface AuditMatrixScreenshotDiff {
   note: string;
   widthDelta?: number;
   heightDelta?: number;
+}
+
+export interface AuditMatrixReviewPriority {
+  level: "high" | "medium" | "low";
+  reason: string;
 }
 
 export interface AuditMatrixPixelDiff {
@@ -976,7 +982,7 @@ function summarizeVisualComparisonQueue(
       const highest = links[0];
       const lowest = links[links.length - 1];
       if (!highest || !lowest || highest.label === lowest.label || highest.count === lowest.count) return undefined;
-      return {
+      const comparison: AuditMatrixVisualComparison = {
         stateKey: state.stateKey,
         label: state.label,
         url: state.url,
@@ -987,6 +993,8 @@ function summarizeVisualComparisonQueue(
         visualEvidence: [highest, lowest].map(createAuditMatrixVisualEvidence),
         evidenceLinks: [highest, lowest]
       };
+      comparison.reviewPriority = summarizeAuditMatrixReviewPriority(comparison);
+      return comparison;
     })
     .filter((state): state is AuditMatrixVisualComparison => Boolean(state))
     .sort((left, right) => (
@@ -1025,6 +1033,7 @@ export async function attachAuditMatrixScreenshotDiffs(
     }
     item.screenshotDiff = summarizeAuditMatrixScreenshotDiff(item.visualEvidence);
     item.pixelDiff = summarizeAuditMatrixPixelDiff(images);
+    item.reviewPriority = summarizeAuditMatrixReviewPriority(item);
   }
 }
 
@@ -1099,6 +1108,43 @@ function summarizeAuditMatrixScreenshotDiff(evidence: AuditMatrixVisualEvidence[
     widthDelta,
     heightDelta,
     note: `Screenshot sizes differ: ${left.label} is ${left.screenshotWidth} x ${left.screenshotHeight}; ${right.label} is ${right.screenshotWidth} x ${right.screenshotHeight}.`
+  };
+}
+
+function summarizeAuditMatrixReviewPriority(item: AuditMatrixVisualComparison): AuditMatrixReviewPriority {
+  if (item.pixelDiff?.status === "changed-pixels" && (item.pixelDiff.changedPercent || 0) >= 10) {
+    return {
+      level: "high",
+      reason: `Large visual difference detected (${item.pixelDiff.changedPercent}% changed pixels). Review this state before lower-difference comparisons.`
+    };
+  }
+  if (item.spread >= 5) {
+    return {
+      level: "high",
+      reason: `Large finding-count spread (${item.spread}) between profiles. Confirm whether the difference is a real browser or responsive defect.`
+    };
+  }
+  if (item.pixelDiff?.status === "changed-pixels" && (item.pixelDiff.changedPercent || 0) > 0) {
+    return {
+      level: "medium",
+      reason: `Visual pixels changed (${item.pixelDiff.changedPercent}%) while findings also differ. Compare the screenshots before filing profile-specific issues.`
+    };
+  }
+  if (item.screenshotDiff?.status === "different-size") {
+    return {
+      level: "medium",
+      reason: "Screenshot dimensions differ, so compare the visual reports before treating the finding spread as product behavior."
+    };
+  }
+  if (/differ|reuses|at least one profile/i.test(item.screenshotReview)) {
+    return {
+      level: "medium",
+      reason: item.screenshotReview
+    };
+  }
+  return {
+    level: "low",
+    reason: "Small finding-count difference with comparable screenshot evidence. Review after higher-priority matrix items."
   };
 }
 
@@ -1456,10 +1502,10 @@ function formatAuditMatrixScreenshotHint(link: AuditMatrixStateEvidenceLink): st
 function formatVisualComparisonQueue(queue: AuditMatrixVisualComparison[]): string {
   if (queue.length === 0) return "No visual comparison queue was available from the completed profile summaries.";
   return [
-    "| State | Compare first | Why | Screenshot review | Screenshot diff | Pixel diff | Evidence |",
-    "|---|---|---|---|---|---|---|",
+    "| State | Review priority | Compare first | Why | Screenshot review | Screenshot diff | Pixel diff | Evidence |",
+    "|---|---|---|---|---|---|---|---|",
     ...queue.map((item) => (
-      `| ${escapeMarkdownTableCell(item.label)} | ${escapeMarkdownTableCell(item.compare)} | ${escapeMarkdownTableCell(`${item.spread} finding spread at depth ${item.depth}`)} | ${escapeMarkdownTableCell(item.screenshotReview)} | ${escapeMarkdownTableCell(formatAuditMatrixScreenshotDiff(item.screenshotDiff))} | ${escapeMarkdownTableCell(formatAuditMatrixPixelDiff(item.pixelDiff))} | ${formatAuditMatrixEvidenceLinks(item.evidenceLinks)} |`
+      `| ${escapeMarkdownTableCell(item.label)} | ${escapeMarkdownTableCell(formatAuditMatrixReviewPriority(item.reviewPriority))} | ${escapeMarkdownTableCell(item.compare)} | ${escapeMarkdownTableCell(`${item.spread} finding spread at depth ${item.depth}`)} | ${escapeMarkdownTableCell(item.screenshotReview)} | ${escapeMarkdownTableCell(formatAuditMatrixScreenshotDiff(item.screenshotDiff))} | ${escapeMarkdownTableCell(formatAuditMatrixPixelDiff(item.pixelDiff))} | ${formatAuditMatrixEvidenceLinks(item.evidenceLinks)} |`
     ))
   ].join("\n");
 }
@@ -1477,6 +1523,11 @@ function formatAuditMatrixPixelDiff(diff?: AuditMatrixPixelDiff): string {
   if (diff.status === "changed-pixels") return `${diff.changedPercent}% changed`;
   if (diff.status === "same-pixels") return "0% changed";
   return diff.status;
+}
+
+function formatAuditMatrixReviewPriority(priority?: AuditMatrixReviewPriority): string {
+  if (!priority) return "low";
+  return `${priority.level}: ${priority.reason}`;
 }
 
 export function renderAuditMatrixHtmlSummary(
@@ -1511,6 +1562,10 @@ export function renderAuditMatrixHtmlSummary(
     .warning { color: var(--warning); }
     .info { color: var(--info); }
     .ok { color: var(--ok); }
+    .priority-badge { display: inline-flex; align-items: center; width: fit-content; border-radius: 999px; border: 1px solid var(--border); padding: 3px 8px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0; }
+    .priority-high { color: var(--critical); background: #fff0f3; border-color: #f5b3c0; }
+    .priority-medium { color: var(--warning); background: #fff6ed; border-color: #f2c197; }
+    .priority-low { color: var(--ok); background: #effaf4; border-color: #a8dbc0; }
     .panel { padding: 16px; margin-top: 16px; }
     table { width: 100%; border-collapse: collapse; }
     th, td { border-top: 1px solid var(--border); padding: 8px; text-align: left; vertical-align: top; }
@@ -1609,6 +1664,7 @@ function renderAuditMatrixHtmlVisualQueue(
     <h2>Side-by-side Review</h2>
     ${queue.map((item) => `<article class="comparison-card" aria-labelledby="comparison-${escapeAttribute(slugifyMatrixId(item.stateKey))}">
       <div>
+        ${renderAuditMatrixHtmlReviewPriority(item.reviewPriority)}
         <h3 id="comparison-${escapeAttribute(slugifyMatrixId(item.stateKey))}">${escapeHtml(item.label)}</h3>
         <p class="muted">${escapeHtml(item.compare)} · ${escapeHtml(`${item.spread} finding spread at depth ${item.depth}`)}<br>${escapeHtml(item.screenshotReview)}<br>${escapeHtml(formatAuditMatrixScreenshotDiffNote(item.screenshotDiff))}<br>${escapeHtml(formatAuditMatrixPixelDiffNote(item.pixelDiff))}</p>
       </div>
@@ -1618,6 +1674,11 @@ function renderAuditMatrixHtmlVisualQueue(
       </div>
     </article>`).join("")}
   </section>`;
+}
+
+function renderAuditMatrixHtmlReviewPriority(priority?: AuditMatrixReviewPriority): string {
+  const resolved = priority || { level: "low", reason: "Small finding-count difference with comparable screenshot evidence." } satisfies AuditMatrixReviewPriority;
+  return `<span class="priority-badge priority-${escapeAttribute(resolved.level)}" title="${escapeAttribute(resolved.reason)}">${escapeHtml(resolved.level)} review priority</span>`;
 }
 
 function renderAuditMatrixHtmlDiffSlider(

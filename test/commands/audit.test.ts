@@ -244,7 +244,7 @@ test("formatAuditDeviceMatrixSummary links generated visual reports", () => {
   assert.match(markdown, /Initial page \| https:\/\/example\.com\/ \| 0 \| 3 \| desktop: 1; mobile \(iPhone 13\): 4/);
   assert.match(markdown, /\[desktop: 1\]\(reports\/devices\/desktop\/a11y-report\.html#state-1\) \(full-page, 1 screenshot\); \[mobile \(iPhone 13\): 4\]\(reports\/devices\/mobile\/a11y-report\.html#state-1\) \(viewport, 2 screenshots\)/);
   assert.match(markdown, /### Visual Comparison Queue/);
-  assert.match(markdown, /Initial page \| mobile \(iPhone 13\) \(4\) vs desktop \(1\) \| 3 finding spread at depth 0/);
+  assert.match(markdown, /Initial page \| medium: Screenshot capture modes differ; compare the linked full-page and viewport evidence carefully\. \| mobile \(iPhone 13\) \(4\) vs desktop \(1\) \| 3 finding spread at depth 0/);
   assert.match(markdown, /Screenshot capture modes differ; compare the linked full-page and viewport evidence carefully/);
   assert.match(markdown, /## Review Hotspots/);
   assert.match(markdown, /desktop \| Click: Open menu \(3 findings, depth 1\) \| color-contrast: 2; target-size: 1/);
@@ -360,6 +360,10 @@ test("createAuditDeviceMatrixReport exports machine-readable device results", ()
       spread: 1,
       compare: "desktop (2) vs mobile (iPhone 13) (1)",
       screenshotReview: "At least one profile reuses a screenshot from another state; confirm the linked report before treating it as a visual difference.",
+      reviewPriority: {
+        level: "medium",
+        reason: "At least one profile reuses a screenshot from another state; confirm the linked report before treating it as a visual difference."
+      },
       visualEvidence: [
         { label: "desktop", report: "reports/devices/desktop/a11y-report.html#state-1", count: 2, screenshot: "screenshots/state-1.png", screenshotMode: "full-page", screenshotEvidenceCount: 1 },
         { label: "mobile (iPhone 13)", report: "reports/devices/mobile/a11y-report.html#state-1", count: 1, screenshot: "screenshots/state-1-mobile.png", screenshotMode: "viewport", screenshotEvidenceCount: 1, visualDuplicateOf: "state-1" }
@@ -473,6 +477,7 @@ test("renderAuditMatrixHtmlSummary creates side-by-side visual evidence links", 
   assert.match(html, /<title>Device Audit Summary<\/title>/);
   assert.match(html, /Side-by-side Review/);
   assert.match(html, /Visual overlay/);
+  assert.match(html, /medium review priority/);
   assert.match(html, /data-diff-slider/);
   assert.match(html, /data-diff-input/);
   assert.match(html, /Drag to reveal mobile \(iPhone 13\) over desktop/);
@@ -537,6 +542,10 @@ test("attachAuditMatrixScreenshotDiffs adds screenshot size deltas to matrix rep
     status: "different-size",
     note: "Pixel diff was not measured because the screenshots have different dimensions."
   });
+  assert.deepEqual(report.comparison.visualComparisonQueue[0]?.reviewPriority, {
+    level: "medium",
+    reason: "Screenshot dimensions differ, so compare the visual reports before treating the finding spread as product behavior."
+  });
   assert.deepEqual(report.comparison.visualComparisonQueue[0]?.visualEvidence.map((evidence) => ({
     label: evidence.label,
     width: evidence.screenshotWidth,
@@ -550,6 +559,7 @@ test("attachAuditMatrixScreenshotDiffs adds screenshot size deltas to matrix rep
   assert.match(html, /Screenshot diff: different size/);
   assert.match(html, /Pixel diff: different-size/);
   assert.match(html, /Pixel difference: different-size/);
+  assert.match(html, /medium review priority/);
   assert.match(html, /pixel-diff-unavailable/);
   assert.match(html, /400 x 300/);
   assert.match(html, /375 x 300/);
@@ -613,6 +623,10 @@ test("attachAuditMatrixScreenshotDiffs measures changed pixels for equal-size PN
     changedPercent: 50,
     note: "1 of 2 pixels changed (50%)."
   });
+  assert.deepEqual(report.comparison.visualComparisonQueue[0]?.reviewPriority, {
+    level: "high",
+    reason: "Large visual difference detected (50% changed pixels). Review this state before lower-difference comparisons."
+  });
 
   const markdown = formatAuditDeviceMatrixSummary([
     {
@@ -652,6 +666,7 @@ test("attachAuditMatrixScreenshotDiffs measures changed pixels for equal-size PN
   const html = renderAuditMatrixHtmlSummary("Device Audit Summary", "device profile", report, baseOutputDir);
   assert.match(html, /Pixel diff: 50% changed/);
   assert.match(html, /Pixel difference: 50% changed/);
+  assert.match(html, /high review priority/);
   assert.match(html, /--pixel-diff: 50%/);
 });
 
@@ -726,7 +741,7 @@ test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
   assert.match(markdown, /Initial page \| https:\/\/example\.com\/ \| 0 \| 3 \| Chromium: 4; WebKit: 1/);
   assert.match(markdown, /\[Chromium: 4\]\(reports\/browsers\/chromium\/a11y-report\.html#state-1\) \(full-page, 2 screenshots\); \[WebKit: 1\]\(reports\/browsers\/webkit\/a11y-report\.html#state-1\) \(viewport, 1 screenshot, reuses state-1\)/);
   assert.match(markdown, /### Visual Comparison Queue/);
-  assert.match(markdown, /Initial page \| Chromium \(4\) vs WebKit \(1\) \| 3 finding spread at depth 0/);
+  assert.match(markdown, /Initial page \| medium: At least one profile reuses a screenshot from another state; confirm the linked report before treating it as a visual difference\. \| Chromium \(4\) vs WebKit \(1\) \| 3 finding spread at depth 0/);
   assert.match(markdown, /At least one profile reuses a screenshot from another state; confirm the linked report before treating it as a visual difference/);
   assert.match(markdown, /Chromium \| Initial page \(4 findings, depth 0\) \| button-name: 1; focus-visible: 2/);
   assert.match(markdown, /WebKit \| Click: Details \(2 findings, depth 1\) \| focus-visible: 2/);
@@ -836,6 +851,10 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
       spread: 3,
       compare: "Chromium (4) vs Firefox (1)",
       screenshotReview: "Screenshot capture modes differ; compare the linked full-page and viewport evidence carefully.",
+      reviewPriority: {
+        level: "medium",
+        reason: "Screenshot capture modes differ; compare the linked full-page and viewport evidence carefully."
+      },
       visualEvidence: [
         { label: "Chromium", report: "reports/browsers/chromium/a11y-report.html#state-1", count: 4, screenshot: "screenshots/state-1-chromium.png", screenshotMode: "full-page", screenshotEvidenceCount: 2 },
         { label: "Firefox", report: "reports/browsers/firefox/a11y-report.html#state-1", count: 1, screenshot: "screenshots/state-1-firefox.png", screenshotMode: "viewport", screenshotEvidenceCount: 1 }

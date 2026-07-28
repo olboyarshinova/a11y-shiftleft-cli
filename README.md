@@ -346,6 +346,8 @@ side-by-side comparison queue with an overlay slider and screenshot-size diff
 metadata for captured screenshots. When matching screenshots are PNG files with
 the same dimensions, the matrix summary also records a lightweight pixel-change
 percentage and shows it as a compact visual meter.
+Each visual comparison item is also labeled with a review priority so the
+highest-risk browser or responsive differences are easier to inspect first.
 
 Install the browser engine before using it, for example:
 
@@ -364,7 +366,8 @@ notes, and a short side-by-side comparison queue with an overlay slider for
 captured screenshots plus screenshot-size diff metadata. When matching
 screenshots are PNG files with the same dimensions, the matrix summary also
 records a lightweight pixel-change percentage and shows it as a compact visual
-meter.
+meter. Each visual comparison item is also labeled with a review priority so
+the highest-risk browser differences are easier to inspect first.
 
 Audit profiles are shortcuts:
 

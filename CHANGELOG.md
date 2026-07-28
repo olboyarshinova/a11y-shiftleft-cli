@@ -37,6 +37,7 @@
 - Added lightweight PNG pixel-difference metadata for same-size matrix
   screenshots.
 - Added a visual pixel-difference meter to matrix HTML summaries.
+- Added review-priority badges and metadata to matrix visual comparison items.
 
 ## 0.9.0
 
