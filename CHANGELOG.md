@@ -24,6 +24,9 @@
   checklist so inline focus, blur, input, change, select, and autofocus triggers
   are surfaced for WCAG 3.2.1 and 3.2.2 review without executing risky
   navigation or submission behavior.
+- Added a Multiple Ways manual-review area to visual and Markdown Audit
+  Coverage so WCAG 2.4.5 can be tracked as assisted evidence instead of being
+  left as an undocumented gap.
 - Added 200% zoom comparison and fixed/sticky overlap candidates to reflow
   evidence so visual and Markdown reports flag resize-text and 400% reflow
   risks without extra screenshots.

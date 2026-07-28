@@ -21,6 +21,7 @@ test("createManualChecklist generates human-review checklist items", () => {
   assert.equal(checklist.items.some((item) => item.id === "complex-widget-focus"), true);
   assert.equal(checklist.items.some((item) => item.id === "zoom-reflow"), true);
   assert.equal(checklist.items.some((item) => item.id === "alternative-text-quality"), true);
+  assert.equal(checklist.items.some((item) => item.id === "multiple-ways-findability"), true);
   assert.equal(checklist.items.some((item) => item.id === "brand-logo-accessibility"), true);
   assert.equal(checklist.items.some((item) => item.id === "sensory-color-instructions"), true);
   assert.equal(checklist.items.some((item) => item.id === "text-spacing-resilience"), true);
@@ -491,7 +492,8 @@ test("toManualChecklistMarkdown renders actionable Markdown checkboxes", () => {
   assert.match(markdown, /Automated accessibility tools do not prove full WCAG conformance/);
   assert.match(markdown, /Status: `not-reviewed`/);
   assert.match(markdown, /## Review Status/);
-  assert.match(markdown, /Not reviewed \| 25/);
+  assert.match(markdown, /Not reviewed \| 26/);
+  assert.match(markdown, /Multiple ways to find important pages/);
   assert.match(markdown, /Step records \| \d+/);
   assert.match(markdown, /Task evidence attachments \| 0/);
   assert.match(markdown, /Environment summary:/);

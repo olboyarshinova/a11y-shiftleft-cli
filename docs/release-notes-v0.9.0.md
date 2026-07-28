@@ -56,6 +56,9 @@ This creates separate visual reports for each browser engine plus:
   manual checklist outputs. The scanner now inventories inline focus, blur,
   input, change, select, and autofocus triggers for WCAG 3.2.1 and 3.2.2
   review without executing risky navigation or submission behavior.
+- Multiple Ways assisted review in visual and Markdown Audit Coverage. The
+  checklist now asks reviewers to confirm that important pages can be found
+  through at least two supported paths for WCAG 2.4.5.
 
 ## Changed
 

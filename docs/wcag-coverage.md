@@ -1,6 +1,6 @@
 # WCAG 2.2 Coverage Matrix
 
-Last reviewed: 2026-06-18
+Last reviewed: 2026-07-28
 
 This document compares all 86 active WCAG 2.2 success criteria with the checks
 currently available in `a11y-shiftleft-cli`. WCAG 2.2 removes 4.1.1 Parsing, so
@@ -39,9 +39,9 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
   catalog; 12 mappings were restored after the 2026-06-18 catalog audit.
 - Focus Order now has static signals, bounded Tab and Shift+Tab paths, and a manual
   checklist; complete task semantics and reverse traversal remain manual.
-- 33 of 55 A/AA criteria have either an automated signal or an explicitly
+- 34 of 55 A/AA criteria have either an automated signal or an explicitly
   mapped `--semi-auto` review step.
-- 22 of 55 A/AA criteria currently have no dedicated coverage.
+- 21 of 55 A/AA criteria currently have no dedicated coverage.
 - AAA is reported below for completeness, but is not the current product
   conformance target.
 
@@ -100,7 +100,7 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
 | 2.4.2 Page Titled | A | Automated + mapped | axe title rule plus duplicate and placeholder title analysis across URLs |
 | 2.4.3 Focus Order | A | Partial automated + mapped; manual checklist | Angular tabindex/focus lint plus recorded bounded Tab and Shift+Tab paths; logical task order still requires review |
 | 2.4.4 Link Purpose (In Context) | A | Automated + mapped | axe link and area accessible-name rules cover common failures |
-| 2.4.5 Multiple Ways | AA | Gap | No sitemap, search, navigation, or related-page comparison |
+| 2.4.5 Multiple Ways | AA | Manual checklist | Review representative important pages for at least two discovery paths such as navigation, search, sitemap, breadcrumbs, related links, footer links, or an index page |
 | 2.4.6 Headings and Labels | AA | Manual checklist | Structural signals exist, but descriptive quality needs explicit review |
 | 2.4.7 Focus Visible | AA | Partial automated + mapped; manual checklist | keyboard runner checks viewport visibility and outline/box-shadow indicators; custom visual treatments require review |
 | 2.4.8 Location | AAA | Gap | Outside current target |
@@ -130,10 +130,10 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
 | 3.1.6 Pronunciation | AAA | Gap | Outside current target |
 | 3.2.1 On Focus | A | Heuristic + manual checklist | Inline focus/blur/autofocus handlers are inventoried for context-change review; behavior confirmation remains manual |
 | 3.2.2 On Input | A | Heuristic + manual checklist | Inline input/change/select handlers are inventoried for context-change review; behavior confirmation remains manual |
-| 3.2.3 Consistent Navigation | AA | Gap | Exploration does not compare repeated navigation order across pages |
-| 3.2.4 Consistent Identification | AA | Gap | Same-purpose component naming is not compared across pages |
+| 3.2.3 Consistent Navigation | AA | Heuristic + manual checklist | Cross-page exploration compares repeated navigation order for review; differences require manual confirmation |
+| 3.2.4 Consistent Identification | AA | Heuristic + manual checklist | Cross-page exploration compares same-purpose control names and checklist review covers predictable naming |
 | 3.2.5 Change on Request | AAA | Automated, metadata gap | axe meta-refresh signal only; outside current target |
-| 3.2.6 Consistent Help | A | Gap | Help mechanisms are not identified and compared across pages |
+| 3.2.6 Consistent Help | A | Heuristic + manual checklist | Cross-page exploration compares detected help mechanisms and checklist review covers recovery/help paths |
 | 3.3.1 Error Identification | A | Rendered-state heuristic + manual checklist | Existing `aria-invalid` fields are checked for exposed associated errors; triggering validation and judging message quality remain manual |
 | 3.3.2 Labels or Instructions | A | Automated + mapped; manual checklist | axe/framework label rules plus quality review |
 | 3.3.3 Error Suggestion | AA | Manual checklist | Representative task review only |

@@ -1075,6 +1075,7 @@ function formatCoverageMatrix(report: A11yReport): string {
 |---|---|---|
 | Browser automation | ${stateCount > 0 ? "Completed" : "Not included"} | ${stateCount > 0 ? `${stateCount} rendered states scanned` : "Run the audit command"} |
 | Static source analysis | Configuration-dependent | Install the adapter for the detected framework |
+| Multiple ways to find pages | ${manualChecklistStatus("multiple-ways-findability", manualChecklistItemIds, report.manualChecklist)} | Confirm important pages can be found through at least two supported paths such as navigation, search, sitemap, breadcrumbs, related links, or footer links |
 | Keyboard traversal | ${report.keyboard ? "Bounded evidence collected" : "Not included"} | ${report.keyboard ? `${report.keyboard.steps.length} forward focus steps` : "Run audit without --no-keyboard"} |
 | Reflow and 200% zoom | ${reflowCount > 0 ? "Heuristic evidence collected" : "Not included"} | ${reflowCount} rendered state${reflowCount === 1 ? "" : "s"} checked for 200% zoom, 400% reflow, clipped text, and fixed or sticky overlap |
 | Forced colors / high contrast | ${forcedColorStates.length > 0 ? "Heuristic evidence collected" : "Not included"} | ${forcedColorStates.length} rendered state${forcedColorStates.length === 1 ? "" : "s"} checked; ${forcedColorSamples} review signal${forcedColorSamples === 1 ? "" : "s"} collected |
@@ -1116,6 +1117,7 @@ function manualChecklistAnchorForCoverage(coverageId: string, manualChecklistIte
     "time-limits-recovery": "time-limits-recovery",
     "context-change-control": "context-change-control",
     "cognitive-clarity": "cognitive-clarity",
+    "multiple-ways-findability": "multiple-ways-findability",
     "hover-focus-content": "hover-focus-content",
     "pointer-dragging": "pointer-dragging-alternatives",
     "screen-reader": "screen-reader-smoke",

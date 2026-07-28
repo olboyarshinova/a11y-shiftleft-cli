@@ -13,11 +13,11 @@ Section 508 certification.
 - Promote planned journey targets beyond checklist evidence into a richer
   journey-review workflow where a reviewer can confirm every step, record
   missing states, and attach manual task-completion evidence.
-- Continue validating the current cross-page consistency evidence for duplicate
-  page titles, placeholder titles, same-purpose control names, repeated
-  navigation order, and help mechanisms in real multi-page projects. Surface
-  differences for review in the current Audit Coverage row rather than
-  asserting that every difference is a WCAG failure.
+- Continue validating cross-page consistency evidence for duplicate page
+  titles, placeholder titles, same-purpose control names, repeated navigation
+  order, help mechanisms, and multiple-ways findability in real multi-page
+  projects. Keep these as review signals rather than claiming every difference
+  is automatically a WCAG failure.
 - Continue improving report grouping controls. Current visual reports include a
   compact `Group Findings` control for rule, WCAG criterion, page/state,
   affected element, and POUR principle while preserving the main triage,
@@ -83,7 +83,7 @@ Section 508 certification.
   report catalog, including 20 WCAG A/AA criteria and 6 AAA criteria. The
   a11y-shiftleft catalog currently tracks 34 WCAG 2.2 A/AA criteria; the
   coverage matrix records 23 of 55 A/AA criteria with installed automated
-  signals and 33 of 55 with automated, heuristic, or mapped manual-review
+  signals and 34 of 55 with automated, heuristic, or mapped manual-review
   evidence. Recheck these numbers before public comparison posts or release
   notes.
 - Continue improving per-criterion coverage rows with status, evidence source,

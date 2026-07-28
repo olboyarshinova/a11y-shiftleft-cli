@@ -488,6 +488,8 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /Context-change evidence on focus\/input/);
   assert.match(html, /select\[name="country"\]/);
   assert.match(html, /location\.href=this\.value/);
+  assert.match(html, /Multiple ways to find pages/);
+  assert.match(html, /Confirm important pages can be found through at least two supported paths/);
   assert.match(html, /Text spacing resilience/);
   assert.match(html, /1 state checked with WCAG text-spacing overrides; 1 clipped text candidate; 1 overflow state/);
   assert.match(html, /Text spacing evidence/);

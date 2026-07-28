@@ -209,6 +209,11 @@ Exploration compares titles across distinct page URLs and reports duplicated or
 obvious starter-template titles. Multiple UI states and color schemes at the
 same URL are treated as one page for this comparison.
 
+Audit Coverage also includes a Multiple Ways review row for WCAG 2.4.5. The
+visual report can show discovered routes, but a reviewer should confirm that
+important pages can be found through at least two supported paths such as
+navigation, search, sitemap, breadcrumbs, related links, or footer links.
+
 Every finding in `exploration.html` includes an expanded `How to fix` section
 with concrete steps, rule documentation, and a React, Vue, or Angular example
 when one is available. Generic fallback guidance remains visible for unknown or

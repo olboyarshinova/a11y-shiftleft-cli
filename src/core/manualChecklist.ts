@@ -34,6 +34,23 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
     ]
   },
   {
+    id: "multiple-ways-findability",
+    title: "Multiple ways to find important pages",
+    principle: "operable",
+    wcag: ["2.4.5"],
+    whyManual: "A crawler can discover links, but it cannot reliably decide whether users have more than one practical way to locate important pages in the product context.",
+    steps: [
+      "Choose important pages or task destinations such as product details, support, account settings, checkout, documentation, or search results.",
+      "Confirm each important page can be found by at least two supported mechanisms such as navigation, search, sitemap, breadcrumbs, related links, footer links, or an index page.",
+      "Document intentional exceptions for process steps that are only available after completing the previous step."
+    ],
+    evidence: [
+      "List of important pages reviewed",
+      "Two discovery paths for each representative page",
+      "Notes for any process-step exceptions"
+    ]
+  },
+  {
     id: "form-label-quality",
     title: "Meaningful form labels and instructions",
     principle: "understandable",
