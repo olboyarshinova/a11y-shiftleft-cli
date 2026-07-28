@@ -135,6 +135,14 @@ report records text and politeness when mutations occur, and explicitly records
 actions with no observed live-region update. Absence is evidence, not an
 automatic defect, because many visual changes do not require an announcement.
 
+Hover/focus content evidence records visible triggers that may reveal tooltips,
+menus, popovers, or disclosures, including `title`, `aria-describedby`,
+`aria-haspopup`, `aria-expanded`, `popovertarget`, details/summary, and common
+tooltip data attributes. The report lists representative triggers and adds them
+to the manual checklist. It does not automatically prove WCAG 1.4.13 behavior;
+confirm manually that the revealed content is dismissible, hoverable or
+focusable, and persistent long enough to read or interact with.
+
 Rendered form states include counts and details for explicit invalid fields,
 their `aria-errormessage` or `aria-describedby` references, exposed error text,
 error summaries, and focus. The scanner does not submit forms or enter data.

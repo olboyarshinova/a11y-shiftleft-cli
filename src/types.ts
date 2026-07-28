@@ -746,7 +746,7 @@ export interface ManualReviewRecord {
 
 export interface ManualReviewTarget {
   id: string;
-  kind: "dialog" | "form" | "image" | "live-region" | "media" | "embedded-content" | "landmark" | "reflow" | "journey";
+  kind: "dialog" | "form" | "image" | "live-region" | "media" | "embedded-content" | "landmark" | "reflow" | "hover-focus" | "journey";
   label: string;
   url: string;
   stateId: string;
@@ -917,6 +917,7 @@ export interface ExplorationState {
   modalFocus?: ModalFocusEvidence;
   dynamicAnnouncements?: DynamicAnnouncementEvidence;
   interactiveControls?: InteractiveControlEvidence[];
+  hoverFocus?: HoverFocusEvidence;
   formErrors?: FormErrorEvidence;
   imageAlternatives?: ImageAlternativeEvidence;
   media?: MediaEvidence;
@@ -938,6 +939,34 @@ export interface InteractiveControlEvidence {
   href?: string;
   inNavigation?: boolean;
   helpCandidate?: boolean;
+}
+
+export type HoverFocusTriggerKind =
+  | "title"
+  | "aria-describedby"
+  | "aria-haspopup"
+  | "aria-expanded"
+  | "popover-target"
+  | "details-summary"
+  | "data-tooltip";
+
+export interface HoverFocusTriggerEvidence {
+  selector: string;
+  triggerKinds: HoverFocusTriggerKind[];
+  label?: string;
+  describedBy?: string;
+  expanded?: boolean;
+  hasPopup?: string;
+}
+
+export interface HoverFocusEvidence {
+  triggerCount: number;
+  titleTriggerCount: number;
+  describedByTriggerCount: number;
+  disclosureTriggerCount: number;
+  popoverTriggerCount: number;
+  visibleTooltipCount: number;
+  samples: HoverFocusTriggerEvidence[];
 }
 
 export interface AccessibilityTreeEvidence {

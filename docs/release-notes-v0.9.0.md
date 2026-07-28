@@ -35,6 +35,10 @@ This creates separate visual reports for each browser engine plus:
   - critical, warning, and info counts
   - explored state counts
   - links to each generated visual report
+- Hover/focus content inventory in visual, Markdown, and manual checklist
+  outputs. The scanner now surfaces likely tooltip, popover, menu, disclosure,
+  and described-by triggers for WCAG 1.4.13 review while keeping final behavior
+  confirmation manual.
 
 ## Changed
 

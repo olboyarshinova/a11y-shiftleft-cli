@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added bounded hover/focus content inventory to exploration evidence, visual
+  Audit Coverage, Markdown reports, and the manual checklist so tooltips,
+  popovers, menus, disclosures, and described-by triggers are surfaced for WCAG
+  1.4.13 review without claiming automatic conformance.
 - Added 200% zoom comparison and fixed/sticky overlap candidates to reflow
   evidence so visual and Markdown reports flag resize-text and 400% reflow
   risks without extra screenshots.

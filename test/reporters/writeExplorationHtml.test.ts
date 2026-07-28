@@ -92,6 +92,26 @@ const graph = {
         escapeClosed: true,
         focusReturnedToTrigger: true
       },
+      hoverFocus: {
+        triggerCount: 2,
+        titleTriggerCount: 1,
+        describedByTriggerCount: 1,
+        disclosureTriggerCount: 1,
+        popoverTriggerCount: 1,
+        visibleTooltipCount: 1,
+        samples: [{
+          selector: "#shipping-help",
+          triggerKinds: ["aria-describedby", "aria-haspopup"],
+          label: "Shipping help",
+          describedBy: "Shipping options update after address entry.",
+          hasPopup: "dialog"
+        }, {
+          selector: "#details-summary",
+          triggerKinds: ["details-summary", "title"],
+          label: "More filters",
+          expanded: false
+        }]
+      },
       formErrors: {
         formCount: 1,
         fieldCount: 2,
@@ -406,7 +426,11 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /Status messages \/ live updates/);
   assert.match(html, /confirm announcement quality manually/);
   assert.match(html, /Hover\/focus content/);
-  assert.match(html, /Review tooltips, menus, popovers, and disclosures/);
+  assert.match(html, /2 possible tooltip, popover, or disclosure triggers found/);
+  assert.match(html, /Automated inventory \+ manual review/);
+  assert.match(html, /Hover\/focus content evidence/);
+  assert.match(html, /Shipping help/);
+  assert.match(html, /described by: Shipping options update after address entry/);
   assert.match(html, /Pointer and dragging alternatives/);
   assert.match(html, /Review sliders, maps, carousels, drag-and-drop, swipe/);
   assert.match(html, /Copy all ticket drafts \(1\)/);

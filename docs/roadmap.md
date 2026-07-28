@@ -139,8 +139,11 @@ Section 508 certification.
 - Add safe diagnostics for unexpected context changes on focus or input while
   blocking navigation, submission, downloads, and other destructive effects by
   default.
-- Extend hover/focus content support beyond the current manual checklist row:
-  collect bounded visual evidence for whether triggered content can be
+- Continue hover/focus content support beyond the current trigger inventory.
+  Current exploration evidence records visible `title`, `aria-describedby`,
+  `aria-haspopup`, `aria-expanded`, popover, details/summary, and common
+  tooltip-data triggers in visual, Markdown, and manual checklist outputs. Next,
+  collect bounded interaction evidence for whether triggered content can be
   dismissed, remains available while hovered or focused, and persists long
   enough to inspect.
 - Extend pointer and dragging support beyond the current manual checklist row:

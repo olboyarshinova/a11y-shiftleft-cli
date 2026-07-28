@@ -164,6 +164,21 @@ test("createManualChecklist creates an assisted queue from exploration evidence"
           suspiciousCount: 1,
           repeatedAlternativeGroups: 0,
           samples: [{ selector: "#hero", alt: "hero.png", concerns: ["filename"] }]
+        },
+        hoverFocus: {
+          triggerCount: 1,
+          titleTriggerCount: 0,
+          describedByTriggerCount: 1,
+          disclosureTriggerCount: 0,
+          popoverTriggerCount: 1,
+          visibleTooltipCount: 0,
+          samples: [{
+            selector: "#help",
+            triggerKinds: ["aria-describedby", "aria-haspopup"],
+            label: "Help",
+            describedBy: "Extra help text",
+            hasPopup: "dialog"
+          }]
         }
       }],
       edges: [],
@@ -184,13 +199,17 @@ test("createManualChecklist creates an assisted queue from exploration evidence"
   const formReview = checklist.items.find((item) => item.id === "form-label-quality");
   const statusReview = checklist.items.find((item) => item.id === "status-messages-live-updates");
   const imageReview = checklist.items.find((item) => item.id === "alternative-text-quality");
+  const hoverFocusReview = checklist.items.find((item) => item.id === "hover-focus-content");
   assert.equal(formReview?.targets?.[0].selector, "#email");
   assert.equal(statusReview?.targets?.[0].selector, "#email");
   assert.equal(formReview?.targets?.[0].stateId, "state-2");
   assert.equal(imageReview?.targets?.[0].kind, "image");
+  assert.equal(hoverFocusReview?.targets?.[0].kind, "hover-focus");
+  assert.equal(hoverFocusReview?.targets?.[0].selector, "#help");
   assert.equal(checklist.items[0].id, "form-label-quality");
   assert.match(toManualChecklistMarkdown(checklist), /Observed targets:\n- \[ \] form: Email address/);
   assert.match(toManualChecklistMarkdown(checklist), /state-2, #email/);
+  assert.match(toManualChecklistMarkdown(checklist), /hover-focus: Help/);
 });
 
 test("createManualChecklist keeps motion review targets when media elements also exist", () => {

@@ -686,6 +686,7 @@ function collectManualReviewTargets(
     addEmbeddedTargets(targets, state);
     addLandmarkTargets(targets, state);
     addReflowTargets(targets, state);
+    addHoverFocusTargets(targets, state);
   }
 
   return targets;
@@ -801,6 +802,15 @@ function addReflowTargets(targets: Map<string, ManualReviewTarget[]>, state: Exp
     : "Reflow sample";
   addTarget(targets, "zoom-reflow", targetFor(state, "reflow", label, undefined,
     `${evidence.horizontalOverflowPx}px horizontal overflow; ${evidence.clippedTextCount} clipped-text candidate(s)`));
+}
+
+function addHoverFocusTargets(targets: Map<string, ManualReviewTarget[]>, state: ExplorationState): void {
+  const evidence = state.hoverFocus;
+  if (!evidence || evidence.triggerCount === 0) return;
+  for (const sample of evidence.samples) {
+    addTarget(targets, "hover-focus-content", targetFor(state, "hover-focus", sample.label || sample.selector, sample.selector,
+      `${sample.triggerKinds.join(", ")} trigger; described-by ${sample.describedBy ? "present" : "not detected"}; popup ${sample.hasPopup || "not detected"}`));
+  }
 }
 
 function targetFor(

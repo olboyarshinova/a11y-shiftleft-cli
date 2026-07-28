@@ -1037,6 +1037,8 @@ function formatCoverageMatrix(report: A11yReport): string {
   const mediaElements = mediaStates.reduce((total, state) => total + (state.media?.audioCount || 0) + (state.media?.videoCount || 0), 0);
   const autoplayRisks = mediaStates.reduce((total, state) => total + (state.media?.autoplayRiskCount || 0), 0);
   const mediaFindings = report.issues.filter((issue) => issue.category === "media").length;
+  const hoverFocusStates = report.exploration?.states.filter((state) => state.hoverFocus) || [];
+  const hoverFocusTriggers = hoverFocusStates.reduce((total, state) => total + (state.hoverFocus?.triggerCount || 0), 0);
   const embeddedStates = report.exploration?.states.filter((state) => state.embeddedContent) || [];
   const iframeCount = embeddedStates.reduce((total, state) => total + (state.embeddedContent?.iframeCount || 0), 0);
   const inaccessibleFrames = embeddedStates.reduce((total, state) => total + (state.embeddedContent?.inaccessibleIframeCount || 0), 0);
@@ -1066,7 +1068,7 @@ function formatCoverageMatrix(report: A11yReport): string {
 | Predictable actions and calm recovery | ${manualChecklistStatus("cognitive-clarity", manualChecklistItemIds, report.manualChecklist)} | Review task copy, button labels, errors, recovery paths, help access, and multi-step form clarity |
 | Image alternatives | ${imageStates.length > 0 ? "Quality heuristics collected" : "No images observed"} | ${suspiciousImages} alternative${suspiciousImages === 1 ? "" : "s"} flagged for contextual human review |
 | Media and motion | ${mediaFindings > 0 ? "Automated findings plus manual review" : mediaStates.length > 0 ? "Manual review required" : "No media or active motion observed"} | ${mediaElements} audio/video element${mediaElements === 1 ? "" : "s"}; ${autoplayRisks} autoplay control risk${autoplayRisks === 1 ? "" : "s"} |
-| Hover/focus content | ${manualChecklistStatus("hover-focus-content", manualChecklistItemIds, report.manualChecklist)} | Review tooltips, menus, popovers, and disclosures for dismissible, hoverable, and persistent behavior |
+| Hover/focus content | ${hoverFocusTriggers > 0 ? "Automated inventory plus manual review" : manualChecklistStatus("hover-focus-content", manualChecklistItemIds, report.manualChecklist)} | ${hoverFocusTriggers > 0 ? `${hoverFocusTriggers} possible tooltip, popover, or disclosure trigger${hoverFocusTriggers === 1 ? "" : "s"} found for manual behavior review` : "Review tooltips, menus, popovers, and disclosures for dismissible, hoverable, and persistent behavior"} |
 | Pointer and dragging alternatives | ${manualChecklistStatus("pointer-dragging", manualChecklistItemIds, report.manualChecklist)} | Review sliders, maps, carousels, drag-and-drop, swipe, and pointer-heavy controls for cancellation and non-drag alternatives |
 | Voice and switch control readiness | Automated signals plus human review | ${voiceControlSignals} label-in-name or same-purpose naming signal${voiceControlSignals === 1 ? "" : "s"}; confirm representative tasks manually |
 | Embedded content and complex graphics | ${embeddedFindings > 0 || inaccessibleFrames > 0 ? "Automated findings plus owner review" : embeddedStates.length > 0 ? "Owner review recommended" : "No iframe or canvas observed"} | ${iframeCount} iframe${iframeCount === 1 ? "" : "s"}; ${inaccessibleFrames} unavailable; ${canvasGaps} canvas alternative gap${canvasGaps === 1 ? "" : "s"} |

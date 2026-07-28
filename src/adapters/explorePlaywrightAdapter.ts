@@ -29,6 +29,7 @@ import type {
   ForcedColorsConcern,
   ForcedColorsEvidence,
   FormErrorEvidence,
+  HoverFocusEvidence,
   ImageAlternativeConcern,
   ImageAlternativeEvidence,
   InteractiveControlEvidence,
@@ -501,6 +502,7 @@ export async function runExplorePlaywrightAdapter(
         });
         const accessibilityTree = await captureAccessibilityTree(page);
         const interactiveControls = await captureInteractiveControls(page);
+        const hoverFocus = await auditHoverFocusContent(page);
         const formErrors = await auditFormErrors(page, config, {
           stateId,
           stateLabel: actionLabel,
@@ -628,6 +630,7 @@ export async function runExplorePlaywrightAdapter(
           modalFocus,
           dynamicAnnouncements,
           interactiveControls,
+          hoverFocus,
           formErrors: formErrors.evidence,
           imageAlternatives: imageAlternatives.evidence,
           media: media.evidence,
@@ -1850,6 +1853,118 @@ async function captureInteractiveControls(page: Page): Promise<InteractiveContro
           ...(helpCandidate ? { helpCandidate: true } : {})
         };
       });
+  });
+}
+
+async function auditHoverFocusContent(page: Page): Promise<HoverFocusEvidence> {
+  return page.evaluate(() => {
+    function clean(value: string | null | undefined): string {
+      return (value || "").replace(/\s+/g, " ").trim();
+    }
+
+    function isVisible(element: Element): boolean {
+      const htmlElement = element as HTMLElement;
+      const rect = htmlElement.getBoundingClientRect();
+      const style = window.getComputedStyle(htmlElement);
+      return rect.width > 0 &&
+        rect.height > 0 &&
+        style.display !== "none" &&
+        style.visibility !== "hidden";
+    }
+
+    function attrSelector(name: string, value: string): string {
+      return `[${name}="${value.replace(/\\/g, "\\\\").replace(/"/g, "\\\"")}"]`;
+    }
+
+    function selectorFor(element: Element): string {
+      const testId = element.getAttribute("data-testid");
+      if (testId) return attrSelector("data-testid", testId);
+
+      const id = element.getAttribute("id");
+      if (id) return attrSelector("id", id);
+
+      const ariaLabel = element.getAttribute("aria-label");
+      if (ariaLabel) return attrSelector("aria-label", ariaLabel);
+
+      const tag = element.tagName.toLowerCase();
+      const parent = element.parentElement;
+      if (!parent) return tag;
+
+      const sameTagSiblings = Array.from(parent.children).filter((sibling) => (
+        sibling.tagName === element.tagName
+      ));
+      const index = sameTagSiblings.indexOf(element) + 1;
+      return `${parent.tagName.toLowerCase()} > ${tag}:nth-of-type(${Math.max(index, 1)})`;
+    }
+
+    function textFromLabelledBy(element: Element): string {
+      const ids = clean(element.getAttribute("aria-labelledby")).split(/\s+/).filter(Boolean);
+      return ids.map((id) => clean(document.getElementById(id)?.textContent)).filter(Boolean).join(" ");
+    }
+
+    function accessibleNameFor(element: Element): string {
+      return clean(element.getAttribute("aria-label")) ||
+        clean(textFromLabelledBy(element)) ||
+        clean(element.textContent) ||
+        clean(element.getAttribute("title")) ||
+        clean(element.getAttribute("alt"));
+    }
+
+    function describedByText(element: Element): string {
+      const ids = clean(element.getAttribute("aria-describedby")).split(/\s+/).filter(Boolean);
+      return ids.map((id) => clean(document.getElementById(id)?.textContent)).filter(Boolean).join(" ");
+    }
+
+    const triggerSelector = [
+      "[title]",
+      "[aria-describedby]",
+      "[aria-haspopup]",
+      "[aria-expanded]",
+      "[popovertarget]",
+      "details > summary",
+      "[data-tooltip]",
+      "[data-tooltip-content]",
+      "[data-tippy-content]"
+    ].join(", ");
+    const triggerElements = Array.from(document.querySelectorAll(triggerSelector))
+      .filter((element) => isVisible(element));
+    const samples = triggerElements.slice(0, 12).map((element) => {
+      const triggerKinds = [
+        clean(element.getAttribute("title")) ? "title" : "",
+        clean(element.getAttribute("aria-describedby")) ? "aria-describedby" : "",
+        clean(element.getAttribute("aria-haspopup")) ? "aria-haspopup" : "",
+        clean(element.getAttribute("aria-expanded")) ? "aria-expanded" : "",
+        clean(element.getAttribute("popovertarget")) ? "popover-target" : "",
+        element.matches("details > summary") ? "details-summary" : "",
+        clean(element.getAttribute("data-tooltip")) ||
+          clean(element.getAttribute("data-tooltip-content")) ||
+          clean(element.getAttribute("data-tippy-content")) ? "data-tooltip" : ""
+      ].filter(Boolean) as Array<"title" | "aria-describedby" | "aria-haspopup" | "aria-expanded" | "popover-target" | "details-summary" | "data-tooltip">;
+      const expanded = element.getAttribute("aria-expanded");
+      const hasPopup = clean(element.getAttribute("aria-haspopup"));
+      const label = accessibleNameFor(element);
+      const describedBy = describedByText(element);
+      return {
+        selector: selectorFor(element),
+        triggerKinds,
+        ...(label ? { label: label.slice(0, 120) } : {}),
+        ...(describedBy ? { describedBy: describedBy.slice(0, 160) } : {}),
+        ...(expanded === "true" || expanded === "false" ? { expanded: expanded === "true" } : {}),
+        ...(hasPopup ? { hasPopup } : {})
+      };
+    });
+    const visibleTooltipCount = Array.from(document.querySelectorAll("[role='tooltip'], [popover]"))
+      .filter((element) => isVisible(element)).length;
+
+    return {
+      triggerCount: triggerElements.length,
+      titleTriggerCount: triggerElements.filter((element) => clean(element.getAttribute("title"))).length,
+      describedByTriggerCount: triggerElements.filter((element) => clean(element.getAttribute("aria-describedby"))).length,
+      disclosureTriggerCount: triggerElements.filter((element) => clean(element.getAttribute("aria-expanded")) || element.matches("details > summary")).length,
+      popoverTriggerCount: triggerElements.filter((element) => clean(element.getAttribute("popovertarget")) || clean(element.getAttribute("aria-haspopup"))).length,
+      visibleTooltipCount,
+      samples
+    };
   });
 }
 

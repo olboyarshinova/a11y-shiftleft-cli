@@ -77,7 +77,7 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
 | 1.4.10 Reflow | AA | Heuristic + manual checklist | 400% / 320 CSS pixel evidence for overflow, clipped text, and fixed or sticky overlap |
 | 1.4.11 Non-text Contrast | AA | Gap | No reliable control, focus-indicator, or graphical-object contrast check |
 | 1.4.12 Text Spacing | AA | Automated + mapped | axe `avoid-inline-spacing` is only a limited signal |
-| 1.4.13 Content on Hover or Focus | AA | Gap | Hover/focus dismissal, persistence, and pointer movement are not exercised |
+| 1.4.13 Content on Hover or Focus | AA | Heuristic + manual checklist | Trigger inventory for title, described-by, popup, disclosure, popover, and tooltip-data patterns; dismissible, hoverable, persistent behavior still requires manual review |
 
 ## 2. Operable
 
