@@ -102,8 +102,9 @@ Section 508 certification.
   queue, screenshot evidence metadata, screenshot review notes, visual evidence
   pairs, screenshot-size diff metadata, local HTML side-by-side summaries with
   overlay sliders, lightweight PNG pixel-difference metadata, compact
-  pixel-diff meters, review-priority badges, and reproduction signals for
-  manual triage; next, add richer heatmap-style image-diff visualization.
+  pixel-diff meters, screenshot-difference hotspots, review-priority badges,
+  and reproduction signals for manual triage; next, refine heatmap-style
+  image-diff visualization for larger screenshots.
   Clearly label
   browser-specific differences for manual review before treating them as product
   defects.
@@ -116,9 +117,10 @@ Section 508 certification.
   visual-evidence-link, comparison queue, screenshot evidence metadata,
   screenshot review notes, visual evidence pairs, screenshot-size diff metadata,
   local HTML side-by-side summaries with overlay sliders, lightweight PNG
-  pixel-difference metadata, compact pixel-diff meters, review-priority badges,
-  and reproduction signals for manual triage; next, add richer heatmap-style
-  image-diff visualization.
+  pixel-difference metadata, compact pixel-diff meters,
+  screenshot-difference hotspots, review-priority badges, and reproduction
+  signals for manual triage; next, refine heatmap-style image-diff
+  visualization for larger screenshots.
   Treat this as responsive/mobile browser testing for rendered websites, not as
   native iOS or Android app auditing.
 - Extend modal checks with additional close, cancel, successful-completion, and

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added screenshot-difference hotspots to device and browser matrix HTML
+  summaries so reviewers can see the most changed regions in side-by-side
+  comparisons.
 - Added a compact WCAG Evidence Gaps table to Markdown reports so reviewers can
   see criteria with findings or manual-review gaps without treating coverage as
   a conformance score.

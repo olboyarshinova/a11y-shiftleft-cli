@@ -283,6 +283,16 @@ export interface AuditMatrixPixelDiff {
   totalPixels?: number;
   changedRatio?: number;
   changedPercent?: number;
+  hotspots?: AuditMatrixPixelDiffHotspot[];
+}
+
+export interface AuditMatrixPixelDiffHotspot {
+  xPercent: number;
+  yPercent: number;
+  widthPercent: number;
+  heightPercent: number;
+  changedPixels: number;
+  changedPercent: number;
 }
 
 export interface AuditMatrixVisualEvidence {
@@ -1180,6 +1190,7 @@ function summarizeAuditMatrixPixelDiff(images: AuditMatrixScreenshotImage[]): Au
 
   const totalPixels = leftPixels.width * leftPixels.height;
   let changedPixels = 0;
+  const changedMask = new Uint8Array(totalPixels);
   for (let index = 0; index < leftPixels.data.length; index += 4) {
     if (
       Math.abs(leftPixels.data[index] - rightPixels.data[index]) > 8
@@ -1188,6 +1199,7 @@ function summarizeAuditMatrixPixelDiff(images: AuditMatrixScreenshotImage[]): Au
       || Math.abs(leftPixels.data[index + 3] - rightPixels.data[index + 3]) > 8
     ) {
       changedPixels += 1;
+      changedMask[index / 4] = 1;
     }
   }
 
@@ -1209,8 +1221,60 @@ function summarizeAuditMatrixPixelDiff(images: AuditMatrixScreenshotImage[]): Au
     totalPixels,
     changedRatio,
     changedPercent,
+    hotspots: summarizeAuditMatrixPixelDiffHotspots(changedMask, leftPixels.width, leftPixels.height),
     note: `${changedPixels} of ${totalPixels} pixels changed (${changedPercent}%).`
   };
+}
+
+function summarizeAuditMatrixPixelDiffHotspots(
+  changedMask: Uint8Array,
+  width: number,
+  height: number,
+  limit = 3
+): AuditMatrixPixelDiffHotspot[] {
+  if (width <= 0 || height <= 0) return [];
+  const columns = Math.min(8, width);
+  const rows = Math.min(8, height);
+  const cells: Array<AuditMatrixPixelDiffHotspot & { density: number }> = [];
+
+  for (let row = 0; row < rows; row += 1) {
+    const yStart = Math.floor((row * height) / rows);
+    const yEnd = Math.floor(((row + 1) * height) / rows);
+    for (let column = 0; column < columns; column += 1) {
+      const xStart = Math.floor((column * width) / columns);
+      const xEnd = Math.floor(((column + 1) * width) / columns);
+      const cellPixels = Math.max(1, (xEnd - xStart) * (yEnd - yStart));
+      let changedPixels = 0;
+
+      for (let y = yStart; y < yEnd; y += 1) {
+        const offset = y * width;
+        for (let x = xStart; x < xEnd; x += 1) {
+          changedPixels += changedMask[offset + x] || 0;
+        }
+      }
+
+      if (changedPixels === 0) continue;
+      const changedPercent = Number(((changedPixels / cellPixels) * 100).toFixed(1));
+      cells.push({
+        xPercent: roundPercent((xStart / width) * 100),
+        yPercent: roundPercent((yStart / height) * 100),
+        widthPercent: roundPercent(((xEnd - xStart) / width) * 100),
+        heightPercent: roundPercent(((yEnd - yStart) / height) * 100),
+        changedPixels,
+        changedPercent,
+        density: changedPixels / cellPixels
+      });
+    }
+  }
+
+  return cells
+    .sort((left, right) => right.density - left.density || right.changedPixels - left.changedPixels || left.yPercent - right.yPercent || left.xPercent - right.xPercent)
+    .slice(0, limit)
+    .map(({ density: _density, ...hotspot }) => hotspot);
+}
+
+function roundPercent(value: number): number {
+  return Number(value.toFixed(1));
 }
 
 function decodePngToRgba(buffer: Buffer): { width: number; height: number; data: Uint8Array } | undefined {
@@ -1583,8 +1647,13 @@ export function renderAuditMatrixHtmlSummary(
     .diff-frame img { display: block; width: 100%; max-height: 520px; object-fit: contain; }
     .diff-frame .diff-overlay { position: absolute; inset: 0; clip-path: inset(0 calc(100% - var(--split, 50%)) 0 0); }
     .diff-frame .diff-divider { position: absolute; top: 0; bottom: 0; left: var(--split, 50%); width: 3px; background: #ffffff; box-shadow: 0 0 0 1px rgba(23, 32, 51, 0.35); }
+    .diff-hotspots { position: absolute; inset: 0; pointer-events: none; }
+    .diff-hotspot { position: absolute; border: 2px solid rgba(224, 0, 42, 0.9); background: rgba(224, 0, 42, 0.18); box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85); }
+    .diff-hotspot::after { content: attr(data-label); position: absolute; top: -1px; left: -1px; transform: translateY(-100%); min-width: 22px; padding: 1px 5px; border-radius: 999px; background: #e0002a; color: #ffffff; font-size: 11px; font-weight: 800; text-align: center; }
     .diff-control { display: grid; gap: 6px; padding: 10px 12px 12px; }
     .diff-control input { width: 100%; }
+    .diff-hotspot-list { margin: 0; padding: 8px 12px 0; color: var(--muted); font-size: 13px; }
+    .diff-hotspot-list li { margin: 2px 0; }
     .evidence-card { overflow: hidden; }
     .evidence-card header { display: flex; justify-content: space-between; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
     .evidence-card img { display: block; width: 100%; max-height: 460px; object-fit: contain; background: #eef2f7; border-bottom: 1px solid var(--border); }
@@ -1701,12 +1770,30 @@ function renderAuditMatrixHtmlDiffSlider(
       <img src="${escapeAttribute(leftSrc)}" alt="${escapeAttribute(`${left.label} screenshot for ${item.label}`)}" loading="lazy">
       <img class="diff-overlay" src="${escapeAttribute(rightSrc)}" alt="${escapeAttribute(`${right.label} screenshot for ${item.label}`)}" loading="lazy">
       <span class="diff-divider" aria-hidden="true"></span>
+      ${renderAuditMatrixHtmlDiffHotspots(item.pixelDiff)}
     </div>
+    ${renderAuditMatrixHtmlDiffHotspotList(item.pixelDiff)}
     <label class="diff-control">
       <span>Drag to reveal ${escapeHtml(right.label)} over ${escapeHtml(left.label)}</span>
       <input type="range" min="0" max="100" value="50" data-diff-input aria-label="${escapeAttribute(`Reveal ${right.label} over ${left.label}`)}">
     </label>
   </section>`;
+}
+
+function renderAuditMatrixHtmlDiffHotspots(diff?: AuditMatrixPixelDiff): string {
+  const hotspots = diff?.hotspots || [];
+  if (hotspots.length === 0) return "";
+  return `<div class="diff-hotspots" aria-hidden="true">${hotspots.map((hotspot, index) => (
+    `<span class="diff-hotspot" data-label="${index + 1}" style="left:${hotspot.xPercent}%;top:${hotspot.yPercent}%;width:${hotspot.widthPercent}%;height:${hotspot.heightPercent}%;"></span>`
+  )).join("")}</div>`;
+}
+
+function renderAuditMatrixHtmlDiffHotspotList(diff?: AuditMatrixPixelDiff): string {
+  const hotspots = diff?.hotspots || [];
+  if (hotspots.length === 0) return "";
+  return `<ol class="diff-hotspot-list" aria-label="Top changed screenshot areas">${hotspots.map((hotspot, index) => (
+    `<li>Area ${index + 1}: ${hotspot.changedPercent}% changed in this region (${hotspot.changedPixels} pixel${hotspot.changedPixels === 1 ? "" : "s"}).</li>`
+  )).join("")}</ol>`;
 }
 
 function renderAuditMatrixHtmlPixelDiffMeter(diff?: AuditMatrixPixelDiff): string {

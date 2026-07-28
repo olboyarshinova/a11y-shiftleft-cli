@@ -621,6 +621,14 @@ test("attachAuditMatrixScreenshotDiffs measures changed pixels for equal-size PN
     totalPixels: 2,
     changedRatio: 0.5,
     changedPercent: 50,
+    hotspots: [{
+      xPercent: 50,
+      yPercent: 0,
+      widthPercent: 50,
+      heightPercent: 100,
+      changedPixels: 1,
+      changedPercent: 100
+    }],
     note: "1 of 2 pixels changed (50%)."
   });
   assert.deepEqual(report.comparison.visualComparisonQueue[0]?.reviewPriority, {
@@ -668,6 +676,10 @@ test("attachAuditMatrixScreenshotDiffs measures changed pixels for equal-size PN
   assert.match(html, /Pixel difference: 50% changed/);
   assert.match(html, /high review priority/);
   assert.match(html, /--pixel-diff: 50%/);
+  assert.match(html, /class="diff-hotspot"/);
+  assert.match(html, /left:50%;top:0%;width:50%;height:100%/);
+  assert.match(html, /Top changed screenshot areas/);
+  assert.match(html, /Area 1: 100% changed in this region/);
 });
 
 test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
