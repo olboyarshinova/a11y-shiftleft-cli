@@ -50,7 +50,8 @@ Section 508 certification.
   as a conformance standard. WCAG remains the normative mapping source.
 - Keep WCAG coverage evidence in JSON and internal summaries, but avoid
   presenting a separate coverage-score section in the primary visual and
-  Markdown reports. Use Audit Coverage as the user-facing checklist. Report
+  Markdown reports. Use Audit Coverage as the user-facing checklist, and keep
+  the Markdown WCAG evidence-gap table compact and action-oriented. Report
   internal coverage as evidence coverage, not as a claim that a site is
   accessibility-compliant. Use separate metrics for automated evidence and
   assisted review evidence:
@@ -85,10 +86,11 @@ Section 508 certification.
   signals and 33 of 55 with automated, heuristic, or mapped manual-review
   evidence. Recheck these numbers before public comparison posts or release
   notes.
-- Add per-criterion coverage rows with status, evidence source, finding count,
-  and next step: `automated`, `heuristic`, `manual required`, `not covered`, or
-  `not applicable`. Keep untested criteria visible so users understand what the
-  tool cannot prove automatically.
+- Continue improving per-criterion coverage rows with status, evidence source,
+  finding count, and next step: `automated`, `heuristic`, `manual required`,
+  `not covered`, or `not applicable`. The Markdown report now shows a compact
+  WCAG Evidence Gaps table; next, keep the full JSON matrix complete while
+  making the visual report similarly lightweight.
 - Extend reflow evidence with explicit 200%/400% zoom checks and overlapping
   fixed or sticky control checks.
 - Continue cross-browser evidence beyond the current `--browser` and

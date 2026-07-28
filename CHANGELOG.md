@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added a compact WCAG Evidence Gaps table to Markdown reports so reviewers can
+  see criteria with findings or manual-review gaps without treating coverage as
+  a conformance score.
 - Added rule-level difference review to `audit --devices` and
   `audit --browsers` Markdown/JSON summaries so teams can quickly spot
   responsive or browser-specific accessibility signals.

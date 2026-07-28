@@ -12,7 +12,7 @@ import { summarizeRootCauses } from "../core/rootCauses.js";
 import { summarizeSampleComparison } from "../core/sampleComparison.js";
 import { applyUserImpact, countUserImpact } from "../core/userImpact.js";
 import { summarizeWcagCoverage } from "../core/wcagCoverage.js";
-import type { A11yReport, ComplianceEvidenceSummary, ComplianceStandardMetadata, DedupedIssue, Framework, LighthouseAuditResult, LighthouseReportSummary, PageSummary, RemediationHint, ReportFormat, ReportMetrics, ReportSummary, RootCauseGroup, Severity } from "../types.js";
+import type { A11yReport, ComplianceEvidenceSummary, ComplianceStandardMetadata, DedupedIssue, Framework, LighthouseAuditResult, LighthouseReportSummary, PageSummary, RemediationHint, ReportFormat, ReportMetrics, ReportSummary, RootCauseGroup, Severity, WcagCoverageCriterionSummary, WcagCoverageStatus } from "../types.js";
 
 interface WriteReportOptions {
   formats?: ReportFormat[];
@@ -557,6 +557,8 @@ ${formatPlannedScope(report.summary)}
 
 ${formatCoverageMatrix(report)}
 
+${formatWcagEvidenceGaps(report)}
+
 ${formatPageSummary(report.summary.byPage || [])}
 
 ${formatComplianceEvidence(complianceEvidence)}
@@ -1100,6 +1102,58 @@ function manualChecklistAnchorForCoverage(coverageId: string, manualChecklistIte
   return itemId && manualChecklistItemIds.has(itemId)
     ? `manual-checklist-item-${itemId}`
     : "manual-review-checklist";
+}
+
+function formatWcagEvidenceGaps(report: A11yReport): string {
+  const coverage = report.summary.wcagCoverage;
+  if (!coverage) return "";
+
+  const rows = coverage.criteria
+    .filter((criterion) => criterion.findingCount > 0 || criterion.status !== "automated")
+    .sort(compareWcagCoverageRows);
+  const visibleRows = rows.slice(0, 8);
+  if (visibleRows.length === 0) return "";
+
+  const table = visibleRows.map((criterion) => (
+    `| [WCAG ${markdownCell(criterion.id)} ${markdownCell(criterion.title)}](${criterion.url}) | ${criterion.level} | ${formatWcagCoverageStatus(criterion.status)} | ${criterion.findingCount} | ${formatWcagCoverageSources(criterion)} | ${markdownCell(criterion.nextStep)} |`
+  )).join("\n");
+  const hiddenCount = rows.length - visibleRows.length;
+
+  return `## WCAG Evidence Gaps
+
+This is evidence coverage, not a conformance claim. Use it to decide what still needs manual review.
+
+| Criterion | Level | Status | Findings | Evidence | Next step |
+|---|---|---|---:|---|---|
+${table}
+
+${hiddenCount > 0 ? `Showing ${visibleRows.length} of ${rows.length} criteria with findings or manual-review gaps. See \`a11y-report.json\` for the complete evidence matrix.` : ""}`;
+}
+
+function compareWcagCoverageRows(
+  left: WcagCoverageCriterionSummary,
+  right: WcagCoverageCriterionSummary
+): number {
+  return right.findingCount - left.findingCount
+    || wcagCoverageStatusRank(left.status) - wcagCoverageStatusRank(right.status)
+    || left.id.localeCompare(right.id, undefined, { numeric: true });
+}
+
+function wcagCoverageStatusRank(status: WcagCoverageStatus): number {
+  if (status === "heuristic") return 1;
+  if (status === "manual-required") return 2;
+  if (status === "not-covered") return 3;
+  return 4;
+}
+
+function formatWcagCoverageStatus(status: WcagCoverageStatus): string {
+  if (status === "manual-required") return "manual required";
+  if (status === "not-covered") return "not covered";
+  return status;
+}
+
+function formatWcagCoverageSources(criterion: WcagCoverageCriterionSummary): string {
+  return markdownCell(criterion.evidenceSources.join("; ") || "none recorded");
 }
 
 function formatManualReviewSummary(report: A11yReport): string {

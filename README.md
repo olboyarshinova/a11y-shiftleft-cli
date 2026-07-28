@@ -45,8 +45,9 @@ systems:
 | [Lighthouse](https://developer.chrome.com/docs/lighthouse/overview/) | Optional accessibility score comparison when installed |
 
 The report combines these signals with deduplication, WCAG labels, visual
-evidence, and manual-review gaps. It is an evidence workflow, not a replacement
-for the underlying tools or a conformance certification.
+evidence, compact WCAG evidence gaps, and manual-review guidance. It is an
+evidence workflow, not a replacement for the underlying tools or a conformance
+certification.
 
 ## 2-Minute Quick Start
 

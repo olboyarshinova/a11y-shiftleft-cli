@@ -351,6 +351,9 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /Browser evidence \| Chromium 141\.0\.0\.0 \(dynamic\)/);
   assert.doesNotMatch(markdown, /Tracked WCAG Coverage/);
   assert.doesNotMatch(markdown, /Tracked WCAG automated coverage/);
+  assert.match(markdown, /## WCAG Evidence Gaps/);
+  assert.match(markdown, /WCAG 4\.1\.2 Name, Role, Value.*automated.*1.*browser automation/s);
+  assert.match(markdown, /not covered/);
   assert.match(markdown, /Average score \| 91/);
   assert.match(markdown, /http:\/\/localhost:3000\/ \| 91 \| 1 \| 1/);
   assert.match(markdown, /Lighthouse And Pipeline Comparison/);
