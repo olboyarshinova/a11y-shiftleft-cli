@@ -39,6 +39,11 @@ This creates separate visual reports for each browser engine plus:
   outputs. The scanner now surfaces likely tooltip, popover, menu, disclosure,
   and described-by triggers for WCAG 1.4.13 review while keeping final behavior
   confirmation manual.
+- Pointer-interaction inventory in visual, Markdown, and manual checklist
+  outputs. The scanner now surfaces sliders, range inputs, carousels, maps,
+  canvas regions, draggable controls, swipe regions, sortable controls, and
+  inline pointer handlers for WCAG 2.5 review without performing unsafe
+  gestures.
 
 ## Changed
 

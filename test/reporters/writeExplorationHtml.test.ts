@@ -112,6 +112,27 @@ const graph = {
           expanded: false
         }]
       },
+      pointerInteractions: {
+        targetCount: 2,
+        draggableCount: 1,
+        sliderCount: 1,
+        carouselCount: 0,
+        mapOrCanvasCount: 0,
+        swipeOrSortableCount: 1,
+        pointerHandlerCount: 0,
+        samples: [{
+          selector: "#price-slider",
+          interactionKinds: ["slider", "range-input"],
+          label: "Price range",
+          role: "slider",
+          tagName: "input"
+        }, {
+          selector: "#sort-handle",
+          interactionKinds: ["draggable", "sortable"],
+          label: "Move item",
+          tagName: "button"
+        }]
+      },
       formErrors: {
         formCount: 1,
         fieldCount: 2,
@@ -432,7 +453,10 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /Shipping help/);
   assert.match(html, /described by: Shipping options update after address entry/);
   assert.match(html, /Pointer and dragging alternatives/);
-  assert.match(html, /Review sliders, maps, carousels, drag-and-drop, swipe/);
+  assert.match(html, /2 pointer-heavy targets found; 1 slider\/range signal; 2 drag, swipe, or sortable signals/);
+  assert.match(html, /Pointer and dragging evidence/);
+  assert.match(html, /Price range/);
+  assert.match(html, /Move item/);
   assert.match(html, /Copy all ticket drafts \(1\)/);
   assert.match(html, /Copy local Markdown drafts grouped by issue type/);
   assert.match(html, /title="Copy Markdown drafts grouped by issue type"/);

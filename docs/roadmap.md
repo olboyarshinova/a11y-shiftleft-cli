@@ -146,10 +146,13 @@ Section 508 certification.
   collect bounded interaction evidence for whether triggered content can be
   dismissed, remains available while hovered or focused, and persists long
   enough to inspect.
-- Extend pointer and dragging support beyond the current manual checklist row:
-  collect bounded visual evidence for pointer cancellation, drag alternatives,
-  swipe-only controls, sliders, maps, and pointer-heavy widgets without
-  triggering destructive or account-changing actions.
+- Continue pointer and dragging support beyond the current trigger inventory.
+  Current exploration evidence records sliders, range inputs, carousels, maps,
+  canvas regions, draggable controls, swipe regions, sortable controls, and
+  inline pointer-handler attributes in visual, Markdown, and manual checklist
+  outputs. Next, collect bounded interaction evidence for pointer cancellation
+  and non-drag alternatives without triggering destructive or account-changing
+  actions.
 - Extend sensory/color-only instructions and text-spacing support beyond the
   current manual checklist rows: collect bounded visual evidence for
   instruction copy, legends, charts, validation text, and user text-spacing

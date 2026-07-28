@@ -746,7 +746,7 @@ export interface ManualReviewRecord {
 
 export interface ManualReviewTarget {
   id: string;
-  kind: "dialog" | "form" | "image" | "live-region" | "media" | "embedded-content" | "landmark" | "reflow" | "hover-focus" | "journey";
+  kind: "dialog" | "form" | "image" | "live-region" | "media" | "embedded-content" | "landmark" | "reflow" | "hover-focus" | "pointer" | "journey";
   label: string;
   url: string;
   stateId: string;
@@ -918,6 +918,7 @@ export interface ExplorationState {
   dynamicAnnouncements?: DynamicAnnouncementEvidence;
   interactiveControls?: InteractiveControlEvidence[];
   hoverFocus?: HoverFocusEvidence;
+  pointerInteractions?: PointerInteractionEvidence;
   formErrors?: FormErrorEvidence;
   imageAlternatives?: ImageAlternativeEvidence;
   media?: MediaEvidence;
@@ -967,6 +968,35 @@ export interface HoverFocusEvidence {
   popoverTriggerCount: number;
   visibleTooltipCount: number;
   samples: HoverFocusTriggerEvidence[];
+}
+
+export type PointerInteractionKind =
+  | "draggable"
+  | "slider"
+  | "range-input"
+  | "carousel"
+  | "map-or-canvas"
+  | "swipe-region"
+  | "sortable"
+  | "pointer-handler";
+
+export interface PointerInteractionTargetEvidence {
+  selector: string;
+  interactionKinds: PointerInteractionKind[];
+  label?: string;
+  role?: string;
+  tagName: string;
+}
+
+export interface PointerInteractionEvidence {
+  targetCount: number;
+  draggableCount: number;
+  sliderCount: number;
+  carouselCount: number;
+  mapOrCanvasCount: number;
+  swipeOrSortableCount: number;
+  pointerHandlerCount: number;
+  samples: PointerInteractionTargetEvidence[];
 }
 
 export interface AccessibilityTreeEvidence {

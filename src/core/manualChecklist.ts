@@ -687,6 +687,7 @@ function collectManualReviewTargets(
     addLandmarkTargets(targets, state);
     addReflowTargets(targets, state);
     addHoverFocusTargets(targets, state);
+    addPointerTargets(targets, state);
   }
 
   return targets;
@@ -810,6 +811,15 @@ function addHoverFocusTargets(targets: Map<string, ManualReviewTarget[]>, state:
   for (const sample of evidence.samples) {
     addTarget(targets, "hover-focus-content", targetFor(state, "hover-focus", sample.label || sample.selector, sample.selector,
       `${sample.triggerKinds.join(", ")} trigger; described-by ${sample.describedBy ? "present" : "not detected"}; popup ${sample.hasPopup || "not detected"}`));
+  }
+}
+
+function addPointerTargets(targets: Map<string, ManualReviewTarget[]>, state: ExplorationState): void {
+  const evidence = state.pointerInteractions;
+  if (!evidence || evidence.targetCount === 0) return;
+  for (const sample of evidence.samples) {
+    addTarget(targets, "pointer-dragging-alternatives", targetFor(state, "pointer", sample.label || sample.selector, sample.selector,
+      `${sample.interactionKinds.join(", ")} target; role ${sample.role || "not detected"}; element ${sample.tagName}`));
   }
 }
 

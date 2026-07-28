@@ -37,6 +37,7 @@ import type {
   MediaElementEvidence,
   MediaEvidence,
   ModalFocusEvidence,
+  PointerInteractionEvidence,
   ReflowEvidence
 } from "../types.js";
 import type { ElementBounds } from "../types.js";
@@ -503,6 +504,7 @@ export async function runExplorePlaywrightAdapter(
         const accessibilityTree = await captureAccessibilityTree(page);
         const interactiveControls = await captureInteractiveControls(page);
         const hoverFocus = await auditHoverFocusContent(page);
+        const pointerInteractions = await auditPointerInteractions(page);
         const formErrors = await auditFormErrors(page, config, {
           stateId,
           stateLabel: actionLabel,
@@ -631,6 +633,7 @@ export async function runExplorePlaywrightAdapter(
           dynamicAnnouncements,
           interactiveControls,
           hoverFocus,
+          pointerInteractions,
           formErrors: formErrors.evidence,
           imageAlternatives: imageAlternatives.evidence,
           media: media.evidence,
@@ -1963,6 +1966,132 @@ async function auditHoverFocusContent(page: Page): Promise<HoverFocusEvidence> {
       disclosureTriggerCount: triggerElements.filter((element) => clean(element.getAttribute("aria-expanded")) || element.matches("details > summary")).length,
       popoverTriggerCount: triggerElements.filter((element) => clean(element.getAttribute("popovertarget")) || clean(element.getAttribute("aria-haspopup"))).length,
       visibleTooltipCount,
+      samples
+    };
+  });
+}
+
+async function auditPointerInteractions(page: Page): Promise<PointerInteractionEvidence> {
+  return page.evaluate(() => {
+    type PointerKind = "draggable" | "slider" | "range-input" | "carousel" | "map-or-canvas" | "swipe-region" | "sortable" | "pointer-handler";
+
+    function clean(value: string | null | undefined): string {
+      return (value || "").replace(/\s+/g, " ").trim();
+    }
+
+    function isVisible(element: Element): boolean {
+      const htmlElement = element as HTMLElement;
+      const rect = htmlElement.getBoundingClientRect();
+      const style = window.getComputedStyle(htmlElement);
+      return rect.width > 0 &&
+        rect.height > 0 &&
+        style.display !== "none" &&
+        style.visibility !== "hidden";
+    }
+
+    function attrSelector(name: string, value: string): string {
+      return `[${name}="${value.replace(/\\/g, "\\\\").replace(/"/g, "\\\"")}"]`;
+    }
+
+    function selectorFor(element: Element): string {
+      const testId = element.getAttribute("data-testid");
+      if (testId) return attrSelector("data-testid", testId);
+
+      const id = element.getAttribute("id");
+      if (id) return attrSelector("id", id);
+
+      const ariaLabel = element.getAttribute("aria-label");
+      if (ariaLabel) return attrSelector("aria-label", ariaLabel);
+
+      const tag = element.tagName.toLowerCase();
+      const parent = element.parentElement;
+      if (!parent) return tag;
+
+      const sameTagSiblings = Array.from(parent.children).filter((sibling) => (
+        sibling.tagName === element.tagName
+      ));
+      const index = sameTagSiblings.indexOf(element) + 1;
+      return `${parent.tagName.toLowerCase()} > ${tag}:nth-of-type(${Math.max(index, 1)})`;
+    }
+
+    function textFromLabelledBy(element: Element): string {
+      const ids = clean(element.getAttribute("aria-labelledby")).split(/\s+/).filter(Boolean);
+      return ids.map((id) => clean(document.getElementById(id)?.textContent)).filter(Boolean).join(" ");
+    }
+
+    function labelFor(element: Element): string {
+      return clean(element.getAttribute("aria-label")) ||
+        clean(textFromLabelledBy(element)) ||
+        clean(element.getAttribute("title")) ||
+        clean(element.textContent);
+    }
+
+    function datasetText(element: Element): string {
+      const htmlElement = element as HTMLElement;
+      return Object.entries(htmlElement.dataset || {})
+        .map(([key, value]) => `${key} ${value || ""}`)
+        .join(" ");
+    }
+
+    function classAndAttributeText(element: Element): string {
+      return [
+        element.getAttribute("id"),
+        element.getAttribute("class"),
+        element.getAttribute("role"),
+        element.getAttribute("aria-label"),
+        element.getAttribute("aria-roledescription"),
+        element.getAttribute("data-testid"),
+        element.getAttribute("title"),
+        datasetText(element)
+      ].map((value) => clean(value)).filter(Boolean).join(" ");
+    }
+
+    function interactionKindsFor(element: Element): PointerKind[] {
+      const tag = element.tagName.toLowerCase();
+      const role = clean(element.getAttribute("role")).toLowerCase();
+      const text = classAndAttributeText(element).toLowerCase();
+      const inputType = clean(element.getAttribute("type")).toLowerCase();
+      const kinds = [
+        element.getAttribute("draggable") === "true" ? "draggable" : "",
+        role === "slider" || role === "scrollbar" || text.includes("slider") ? "slider" : "",
+        tag === "input" && inputType === "range" ? "range-input" : "",
+        text.includes("carousel") ? "carousel" : "",
+        tag === "canvas" || /\b(map|mapbox|leaflet|google-map|drawing)\b/.test(text) ? "map-or-canvas" : "",
+        /\b(swipe|swipeable|pan|pinch)\b/.test(text) ? "swipe-region" : "",
+        /\b(sortable|reorder|re-order|drag-handle|draggable)\b/.test(text) ? "sortable" : "",
+        element.hasAttribute("onpointerdown") ||
+          element.hasAttribute("onmousedown") ||
+          element.hasAttribute("ontouchstart") ? "pointer-handler" : ""
+      ].filter(Boolean);
+      return [...new Set(kinds)] as PointerKind[];
+    }
+
+    const visibleElements = Array.from(document.querySelectorAll("button, a, input, [role], [draggable], canvas, [class], [id], [data-testid], [aria-roledescription], [onpointerdown], [onmousedown], [ontouchstart]"))
+      .filter((element) => isVisible(element))
+      .slice(0, 1200);
+    const candidates = visibleElements
+      .map((element) => ({
+        element,
+        kinds: interactionKindsFor(element)
+      }))
+      .filter((candidate) => candidate.kinds.length > 0);
+    const samples = candidates.slice(0, 12).map(({ element, kinds }) => ({
+      selector: selectorFor(element),
+      interactionKinds: kinds,
+      tagName: element.tagName.toLowerCase(),
+      ...(labelFor(element) ? { label: labelFor(element).slice(0, 120) } : {}),
+      ...(clean(element.getAttribute("role")) ? { role: clean(element.getAttribute("role")) } : {})
+    }));
+    const countKind = (kind: PointerKind) => candidates.filter((candidate) => candidate.kinds.includes(kind)).length;
+
+    return {
+      targetCount: candidates.length,
+      draggableCount: countKind("draggable"),
+      sliderCount: candidates.filter((candidate) => candidate.kinds.includes("slider") || candidate.kinds.includes("range-input")).length,
+      carouselCount: countKind("carousel"),
+      mapOrCanvasCount: countKind("map-or-canvas"),
+      swipeOrSortableCount: candidates.filter((candidate) => candidate.kinds.includes("swipe-region") || candidate.kinds.includes("sortable")).length,
+      pointerHandlerCount: countKind("pointer-handler"),
       samples
     };
   });

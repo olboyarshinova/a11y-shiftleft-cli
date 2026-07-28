@@ -143,6 +143,14 @@ to the manual checklist. It does not automatically prove WCAG 1.4.13 behavior;
 confirm manually that the revealed content is dismissible, hoverable or
 focusable, and persistent long enough to read or interact with.
 
+Pointer and dragging evidence records visible controls that may depend on
+pointer precision or gestures, including sliders, range inputs, carousels, maps,
+canvas regions, draggable controls, swipe regions, sortable controls, and inline
+pointer handlers. The scanner does not drag, submit, reorder, pay, delete,
+upload, or change account data. Confirm manually that pointer actions can be
+cancelled or undone and that drag, swipe, slider, map, and carousel tasks have
+simple non-drag alternatives.
+
 Rendered form states include counts and details for explicit invalid fields,
 their `aria-errormessage` or `aria-describedby` references, exposed error text,
 error summaries, and focus. The scanner does not submit forms or enter data.

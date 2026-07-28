@@ -2914,6 +2914,10 @@ function renderCoverageMatrix(
   const hoverFocusStates = graph.states.filter((state) => state.hoverFocus);
   const hoverFocusTriggers = hoverFocusStates.reduce((total, state) => total + (state.hoverFocus?.triggerCount || 0), 0);
   const visibleTooltipCount = hoverFocusStates.reduce((total, state) => total + (state.hoverFocus?.visibleTooltipCount || 0), 0);
+  const pointerStates = graph.states.filter((state) => state.pointerInteractions);
+  const pointerTargets = pointerStates.reduce((total, state) => total + (state.pointerInteractions?.targetCount || 0), 0);
+  const pointerDragSignals = pointerStates.reduce((total, state) => total + (state.pointerInteractions?.draggableCount || 0) + (state.pointerInteractions?.swipeOrSortableCount || 0), 0);
+  const pointerSliderSignals = pointerStates.reduce((total, state) => total + (state.pointerInteractions?.sliderCount || 0), 0);
   const embeddedStates = graph.states.filter((state) => state.embeddedContent);
   const iframeCount = embeddedStates.reduce((total, state) => total + (state.embeddedContent?.iframeCount || 0), 0);
   const inaccessibleFrames = embeddedStates.reduce((total, state) => total + (state.embeddedContent?.inaccessibleIframeCount || 0), 0);
@@ -2978,7 +2982,7 @@ function renderCoverageMatrix(
     coverageRow("image-alternatives", "Image alternatives", evidenceState(countIssues((issue) => issue.category === "images")), imageStates.length > 0 ? "Automated heuristics" : "No images observed", `${suspiciousImages} image alternative${suspiciousImages === 1 ? "" : "s"} flagged for human review across ${imageStates.length} state${imageStates.length === 1 ? "" : "s"}`, true, countIssues((issue) => issue.category === "images"), manualChecklistItemIds),
     coverageRow("media-motion", "Media and motion", mediaCoverageState, mediaFindingCount > 0 ? "Automated findings + manual review" : mediaStates.length > 0 ? "Manual review required" : "Review if applicable", mediaStates.length > 0 ? `${mediaElements} audio/video element${mediaElements === 1 ? "" : "s"}; ${autoplayRisks} autoplay control risk${autoplayRisks === 1 ? "" : "s"}; ${activeAnimations} active animation${activeAnimations === 1 ? "" : "s"}; reduced-motion CSS in ${reducedMotionStates}/${mediaStates.length} state${mediaStates.length === 1 ? "" : "s"}` : "Review captions, transcripts, autoplay, flashing, and reduced-motion behavior when media or animation is present", mediaFindingCount > 0, mediaStates.length > 0 ? mediaFindingCount : undefined, manualChecklistItemIds),
     coverageRow("hover-focus-content", "Hover/focus content", "needs-review", hoverFocusTriggers > 0 ? "Automated inventory + manual review" : options.manualChecklist ? "Checklist ready" : "Human review required", hoverFocusTriggers > 0 ? `${hoverFocusTriggers} possible tooltip, popover, or disclosure trigger${hoverFocusTriggers === 1 ? "" : "s"} found; ${visibleTooltipCount} tooltip/popover surface${visibleTooltipCount === 1 ? "" : "s"} visible during capture` : "Review tooltips, menus, popovers, and disclosures for dismissible, hoverable, and persistent behavior", false, hoverFocusTriggers > 0 ? hoverFocusTriggers : undefined, manualChecklistItemIds),
-    coverageRow("pointer-dragging", "Pointer and dragging alternatives", "needs-review", options.manualChecklist ? "Checklist ready" : "Human review required", "Review sliders, maps, carousels, drag-and-drop, swipe, and pointer-heavy controls for cancellation and non-drag alternatives", false, undefined, manualChecklistItemIds),
+    coverageRow("pointer-dragging", "Pointer and dragging alternatives", "needs-review", pointerTargets > 0 ? "Automated inventory + manual review" : options.manualChecklist ? "Checklist ready" : "Human review required", pointerTargets > 0 ? `${pointerTargets} pointer-heavy target${pointerTargets === 1 ? "" : "s"} found; ${pointerSliderSignals} slider/range signal${pointerSliderSignals === 1 ? "" : "s"}; ${pointerDragSignals} drag, swipe, or sortable signal${pointerDragSignals === 1 ? "" : "s"}` : "Review sliders, maps, carousels, drag-and-drop, swipe, and pointer-heavy controls for cancellation and non-drag alternatives", false, pointerTargets > 0 ? pointerTargets : undefined, manualChecklistItemIds),
     coverageRow("voice-switch-readiness", "Voice and switch control readiness", evidenceState(voiceControlFindingCount), "Automated signals + human review", `${voiceControlFindingCount} label-in-name or same-purpose naming signal${voiceControlFindingCount === 1 ? "" : "s"}; confirm representative voice or switch-control tasks manually`, true, voiceControlFindingCount, manualChecklistItemIds),
     coverageRow("embedded-content", "Embedded content and complex graphics", embeddedCoverageState, embeddedCoverageFindingCount > 0 || inaccessibleFrames > 0 ? "Automated findings + owner review" : embeddedStates.length > 0 ? "Owner review recommended" : "No embeds observed", embeddedStates.length > 0 ? `${iframeCount} iframe${iframeCount === 1 ? "" : "s"}; ${inaccessibleFrames} unavailable document${inaccessibleFrames === 1 ? "" : "s"}; ${canvasGaps} canvas alternative gap${canvasGaps === 1 ? "" : "s"}; ${thirdPartyEmbeddedFindingCount} third-party finding${thirdPartyEmbeddedFindingCount === 1 ? "" : "s"} ${thirdPartyEmbeddedFindingCount === 1 ? "needs" : "need"} owner follow-up` : "No iframe, canvas, or complex embedded graphic evidence collected", embeddedStates.length === 0 || embeddedCoverageFindingCount > 0 || inaccessibleFrames > 0, embeddedStates.length > 0 ? embeddedCoverageFindingCount : 0, manualChecklistItemIds),
     coverageRow("screen-reader", "Screen reader", "needs-review", options.manualChecklist ? "Checklist ready" : "Human review required", "Test representative tasks with NVDA, JAWS, or VoiceOver", false, undefined, manualChecklistItemIds),
@@ -3267,6 +3271,7 @@ function renderState(state: StateViewModel): string {
     ${renderModalFocusEvidence(state)}
     ${renderDynamicAnnouncementEvidence(state)}
     ${renderHoverFocusEvidence(state)}
+    ${renderPointerInteractionEvidence(state)}
     ${renderFormErrorEvidence(state)}
     ${renderImageAlternativeEvidence(state)}
     ${renderMediaEvidence(state)}
@@ -3350,6 +3355,24 @@ function renderHoverFocusEvidence(state: ExplorationState): string {
     </div>
     <ul>${evidence.samples.map((sample) => `<li><code>${escapeHtml(sample.selector)}</code>: ${escapeHtml(sample.triggerKinds.join(", "))}${sample.label ? ` · ${escapeHtml(sample.label)}` : ""}${sample.describedBy ? ` · described by: ${escapeHtml(sample.describedBy)}` : ""}${typeof sample.expanded === "boolean" ? ` · expanded: ${sample.expanded ? "true" : "false"}` : ""}${sample.hasPopup ? ` · popup: ${escapeHtml(sample.hasPopup)}` : ""}</li>`).join("")}</ul>
     <p class="muted">Confirm manually that triggered content can be dismissed, stays available while hovered or focused, and remains visible long enough to read or interact with.</p>
+  </details>`;
+}
+
+function renderPointerInteractionEvidence(state: ExplorationState): string {
+  const evidence = state.pointerInteractions;
+  if (!evidence || evidence.targetCount === 0) return "";
+  return `<details>
+    <summary>Pointer and dragging evidence</summary>
+    <div class="summary">
+      ${metric("Pointer-heavy targets", evidence.targetCount, "warning")}
+      ${metric("Sliders/range controls", evidence.sliderCount)}
+      ${metric("Drag/swipe/sortable signals", evidence.draggableCount + evidence.swipeOrSortableCount)}
+      ${metric("Carousel signals", evidence.carouselCount)}
+      ${metric("Map/canvas signals", evidence.mapOrCanvasCount)}
+      ${metric("Inline pointer handlers", evidence.pointerHandlerCount)}
+    </div>
+    <ul>${evidence.samples.map((sample) => `<li><code>${escapeHtml(sample.selector)}</code>: ${escapeHtml(sample.interactionKinds.join(", "))}${sample.label ? ` · ${escapeHtml(sample.label)}` : ""}${sample.role ? ` · role: ${escapeHtml(sample.role)}` : ""}${sample.tagName ? ` · ${escapeHtml(sample.tagName)}` : ""}</li>`).join("")}</ul>
+    <p class="muted">Confirm manually that pointer actions can be cancelled or undone, and that drag, swipe, slider, map, and carousel tasks have simple non-drag alternatives.</p>
   </details>`;
 }
 

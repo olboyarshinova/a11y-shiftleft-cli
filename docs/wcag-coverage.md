@@ -109,13 +109,13 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
 | 2.4.11 Focus Not Obscured (Minimum) | AA | Partial automated + mapped; manual checklist | keyboard runner checks focused-element geometry and center-point occlusion; complete boundary coverage requires review |
 | 2.4.12 Focus Not Obscured (Enhanced) | AAA | Gap | Outside current target |
 | 2.4.13 Focus Appearance | AAA | Gap | Outside current target |
-| 2.5.1 Pointer Gestures | A | Gap | Multipoint/path gestures and alternatives are not exercised |
-| 2.5.2 Pointer Cancellation | A | Gap | Down-event activation and cancellation behavior are not tested |
+| 2.5.1 Pointer Gestures | A | Heuristic + manual checklist | Pointer-heavy inventory can surface maps, swipe regions, and pointer handlers; multipoint/path gesture alternatives require manual review |
+| 2.5.2 Pointer Cancellation | A | Heuristic + manual checklist | Pointer-heavy inventory can surface risky controls; down-event activation and cancellation behavior require manual review |
 | 2.5.3 Label in Name | A | Automated + mapped | axe `label-content-name-mismatch` |
 | 2.5.4 Motion Actuation | A | Gap | Device-motion behavior and alternatives are not tested |
 | 2.5.5 Target Size (Enhanced) | AAA | Gap | Outside current target |
 | 2.5.6 Concurrent Input Mechanisms | AAA | Gap | Outside current target |
-| 2.5.7 Dragging Movements | AA | Gap | Catalog entry exists, but no adapter currently emits `dragging-movements` |
+| 2.5.7 Dragging Movements | AA | Heuristic + manual checklist | Drag, sortable, slider, carousel, map, and canvas inventory; non-drag alternatives require manual review |
 | 2.5.8 Target Size (Minimum) | AA | Automated + mapped | axe `target-size`; exceptions still require judgment |
 
 ## 3. Understandable
@@ -157,8 +157,8 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
    with findings merged into the normal report pipeline.
 2. Expand `--semi-auto` so every A/AA criterion without reliable automation
    has an explicit review step and evidence field.
-3. Do not present placeholder mappings for 2.5.7 or 3.3.8 as implemented until
-   an adapter or manual check actually produces evidence for them.
+3. Do not present placeholder mappings for 3.3.8 as implemented until an
+   adapter or manual check actually produces evidence for it.
 
 ## Interpretation
 

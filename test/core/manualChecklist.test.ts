@@ -179,6 +179,21 @@ test("createManualChecklist creates an assisted queue from exploration evidence"
             describedBy: "Extra help text",
             hasPopup: "dialog"
           }]
+        },
+        pointerInteractions: {
+          targetCount: 1,
+          draggableCount: 1,
+          sliderCount: 0,
+          carouselCount: 0,
+          mapOrCanvasCount: 0,
+          swipeOrSortableCount: 1,
+          pointerHandlerCount: 0,
+          samples: [{
+            selector: "#sort-handle",
+            interactionKinds: ["draggable", "sortable"],
+            label: "Move item",
+            tagName: "button"
+          }]
         }
       }],
       edges: [],
@@ -200,16 +215,20 @@ test("createManualChecklist creates an assisted queue from exploration evidence"
   const statusReview = checklist.items.find((item) => item.id === "status-messages-live-updates");
   const imageReview = checklist.items.find((item) => item.id === "alternative-text-quality");
   const hoverFocusReview = checklist.items.find((item) => item.id === "hover-focus-content");
+  const pointerReview = checklist.items.find((item) => item.id === "pointer-dragging-alternatives");
   assert.equal(formReview?.targets?.[0].selector, "#email");
   assert.equal(statusReview?.targets?.[0].selector, "#email");
   assert.equal(formReview?.targets?.[0].stateId, "state-2");
   assert.equal(imageReview?.targets?.[0].kind, "image");
   assert.equal(hoverFocusReview?.targets?.[0].kind, "hover-focus");
   assert.equal(hoverFocusReview?.targets?.[0].selector, "#help");
+  assert.equal(pointerReview?.targets?.[0].kind, "pointer");
+  assert.equal(pointerReview?.targets?.[0].selector, "#sort-handle");
   assert.equal(checklist.items[0].id, "form-label-quality");
   assert.match(toManualChecklistMarkdown(checklist), /Observed targets:\n- \[ \] form: Email address/);
   assert.match(toManualChecklistMarkdown(checklist), /state-2, #email/);
   assert.match(toManualChecklistMarkdown(checklist), /hover-focus: Help/);
+  assert.match(toManualChecklistMarkdown(checklist), /pointer: Move item/);
 });
 
 test("createManualChecklist keeps motion review targets when media elements also exist", () => {
