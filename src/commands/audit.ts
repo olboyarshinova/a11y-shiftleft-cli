@@ -2,7 +2,7 @@ import type { Command } from "commander";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { runEslintAdapter } from "../adapters/eslintAdapter.js";
-import { runExplorePlaywrightAdapter, writeExplorationGraph } from "../adapters/explorePlaywrightAdapter.js";
+import { readScreenshotDimensions, runExplorePlaywrightAdapter, writeExplorationGraph } from "../adapters/explorePlaywrightAdapter.js";
 import { runKeyboardPlaywrightAdapter } from "../adapters/keyboardPlaywrightAdapter.js";
 import { runLighthouseAdapter } from "../adapters/lighthouseAdapter.js";
 import { loadConfig } from "../config/loadConfig.js";
@@ -256,8 +256,16 @@ export interface AuditMatrixVisualComparison {
   spread: number;
   compare: string;
   screenshotReview: string;
+  screenshotDiff?: AuditMatrixScreenshotDiff;
   visualEvidence: AuditMatrixVisualEvidence[];
   evidenceLinks: AuditMatrixStateEvidenceLink[];
+}
+
+export interface AuditMatrixScreenshotDiff {
+  status: "same-size" | "different-size" | "missing-dimensions";
+  note: string;
+  widthDelta?: number;
+  heightDelta?: number;
 }
 
 export interface AuditMatrixVisualEvidence {
@@ -267,6 +275,8 @@ export interface AuditMatrixVisualEvidence {
   screenshot?: string;
   screenshotMode: "full-page" | "viewport" | "unknown";
   screenshotEvidenceCount: number;
+  screenshotWidth?: number;
+  screenshotHeight?: number;
   visualDuplicateOf?: string;
 }
 
@@ -370,6 +380,7 @@ export async function runAuditBrowserMatrix(options: AuditOptions): Promise<{ fa
   const jsonSummaryPath = path.join(baseOutputDir, "a11y-browser-audit.json");
   const htmlSummaryPath = path.join(baseOutputDir, "a11y-browser-audit.html");
   const matrixReport = createAuditBrowserMatrixReport(results, undefined, options);
+  await attachAuditMatrixScreenshotDiffs(matrixReport, baseOutputDir);
   await fs.mkdir(baseOutputDir, { recursive: true });
   await fs.writeFile(summaryPath, formatAuditBrowserMatrixSummary(results, options), "utf8");
   await fs.writeFile(jsonSummaryPath, `${JSON.stringify(matrixReport, null, 2)}\n`, "utf8");
@@ -521,6 +532,7 @@ export async function runAuditDeviceMatrix(options: AuditOptions): Promise<{ fai
   const jsonSummaryPath = path.join(baseOutputDir, "a11y-device-audit.json");
   const htmlSummaryPath = path.join(baseOutputDir, "a11y-device-audit.html");
   const matrixReport = createAuditDeviceMatrixReport(results, undefined, options);
+  await attachAuditMatrixScreenshotDiffs(matrixReport, baseOutputDir);
   await fs.mkdir(baseOutputDir, { recursive: true });
   await fs.writeFile(summaryPath, formatAuditDeviceMatrixSummary(results, options), "utf8");
   await fs.writeFile(jsonSummaryPath, `${JSON.stringify(matrixReport, null, 2)}\n`, "utf8");
@@ -985,6 +997,80 @@ function createAuditMatrixVisualEvidence(link: AuditMatrixStateEvidenceLink): Au
   };
 }
 
+export async function attachAuditMatrixScreenshotDiffs(
+  report: Pick<AuditBrowserMatrixReport | AuditDeviceMatrixReport, "profiles" | "comparison">,
+  baseOutputDir = "."
+): Promise<void> {
+  for (const item of report.comparison.visualComparisonQueue) {
+    for (const evidence of item.visualEvidence) {
+      const dimensions = await readAuditMatrixEvidenceDimensions(evidence, report.profiles, baseOutputDir);
+      if (!dimensions) continue;
+      evidence.screenshotWidth = dimensions.width;
+      evidence.screenshotHeight = dimensions.height;
+    }
+    item.screenshotDiff = summarizeAuditMatrixScreenshotDiff(item.visualEvidence);
+  }
+}
+
+async function readAuditMatrixEvidenceDimensions(
+  evidence: AuditMatrixVisualEvidence,
+  profiles: Array<{ label: string; outputDir: string }>,
+  baseOutputDir: string
+): Promise<{ width: number; height: number } | undefined> {
+  if (!evidence.screenshot) return undefined;
+  const screenshotPath = resolveAuditMatrixScreenshotFilePath(evidence, profiles, baseOutputDir);
+  const format = inferScreenshotFormat(screenshotPath);
+  if (!format) return undefined;
+  try {
+    return readScreenshotDimensions(await fs.readFile(screenshotPath), format);
+  } catch {
+    return undefined;
+  }
+}
+
+function resolveAuditMatrixScreenshotFilePath(
+  evidence: AuditMatrixVisualEvidence,
+  profiles: Array<{ label: string; outputDir: string }>,
+  baseOutputDir: string
+): string {
+  const profile = profiles.find((candidate) => candidate.label === evidence.label);
+  if (!profile || !evidence.screenshot) return evidence.screenshot || "";
+  const profileOutputDir = path.isAbsolute(profile.outputDir) ? profile.outputDir : path.join(baseOutputDir, profile.outputDir);
+  const screenshotPath = path.join(profileOutputDir, evidence.screenshot);
+  return path.isAbsolute(screenshotPath) ? screenshotPath : path.resolve(screenshotPath);
+}
+
+function inferScreenshotFormat(filePath: string): "png" | "jpeg" | undefined {
+  const extension = path.extname(filePath).toLowerCase();
+  if (extension === ".png") return "png";
+  if (extension === ".jpg" || extension === ".jpeg") return "jpeg";
+  return undefined;
+}
+
+function summarizeAuditMatrixScreenshotDiff(evidence: AuditMatrixVisualEvidence[]): AuditMatrixScreenshotDiff {
+  const [left, right] = evidence.filter((entry) => entry.screenshot).slice(0, 2);
+  if (!left || !right || !left.screenshotWidth || !left.screenshotHeight || !right.screenshotWidth || !right.screenshotHeight) {
+    return {
+      status: "missing-dimensions",
+      note: "Screenshot dimensions were unavailable for one or both profiles."
+    };
+  }
+  const widthDelta = Math.abs(left.screenshotWidth - right.screenshotWidth);
+  const heightDelta = Math.abs(left.screenshotHeight - right.screenshotHeight);
+  if (widthDelta === 0 && heightDelta === 0) {
+    return {
+      status: "same-size",
+      note: `Both screenshots are ${left.screenshotWidth} x ${left.screenshotHeight}.`
+    };
+  }
+  return {
+    status: "different-size",
+    widthDelta,
+    heightDelta,
+    note: `Screenshot sizes differ: ${left.label} is ${left.screenshotWidth} x ${left.screenshotHeight}; ${right.label} is ${right.screenshotWidth} x ${right.screenshotHeight}.`
+  };
+}
+
 function summarizeVisualComparisonScreenshotReview(links: AuditMatrixStateEvidenceLink[]): string {
   if (links.every((link) => !link.screenshot && !link.screenshotEvidenceCount)) {
     return "No screenshot evidence captured; rerun with screenshots enabled before comparing visually.";
@@ -1153,12 +1239,20 @@ function formatAuditMatrixScreenshotHint(link: AuditMatrixStateEvidenceLink): st
 function formatVisualComparisonQueue(queue: AuditMatrixVisualComparison[]): string {
   if (queue.length === 0) return "No visual comparison queue was available from the completed profile summaries.";
   return [
-    "| State | Compare first | Why | Screenshot review | Evidence |",
-    "|---|---|---|---|---|",
+    "| State | Compare first | Why | Screenshot review | Screenshot diff | Evidence |",
+    "|---|---|---|---|---|---|",
     ...queue.map((item) => (
-      `| ${escapeMarkdownTableCell(item.label)} | ${escapeMarkdownTableCell(item.compare)} | ${escapeMarkdownTableCell(`${item.spread} finding spread at depth ${item.depth}`)} | ${escapeMarkdownTableCell(item.screenshotReview)} | ${formatAuditMatrixEvidenceLinks(item.evidenceLinks)} |`
+      `| ${escapeMarkdownTableCell(item.label)} | ${escapeMarkdownTableCell(item.compare)} | ${escapeMarkdownTableCell(`${item.spread} finding spread at depth ${item.depth}`)} | ${escapeMarkdownTableCell(item.screenshotReview)} | ${escapeMarkdownTableCell(formatAuditMatrixScreenshotDiff(item.screenshotDiff))} | ${formatAuditMatrixEvidenceLinks(item.evidenceLinks)} |`
     ))
   ].join("\n");
+}
+
+function formatAuditMatrixScreenshotDiff(diff?: AuditMatrixScreenshotDiff): string {
+  if (!diff) return "not measured";
+  if (diff.status === "different-size") {
+    return `${diff.status}; width delta ${diff.widthDelta || 0}px; height delta ${diff.heightDelta || 0}px`;
+  }
+  return diff.status;
 }
 
 export function renderAuditMatrixHtmlSummary(
@@ -1287,7 +1381,7 @@ function renderAuditMatrixHtmlVisualQueue(
     ${queue.map((item) => `<article class="comparison-card" aria-labelledby="comparison-${escapeAttribute(slugifyMatrixId(item.stateKey))}">
       <div>
         <h3 id="comparison-${escapeAttribute(slugifyMatrixId(item.stateKey))}">${escapeHtml(item.label)}</h3>
-        <p class="muted">${escapeHtml(item.compare)} · ${escapeHtml(`${item.spread} finding spread at depth ${item.depth}`)}<br>${escapeHtml(item.screenshotReview)}</p>
+        <p class="muted">${escapeHtml(item.compare)} · ${escapeHtml(`${item.spread} finding spread at depth ${item.depth}`)}<br>${escapeHtml(item.screenshotReview)}<br>${escapeHtml(formatAuditMatrixScreenshotDiffNote(item.screenshotDiff))}</p>
       </div>
       ${renderAuditMatrixHtmlDiffSlider(item, profiles, baseOutputDir)}
       <div class="comparison-grid">
@@ -1340,10 +1434,23 @@ function renderAuditMatrixHtmlEvidenceCard(
     <dl>
       <dt>Findings</dt><dd>${evidence.count}</dd>
       <dt>Screenshot</dt><dd>${escapeHtml(evidence.screenshotMode)}</dd>
+      <dt>Size</dt><dd>${escapeHtml(formatAuditMatrixEvidenceSize(evidence))}</dd>
       <dt>Focused evidence</dt><dd>${evidence.screenshotEvidenceCount}</dd>
       ${evidence.visualDuplicateOf ? `<dt>Reuse</dt><dd>${escapeHtml(evidence.visualDuplicateOf)}</dd>` : ""}
     </dl>
   </article>`;
+}
+
+function formatAuditMatrixScreenshotDiffNote(diff?: AuditMatrixScreenshotDiff): string {
+  if (!diff) return "Screenshot dimensions were not measured.";
+  if (diff.status === "same-size") return `Screenshot diff: same size. ${diff.note}`;
+  if (diff.status === "different-size") return `Screenshot diff: different size. ${diff.note}`;
+  return `Screenshot diff: dimensions unavailable. ${diff.note}`;
+}
+
+function formatAuditMatrixEvidenceSize(evidence: AuditMatrixVisualEvidence): string {
+  if (!evidence.screenshotWidth || !evidence.screenshotHeight) return "not measured";
+  return `${evidence.screenshotWidth} x ${evidence.screenshotHeight}`;
 }
 
 function resolveAuditMatrixScreenshotSrc(

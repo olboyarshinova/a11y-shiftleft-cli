@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { createProgram } from "../../dist/cli.js";
-import { createAuditBrowserMatrixReport, createAuditDeviceMatrixReport, formatAuditBrowserMatrixSummary, formatAuditDeviceMatrixSummary, hasAuditBrowserMatrix, hasAuditDeviceMatrix, normalizeAuditUrl, renderAuditMatrixHtmlSummary, resolveAuditBrowserTargets, resolveAuditDepthOption, resolveAuditDeviceTargets, resolveAuditProfileOptions } from "../../dist/commands/audit.js";
+import { attachAuditMatrixScreenshotDiffs, createAuditBrowserMatrixReport, createAuditDeviceMatrixReport, formatAuditBrowserMatrixSummary, formatAuditDeviceMatrixSummary, hasAuditBrowserMatrix, hasAuditDeviceMatrix, normalizeAuditUrl, renderAuditMatrixHtmlSummary, resolveAuditBrowserTargets, resolveAuditDepthOption, resolveAuditDeviceTargets, resolveAuditProfileOptions } from "../../dist/commands/audit.js";
 
 test("audit is the unified visual report command with optional extra formats", () => {
   const audit = createProgram().commands.find((command) => command.name() === "audit");
@@ -479,6 +482,71 @@ test("renderAuditMatrixHtmlSummary creates side-by-side visual evidence links", 
   assert.match(html, /Screenshot capture modes differ; compare the linked full-page and viewport evidence carefully/);
 });
 
+test("attachAuditMatrixScreenshotDiffs adds screenshot size deltas to matrix reports", async () => {
+  const baseOutputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-matrix-diff-"));
+  const desktopDir = path.join(baseOutputDir, "desktop");
+  const mobileDir = path.join(baseOutputDir, "mobile");
+  await fs.mkdir(path.join(desktopDir, "screenshots"), { recursive: true });
+  await fs.mkdir(path.join(mobileDir, "screenshots"), { recursive: true });
+  await fs.writeFile(path.join(desktopDir, "screenshots", "state-1.png"), createPngHeader(400, 300));
+  await fs.writeFile(path.join(mobileDir, "screenshots", "state-1-mobile.png"), createPngHeader(375, 300));
+
+  const report = createAuditDeviceMatrixReport([
+    {
+      target: { label: "desktop", slug: "desktop" },
+      failed: false,
+      outputDir: desktopDir,
+      summary: {
+        total: 2,
+        critical: 1,
+        warning: 1,
+        info: 0,
+        states: 1,
+        topStates: [
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 2, screenshot: "screenshots/state-1.png", screenshotEvidenceCount: 1, screenshotFullPage: true }
+        ]
+      }
+    },
+    {
+      target: { label: "mobile", slug: "mobile" },
+      failed: false,
+      outputDir: mobileDir,
+      summary: {
+        total: 1,
+        critical: 0,
+        warning: 1,
+        info: 0,
+        states: 1,
+        topStates: [
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 1, screenshot: "screenshots/state-1-mobile.png", screenshotEvidenceCount: 1, screenshotFullPage: false }
+        ]
+      }
+    }
+  ], "2026-07-26T00:00:00.000Z");
+
+  await attachAuditMatrixScreenshotDiffs(report, baseOutputDir);
+
+  assert.deepEqual(report.comparison.visualComparisonQueue[0]?.screenshotDiff, {
+    status: "different-size",
+    widthDelta: 25,
+    heightDelta: 0,
+    note: "Screenshot sizes differ: desktop is 400 x 300; mobile is 375 x 300."
+  });
+  assert.deepEqual(report.comparison.visualComparisonQueue[0]?.visualEvidence.map((evidence) => ({
+    label: evidence.label,
+    width: evidence.screenshotWidth,
+    height: evidence.screenshotHeight
+  })), [
+    { label: "desktop", width: 400, height: 300 },
+    { label: "mobile", width: 375, height: 300 }
+  ]);
+
+  const html = renderAuditMatrixHtmlSummary("Device Audit Summary", "device profile", report, baseOutputDir);
+  assert.match(html, /Screenshot diff: different size/);
+  assert.match(html, /400 x 300/);
+  assert.match(html, /375 x 300/);
+});
+
 test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
   const markdown = formatAuditBrowserMatrixSummary([
     {
@@ -703,3 +771,12 @@ test("createAuditBrowserMatrixReport exports machine-readable browser results", 
     }
   });
 });
+
+function createPngHeader(width: number, height: number): Buffer {
+  const buffer = Buffer.alloc(24);
+  buffer[0] = 0x89;
+  buffer.write("PNG", 1, "ascii");
+  buffer.writeUInt32BE(width, 16);
+  buffer.writeUInt32BE(height, 20);
+  return buffer;
+}

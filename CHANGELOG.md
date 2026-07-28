@@ -32,6 +32,8 @@
   side-by-side visual evidence cards.
 - Added an overlay slider to matrix HTML summaries so reviewers can compare two
   captured screenshots without opening separate tabs.
+- Added lightweight screenshot-size diff metadata to matrix JSON and HTML
+  summaries.
 
 ## 0.9.0
 

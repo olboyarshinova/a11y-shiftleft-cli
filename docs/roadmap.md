@@ -98,8 +98,9 @@ Section 508 certification.
   profile. They also call out coverage-overlap counts plus browser-only rule,
   page, UI-state, shared-state-difference, visual-evidence-link, comparison
   queue, screenshot evidence metadata, screenshot review notes, visual evidence
-  pairs, local HTML side-by-side summaries with overlay sliders, and
-  reproduction signals for manual triage; next, add pixel-difference metrics.
+  pairs, screenshot-size diff metadata, local HTML side-by-side summaries with
+  overlay sliders, and reproduction signals for manual triage; next, add
+  pixel-difference metrics.
   Clearly label
   browser-specific differences for manual review before treating them as product
   defects.
@@ -110,10 +111,11 @@ Section 508 certification.
   rerun one profile. They also call out coverage-overlap counts plus
   profile-specific rule, page, UI-state, shared-state-difference,
   visual-evidence-link, comparison queue, screenshot evidence metadata,
-  screenshot review notes, visual evidence pairs, local HTML side-by-side
-  summaries with overlay sliders, and reproduction signals for manual triage;
-  next, add pixel-difference metrics. Treat this as responsive/mobile browser testing for rendered
-  websites, not as native iOS or Android app auditing.
+  screenshot review notes, visual evidence pairs, screenshot-size diff metadata,
+  local HTML side-by-side summaries with overlay sliders, and reproduction
+  signals for manual triage; next, add pixel-difference metrics. Treat this as
+  responsive/mobile browser testing for rendered websites, not as native iOS or
+  Android app auditing.
 - Extend modal checks with additional close, cancel, successful-completion, and
   non-modal dialog paths.
 - Extend live-region evidence beyond the current manual checklist row and
