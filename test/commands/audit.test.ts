@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { deflateSync } from "node:zlib";
 import { createProgram } from "../../dist/cli.js";
 import { attachAuditMatrixScreenshotDiffs, createAuditBrowserMatrixReport, createAuditDeviceMatrixReport, formatAuditBrowserMatrixSummary, formatAuditDeviceMatrixSummary, hasAuditBrowserMatrix, hasAuditDeviceMatrix, normalizeAuditUrl, renderAuditMatrixHtmlSummary, resolveAuditBrowserTargets, resolveAuditDepthOption, resolveAuditDeviceTargets, resolveAuditProfileOptions } from "../../dist/commands/audit.js";
 
@@ -532,6 +533,10 @@ test("attachAuditMatrixScreenshotDiffs adds screenshot size deltas to matrix rep
     heightDelta: 0,
     note: "Screenshot sizes differ: desktop is 400 x 300; mobile is 375 x 300."
   });
+  assert.deepEqual(report.comparison.visualComparisonQueue[0]?.pixelDiff, {
+    status: "different-size",
+    note: "Pixel diff was not measured because the screenshots have different dimensions."
+  });
   assert.deepEqual(report.comparison.visualComparisonQueue[0]?.visualEvidence.map((evidence) => ({
     label: evidence.label,
     width: evidence.screenshotWidth,
@@ -543,8 +548,107 @@ test("attachAuditMatrixScreenshotDiffs adds screenshot size deltas to matrix rep
 
   const html = renderAuditMatrixHtmlSummary("Device Audit Summary", "device profile", report, baseOutputDir);
   assert.match(html, /Screenshot diff: different size/);
+  assert.match(html, /Pixel diff: different-size/);
   assert.match(html, /400 x 300/);
   assert.match(html, /375 x 300/);
+});
+
+test("attachAuditMatrixScreenshotDiffs measures changed pixels for equal-size PNG evidence", async () => {
+  const baseOutputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-matrix-pixel-diff-"));
+  const desktopDir = path.join(baseOutputDir, "desktop");
+  const tabletDir = path.join(baseOutputDir, "tablet");
+  await fs.mkdir(path.join(desktopDir, "screenshots"), { recursive: true });
+  await fs.mkdir(path.join(tabletDir, "screenshots"), { recursive: true });
+  await fs.writeFile(path.join(desktopDir, "screenshots", "state-1.png"), createPngImage(2, 1, [
+    [255, 255, 255, 255],
+    [0, 0, 0, 255]
+  ]));
+  await fs.writeFile(path.join(tabletDir, "screenshots", "state-1.png"), createPngImage(2, 1, [
+    [255, 255, 255, 255],
+    [255, 0, 0, 255]
+  ]));
+
+  const report = createAuditDeviceMatrixReport([
+    {
+      target: { label: "desktop", slug: "desktop" },
+      failed: false,
+      outputDir: desktopDir,
+      summary: {
+        total: 2,
+        critical: 1,
+        warning: 1,
+        info: 0,
+        states: 1,
+        topStates: [
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 2, screenshot: "screenshots/state-1.png", screenshotEvidenceCount: 1, screenshotFullPage: true }
+        ]
+      }
+    },
+    {
+      target: { label: "tablet", slug: "tablet" },
+      failed: false,
+      outputDir: tabletDir,
+      summary: {
+        total: 1,
+        critical: 0,
+        warning: 1,
+        info: 0,
+        states: 1,
+        topStates: [
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 1, screenshot: "screenshots/state-1.png", screenshotEvidenceCount: 1, screenshotFullPage: true }
+        ]
+      }
+    }
+  ], "2026-07-26T00:00:00.000Z");
+
+  await attachAuditMatrixScreenshotDiffs(report, baseOutputDir);
+
+  assert.deepEqual(report.comparison.visualComparisonQueue[0]?.pixelDiff, {
+    status: "changed-pixels",
+    changedPixels: 1,
+    totalPixels: 2,
+    changedRatio: 0.5,
+    changedPercent: 50,
+    note: "1 of 2 pixels changed (50%)."
+  });
+
+  const markdown = formatAuditDeviceMatrixSummary([
+    {
+      target: { label: "desktop", slug: "desktop" },
+      failed: false,
+      outputDir: desktopDir,
+      summary: {
+        total: 2,
+        critical: 1,
+        warning: 1,
+        info: 0,
+        states: 1,
+        topStates: [
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 2, screenshot: "screenshots/state-1.png", screenshotEvidenceCount: 1, screenshotFullPage: true }
+        ]
+      }
+    },
+    {
+      target: { label: "tablet", slug: "tablet" },
+      failed: false,
+      outputDir: tabletDir,
+      summary: {
+        total: 1,
+        critical: 0,
+        warning: 1,
+        info: 0,
+        states: 1,
+        topStates: [
+          { id: "state-1", label: "Initial page", url: "https://example.com/", depth: 0, issueCount: 1, screenshot: "screenshots/state-1.png", screenshotEvidenceCount: 1, screenshotFullPage: true }
+        ]
+      }
+    }
+  ], undefined, report);
+  assert.match(markdown, /Pixel diff/);
+  assert.match(markdown, /50% changed/);
+
+  const html = renderAuditMatrixHtmlSummary("Device Audit Summary", "device profile", report, baseOutputDir);
+  assert.match(html, /Pixel diff: 50% changed/);
 });
 
 test("formatAuditBrowserMatrixSummary links generated visual reports", () => {
@@ -779,4 +883,41 @@ function createPngHeader(width: number, height: number): Buffer {
   buffer.writeUInt32BE(width, 16);
   buffer.writeUInt32BE(height, 20);
   return buffer;
+}
+
+function createPngImage(width: number, height: number, pixels: Array<[number, number, number, number]>): Buffer {
+  assert.equal(pixels.length, width * height);
+  const signature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8;
+  ihdr[9] = 6;
+  ihdr[10] = 0;
+  ihdr[11] = 0;
+  ihdr[12] = 0;
+
+  const rawRows: number[] = [];
+  for (let y = 0; y < height; y += 1) {
+    rawRows.push(0);
+    for (let x = 0; x < width; x += 1) {
+      rawRows.push(...pixels[(y * width) + x]);
+    }
+  }
+
+  return Buffer.concat([
+    signature,
+    createPngChunk("IHDR", ihdr),
+    createPngChunk("IDAT", deflateSync(Buffer.from(rawRows))),
+    createPngChunk("IEND", Buffer.alloc(0))
+  ]);
+}
+
+function createPngChunk(type: string, data: Buffer): Buffer {
+  const chunk = Buffer.alloc(12 + data.length);
+  chunk.writeUInt32BE(data.length, 0);
+  chunk.write(type, 4, "ascii");
+  data.copy(chunk, 8);
+  chunk.writeUInt32BE(0, 8 + data.length);
+  return chunk;
 }

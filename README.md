@@ -343,7 +343,9 @@ profile-specific rule signals and includes coverage-overlap counts,
 profile-specific page/state signals, copy-paste commands, direct links to
 matching visual evidence, screenshot hints, screenshot review notes, and a short
 side-by-side comparison queue with an overlay slider and screenshot-size diff
-metadata for captured screenshots.
+metadata for captured screenshots. When matching screenshots are PNG files with
+the same dimensions, the matrix summary also records a lightweight pixel-change
+percentage.
 
 Install the browser engine before using it, for example:
 
@@ -359,7 +361,9 @@ each browser report. The summary also calls out browser-only rule signals and
 coverage-overlap counts, browser-only page/state signals, copy-paste commands,
 direct links to matching visual evidence, screenshot hints, screenshot review
 notes, and a short side-by-side comparison queue with an overlay slider for
-captured screenshots plus screenshot-size diff metadata.
+captured screenshots plus screenshot-size diff metadata. When matching
+screenshots are PNG files with the same dimensions, the matrix summary also
+records a lightweight pixel-change percentage.
 
 Audit profiles are shortcuts:
 

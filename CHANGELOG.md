@@ -34,6 +34,8 @@
   captured screenshots without opening separate tabs.
 - Added lightweight screenshot-size diff metadata to matrix JSON and HTML
   summaries.
+- Added lightweight PNG pixel-difference metadata for same-size matrix
+  screenshots.
 
 ## 0.9.0
 

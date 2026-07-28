@@ -1,6 +1,7 @@
 import type { Command } from "commander";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { inflateSync } from "node:zlib";
 import { runEslintAdapter } from "../adapters/eslintAdapter.js";
 import { readScreenshotDimensions, runExplorePlaywrightAdapter, writeExplorationGraph } from "../adapters/explorePlaywrightAdapter.js";
 import { runKeyboardPlaywrightAdapter } from "../adapters/keyboardPlaywrightAdapter.js";
@@ -257,6 +258,7 @@ export interface AuditMatrixVisualComparison {
   compare: string;
   screenshotReview: string;
   screenshotDiff?: AuditMatrixScreenshotDiff;
+  pixelDiff?: AuditMatrixPixelDiff;
   visualEvidence: AuditMatrixVisualEvidence[];
   evidenceLinks: AuditMatrixStateEvidenceLink[];
 }
@@ -266,6 +268,15 @@ export interface AuditMatrixScreenshotDiff {
   note: string;
   widthDelta?: number;
   heightDelta?: number;
+}
+
+export interface AuditMatrixPixelDiff {
+  status: "same-pixels" | "changed-pixels" | "different-size" | "unsupported-format" | "missing-dimensions" | "decode-failed";
+  note: string;
+  changedPixels?: number;
+  totalPixels?: number;
+  changedRatio?: number;
+  changedPercent?: number;
 }
 
 export interface AuditMatrixVisualEvidence {
@@ -382,7 +393,7 @@ export async function runAuditBrowserMatrix(options: AuditOptions): Promise<{ fa
   const matrixReport = createAuditBrowserMatrixReport(results, undefined, options);
   await attachAuditMatrixScreenshotDiffs(matrixReport, baseOutputDir);
   await fs.mkdir(baseOutputDir, { recursive: true });
-  await fs.writeFile(summaryPath, formatAuditBrowserMatrixSummary(results, options), "utf8");
+  await fs.writeFile(summaryPath, formatAuditBrowserMatrixSummary(results, options, matrixReport), "utf8");
   await fs.writeFile(jsonSummaryPath, `${JSON.stringify(matrixReport, null, 2)}\n`, "utf8");
   await fs.writeFile(htmlSummaryPath, renderAuditMatrixHtmlSummary("Browser Audit Summary", "browser engine", matrixReport, baseOutputDir), "utf8");
 
@@ -447,10 +458,11 @@ export function createAuditBrowserMatrixReport(
 
 export function formatAuditBrowserMatrixSummary(
   results: Array<{ target: AuditBrowserTarget; failed: boolean; outputDir: string; summary?: AuditDeviceSummary }>,
-  options?: Pick<AuditOptions, "url" | "depth" | "maxDepth" | "limit" | "withLighthouse" | "keyboard" | "screenshots" | "standard" | "authState" | "waitMs" | "waitForSelector">
+  options?: Pick<AuditOptions, "url" | "depth" | "maxDepth" | "limit" | "withLighthouse" | "keyboard" | "screenshots" | "standard" | "authState" | "waitMs" | "waitForSelector">,
+  matrixReport = createAuditBrowserMatrixReport(results, undefined, options)
 ): string {
-  const totals = summarizeAuditDeviceMatrix(results);
-  const comparison = createAuditMatrixComparison(results);
+  const totals = matrixReport.totals;
+  const comparison = matrixReport.comparison;
   const rows = results.map((result) => (
     `| ${escapeMarkdownTableCell(result.target.label)} | ${result.failed ? "failed" : "completed"} | ${formatDeviceSummaryCounts(result)} | ${formatDeviceSummaryStates(result)} | [Open report](${escapeMarkdownLink(`${result.outputDir}/a11y-report.html`)}) |`
   )).join("\n");
@@ -534,7 +546,7 @@ export async function runAuditDeviceMatrix(options: AuditOptions): Promise<{ fai
   const matrixReport = createAuditDeviceMatrixReport(results, undefined, options);
   await attachAuditMatrixScreenshotDiffs(matrixReport, baseOutputDir);
   await fs.mkdir(baseOutputDir, { recursive: true });
-  await fs.writeFile(summaryPath, formatAuditDeviceMatrixSummary(results, options), "utf8");
+  await fs.writeFile(summaryPath, formatAuditDeviceMatrixSummary(results, options, matrixReport), "utf8");
   await fs.writeFile(jsonSummaryPath, `${JSON.stringify(matrixReport, null, 2)}\n`, "utf8");
   await fs.writeFile(htmlSummaryPath, renderAuditMatrixHtmlSummary("Device Audit Summary", "device profile", matrixReport, baseOutputDir), "utf8");
 
@@ -598,10 +610,11 @@ function summarizeAuditDeviceMatrix(results: Array<{ summary?: AuditDeviceSummar
 
 export function formatAuditDeviceMatrixSummary(
   results: Array<{ target: AuditDeviceTarget; failed: boolean; outputDir: string; summary?: AuditDeviceSummary }>,
-  options?: Pick<AuditOptions, "url" | "depth" | "maxDepth" | "limit" | "withLighthouse" | "keyboard" | "screenshots" | "standard" | "authState" | "waitMs" | "waitForSelector">
+  options?: Pick<AuditOptions, "url" | "depth" | "maxDepth" | "limit" | "withLighthouse" | "keyboard" | "screenshots" | "standard" | "authState" | "waitMs" | "waitForSelector">,
+  matrixReport = createAuditDeviceMatrixReport(results, undefined, options)
 ): string {
-  const totals = summarizeAuditDeviceMatrix(results);
-  const comparison = createAuditMatrixComparison(results);
+  const totals = matrixReport.totals;
+  const comparison = matrixReport.comparison;
   const rows = results.map((result) => (
     `| ${escapeMarkdownTableCell(result.target.label)} | ${result.failed ? "failed" : "completed"} | ${formatDeviceSummaryCounts(result)} | ${formatDeviceSummaryStates(result)} | [Open report](${escapeMarkdownLink(`${result.outputDir}/a11y-report.html`)}) |`
   )).join("\n");
@@ -1002,27 +1015,45 @@ export async function attachAuditMatrixScreenshotDiffs(
   baseOutputDir = "."
 ): Promise<void> {
   for (const item of report.comparison.visualComparisonQueue) {
+    const images: AuditMatrixScreenshotImage[] = [];
     for (const evidence of item.visualEvidence) {
-      const dimensions = await readAuditMatrixEvidenceDimensions(evidence, report.profiles, baseOutputDir);
-      if (!dimensions) continue;
-      evidence.screenshotWidth = dimensions.width;
-      evidence.screenshotHeight = dimensions.height;
+      const image = await readAuditMatrixEvidenceImage(evidence, report.profiles, baseOutputDir);
+      if (!image) continue;
+      evidence.screenshotWidth = image.width;
+      evidence.screenshotHeight = image.height;
+      images.push(image);
     }
     item.screenshotDiff = summarizeAuditMatrixScreenshotDiff(item.visualEvidence);
+    item.pixelDiff = summarizeAuditMatrixPixelDiff(images);
   }
 }
 
-async function readAuditMatrixEvidenceDimensions(
+interface AuditMatrixScreenshotImage {
+  buffer: Buffer;
+  format: "png" | "jpeg";
+  width: number;
+  height: number;
+}
+
+async function readAuditMatrixEvidenceImage(
   evidence: AuditMatrixVisualEvidence,
   profiles: Array<{ label: string; outputDir: string }>,
   baseOutputDir: string
-): Promise<{ width: number; height: number } | undefined> {
+): Promise<AuditMatrixScreenshotImage | undefined> {
   if (!evidence.screenshot) return undefined;
   const screenshotPath = resolveAuditMatrixScreenshotFilePath(evidence, profiles, baseOutputDir);
   const format = inferScreenshotFormat(screenshotPath);
   if (!format) return undefined;
   try {
-    return readScreenshotDimensions(await fs.readFile(screenshotPath), format);
+    const buffer = await fs.readFile(screenshotPath);
+    const dimensions = readScreenshotDimensions(buffer, format);
+    if (!dimensions) return undefined;
+    return {
+      buffer,
+      format,
+      width: dimensions.width,
+      height: dimensions.height
+    };
   } catch {
     return undefined;
   }
@@ -1069,6 +1100,192 @@ function summarizeAuditMatrixScreenshotDiff(evidence: AuditMatrixVisualEvidence[
     heightDelta,
     note: `Screenshot sizes differ: ${left.label} is ${left.screenshotWidth} x ${left.screenshotHeight}; ${right.label} is ${right.screenshotWidth} x ${right.screenshotHeight}.`
   };
+}
+
+function summarizeAuditMatrixPixelDiff(images: AuditMatrixScreenshotImage[]): AuditMatrixPixelDiff {
+  const [left, right] = images.slice(0, 2);
+  if (!left || !right) {
+    return {
+      status: "missing-dimensions",
+      note: "Pixel diff was not measured because one or both screenshots were unavailable."
+    };
+  }
+  if (left.width !== right.width || left.height !== right.height) {
+    return {
+      status: "different-size",
+      note: "Pixel diff was not measured because the screenshots have different dimensions."
+    };
+  }
+  if (left.format !== "png" || right.format !== "png") {
+    return {
+      status: "unsupported-format",
+      note: "Pixel diff is currently measured for PNG screenshots only."
+    };
+  }
+
+  const leftPixels = decodePngToRgba(left.buffer);
+  const rightPixels = decodePngToRgba(right.buffer);
+  if (!leftPixels || !rightPixels || leftPixels.width !== rightPixels.width || leftPixels.height !== rightPixels.height) {
+    return {
+      status: "decode-failed",
+      note: "Pixel diff could not decode one or both PNG screenshots."
+    };
+  }
+
+  const totalPixels = leftPixels.width * leftPixels.height;
+  let changedPixels = 0;
+  for (let index = 0; index < leftPixels.data.length; index += 4) {
+    if (
+      Math.abs(leftPixels.data[index] - rightPixels.data[index]) > 8
+      || Math.abs(leftPixels.data[index + 1] - rightPixels.data[index + 1]) > 8
+      || Math.abs(leftPixels.data[index + 2] - rightPixels.data[index + 2]) > 8
+      || Math.abs(leftPixels.data[index + 3] - rightPixels.data[index + 3]) > 8
+    ) {
+      changedPixels += 1;
+    }
+  }
+
+  const changedRatio = totalPixels > 0 ? changedPixels / totalPixels : 0;
+  const changedPercent = Number((changedRatio * 100).toFixed(2));
+  if (changedPixels === 0) {
+    return {
+      status: "same-pixels",
+      changedPixels,
+      totalPixels,
+      changedRatio,
+      changedPercent,
+      note: `No changed pixels detected across ${totalPixels} pixels.`
+    };
+  }
+  return {
+    status: "changed-pixels",
+    changedPixels,
+    totalPixels,
+    changedRatio,
+    changedPercent,
+    note: `${changedPixels} of ${totalPixels} pixels changed (${changedPercent}%).`
+  };
+}
+
+function decodePngToRgba(buffer: Buffer): { width: number; height: number; data: Uint8Array } | undefined {
+  if (buffer.length < 24 || buffer.toString("ascii", 1, 4) !== "PNG") return undefined;
+  let offset = 8;
+  let width = 0;
+  let height = 0;
+  let bitDepth = 0;
+  let colorType = 0;
+  let interlace = 0;
+  const idatChunks: Buffer[] = [];
+
+  while (offset + 12 <= buffer.length) {
+    const length = buffer.readUInt32BE(offset);
+    const type = buffer.toString("ascii", offset + 4, offset + 8);
+    const dataStart = offset + 8;
+    const dataEnd = dataStart + length;
+    if (dataEnd + 4 > buffer.length) return undefined;
+    const data = buffer.subarray(dataStart, dataEnd);
+    if (type === "IHDR") {
+      width = data.readUInt32BE(0);
+      height = data.readUInt32BE(4);
+      bitDepth = data[8];
+      colorType = data[9];
+      interlace = data[12];
+    } else if (type === "IDAT") {
+      idatChunks.push(data);
+    } else if (type === "IEND") {
+      break;
+    }
+    offset = dataEnd + 4;
+  }
+
+  if (!width || !height || bitDepth !== 8 || interlace !== 0 || idatChunks.length === 0) return undefined;
+  const bytesPerPixel = colorType === 6 ? 4 : colorType === 2 ? 3 : colorType === 0 ? 1 : 0;
+  if (!bytesPerPixel) return undefined;
+
+  let inflated: Buffer;
+  try {
+    inflated = inflateSync(Buffer.concat(idatChunks));
+  } catch {
+    return undefined;
+  }
+
+  const scanlineLength = width * bytesPerPixel;
+  const minimumLength = height * (scanlineLength + 1);
+  if (inflated.length < minimumLength) return undefined;
+  const output = new Uint8Array(width * height * 4);
+  let inputOffset = 0;
+  let outputOffset = 0;
+  let previous: Uint8Array<ArrayBufferLike> = new Uint8Array(scanlineLength);
+
+  for (let y = 0; y < height; y += 1) {
+    const filter = inflated[inputOffset];
+    inputOffset += 1;
+    const encoded = inflated.subarray(inputOffset, inputOffset + scanlineLength);
+    inputOffset += scanlineLength;
+    const row = unfilterPngScanline(encoded, previous, bytesPerPixel, filter);
+    if (!row) return undefined;
+    for (let x = 0; x < width; x += 1) {
+      const sourceOffset = x * bytesPerPixel;
+      if (colorType === 6) {
+        output[outputOffset] = row[sourceOffset];
+        output[outputOffset + 1] = row[sourceOffset + 1];
+        output[outputOffset + 2] = row[sourceOffset + 2];
+        output[outputOffset + 3] = row[sourceOffset + 3];
+      } else if (colorType === 2) {
+        output[outputOffset] = row[sourceOffset];
+        output[outputOffset + 1] = row[sourceOffset + 1];
+        output[outputOffset + 2] = row[sourceOffset + 2];
+        output[outputOffset + 3] = 255;
+      } else {
+        output[outputOffset] = row[sourceOffset];
+        output[outputOffset + 1] = row[sourceOffset];
+        output[outputOffset + 2] = row[sourceOffset];
+        output[outputOffset + 3] = 255;
+      }
+      outputOffset += 4;
+    }
+    previous = row;
+  }
+
+  return { width, height, data: output };
+}
+
+function unfilterPngScanline(
+  encoded: Uint8Array<ArrayBufferLike>,
+  previous: Uint8Array<ArrayBufferLike>,
+  bytesPerPixel: number,
+  filter: number
+): Uint8Array<ArrayBufferLike> | undefined {
+  const row = new Uint8Array(encoded.length);
+  for (let index = 0; index < encoded.length; index += 1) {
+    const left = index >= bytesPerPixel ? row[index - bytesPerPixel] : 0;
+    const up = previous[index] || 0;
+    const upLeft = index >= bytesPerPixel ? previous[index - bytesPerPixel] || 0 : 0;
+    if (filter === 0) {
+      row[index] = encoded[index];
+    } else if (filter === 1) {
+      row[index] = (encoded[index] + left) & 0xff;
+    } else if (filter === 2) {
+      row[index] = (encoded[index] + up) & 0xff;
+    } else if (filter === 3) {
+      row[index] = (encoded[index] + Math.floor((left + up) / 2)) & 0xff;
+    } else if (filter === 4) {
+      row[index] = (encoded[index] + paethPredictor(left, up, upLeft)) & 0xff;
+    } else {
+      return undefined;
+    }
+  }
+  return row;
+}
+
+function paethPredictor(left: number, up: number, upLeft: number): number {
+  const estimate = left + up - upLeft;
+  const distanceLeft = Math.abs(estimate - left);
+  const distanceUp = Math.abs(estimate - up);
+  const distanceUpLeft = Math.abs(estimate - upLeft);
+  if (distanceLeft <= distanceUp && distanceLeft <= distanceUpLeft) return left;
+  if (distanceUp <= distanceUpLeft) return up;
+  return upLeft;
 }
 
 function summarizeVisualComparisonScreenshotReview(links: AuditMatrixStateEvidenceLink[]): string {
@@ -1239,10 +1456,10 @@ function formatAuditMatrixScreenshotHint(link: AuditMatrixStateEvidenceLink): st
 function formatVisualComparisonQueue(queue: AuditMatrixVisualComparison[]): string {
   if (queue.length === 0) return "No visual comparison queue was available from the completed profile summaries.";
   return [
-    "| State | Compare first | Why | Screenshot review | Screenshot diff | Evidence |",
-    "|---|---|---|---|---|---|",
+    "| State | Compare first | Why | Screenshot review | Screenshot diff | Pixel diff | Evidence |",
+    "|---|---|---|---|---|---|---|",
     ...queue.map((item) => (
-      `| ${escapeMarkdownTableCell(item.label)} | ${escapeMarkdownTableCell(item.compare)} | ${escapeMarkdownTableCell(`${item.spread} finding spread at depth ${item.depth}`)} | ${escapeMarkdownTableCell(item.screenshotReview)} | ${escapeMarkdownTableCell(formatAuditMatrixScreenshotDiff(item.screenshotDiff))} | ${formatAuditMatrixEvidenceLinks(item.evidenceLinks)} |`
+      `| ${escapeMarkdownTableCell(item.label)} | ${escapeMarkdownTableCell(item.compare)} | ${escapeMarkdownTableCell(`${item.spread} finding spread at depth ${item.depth}`)} | ${escapeMarkdownTableCell(item.screenshotReview)} | ${escapeMarkdownTableCell(formatAuditMatrixScreenshotDiff(item.screenshotDiff))} | ${escapeMarkdownTableCell(formatAuditMatrixPixelDiff(item.pixelDiff))} | ${formatAuditMatrixEvidenceLinks(item.evidenceLinks)} |`
     ))
   ].join("\n");
 }
@@ -1252,6 +1469,13 @@ function formatAuditMatrixScreenshotDiff(diff?: AuditMatrixScreenshotDiff): stri
   if (diff.status === "different-size") {
     return `${diff.status}; width delta ${diff.widthDelta || 0}px; height delta ${diff.heightDelta || 0}px`;
   }
+  return diff.status;
+}
+
+function formatAuditMatrixPixelDiff(diff?: AuditMatrixPixelDiff): string {
+  if (!diff) return "not measured";
+  if (diff.status === "changed-pixels") return `${diff.changedPercent}% changed`;
+  if (diff.status === "same-pixels") return "0% changed";
   return diff.status;
 }
 
@@ -1381,7 +1605,7 @@ function renderAuditMatrixHtmlVisualQueue(
     ${queue.map((item) => `<article class="comparison-card" aria-labelledby="comparison-${escapeAttribute(slugifyMatrixId(item.stateKey))}">
       <div>
         <h3 id="comparison-${escapeAttribute(slugifyMatrixId(item.stateKey))}">${escapeHtml(item.label)}</h3>
-        <p class="muted">${escapeHtml(item.compare)} · ${escapeHtml(`${item.spread} finding spread at depth ${item.depth}`)}<br>${escapeHtml(item.screenshotReview)}<br>${escapeHtml(formatAuditMatrixScreenshotDiffNote(item.screenshotDiff))}</p>
+        <p class="muted">${escapeHtml(item.compare)} · ${escapeHtml(`${item.spread} finding spread at depth ${item.depth}`)}<br>${escapeHtml(item.screenshotReview)}<br>${escapeHtml(formatAuditMatrixScreenshotDiffNote(item.screenshotDiff))}<br>${escapeHtml(formatAuditMatrixPixelDiffNote(item.pixelDiff))}</p>
       </div>
       ${renderAuditMatrixHtmlDiffSlider(item, profiles, baseOutputDir)}
       <div class="comparison-grid">
@@ -1446,6 +1670,13 @@ function formatAuditMatrixScreenshotDiffNote(diff?: AuditMatrixScreenshotDiff): 
   if (diff.status === "same-size") return `Screenshot diff: same size. ${diff.note}`;
   if (diff.status === "different-size") return `Screenshot diff: different size. ${diff.note}`;
   return `Screenshot diff: dimensions unavailable. ${diff.note}`;
+}
+
+function formatAuditMatrixPixelDiffNote(diff?: AuditMatrixPixelDiff): string {
+  if (!diff) return "Pixel diff: not measured.";
+  if (diff.status === "changed-pixels") return `Pixel diff: ${diff.changedPercent}% changed. ${diff.note}`;
+  if (diff.status === "same-pixels") return `Pixel diff: 0% changed. ${diff.note}`;
+  return `Pixel diff: ${diff.status}. ${diff.note}`;
 }
 
 function formatAuditMatrixEvidenceSize(evidence: AuditMatrixVisualEvidence): string {
