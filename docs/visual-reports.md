@@ -123,6 +123,13 @@ fixed or sticky overlap candidates. These are heuristic WCAG 1.4.4 and 1.4.10
 signals: confirm them manually before treating intentional truncation or sticky
 overlap as a defect.
 
+Each explored state also receives bounded text-spacing evidence. The scanner
+temporarily applies WCAG text-spacing overrides for line height, paragraph
+spacing, letter spacing, and word spacing, then records horizontal overflow and
+clipped-text candidates. These are heuristic WCAG 1.4.12 signals: confirm them
+manually with real user styles before treating intentional truncation as a
+defect.
+
 For modals reached through safe exploration, the report records the dialog
 name, initial focused element, isolated Escape result, and focus restoration to
 the trigger. The isolated page prevents the close test from changing the main

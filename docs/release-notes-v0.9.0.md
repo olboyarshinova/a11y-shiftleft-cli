@@ -44,6 +44,10 @@ This creates separate visual reports for each browser engine plus:
   canvas regions, draggable controls, swipe regions, sortable controls, and
   inline pointer handlers for WCAG 2.5 review without performing unsafe
   gestures.
+- Text-spacing override evidence in visual, Markdown, WCAG evidence, and manual
+  checklist outputs. The scanner now temporarily applies WCAG text-spacing
+  overrides and records overflow or clipped-text candidates for WCAG 1.4.12
+  review.
 
 ## Changed
 

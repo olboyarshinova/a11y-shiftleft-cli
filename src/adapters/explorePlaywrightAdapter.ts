@@ -38,7 +38,8 @@ import type {
   MediaEvidence,
   ModalFocusEvidence,
   PointerInteractionEvidence,
-  ReflowEvidence
+  ReflowEvidence,
+  TextSpacingEvidence
 } from "../types.js";
 import type { ElementBounds } from "../types.js";
 
@@ -628,6 +629,7 @@ export async function runExplorePlaywrightAdapter(
           actionCount: actions.length,
           accessibilityTree,
           reflow: reflow.evidence,
+          textSpacing: reflow.textSpacing,
           forcedColors: forcedColors.evidence,
           modalFocus,
           dynamicAnnouncements,
@@ -2105,10 +2107,11 @@ async function auditReflow(
     stateLabel: string;
     colorScheme: Issue["colorScheme"];
   }
-): Promise<{ evidence: ReflowEvidence; issues: Issue[] }> {
+): Promise<{ evidence: ReflowEvidence; textSpacing: TextSpacingEvidence; issues: Issue[] }> {
   const originalViewport = page.viewportSize() || { width: 1280, height: 720 };
   const resizeTextViewport = { width: 640, height: 800 };
   const reflowViewport = { width: 320, height: 800 };
+  const textSpacingStyleId = "a11y-shiftleft-text-spacing-check";
 
   try {
     const measureAtViewport = async (
@@ -2261,6 +2264,34 @@ async function auditReflow(
     };
     const resizeTextEvidence = await measureAtViewport(resizeTextViewport);
     const measuredEvidence = await measureAtViewport(reflowViewport);
+    await page.setViewportSize(originalViewport);
+    await page.evaluate((id) => {
+      document.getElementById(id)?.remove();
+      const style = document.createElement("style");
+      style.id = id;
+      style.textContent = `
+        *, *::before, *::after {
+          line-height: 1.5 !important;
+          letter-spacing: 0.12em !important;
+          word-spacing: 0.16em !important;
+        }
+        p {
+          margin-bottom: 2em !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }, textSpacingStyleId).catch(() => undefined);
+    await page.waitForTimeout(100);
+    const textSpacingMeasured = await measureAtViewport(originalViewport);
+    const textSpacing: TextSpacingEvidence = {
+      viewportWidth: textSpacingMeasured.viewportWidth,
+      viewportHeight: textSpacingMeasured.viewportHeight,
+      documentWidth: textSpacingMeasured.documentWidth,
+      horizontalOverflowPx: textSpacingMeasured.horizontalOverflowPx,
+      clippedTextCount: textSpacingMeasured.clippedTextCount,
+      clippedTextSample: textSpacingMeasured.clippedTextSample
+    };
+    await page.evaluate((id) => document.getElementById(id)?.remove(), textSpacingStyleId).catch(() => undefined);
     const evidence: ReflowEvidence = {
       ...measuredEvidence,
       zoomChecks: [
@@ -2341,8 +2372,27 @@ async function auditReflow(
       });
     }
 
-    return { evidence, issues };
+    if (textSpacing.horizontalOverflowPx > 1 || textSpacing.clippedTextCount > 0) {
+      const signals = [
+        textSpacing.horizontalOverflowPx > 1 ? `${textSpacing.horizontalOverflowPx}px horizontal overflow` : "",
+        textSpacing.clippedTextCount > 0 ? `${textSpacing.clippedTextCount} clipped text candidate${textSpacing.clippedTextCount === 1 ? "" : "s"}` : ""
+      ].filter(Boolean).join(", ");
+      issues.push({
+        ...common,
+        ruleId: "text-spacing-resilience-risk",
+        wcag: ["1.4.12"],
+        tags: ["wcag1412", "heuristic", "needs-review"],
+        selector: "html",
+        confidenceScore: 60,
+        confidenceReason: "The page showed layout risk signals after WCAG text-spacing overrides were applied; confirm manually before treating it as a WCAG 1.4.12 failure.",
+        findingType: "needs-review",
+        message: `Review text-spacing resilience: ${signals}.`
+      });
+    }
+
+    return { evidence, textSpacing, issues };
   } finally {
+    await page.evaluate((id) => document.getElementById(id)?.remove(), textSpacingStyleId).catch(() => undefined);
     await page.setViewportSize(originalViewport).catch(() => undefined);
     await page.waitForTimeout(50).catch(() => undefined);
   }

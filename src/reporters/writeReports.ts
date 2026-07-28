@@ -1023,6 +1023,9 @@ ${audit.steps.length > 20 ? `Showing 20 of ${audit.steps.length} forward focus s
 function formatCoverageMatrix(report: A11yReport): string {
   const stateCount = report.exploration?.summary.statesVisited || 0;
   const reflowCount = report.exploration?.states.filter((state) => state.reflow).length || 0;
+  const textSpacingStates = report.exploration?.states.filter((state) => state.textSpacing) || [];
+  const textSpacingClipped = textSpacingStates.reduce((total, state) => total + (state.textSpacing?.clippedTextCount || 0), 0);
+  const textSpacingOverflowStates = textSpacingStates.filter((state) => (state.textSpacing?.horizontalOverflowPx || 0) > 1).length;
   const modalCount = report.exploration?.states.filter((state) => state.modalFocus).length || 0;
   const announcementStates = report.exploration?.states.filter((state) => state.dynamicAnnouncements) || [];
   const announcementUpdates = announcementStates.reduce((total, state) => total + (state.dynamicAnnouncements?.meaningfulUpdates || 0), 0);
@@ -1066,7 +1069,7 @@ function formatCoverageMatrix(report: A11yReport): string {
 | Dynamic announcements | ${announcementStates.length > 0 ? "Mutation evidence collected" : "No action evidence"} | ${announcementUpdates} meaningful live-region update${announcementUpdates === 1 ? "" : "s"} observed after ${announcementStates.length} action${announcementStates.length === 1 ? "" : "s"} |
 | Form error states | ${formStates.length > 0 ? "Rendered-state evidence collected" : "No forms observed"} | ${invalidFields} explicit invalid field${invalidFields === 1 ? "" : "s"}; ${unassociatedInvalidFields} without an exposed associated error |
 | Sensory and color-only instructions | ${manualChecklistStatus("sensory-color-instructions", manualChecklistItemIds, report.manualChecklist)} | Review instructions, legends, charts, filters, and validation copy for color-only, position-only, sound-only, or shape-only cues |
-| Text spacing resilience | ${manualChecklistStatus("text-spacing", manualChecklistItemIds, report.manualChecklist)} | Apply text-spacing overrides and confirm content, controls, and errors do not clip, overlap, or disappear |
+| Text spacing resilience | ${textSpacingStates.length > 0 ? "Automated heuristic plus manual review" : manualChecklistStatus("text-spacing", manualChecklistItemIds, report.manualChecklist)} | ${textSpacingStates.length > 0 ? `${textSpacingStates.length} state${textSpacingStates.length === 1 ? "" : "s"} checked with WCAG text-spacing overrides; ${textSpacingClipped} clipped text candidate${textSpacingClipped === 1 ? "" : "s"}; ${textSpacingOverflowStates} overflow state${textSpacingOverflowStates === 1 ? "" : "s"}` : "Apply text-spacing overrides and confirm content, controls, and errors do not clip, overlap, or disappear"} |
 | Account and authentication flow | ${manualChecklistStatus("account-authentication-flow", manualChecklistItemIds, report.manualChecklist)} | Review login, checkout, account recovery, and multi-step forms for redundant entry and cognitive authentication barriers |
 | Time limits and recovery | ${manualChecklistStatus("time-limits-recovery", manualChecklistItemIds, report.manualChecklist)} | Review timeout warnings, session extension, interrupted tasks, data preservation, and legal/financial/data-change confirmation |
 | Predictable actions and calm recovery | ${manualChecklistStatus("cognitive-clarity", manualChecklistItemIds, report.manualChecklist)} | Review task copy, button labels, errors, recovery paths, help access, and multi-step form clarity |

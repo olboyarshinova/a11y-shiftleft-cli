@@ -11,6 +11,10 @@
   inputs, carousels, maps, canvas regions, draggable controls, swipe regions,
   sortable controls, and inline pointer handlers are surfaced for WCAG 2.5
   review without performing unsafe gestures.
+- Added bounded text-spacing override evidence to exploration, visual reports,
+  Markdown reports, WCAG evidence summaries, and the manual checklist so WCAG
+  1.4.12 clipping and overflow risks are surfaced without requiring a separate
+  browser bookmarklet pass.
 - Added 200% zoom comparison and fixed/sticky overlap candidates to reflow
   evidence so visual and Markdown reports flag resize-text and 400% reflow
   risks without extra screenshots.

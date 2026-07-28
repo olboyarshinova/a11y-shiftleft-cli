@@ -2893,6 +2893,9 @@ function renderCoverageMatrix(
 ): string {
   const themes = [...new Set(graph.states.map((state) => state.colorScheme).filter(Boolean))];
   const reflowStates = graph.states.filter((state) => state.reflow);
+  const textSpacingStates = graph.states.filter((state) => state.textSpacing);
+  const textSpacingClipped = textSpacingStates.reduce((total, state) => total + (state.textSpacing?.clippedTextCount || 0), 0);
+  const textSpacingOverflowStates = textSpacingStates.filter((state) => (state.textSpacing?.horizontalOverflowPx || 0) > 1).length;
   const modalStates = graph.states.filter((state) => state.modalFocus);
   const announcementStates = graph.states.filter((state) => state.dynamicAnnouncements);
   const announcementUpdates = announcementStates.reduce((total, state) => (
@@ -2975,7 +2978,7 @@ function renderCoverageMatrix(
     coverageRow("announcements", "Status messages / live updates", announcementStates.length > 0 ? "passed" : "needs-review", announcementStates.length > 0 ? "Mutation evidence" : "Human review required", announcementStates.length > 0 ? `${announcementUpdates} meaningful live-region update${announcementUpdates === 1 ? "" : "s"} observed after ${announcementStates.length} action${announcementStates.length === 1 ? "" : "s"}; confirm announcement quality manually` : "Trigger loading, success, error, cart, search-result, and validation updates with a screen reader", announcementStates.length > 0, announcementStates.length > 0 ? 0 : undefined, manualChecklistItemIds),
     coverageRow("form-errors", "Form error states", formStates.length > 0 ? evidenceState(countIssues((issue) => issue.category === "forms")) : "needs-review", formStates.length > 0 ? "Automated evidence" : "Review if applicable", formStates.length > 0 ? `${invalidFields} explicit invalid field${invalidFields === 1 ? "" : "s"}; ${unassociatedInvalidFields} without an exposed associated error` : "No rendered form error state was observed", formStates.length > 0, formStates.length > 0 ? countIssues((issue) => issue.category === "forms") : undefined, manualChecklistItemIds),
     coverageRow("sensory-color-instructions", "Sensory and color-only instructions", "needs-review", options.manualChecklist ? "Checklist ready" : "Human review required", "Review instructions, legends, charts, filters, and validation copy for color-only, position-only, sound-only, or shape-only cues", false, undefined, manualChecklistItemIds),
-    coverageRow("text-spacing", "Text spacing resilience", "needs-review", options.manualChecklist ? "Checklist ready" : "Human review required", "Apply text-spacing overrides and confirm content, controls, and errors do not clip, overlap, or disappear", false, undefined, manualChecklistItemIds),
+    coverageRow("text-spacing", "Text spacing resilience", textSpacingStates.length > 0 ? evidenceState(textSpacingClipped + textSpacingOverflowStates) : "needs-review", textSpacingStates.length > 0 ? "Automated heuristic + manual review" : options.manualChecklist ? "Checklist ready" : "Human review required", textSpacingStates.length > 0 ? `${textSpacingStates.length} state${textSpacingStates.length === 1 ? "" : "s"} checked with WCAG text-spacing overrides; ${textSpacingClipped} clipped text candidate${textSpacingClipped === 1 ? "" : "s"}; ${textSpacingOverflowStates} overflow state${textSpacingOverflowStates === 1 ? "" : "s"}` : "Apply text-spacing overrides and confirm content, controls, and errors do not clip, overlap, or disappear", textSpacingStates.length > 0, textSpacingStates.length > 0 ? textSpacingClipped + textSpacingOverflowStates : undefined, manualChecklistItemIds),
     coverageRow("account-authentication-flow", "Account and authentication flow", "needs-review", options.manualChecklist ? "Checklist ready" : "Human review required", "Review login, checkout, account recovery, and multi-step forms for redundant entry and cognitive authentication barriers", false, undefined, manualChecklistItemIds),
     coverageRow("time-limits-recovery", "Time limits and recovery", "needs-review", options.manualChecklist ? "Checklist ready" : "Human review required", "Review timeout warnings, session extension, interrupted tasks, data preservation, and legal/financial/data-change confirmation", false, undefined, manualChecklistItemIds),
     coverageRow("cognitive-clarity", "Predictable actions and calm recovery", "needs-review", options.manualChecklist ? "Checklist ready" : "Human review required", "Review task copy, button labels, errors, recovery paths, help access, and multi-step form clarity", false, undefined, manualChecklistItemIds),
@@ -3267,6 +3270,7 @@ function renderState(state: StateViewModel): string {
     ${renderIssues(state.issues, state.annotationNumberByIssueKey)}
     ${renderAccessibilityTreeEvidence(state)}
     ${renderReflowEvidence(state)}
+    ${renderTextSpacingEvidence(state)}
     ${renderForcedColorsEvidence(state)}
     ${renderModalFocusEvidence(state)}
     ${renderDynamicAnnouncementEvidence(state)}
@@ -3487,6 +3491,24 @@ function renderReflowEvidence(state: ExplorationState): string {
       ? `<h4>Fixed or sticky overlap candidates</h4><ul>${overlapSample.map((item) => `<li><code>${escapeHtml(item.selector)}</code> overlaps <code>${escapeHtml(item.overlappedSelector)}</code> (${escapeHtml(item.position)}, ${item.overlapAreaPx}px area${item.text ? `, ${escapeHtml(item.text)}` : ""})</li>`).join("")}</ul>`
       : '<p class="muted">No fixed or sticky overlap candidates were detected by the bounded heuristic.</p>'}
     <p class="muted">Review flagged content manually at 400% zoom. Intentional truncation or sticky overlap is not automatically a WCAG failure when the complete information remains available and controls remain operable.</p>
+  </details>`;
+}
+
+function renderTextSpacingEvidence(state: ExplorationState): string {
+  const evidence = state.textSpacing;
+  if (!evidence || (evidence.horizontalOverflowPx <= 1 && evidence.clippedTextCount === 0)) return "";
+  return `<details>
+    <summary>Text spacing evidence</summary>
+    <div class="summary">
+      ${metric("Viewport width", evidence.viewportWidth)}
+      ${metric("Document width", evidence.documentWidth)}
+      ${metric("Horizontal overflow px", evidence.horizontalOverflowPx, evidence.horizontalOverflowPx > 1 ? "warning" : undefined)}
+      ${metric("Clipped text candidates", evidence.clippedTextCount, evidence.clippedTextCount > 0 ? "warning" : undefined)}
+    </div>
+    ${evidence.clippedTextSample.length > 0
+      ? `<ul>${evidence.clippedTextSample.map((item) => `<li><code>${escapeHtml(item.selector)}</code>: ${escapeHtml(item.text || "unnamed text")} (${item.horizontalOverflowPx}px horizontal, ${item.verticalOverflowPx}px vertical overflow)</li>`).join("")}</ul>`
+      : '<p class="muted">No clipped text candidates were detected after WCAG text-spacing overrides.</p>'}
+    <p class="muted">Confirm manually with user text-spacing settings or a browser stylesheet. The heuristic applies line-height, letter-spacing, word-spacing, and paragraph spacing overrides, then checks for clipped or horizontally overflowing content.</p>
   </details>`;
 }
 

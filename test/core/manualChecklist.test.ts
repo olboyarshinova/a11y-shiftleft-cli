@@ -165,6 +165,19 @@ test("createManualChecklist creates an assisted queue from exploration evidence"
           repeatedAlternativeGroups: 0,
           samples: [{ selector: "#hero", alt: "hero.png", concerns: ["filename"] }]
         },
+        textSpacing: {
+          viewportWidth: 1280,
+          viewportHeight: 720,
+          documentWidth: 1300,
+          horizontalOverflowPx: 20,
+          clippedTextCount: 1,
+          clippedTextSample: [{
+            selector: "#card-title",
+            text: "Long translated title",
+            horizontalOverflowPx: 0,
+            verticalOverflowPx: 12
+          }]
+        },
         hoverFocus: {
           triggerCount: 1,
           titleTriggerCount: 0,
@@ -214,12 +227,14 @@ test("createManualChecklist creates an assisted queue from exploration evidence"
   const formReview = checklist.items.find((item) => item.id === "form-label-quality");
   const statusReview = checklist.items.find((item) => item.id === "status-messages-live-updates");
   const imageReview = checklist.items.find((item) => item.id === "alternative-text-quality");
+  const textSpacingReview = checklist.items.find((item) => item.id === "text-spacing-resilience");
   const hoverFocusReview = checklist.items.find((item) => item.id === "hover-focus-content");
   const pointerReview = checklist.items.find((item) => item.id === "pointer-dragging-alternatives");
   assert.equal(formReview?.targets?.[0].selector, "#email");
   assert.equal(statusReview?.targets?.[0].selector, "#email");
   assert.equal(formReview?.targets?.[0].stateId, "state-2");
   assert.equal(imageReview?.targets?.[0].kind, "image");
+  assert.equal(textSpacingReview?.targets?.[0].kind, "text-spacing");
   assert.equal(hoverFocusReview?.targets?.[0].kind, "hover-focus");
   assert.equal(hoverFocusReview?.targets?.[0].selector, "#help");
   assert.equal(pointerReview?.targets?.[0].kind, "pointer");
@@ -228,6 +243,7 @@ test("createManualChecklist creates an assisted queue from exploration evidence"
   assert.match(toManualChecklistMarkdown(checklist), /Observed targets:\n- \[ \] form: Email address/);
   assert.match(toManualChecklistMarkdown(checklist), /state-2, #email/);
   assert.match(toManualChecklistMarkdown(checklist), /hover-focus: Help/);
+  assert.match(toManualChecklistMarkdown(checklist), /text-spacing: Text-spacing findings require review/);
   assert.match(toManualChecklistMarkdown(checklist), /pointer: Move item/);
 });
 

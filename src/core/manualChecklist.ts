@@ -686,6 +686,7 @@ function collectManualReviewTargets(
     addEmbeddedTargets(targets, state);
     addLandmarkTargets(targets, state);
     addReflowTargets(targets, state);
+    addTextSpacingTargets(targets, state);
     addHoverFocusTargets(targets, state);
     addPointerTargets(targets, state);
   }
@@ -803,6 +804,16 @@ function addReflowTargets(targets: Map<string, ManualReviewTarget[]>, state: Exp
     : "Reflow sample";
   addTarget(targets, "zoom-reflow", targetFor(state, "reflow", label, undefined,
     `${evidence.horizontalOverflowPx}px horizontal overflow; ${evidence.clippedTextCount} clipped-text candidate(s)`));
+}
+
+function addTextSpacingTargets(targets: Map<string, ManualReviewTarget[]>, state: ExplorationState): void {
+  const evidence = state.textSpacing;
+  if (!evidence) return;
+  const label = evidence.horizontalOverflowPx > 0 || evidence.clippedTextCount > 0
+    ? "Text-spacing findings require review"
+    : "Text-spacing sample";
+  addTarget(targets, "text-spacing-resilience", targetFor(state, "text-spacing", label, undefined,
+    `${evidence.horizontalOverflowPx}px horizontal overflow; ${evidence.clippedTextCount} clipped-text candidate(s) after WCAG text-spacing overrides`));
 }
 
 function addHoverFocusTargets(targets: Map<string, ManualReviewTarget[]>, state: ExplorationState): void {

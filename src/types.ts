@@ -746,7 +746,7 @@ export interface ManualReviewRecord {
 
 export interface ManualReviewTarget {
   id: string;
-  kind: "dialog" | "form" | "image" | "live-region" | "media" | "embedded-content" | "landmark" | "reflow" | "hover-focus" | "pointer" | "journey";
+  kind: "dialog" | "form" | "image" | "live-region" | "media" | "embedded-content" | "landmark" | "reflow" | "text-spacing" | "hover-focus" | "pointer" | "journey";
   label: string;
   url: string;
   stateId: string;
@@ -913,6 +913,7 @@ export interface ExplorationState {
   actionCount: number;
   accessibilityTree?: AccessibilityTreeEvidence;
   reflow?: ReflowEvidence;
+  textSpacing?: TextSpacingEvidence;
   forcedColors?: ForcedColorsEvidence;
   modalFocus?: ModalFocusEvidence;
   dynamicAnnouncements?: DynamicAnnouncementEvidence;
@@ -1045,6 +1046,15 @@ export interface ReflowEvidence {
   fixedStickyOverlapCount?: number;
   fixedStickyOverlapSample?: ReflowOverlapElement[];
   zoomChecks?: ReflowZoomCheck[];
+}
+
+export interface TextSpacingEvidence {
+  viewportWidth: number;
+  viewportHeight: number;
+  documentWidth: number;
+  horizontalOverflowPx: number;
+  clippedTextCount: number;
+  clippedTextSample: ReflowClippedElement[];
 }
 
 export type ForcedColorsConcern =

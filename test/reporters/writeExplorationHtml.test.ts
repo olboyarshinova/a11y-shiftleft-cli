@@ -74,6 +74,19 @@ const graph = {
           fixedStickyOverlapCount: 1
         }]
       },
+      textSpacing: {
+        viewportWidth: 1280,
+        viewportHeight: 720,
+        documentWidth: 1296,
+        horizontalOverflowPx: 16,
+        clippedTextCount: 1,
+        clippedTextSample: [{
+          selector: "#promo-card",
+          text: "Limited time offer",
+          horizontalOverflowPx: 0,
+          verticalOverflowPx: 18
+        }]
+      },
       modalFocus: {
         dialogCount: 1,
         dialogSelector: "[role=\"dialog\"]",
@@ -441,7 +454,9 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /Sensory and color-only instructions/);
   assert.match(html, /Review instructions, legends, charts, filters/);
   assert.match(html, /Text spacing resilience/);
-  assert.match(html, /Apply text-spacing overrides/);
+  assert.match(html, /1 state checked with WCAG text-spacing overrides; 1 clipped text candidate; 1 overflow state/);
+  assert.match(html, /Text spacing evidence/);
+  assert.match(html, /Limited time offer/);
   assert.match(html, /Account and authentication flow/);
   assert.match(html, /Review login, checkout, account recovery/);
   assert.match(html, /Status messages \/ live updates/);
