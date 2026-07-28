@@ -99,8 +99,9 @@ Section 508 certification.
   page, UI-state, shared-state-difference, visual-evidence-link, comparison
   queue, screenshot evidence metadata, screenshot review notes, visual evidence
   pairs, screenshot-size diff metadata, local HTML side-by-side summaries with
-  overlay sliders, lightweight PNG pixel-difference metadata, and reproduction
-  signals for manual triage; next, add richer image-diff visualization.
+  overlay sliders, lightweight PNG pixel-difference metadata, compact
+  pixel-diff meters, and reproduction signals for manual triage; next, add
+  richer heatmap-style image-diff visualization.
   Clearly label
   browser-specific differences for manual review before treating them as product
   defects.
@@ -113,9 +114,10 @@ Section 508 certification.
   visual-evidence-link, comparison queue, screenshot evidence metadata,
   screenshot review notes, visual evidence pairs, screenshot-size diff metadata,
   local HTML side-by-side summaries with overlay sliders, lightweight PNG
-  pixel-difference metadata, and reproduction signals for manual triage; next,
-  add richer image-diff visualization. Treat this as responsive/mobile browser
-  testing for rendered websites, not as native iOS or Android app auditing.
+  pixel-difference metadata, compact pixel-diff meters, and reproduction signals
+  for manual triage; next, add richer heatmap-style image-diff visualization.
+  Treat this as responsive/mobile browser testing for rendered websites, not as
+  native iOS or Android app auditing.
 - Extend modal checks with additional close, cancel, successful-completion, and
   non-modal dialog paths.
 - Extend live-region evidence beyond the current manual checklist row and

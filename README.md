@@ -345,7 +345,7 @@ matching visual evidence, screenshot hints, screenshot review notes, and a short
 side-by-side comparison queue with an overlay slider and screenshot-size diff
 metadata for captured screenshots. When matching screenshots are PNG files with
 the same dimensions, the matrix summary also records a lightweight pixel-change
-percentage.
+percentage and shows it as a compact visual meter.
 
 Install the browser engine before using it, for example:
 
@@ -363,7 +363,8 @@ direct links to matching visual evidence, screenshot hints, screenshot review
 notes, and a short side-by-side comparison queue with an overlay slider for
 captured screenshots plus screenshot-size diff metadata. When matching
 screenshots are PNG files with the same dimensions, the matrix summary also
-records a lightweight pixel-change percentage.
+records a lightweight pixel-change percentage and shows it as a compact visual
+meter.
 
 Audit profiles are shortcuts:
 

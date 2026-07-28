@@ -1519,6 +1519,11 @@ export function renderAuditMatrixHtmlSummary(
     .comparison-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
     .diff-slider { border: 1px solid var(--border); border-radius: 8px; background: #ffffff; overflow: hidden; }
     .diff-slider header { display: flex; justify-content: space-between; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    .pixel-diff-meter { display: grid; gap: 6px; padding: 10px 12px; border-bottom: 1px solid var(--border); background: #fbfcfe; }
+    .pixel-diff-meter strong { font-size: 13px; }
+    .pixel-diff-track { height: 8px; overflow: hidden; border-radius: 999px; background: #e8edf5; }
+    .pixel-diff-fill { display: block; height: 100%; width: min(100%, var(--pixel-diff, 0%)); background: linear-gradient(90deg, #0b7a4b, #c84f00, #e0002a); }
+    .pixel-diff-unavailable .pixel-diff-fill { width: 100%; background: #c7d0dc; }
     .diff-frame { position: relative; min-height: 220px; max-height: 520px; background: #eef2f7; overflow: hidden; }
     .diff-frame img { display: block; width: 100%; max-height: 520px; object-fit: contain; }
     .diff-frame .diff-overlay { position: absolute; inset: 0; clip-path: inset(0 calc(100% - var(--split, 50%)) 0 0); }
@@ -1630,6 +1635,7 @@ function renderAuditMatrixHtmlDiffSlider(
       <strong>Visual overlay</strong>
       <span class="muted">${escapeHtml(left.label)} vs ${escapeHtml(right.label)}</span>
     </header>
+    ${renderAuditMatrixHtmlPixelDiffMeter(item.pixelDiff)}
     <div class="diff-frame">
       <img src="${escapeAttribute(leftSrc)}" alt="${escapeAttribute(`${left.label} screenshot for ${item.label}`)}" loading="lazy">
       <img class="diff-overlay" src="${escapeAttribute(rightSrc)}" alt="${escapeAttribute(`${right.label} screenshot for ${item.label}`)}" loading="lazy">
@@ -1640,6 +1646,21 @@ function renderAuditMatrixHtmlDiffSlider(
       <input type="range" min="0" max="100" value="50" data-diff-input aria-label="${escapeAttribute(`Reveal ${right.label} over ${left.label}`)}">
     </label>
   </section>`;
+}
+
+function renderAuditMatrixHtmlPixelDiffMeter(diff?: AuditMatrixPixelDiff): string {
+  const changedPercent = diff?.status === "changed-pixels" || diff?.status === "same-pixels"
+    ? Math.max(0, Math.min(100, diff.changedPercent || 0))
+    : undefined;
+  const className = changedPercent === undefined ? "pixel-diff-meter pixel-diff-unavailable" : "pixel-diff-meter";
+  const label = changedPercent === undefined ? formatAuditMatrixPixelDiff(diff) : `${changedPercent}% changed`;
+  const note = diff?.note || "Pixel diff was not measured.";
+  const style = changedPercent === undefined ? "" : ` style="--pixel-diff: ${changedPercent}%;"`;
+  return `<div class="${className}"${style} aria-label="${escapeAttribute(`Pixel difference: ${label}`)}">
+      <strong>Pixel difference: ${escapeHtml(label)}</strong>
+      <span class="pixel-diff-track" aria-hidden="true"><span class="pixel-diff-fill"></span></span>
+      <span class="muted">${escapeHtml(note)}</span>
+    </div>`;
 }
 
 function renderAuditMatrixHtmlEvidenceCard(

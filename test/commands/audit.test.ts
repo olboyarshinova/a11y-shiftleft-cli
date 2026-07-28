@@ -549,6 +549,8 @@ test("attachAuditMatrixScreenshotDiffs adds screenshot size deltas to matrix rep
   const html = renderAuditMatrixHtmlSummary("Device Audit Summary", "device profile", report, baseOutputDir);
   assert.match(html, /Screenshot diff: different size/);
   assert.match(html, /Pixel diff: different-size/);
+  assert.match(html, /Pixel difference: different-size/);
+  assert.match(html, /pixel-diff-unavailable/);
   assert.match(html, /400 x 300/);
   assert.match(html, /375 x 300/);
 });
@@ -649,6 +651,8 @@ test("attachAuditMatrixScreenshotDiffs measures changed pixels for equal-size PN
 
   const html = renderAuditMatrixHtmlSummary("Device Audit Summary", "device profile", report, baseOutputDir);
   assert.match(html, /Pixel diff: 50% changed/);
+  assert.match(html, /Pixel difference: 50% changed/);
+  assert.match(html, /--pixel-diff: 50%/);
 });
 
 test("formatAuditBrowserMatrixSummary links generated visual reports", () => {

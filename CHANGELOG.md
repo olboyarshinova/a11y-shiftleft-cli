@@ -36,6 +36,7 @@
   summaries.
 - Added lightweight PNG pixel-difference metadata for same-size matrix
   screenshots.
+- Added a visual pixel-difference meter to matrix HTML summaries.
 
 ## 0.9.0
 
