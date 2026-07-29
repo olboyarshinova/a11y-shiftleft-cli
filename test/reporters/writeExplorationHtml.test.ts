@@ -490,9 +490,17 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /location\.href=this\.value/);
   assert.match(html, /Multiple ways to find pages/);
   assert.match(html, /Confirm important pages can be found through at least two supported paths/);
+  assert.match(html, /Images of text/);
+  assert.match(html, /Review banners, screenshots, charts, ads, and infographics/);
+  assert.match(html, /Character key shortcuts/);
+  assert.match(html, /Review single-key shortcuts in editors, data grids, media players/);
+  assert.match(html, /Motion actuation/);
+  assert.match(html, /Review shake, tilt, rotation, camera, map, game, and AR interactions/);
   assert.match(html, /Text spacing resilience/);
   assert.match(html, /1 state checked with WCAG text-spacing overrides; 1 clipped text candidate; 1 overflow state/);
   assert.match(html, /Text spacing evidence/);
+  assert.match(html, /Non-text contrast/);
+  assert.match(html, /Review meaningful control boundaries, focus indicators, icons, charts/);
   assert.match(html, /Limited time offer/);
   assert.match(html, /Account and authentication flow/);
   assert.match(html, /Review login, checkout, account recovery/);

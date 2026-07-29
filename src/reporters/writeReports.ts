@@ -1079,6 +1079,7 @@ function formatCoverageMatrix(report: A11yReport): string {
 | Keyboard traversal | ${report.keyboard ? "Bounded evidence collected" : "Not included"} | ${report.keyboard ? `${report.keyboard.steps.length} forward focus steps` : "Run audit without --no-keyboard"} |
 | Reflow and 200% zoom | ${reflowCount > 0 ? "Heuristic evidence collected" : "Not included"} | ${reflowCount} rendered state${reflowCount === 1 ? "" : "s"} checked for 200% zoom, 400% reflow, clipped text, and fixed or sticky overlap |
 | Forced colors / high contrast | ${forcedColorStates.length > 0 ? "Heuristic evidence collected" : "Not included"} | ${forcedColorStates.length} rendered state${forcedColorStates.length === 1 ? "" : "s"} checked; ${forcedColorSamples} review signal${forcedColorSamples === 1 ? "" : "s"} collected |
+| Non-text contrast | ${manualChecklistStatus("non-text-contrast-review", manualChecklistItemIds, report.manualChecklist)} | Review meaningful control boundaries, focus indicators, icons, charts, custom graphics, and state colors against adjacent colors |
 | Modal focus behavior | ${modalCount > 0 ? "Heuristic evidence collected" : "No opened modal observed"} | ${modalCount} state${modalCount === 1 ? "" : "s"} checked for name, initial focus, Escape, and restoration |
 | Dynamic announcements | ${announcementStates.length > 0 ? "Mutation evidence collected" : "No action evidence"} | ${announcementUpdates} meaningful live-region update${announcementUpdates === 1 ? "" : "s"} observed after ${announcementStates.length} action${announcementStates.length === 1 ? "" : "s"} |
 | Form error states | ${formStates.length > 0 ? "Rendered-state evidence collected" : "No forms observed"} | ${invalidFields} explicit invalid field${invalidFields === 1 ? "" : "s"}; ${unassociatedInvalidFields} without an exposed associated error |
@@ -1089,9 +1090,12 @@ function formatCoverageMatrix(report: A11yReport): string {
 | Context changes on focus or input | ${contextChangeSamples > 0 ? "Automated heuristic plus manual review" : manualChecklistStatus("context-change-control", manualChecklistItemIds, report.manualChecklist)} | ${contextChangeSamples > 0 ? `${contextChangeSamples} focus/input trigger${contextChangeSamples === 1 ? "" : "s"} found; ${contextNavigationRisks} navigation risk${contextNavigationRisks === 1 ? "" : "s"}; ${contextSubmissionRisks} submission risk${contextSubmissionRisks === 1 ? "" : "s"}` : "Review focus and input changes so users are warned before navigation, submission, new windows, or major task-context changes"} |
 | Predictable actions and calm recovery | ${manualChecklistStatus("cognitive-clarity", manualChecklistItemIds, report.manualChecklist)} | Review task copy, button labels, errors, recovery paths, help access, and multi-step form clarity |
 | Image alternatives | ${imageStates.length > 0 ? "Quality heuristics collected" : "No images observed"} | ${suspiciousImages} alternative${suspiciousImages === 1 ? "" : "s"} flagged for contextual human review |
+| Images of text | ${manualChecklistStatus("images-of-text-review", manualChecklistItemIds, report.manualChecklist)} | Review banners, screenshots, charts, ads, and infographics for meaningful text baked into images; replace with real text or document valid exceptions |
 | Media and motion | ${mediaFindings > 0 ? "Automated findings plus manual review" : mediaStates.length > 0 ? "Manual review required" : "No media or active motion observed"} | ${mediaElements} audio/video element${mediaElements === 1 ? "" : "s"}; ${autoplayRisks} autoplay control risk${autoplayRisks === 1 ? "" : "s"} |
+| Character key shortcuts | ${manualChecklistStatus("character-shortcuts-review", manualChecklistItemIds, report.manualChecklist)} | Review single-key shortcuts in editors, data grids, media players, maps, and custom widgets; confirm they can be turned off, remapped, or scoped to focus |
 | Hover/focus content | ${hoverFocusTriggers > 0 ? "Automated inventory plus manual review" : manualChecklistStatus("hover-focus-content", manualChecklistItemIds, report.manualChecklist)} | ${hoverFocusTriggers > 0 ? `${hoverFocusTriggers} possible tooltip, popover, or disclosure trigger${hoverFocusTriggers === 1 ? "" : "s"} found for manual behavior review` : "Review tooltips, menus, popovers, and disclosures for dismissible, hoverable, and persistent behavior"} |
 | Pointer and dragging alternatives | ${pointerTargets > 0 ? "Automated inventory plus manual review" : manualChecklistStatus("pointer-dragging", manualChecklistItemIds, report.manualChecklist)} | ${pointerTargets > 0 ? `${pointerTargets} pointer-heavy target${pointerTargets === 1 ? "" : "s"} found; ${pointerSliderSignals} slider/range signal${pointerSliderSignals === 1 ? "" : "s"}; ${pointerDragSignals} drag, swipe, or sortable signal${pointerDragSignals === 1 ? "" : "s"}` : "Review sliders, maps, carousels, drag-and-drop, swipe, and pointer-heavy controls for cancellation and non-drag alternatives"} |
+| Motion actuation | ${manualChecklistStatus("motion-actuation-review", manualChecklistItemIds, report.manualChecklist)} | Review shake, tilt, rotation, camera, map, game, and AR interactions on representative devices; confirm non-motion alternatives and disable controls |
 | Voice and switch control readiness | Automated signals plus human review | ${voiceControlSignals} label-in-name or same-purpose naming signal${voiceControlSignals === 1 ? "" : "s"}; confirm representative tasks manually |
 | Embedded content and complex graphics | ${embeddedFindings > 0 || inaccessibleFrames > 0 ? "Automated findings plus owner review" : embeddedStates.length > 0 ? "Owner review recommended" : "No iframe or canvas observed"} | ${iframeCount} iframe${iframeCount === 1 ? "" : "s"}; ${inaccessibleFrames} unavailable; ${canvasGaps} canvas alternative gap${canvasGaps === 1 ? "" : "s"} |
 | Screen reader | ${manualChecklistStatus("screen-reader", manualChecklistItemIds, report.manualChecklist)} | Test representative tasks with NVDA, JAWS, or VoiceOver |
@@ -1113,13 +1117,17 @@ function manualChecklistAnchorForCoverage(coverageId: string, manualChecklistIte
   const itemIdByCoverageId: Record<string, string> = {
     "sensory-color-instructions": "sensory-color-instructions",
     "text-spacing": "text-spacing-resilience",
+    "non-text-contrast-review": "non-text-contrast-review",
     "account-authentication-flow": "account-authentication-flow",
     "time-limits-recovery": "time-limits-recovery",
     "context-change-control": "context-change-control",
     "cognitive-clarity": "cognitive-clarity",
     "multiple-ways-findability": "multiple-ways-findability",
+    "images-of-text-review": "images-of-text-review",
+    "character-shortcuts-review": "character-shortcuts-review",
     "hover-focus-content": "hover-focus-content",
     "pointer-dragging": "pointer-dragging-alternatives",
+    "motion-actuation-review": "motion-actuation-review",
     "screen-reader": "screen-reader-smoke",
     "task-completion-worksheet": "task-completion-worksheet",
     "content-usability": "representative-user-test"

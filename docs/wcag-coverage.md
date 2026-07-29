@@ -39,9 +39,11 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
   catalog; 12 mappings were restored after the 2026-06-18 catalog audit.
 - Focus Order now has static signals, bounded Tab and Shift+Tab paths, and a manual
   checklist; complete task semantics and reverse traversal remain manual.
-- 34 of 55 A/AA criteria have either an automated signal or an explicitly
-  mapped `--semi-auto` review step.
-- 21 of 55 A/AA criteria currently have no dedicated coverage.
+- All 55 A/AA criteria now have either an automated signal, a heuristic signal,
+  or an explicitly mapped manual-review prompt. This is assisted evidence
+  coverage, not a conformance claim.
+- 32 of 55 A/AA criteria currently depend on a mapped manual-review prompt when
+  no stronger installed automated signal is available.
 - AAA is reported below for completeness, but is not the current product
   conformance target.
 
@@ -52,9 +54,9 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
 | 1.1.1 Non-text Content | A | Automated + quality heuristics + manual checklist | axe/framework rules, image quality patterns, and canvas fallback/name evidence; visual meaning and logo/canvas purpose remain manual |
 | 1.2.1 Audio-only and Video-only (Prerecorded) | A | Automated + rendered evidence + manual checklist | axe `audio-caption` plus nearby transcript-candidate evidence; transcript need and quality remain manual |
 | 1.2.2 Captions (Prerecorded) | A | Automated + rendered evidence + manual checklist | axe `video-caption` plus caption-track evidence; audio presence and caption accuracy remain manual |
-| 1.2.3 Audio Description or Media Alternative (Prerecorded) | A | Gap | No dedicated mapped review |
-| 1.2.4 Captions (Live) | AA | Gap | Live caption presence and quality are not tested |
-| 1.2.5 Audio Description (Prerecorded) | AA | Gap | No dedicated mapped review |
+| 1.2.3 Audio Description or Media Alternative (Prerecorded) | A | Manual checklist | Media review asks for audio description or equivalent media alternatives; quality remains manual |
+| 1.2.4 Captions (Live) | AA | Manual checklist | Live-caption presence and quality require representative live-media review |
+| 1.2.5 Audio Description (Prerecorded) | AA | Manual checklist | Audio-description coverage and adequacy require media review |
 | 1.2.6 Sign Language (Prerecorded) | AAA | Gap | Outside current target |
 | 1.2.7 Extended Audio Description (Prerecorded) | AAA | Gap | Outside current target |
 | 1.2.8 Media Alternative (Prerecorded) | AAA | Gap | Outside current target |
@@ -69,13 +71,13 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
 | 1.4.2 Audio Control | A | Automated + rendered evidence | axe `no-autoplay-audio` plus autoplay, muted, and controls state without duplicate findings |
 | 1.4.3 Contrast (Minimum) | AA | Automated + mapped | axe `color-contrast` with measured and required ratios |
 | 1.4.4 Resize Text | AA | Automated + heuristic + manual checklist | axe viewport signal plus 200% zoom comparison for overflow, clipped text, and overlap review |
-| 1.4.5 Images of Text | AA | Gap | Image purpose and rendered text require review |
+| 1.4.5 Images of Text | AA | Manual checklist | Review meaningful text baked into banners, screenshots, charts, ads, infographics, and exceptions |
 | 1.4.6 Contrast (Enhanced) | AAA | Automated, metadata gap | axe `color-contrast-enhanced`; outside current target |
 | 1.4.7 Low or No Background Audio | AAA | Gap | Outside current target |
 | 1.4.8 Visual Presentation | AAA | Gap | Outside current target |
 | 1.4.9 Images of Text (No Exception) | AAA | Gap | Outside current target |
 | 1.4.10 Reflow | AA | Heuristic + manual checklist | 400% / 320 CSS pixel evidence for overflow, clipped text, and fixed or sticky overlap |
-| 1.4.11 Non-text Contrast | AA | Gap | No reliable control, focus-indicator, or graphical-object contrast check |
+| 1.4.11 Non-text Contrast | AA | Heuristic + manual checklist | Forced-colors evidence can surface review signals; control boundaries, focus indicators, icons, charts, and custom graphics still require manual review |
 | 1.4.12 Text Spacing | AA | Heuristic + manual checklist; automated mapping | WCAG text-spacing override evidence for overflow and clipped text plus axe `avoid-inline-spacing`; complete readability still requires review |
 | 1.4.13 Content on Hover or Focus | AA | Heuristic + manual checklist | Trigger inventory for title, described-by, popup, disclosure, popover, and tooltip-data patterns; dismissible, hoverable, persistent behavior still requires manual review |
 
@@ -86,7 +88,7 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
 | 2.1.1 Keyboard | A | Automated + mapped; manual checklist | axe, framework lint, and bounded Tab traversal detect common failures; no complete keyboard task traversal |
 | 2.1.2 No Keyboard Trap | A | Partial automated + mapped; manual checklist | keyboard runner detects stuck focus and early cycles; modal escape and complex widgets still require review |
 | 2.1.3 Keyboard (No Exception) | AAA | Automated, metadata gap | axe scrollable-region signal only; outside current target |
-| 2.1.4 Character Key Shortcuts | A | Gap | No shortcut discovery or remapping test |
+| 2.1.4 Character Key Shortcuts | A | Manual checklist | Review single-key shortcuts for turn-off, remapping, or focus-scoped behavior |
 | 2.2.1 Timing Adjustable | A | Automated + mapped | axe `meta-refresh` detects only one failure pattern |
 | 2.2.2 Pause, Stop, Hide | A | Automated + mapped; manual checklist | axe blink/marquee checks plus media and motion review |
 | 2.2.3 No Timing | AAA | Gap | Outside current target |
@@ -112,7 +114,7 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
 | 2.5.1 Pointer Gestures | A | Heuristic + manual checklist | Pointer-heavy inventory can surface maps, swipe regions, and pointer handlers; multipoint/path gesture alternatives require manual review |
 | 2.5.2 Pointer Cancellation | A | Heuristic + manual checklist | Pointer-heavy inventory can surface risky controls; down-event activation and cancellation behavior require manual review |
 | 2.5.3 Label in Name | A | Automated + mapped | axe `label-content-name-mismatch` |
-| 2.5.4 Motion Actuation | A | Gap | Device-motion behavior and alternatives are not tested |
+| 2.5.4 Motion Actuation | A | Manual checklist | Review shake, tilt, rotation, camera, map, game, and AR interactions on representative devices |
 | 2.5.5 Target Size (Enhanced) | AAA | Gap | Outside current target |
 | 2.5.6 Concurrent Input Mechanisms | AAA | Gap | Outside current target |
 | 2.5.7 Dragging Movements | AA | Heuristic + manual checklist | Drag, sortable, slider, carousel, map, and canvas inventory; non-drag alternatives require manual review |
@@ -137,11 +139,11 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
 | 3.3.1 Error Identification | A | Rendered-state heuristic + manual checklist | Existing `aria-invalid` fields are checked for exposed associated errors; triggering validation and judging message quality remain manual |
 | 3.3.2 Labels or Instructions | A | Automated + mapped; manual checklist | axe/framework label rules plus quality review |
 | 3.3.3 Error Suggestion | AA | Manual checklist | Representative task review only |
-| 3.3.4 Error Prevention (Legal, Financial, Data) | AA | Gap | Safe mode intentionally avoids completing these transactions |
+| 3.3.4 Error Prevention (Legal, Financial, Data) | AA | Manual checklist | Time-limit and recovery review covers legal, financial, and user-data confirmation without completing real transactions |
 | 3.3.5 Help | AAA | Gap | Outside current target |
 | 3.3.6 Error Prevention (All) | AAA | Gap | Outside current target |
-| 3.3.7 Redundant Entry | A | Gap | Multi-step form values are not tracked |
-| 3.3.8 Accessible Authentication (Minimum) | AA | Gap | Catalog entry exists, but no adapter currently emits `accessible-authentication` |
+| 3.3.7 Redundant Entry | A | Manual checklist | Account, checkout, and recovery review covers repeated-entry barriers; no personal data or credentials should be recorded |
+| 3.3.8 Accessible Authentication (Minimum) | AA | Manual checklist | Account/authentication review covers cognitive authentication barriers and accessible alternatives |
 | 3.3.9 Accessible Authentication (Enhanced) | AAA | Gap | Outside current target |
 
 ## 4. Robust
@@ -149,16 +151,16 @@ project target, WCAG 2.2 AA, therefore includes 55 Level A and AA criteria.
 | Criterion | Level | Current coverage | Current source or limitation |
 |---|---|---|---|
 | 4.1.2 Name, Role, Value | A | Automated + mapped; manual checklist | broad axe ARIA/name rules, framework lint, and screen-reader review |
-| 4.1.3 Status Messages | AA | Gap | Live-region and status announcement behavior is not triggered or observed |
+| 4.1.3 Status Messages | AA | Heuristic + manual checklist | Dynamic-announcement evidence records observed live-region mutations; timing, priority, and screen-reader usefulness remain manual |
 
 ## Priority Gaps
 
-1. Add a keyboard/focus runner for 2.1.1, 2.1.2, 2.4.3, 2.4.7, and 2.4.11,
-   with findings merged into the normal report pipeline.
-2. Expand `--semi-auto` so every A/AA criterion without reliable automation
-   has an explicit review step and evidence field.
-3. Do not present placeholder mappings for 3.3.8 as implemented until an
-   adapter or manual check actually produces evidence for it.
+1. Add deeper keyboard/focus task traversal for 2.1.1, 2.1.2, 2.4.3, 2.4.7,
+   and 2.4.11 beyond the current bounded path evidence.
+2. Validate the full A/AA manual-review prompt set in real audits and tighten
+   wording where reviewers need clearer evidence examples.
+3. Convert selected manual-only prompts into safer heuristic evidence where the
+   signal can be collected without false pass/fail claims.
 
 ## Interpretation
 

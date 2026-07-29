@@ -27,6 +27,11 @@
 - Added a Multiple Ways manual-review area to visual and Markdown Audit
   Coverage so WCAG 2.4.5 can be tracked as assisted evidence instead of being
   left as an undocumented gap.
+- Completed WCAG 2.2 A/AA criterion metadata coverage and mapped remaining
+  manual-review prompts for media alternatives, live captions, images of text,
+  non-text contrast, character shortcuts, pointer gestures, motion actuation,
+  legal/financial/data error prevention, redundant entry, accessible
+  authentication, and status messages.
 - Added 200% zoom comparison and fixed/sticky overlap candidates to reflow
   evidence so visual and Markdown reports flag resize-text and 400% reflow
   risks without extra screenshots.

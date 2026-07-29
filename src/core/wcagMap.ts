@@ -119,6 +119,30 @@ const WCAG_CRITERIA: Record<string, WcagCriterion> = {
     introducedIn: "2.0",
     url: "https://www.w3.org/WAI/WCAG22/Understanding/captions-prerecorded.html"
   },
+  "1.2.3": {
+    id: "1.2.3",
+    title: "Audio Description or Media Alternative (Prerecorded)",
+    level: "A",
+    principle: "perceivable",
+    introducedIn: "2.0",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/audio-description-or-media-alternative-prerecorded.html"
+  },
+  "1.2.4": {
+    id: "1.2.4",
+    title: "Captions (Live)",
+    level: "AA",
+    principle: "perceivable",
+    introducedIn: "2.0",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/captions-live.html"
+  },
+  "1.2.5": {
+    id: "1.2.5",
+    title: "Audio Description (Prerecorded)",
+    level: "AA",
+    principle: "perceivable",
+    introducedIn: "2.0",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/audio-description-prerecorded.html"
+  },
   "1.3.1": {
     id: "1.3.1",
     title: "Info and Relationships",
@@ -126,6 +150,14 @@ const WCAG_CRITERIA: Record<string, WcagCriterion> = {
     principle: "perceivable",
     introducedIn: "2.0",
     url: "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
+  },
+  "1.3.2": {
+    id: "1.3.2",
+    title: "Meaningful Sequence",
+    level: "A",
+    principle: "perceivable",
+    introducedIn: "2.0",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/meaningful-sequence.html"
   },
   "1.3.3": {
     id: "1.3.3",
@@ -183,6 +215,14 @@ const WCAG_CRITERIA: Record<string, WcagCriterion> = {
     introducedIn: "2.0",
     url: "https://www.w3.org/WAI/WCAG22/Understanding/resize-text.html"
   },
+  "1.4.5": {
+    id: "1.4.5",
+    title: "Images of Text",
+    level: "AA",
+    principle: "perceivable",
+    introducedIn: "2.0",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/images-of-text.html"
+  },
   "1.4.10": {
     id: "1.4.10",
     title: "Reflow",
@@ -198,6 +238,14 @@ const WCAG_CRITERIA: Record<string, WcagCriterion> = {
     principle: "perceivable",
     introducedIn: "2.1",
     url: "https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html"
+  },
+  "1.4.13": {
+    id: "1.4.13",
+    title: "Content on Hover or Focus",
+    level: "AA",
+    principle: "perceivable",
+    introducedIn: "2.1",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/content-on-hover-or-focus.html"
   },
   "1.4.11": {
     id: "1.4.11",
@@ -222,6 +270,14 @@ const WCAG_CRITERIA: Record<string, WcagCriterion> = {
     principle: "operable",
     introducedIn: "2.0",
     url: "https://www.w3.org/WAI/WCAG22/Understanding/no-keyboard-trap.html"
+  },
+  "2.1.4": {
+    id: "2.1.4",
+    title: "Character Key Shortcuts",
+    level: "A",
+    principle: "operable",
+    introducedIn: "2.1",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/character-key-shortcuts.html"
   },
   "2.2.1": {
     id: "2.2.1",
@@ -271,6 +327,22 @@ const WCAG_CRITERIA: Record<string, WcagCriterion> = {
     introducedIn: "2.0",
     url: "https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-in-context.html"
   },
+  "2.4.5": {
+    id: "2.4.5",
+    title: "Multiple Ways",
+    level: "AA",
+    principle: "operable",
+    introducedIn: "2.0",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/multiple-ways.html"
+  },
+  "2.4.6": {
+    id: "2.4.6",
+    title: "Headings and Labels",
+    level: "AA",
+    principle: "operable",
+    introducedIn: "2.0",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/headings-and-labels.html"
+  },
   "2.4.7": {
     id: "2.4.7",
     title: "Focus Visible",
@@ -295,6 +367,14 @@ const WCAG_CRITERIA: Record<string, WcagCriterion> = {
     introducedIn: "2.1",
     url: "https://www.w3.org/WAI/WCAG22/Understanding/label-in-name.html"
   },
+  "2.5.4": {
+    id: "2.5.4",
+    title: "Motion Actuation",
+    level: "A",
+    principle: "operable",
+    introducedIn: "2.1",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/motion-actuation.html"
+  },
   "2.4.11": {
     id: "2.4.11",
     title: "Focus Not Obscured (Minimum)",
@@ -302,6 +382,14 @@ const WCAG_CRITERIA: Record<string, WcagCriterion> = {
     principle: "operable",
     introducedIn: "2.2",
     url: "https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html"
+  },
+  "2.5.1": {
+    id: "2.5.1",
+    title: "Pointer Gestures",
+    level: "A",
+    principle: "operable",
+    introducedIn: "2.1",
+    url: "https://www.w3.org/WAI/WCAG22/Understanding/pointer-gestures.html"
   },
   "3.1.1": {
     id: "3.1.1",

@@ -99,6 +99,22 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
     ]
   },
   {
+    id: "non-text-contrast-review",
+    title: "Non-text contrast for controls and graphics",
+    principle: "perceivable",
+    wcag: ["1.4.11"],
+    whyManual: "Automated scans can detect some color issues, but product teams still need to review control boundaries, focus indicators, icons, charts, and graphical objects in context.",
+    steps: [
+      "Review buttons, inputs, checkboxes, radio buttons, switches, focus indicators, icons, charts, and custom graphics against their adjacent colors.",
+      "Confirm meaningful non-text parts meet the required contrast unless they are inactive, decorative, or part of a logo/brand mark exception.",
+      "Check default, hover, focus, selected, disabled, error, light mode, dark mode, and forced-colors or high-contrast states where supported."
+    ],
+    evidence: [
+      "Control and graphic contrast samples",
+      "Design-token or screenshot evidence for reviewed states"
+    ]
+  },
+  {
     id: "complex-widget-focus",
     title: "Focus behavior for complex widgets",
     principle: "operable",
@@ -152,7 +168,7 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
     id: "cognitive-clarity",
     title: "Predictable next actions and calm error recovery",
     principle: "understandable",
-    wcag: ["3.2.4", "3.2.6", "3.3.2", "3.3.3"],
+    wcag: ["3.2.3", "3.2.4", "3.2.6", "3.3.2", "3.3.3"],
     whyManual: "Automated tools cannot reliably judge whether users understand what will happen next, why an error occurred, or how to recover from it.",
     steps: [
       "Review primary tasks, empty states, validation errors, destructive actions, and multi-step forms for clear next actions.",
@@ -286,6 +302,22 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
     ]
   },
   {
+    id: "images-of-text-review",
+    title: "Images of text have a text alternative or exception",
+    principle: "perceivable",
+    wcag: ["1.4.5"],
+    whyManual: "Automated tools can identify image files, but they cannot reliably decide whether rendered text inside an image is essential, decorative, branding, or replaceable with real text.",
+    steps: [
+      "Review banners, hero images, screenshots, cards, charts, ads, and infographics for text that is baked into an image.",
+      "Replace non-essential image text with real HTML text where possible, preserving responsive resizing, zoom, translation, and user styles.",
+      "Document exceptions where the exact visual presentation is essential, such as logos, screenshots used as examples, or text that cannot reasonably be represented as live text."
+    ],
+    evidence: [
+      "Inventory of images containing meaningful text",
+      "Replacement plan or exception note for each representative example"
+    ]
+  },
+  {
     id: "brand-logo-accessibility",
     title: "Logo purpose and accessible name",
     principle: "perceivable",
@@ -307,16 +339,34 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
     id: "media-motion",
     title: "Media alternatives, autoplay, and motion",
     principle: "perceivable",
-    wcag: ["1.2.1", "1.2.2", "2.2.2", "2.3.1"],
-    whyManual: "Metadata checks cannot confirm caption accuracy, transcript completeness, unexpected audio, or harmful flashing.",
+    wcag: ["1.2.1", "1.2.2", "1.2.3", "1.2.4", "1.2.5", "2.2.2", "2.3.1"],
+    whyManual: "Metadata checks cannot confirm caption accuracy, transcript completeness, audio-description coverage, unexpected audio, or harmful flashing.",
     steps: [
       "Confirm prerecorded audio has a transcript and prerecorded video has accurate synchronized captions.",
+      "Confirm live video or audio streams have live captions when the product publishes live media.",
+      "Confirm meaningful visual information in prerecorded video is available through audio description or an equivalent media alternative when needed.",
       "Confirm audio or motion does not start unexpectedly and that users can pause, stop, or hide moving content.",
       "Review flashing and rapid animation, and verify the experience with reduced-motion preferences enabled."
     ],
     evidence: [
-      "Caption and transcript review notes",
+      "Caption, transcript, and audio-description review notes",
       "Media control and reduced-motion test results"
+    ]
+  },
+  {
+    id: "character-shortcuts-review",
+    title: "Character key shortcuts can be turned off or remapped",
+    principle: "operable",
+    wcag: ["2.1.4"],
+    whyManual: "Single-character shortcuts are often implemented in application code or third-party widgets and cannot be safely inferred from static markup alone.",
+    steps: [
+      "Inventory single-letter, number, punctuation, or symbol shortcuts that work without a modifier key such as Ctrl, Alt, Option, or Command.",
+      "Confirm each shortcut can be turned off, remapped, or is active only when the relevant component has focus.",
+      "Check rich text editors, data grids, media players, maps, command palettes, and custom productivity shortcuts."
+    ],
+    evidence: [
+      "Shortcut inventory with scope and affected component",
+      "Setting, remapping, or focus-scope evidence for representative shortcuts"
     ]
   },
   {
@@ -339,7 +389,7 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
     id: "pointer-dragging-alternatives",
     title: "Pointer cancellation and dragging alternatives",
     principle: "operable",
-    wcag: ["2.5.2", "2.5.7", "2.5.8"],
+    wcag: ["2.5.1", "2.5.2", "2.5.7", "2.5.8"],
     whyManual: "Automated scans can measure some target-size risks, but they cannot reliably prove whether pointer actions can be cancelled or whether drag gestures have simple alternatives.",
     steps: [
       "Review sliders, carousels, maps, sortable lists, drag-and-drop upload areas, drawing canvases, and swipe-only controls.",
@@ -349,6 +399,22 @@ const MANUAL_CHECKS: ManualCheckItem[] = [
     evidence: [
       "Inventory of drag, swipe, slider, and pointer-heavy controls",
       "Notes showing cancellation behavior and non-drag alternatives"
+    ]
+  },
+  {
+    id: "motion-actuation-review",
+    title: "Motion actuation has non-motion alternatives",
+    principle: "operable",
+    wcag: ["2.5.4"],
+    whyManual: "Device-motion gestures depend on hardware, permissions, and product context, so a browser scan should not claim pass or fail without a representative device review.",
+    steps: [
+      "Identify features that respond to shaking, tilting, rotating, or other device/user motion.",
+      "Confirm motion-triggered features can be disabled and have non-motion alternatives such as buttons, links, or standard controls.",
+      "Review camera, map, game, media, and augmented-reality flows on representative mobile devices when the product supports them."
+    ],
+    evidence: [
+      "Motion-triggered feature inventory",
+      "Screenshots or notes showing the non-motion alternative and disable control"
     ]
   },
   {

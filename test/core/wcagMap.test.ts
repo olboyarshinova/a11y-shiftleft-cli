@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   getWcagCriteria,
+  listWcagCriteria,
   mapRuleToWcag,
   matchesWcagLevel,
   matchesWcagVersion,
@@ -22,6 +23,17 @@ const restoredAxeMappings = [
   ["label-content-name-mismatch", "2.5.3", "Label in Name", "A", "operable"],
   ["valid-lang", "3.1.2", "Language of Parts", "AA", "understandable"]
 ] as const;
+
+test("listWcagCriteria includes all WCAG 2.2 A and AA criteria tracked by the coverage matrix", () => {
+  const targetCriteria = listWcagCriteria().filter((criterion) => (
+    criterion.level === "A" || criterion.level === "AA"
+  ));
+
+  assert.equal(targetCriteria.length, 55);
+  assert.equal(targetCriteria.some((criterion) => criterion.id === "1.2.4"), true);
+  assert.equal(targetCriteria.some((criterion) => criterion.id === "2.4.5"), true);
+  assert.equal(targetCriteria.some((criterion) => criterion.id === "3.3.8"), true);
+});
 
 test("mapRuleToWcag maps exact known rules", () => {
   assert.deepEqual(mapRuleToWcag("color-contrast"), ["1.4.3"]);
@@ -157,6 +169,57 @@ test("getWcagCriteria includes focus and input context-change criteria", () => {
   assert.equal(input.title, "On Input");
   assert.equal(input.level, "A");
   assert.equal(input.principle, "understandable");
+});
+
+test("getWcagCriteria includes additional assisted-review A and AA criteria", () => {
+  const [
+    mediaAlternative,
+    liveCaptions,
+    audioDescription,
+    meaningfulSequence,
+    imagesOfText,
+    hoverFocus,
+    shortcuts,
+    multipleWays,
+    headingsLabels,
+    pointerGestures,
+    motion
+  ] = getWcagCriteria([
+    "1.2.3",
+    "1.2.4",
+    "1.2.5",
+    "1.3.2",
+    "1.4.5",
+    "1.4.13",
+    "2.1.4",
+    "2.4.5",
+    "2.4.6",
+    "2.5.1",
+    "2.5.4"
+  ]);
+
+  assert.equal(mediaAlternative.title, "Audio Description or Media Alternative (Prerecorded)");
+  assert.equal(mediaAlternative.level, "A");
+  assert.equal(liveCaptions.title, "Captions (Live)");
+  assert.equal(liveCaptions.level, "AA");
+  assert.equal(audioDescription.title, "Audio Description (Prerecorded)");
+  assert.equal(audioDescription.level, "AA");
+  assert.equal(meaningfulSequence.title, "Meaningful Sequence");
+  assert.equal(meaningfulSequence.level, "A");
+  assert.equal(imagesOfText.title, "Images of Text");
+  assert.equal(imagesOfText.level, "AA");
+  assert.equal(hoverFocus.title, "Content on Hover or Focus");
+  assert.equal(hoverFocus.level, "AA");
+  assert.equal(shortcuts.title, "Character Key Shortcuts");
+  assert.equal(shortcuts.level, "A");
+  assert.equal(multipleWays.title, "Multiple Ways");
+  assert.equal(multipleWays.level, "AA");
+  assert.equal(headingsLabels.title, "Headings and Labels");
+  assert.equal(headingsLabels.level, "AA");
+  assert.equal(pointerGestures.title, "Pointer Gestures");
+  assert.equal(pointerGestures.level, "A");
+  assert.equal(motion.title, "Motion Actuation");
+  assert.equal(motion.level, "A");
 });
 
 test("getWcagCriteria includes WCAG 2.2 redundant entry criteria", () => {

@@ -81,11 +81,11 @@ Section 508 certification.
 - Track competitor coverage as evidence, not marketing claims. Current local
   comparison baseline: Oobee `0.10.95` exposes 26 WCAG-linked criteria in its
   report catalog, including 20 WCAG A/AA criteria and 6 AAA criteria. The
-  a11y-shiftleft catalog currently tracks 34 WCAG 2.2 A/AA criteria; the
+  a11y-shiftleft catalog now tracks all 55 WCAG 2.2 A/AA criteria. The
   coverage matrix records 23 of 55 A/AA criteria with installed automated
-  signals and 34 of 55 with automated, heuristic, or mapped manual-review
-  evidence. Recheck these numbers before public comparison posts or release
-  notes.
+  signals and all 55 with automated, heuristic, or mapped manual-review
+  evidence. Treat the latter as assisted evidence coverage, not conformance.
+  Recheck these numbers before public comparison posts or release notes.
 - Continue improving per-criterion coverage rows with status, evidence source,
   finding count, and next step: `automated`, `heuristic`, `manual required`,
   `not covered`, or `not applicable`. The Markdown report now shows a compact

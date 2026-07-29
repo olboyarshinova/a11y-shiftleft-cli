@@ -852,12 +852,16 @@ test("writeReports supports a compact audit profile without legacy or duplicate 
   assert.match(markdown, /Form error states/);
   assert.match(markdown, /Sensory and color-only instructions/);
   assert.match(markdown, /Text spacing resilience/);
+  assert.match(markdown, /Non-text contrast/);
   assert.match(markdown, /Account and authentication flow/);
   assert.match(markdown, /Image alternatives/);
+  assert.match(markdown, /Images of text/);
   assert.match(markdown, /Media and motion/);
   assert.match(markdown, /Media and motion \| No media or active motion observed/);
+  assert.match(markdown, /Character key shortcuts/);
   assert.match(markdown, /Hover\/focus content/);
   assert.match(markdown, /Pointer and dragging alternatives/);
+  assert.match(markdown, /Motion actuation/);
   assert.match(markdown, /Time limits and recovery/);
   assert.match(markdown, /Predictable actions and calm recovery/);
   assert.match(markdown, /Voice and switch control readiness/);

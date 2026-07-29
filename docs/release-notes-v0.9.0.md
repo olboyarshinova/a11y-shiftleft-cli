@@ -59,6 +59,13 @@ This creates separate visual reports for each browser engine plus:
 - Multiple Ways assisted review in visual and Markdown Audit Coverage. The
   checklist now asks reviewers to confirm that important pages can be found
   through at least two supported paths for WCAG 2.4.5.
+- Complete WCAG 2.2 A/AA criterion metadata in the internal coverage matrix.
+  Every A/AA criterion now has an automated, heuristic, or mapped manual-review
+  path, while reports continue to avoid claiming automatic conformance.
+- Additional assisted-review prompts for media alternatives, live captions,
+  images of text, non-text contrast, character shortcuts, pointer gestures,
+  motion actuation, legal/financial/data error prevention, redundant entry,
+  accessible authentication, and status messages.
 
 ## Changed
 
