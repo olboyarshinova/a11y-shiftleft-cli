@@ -1153,15 +1153,15 @@ function formatWcagEvidenceGaps(report: A11yReport): string {
   )).join("\n");
   const hiddenCount = rows.length - visibleRows.length;
 
-  return `## WCAG Evidence Gaps
+  return `## WCAG Review Coverage
 
-This is evidence coverage, not a conformance claim. Use it to decide what still needs manual review.
+This section shows automated evidence and manual-review prompts for WCAG review. Manual-review rows are checklist work, not proof of conformance.
 
 | Criterion | Level | Status | Findings | Evidence | Next step |
 |---|---|---|---:|---|---|
 ${table}
 
-${hiddenCount > 0 ? `Showing ${visibleRows.length} of ${rows.length} criteria with findings or manual-review gaps. See \`a11y-report.json\` for the complete evidence matrix.` : ""}`;
+${hiddenCount > 0 ? `Showing ${visibleRows.length} of ${rows.length} criteria with findings or manual-review prompts. See \`a11y-report.json\` for the complete review matrix.` : ""}`;
 }
 
 function compareWcagCoverageRows(

@@ -3039,13 +3039,13 @@ function renderWcagEvidenceGaps(coverage?: WcagCoverageSummary): string {
   if (visibleRows.length === 0) return "";
 
   const hiddenCount = rows.length - visibleRows.length;
-  return `<section class="panel panel-full-width wcag-gaps" aria-label="WCAG evidence gaps">
-    <h2>WCAG Evidence Gaps</h2>
-    <p class="muted">Evidence coverage shows what this run observed and what still needs manual review. It is not a conformance claim.</p>
+  return `<section class="panel panel-full-width wcag-gaps" aria-label="WCAG review coverage">
+    <h2>WCAG Review Coverage</h2>
+    <p class="muted">This section shows automated evidence and manual-review prompts for WCAG review. Manual-review rows are checklist work, not proof of conformance.</p>
     <div class="wcag-gap-list">
       ${visibleRows.map(renderWcagEvidenceGapCard).join("\n")}
     </div>
-    ${hiddenCount > 0 ? `<p class="muted">Showing ${visibleRows.length} of ${rows.length} criteria with findings or manual-review gaps. The complete evidence matrix is available in <code>a11y-report.json</code>.</p>` : ""}
+    ${hiddenCount > 0 ? `<p class="muted">Showing ${visibleRows.length} of ${rows.length} criteria with findings or manual-review prompts. The complete review matrix is available in <code>a11y-report.json</code>.</p>` : ""}
   </section>`;
 }
 

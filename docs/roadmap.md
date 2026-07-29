@@ -89,8 +89,8 @@ Section 508 certification.
 - Continue improving per-criterion coverage rows with status, evidence source,
   finding count, and next step: `automated`, `heuristic`, `manual required`,
   `not covered`, or `not applicable`. The Markdown report now shows a compact
-  WCAG Evidence Gaps table, and the visual report now shows a compact
-  WCAG Evidence Gaps panel. Next, keep the full JSON matrix complete while
+  WCAG Review Coverage table, and the visual report now shows a compact
+  WCAG Review Coverage panel. Next, keep the full JSON matrix complete while
   validating the visual wording in real reviews.
 - Continue extending reflow and resize-text evidence beyond the current 200%
   zoom and 400% / 320 CSS px simulation. Current evidence includes horizontal

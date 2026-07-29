@@ -2319,8 +2319,9 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.doesNotMatch(html, /Tracked WCAG Coverage/);
   assert.doesNotMatch(html, /Tracked WCAG evidence coverage/);
   assert.doesNotMatch(html, /not a WCAG conformance score/);
-  assert.match(html, /WCAG Evidence Gaps/);
-  assert.match(html, /aria-label="WCAG evidence gaps"/);
+  assert.match(html, /WCAG Review Coverage/);
+  assert.match(html, /aria-label="WCAG review coverage"/);
+  assert.match(html, /Manual-review rows are checklist work, not proof of conformance/);
   assert.match(html, /WCAG 4\.1\.2 Name, Role, Value/);
   assert.match(html, /data-status="automated"/);
   assert.match(html, /browser automation; axe/);
