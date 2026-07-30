@@ -81,6 +81,8 @@ checksum verification and sharing review stay in the same terminal workflow.
 The package manifest and terminal output also include review-readiness status:
 a package can be checksum-valid while still not ready for handoff if it lacks
 manual-review, evaluation-scope, or keyboard evidence.
+Use `--require-review-ready` when an archive, CI job, or release checklist
+should fail on those handoff blockers instead of only verifying checksums.
 
 When writing to `--out`, the command prints a compact run summary with severity
 counts, finding types, the most affected URL, and the most common WCAG criterion.

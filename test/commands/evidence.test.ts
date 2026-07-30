@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { createProgram } from "../../dist/cli.js";
-import { formatEvidenceExportOutput, formatEvidencePackOutput, formatEvidenceVerifyOutput } from "../../dist/commands/evidence.js";
+import { formatEvidenceExportOutput, formatEvidencePackOutput, formatEvidenceVerifyOutput, shouldFailEvidenceVerify } from "../../dist/commands/evidence.js";
 import { createEvidenceExport } from "../../dist/core/evidenceExport.js";
 import type { EvidencePackageManifest } from "../../dist/core/evidencePackage.js";
 
@@ -27,6 +27,7 @@ test("evidence verify exposes evidence package verification options", () => {
   assert.ok(verifyCommand);
   const flags = verifyCommand.options.map((option) => option.long);
   assert.equal(flags.includes("--package"), true);
+  assert.equal(flags.includes("--require-review-ready"), true);
   assert.match(verifyCommand.description(), /Verify checksums/);
 });
 
@@ -183,6 +184,36 @@ test("formatEvidenceVerifyOutput summarizes valid and invalid packages", () => {
   assert.match(invalid, /1 more hint in evidence-summary\.md/);
   assert.match(invalid, /missing: a11y-report\.json/);
   assert.match(invalid, /changed: a11y-comment\.md/);
+});
+
+test("shouldFailEvidenceVerify can require review-ready handoff evidence", () => {
+  const checksumValidButNotReady = {
+    valid: true,
+    filesChecked: 1,
+    missingFiles: [],
+    changedFiles: [],
+    reviewHints: [],
+    reviewReadiness: {
+      readyForReview: false,
+      blockingHints: ["Add keyboard evidence before treating this package as review-ready."]
+    },
+    privacy: {
+      screenshotsIncluded: false,
+      reviewRequiredBeforeSharing: true,
+      warnings: []
+    }
+  };
+
+  assert.equal(shouldFailEvidenceVerify(checksumValidButNotReady), false);
+  assert.equal(shouldFailEvidenceVerify(checksumValidButNotReady, { requireReviewReady: true }), true);
+  assert.equal(shouldFailEvidenceVerify({
+    ...checksumValidButNotReady,
+    valid: false,
+    reviewReadiness: {
+      readyForReview: true,
+      blockingHints: []
+    }
+  }, { requireReviewReady: true }), true);
 });
 
 test("formatEvidenceExportOutput summarizes the exported evidence dataset", () => {

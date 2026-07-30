@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added `evidence verify --require-review-ready` so scripts can fail when a
+  checksummed evidence package is still missing handoff-ready review evidence.
 - Added evidence package review-readiness checks so `evidence pack` and
   `evidence verify` distinguish checksum-valid packages from packages that are
   still missing manual-review, scope, or keyboard evidence before handoff.

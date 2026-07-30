@@ -24,6 +24,7 @@ interface EvidenceExportOptions {
 
 interface EvidenceVerifyOptions {
   package?: string;
+  requireReviewReady?: boolean;
 }
 
 export function registerEvidenceCommand(program: Command): void {
@@ -53,11 +54,12 @@ export function registerEvidenceCommand(program: Command): void {
     .command("verify")
     .description("Verify checksums in a local evidence package.")
     .option("--package <dir>", "Evidence package directory", "a11y-evidence")
+    .option("--require-review-ready", "Fail when the package is checksum-valid but missing review handoff evidence")
     .action(async (options: EvidenceVerifyOptions) => {
       const packageDir = path.resolve(options.package || "a11y-evidence");
       const verification = await verifyEvidencePackage(packageDir);
       console.log(formatEvidenceVerifyOutput(verification, packageDir));
-      if (!verification.valid) {
+      if (shouldFailEvidenceVerify(verification, options)) {
         process.exitCode = 1;
       }
     });
@@ -123,6 +125,13 @@ export function formatEvidenceVerifyOutput(verification: EvidencePackageVerifica
     ...verification.missingFiles.slice(0, 5).map((file) => `  missing: ${file}`),
     ...verification.changedFiles.slice(0, 5).map((file) => `  changed: ${file}`)
   ].join("\n");
+}
+
+export function shouldFailEvidenceVerify(
+  verification: EvidencePackageVerification,
+  options: Pick<EvidenceVerifyOptions, "requireReviewReady"> = {}
+): boolean {
+  return !verification.valid || (Boolean(options.requireReviewReady) && !verification.reviewReadiness.readyForReview);
 }
 
 function formatEvidenceVerifyPrivacy(verification: EvidencePackageVerification): string {
