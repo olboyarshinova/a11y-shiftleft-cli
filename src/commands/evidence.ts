@@ -178,6 +178,7 @@ function formatEvidenceReviewSummary(summary: EvidencePackageManifest["reviewSum
 export function formatEvidenceExportOutput(evidence: EvidenceExport, outputPath: string): string {
   const topUrl = topEntry(evidence.summary.byUrl);
   const topCriterion = topEntry(evidence.summary.byWcagCriterion);
+  const topJourney = topEntry(evidence.summary.byJourney);
 
   return [
     `Wrote ${evidence.records.length} evidence record${evidence.records.length === 1 ? "" : "s"} to ${outputPath}`,
@@ -185,6 +186,7 @@ export function formatEvidenceExportOutput(evidence: EvidenceExport, outputPath:
     `Summary: ${evidence.summary.critical} critical, ${evidence.summary.warning} warning, ${evidence.summary.info} info`,
     ...formatEvidenceReviewLines(evidence),
     `Evidence types: ${evidence.summary.wcagMapped} WCAG-mapped, ${evidence.summary.needsReview} needs review, ${evidence.summary.bestPractice} best practice`,
+    ...(topJourney ? [`Top journey: ${topJourney[0]} (${topJourney[1]})`] : []),
     topUrl ? `Top URL: ${topUrl[0]} (${topUrl[1]})` : "Top URL: none",
     topCriterion ? `Top WCAG criterion: ${topCriterion[0]} (${topCriterion[1]})` : "Top WCAG criterion: none"
   ].join("\n");

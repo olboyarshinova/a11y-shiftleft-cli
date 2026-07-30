@@ -200,11 +200,16 @@ test("formatEvidenceExportOutput includes manual review and journey summaries wh
       info: 0
     }]
   };
+  evidence.summary.byJourney = {
+    Checkout: 2,
+    Search: 1
+  };
 
   const output = formatEvidenceExportOutput(evidence, "/tmp/evidence.json");
 
   assert.match(output, /Manual review: 1 pass, 1 fail, 1 not reviewed, 2 targets/);
   assert.match(output, /Journeys: 1 tracked, 2 findings/);
+  assert.match(output, /Top journey: Checkout \(2\)/);
 });
 
 test("evidence export writes JSONL records from an accessibility report", async () => {

@@ -105,6 +105,8 @@ validation scripts that need trends without parsing every record first.
 The export also includes grouped counts by URL, WCAG criterion, and WCAG level
 so downstream tools can summarize affected pages and standards coverage without
 recomputing those distributions.
+When findings are linked to planned critical journeys, the terminal export
+summary also shows the top affected journey for quick triage.
 
 The JSON-LD export is intentionally described as EARL-inspired evidence, not a
 formal conformance certificate. `needs-review` findings are represented as
