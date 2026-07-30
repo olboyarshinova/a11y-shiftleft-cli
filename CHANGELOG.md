@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added `evidence verify --format json` for CI scripts and release checks that
+  need machine-readable evidence package verification results.
 - Added visible `evidence verify` readiness blocker lines so incomplete evidence
   packages explain what must be fixed before review handoff.
 - Added `evidence verify --require-review-ready` so scripts can fail when a

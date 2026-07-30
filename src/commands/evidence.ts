@@ -25,6 +25,7 @@ interface EvidenceExportOptions {
 interface EvidenceVerifyOptions {
   package?: string;
   requireReviewReady?: boolean;
+  format?: string;
 }
 
 export function registerEvidenceCommand(program: Command): void {
@@ -55,10 +56,12 @@ export function registerEvidenceCommand(program: Command): void {
     .description("Verify checksums in a local evidence package.")
     .option("--package <dir>", "Evidence package directory", "a11y-evidence")
     .option("--require-review-ready", "Fail when the package is checksum-valid but missing review handoff evidence")
+    .option("--format <format>", "Output format: text or json", "text")
     .action(async (options: EvidenceVerifyOptions) => {
+      const format = toEvidenceVerifyFormat(options.format);
       const packageDir = path.resolve(options.package || "a11y-evidence");
       const verification = await verifyEvidencePackage(packageDir);
-      console.log(formatEvidenceVerifyOutput(verification, packageDir));
+      console.log(formatEvidenceVerifyResult(verification, packageDir, format));
       if (shouldFailEvidenceVerify(verification, options)) {
         process.exitCode = 1;
       }
@@ -126,6 +129,22 @@ export function formatEvidenceVerifyOutput(verification: EvidencePackageVerifica
     ...verification.missingFiles.slice(0, 5).map((file) => `  missing: ${file}`),
     ...verification.changedFiles.slice(0, 5).map((file) => `  changed: ${file}`)
   ].join("\n");
+}
+
+export type EvidenceVerifyFormat = "text" | "json";
+
+export function formatEvidenceVerifyResult(
+  verification: EvidencePackageVerification,
+  packageDir: string,
+  format: EvidenceVerifyFormat
+): string {
+  if (format === "json") {
+    return `${JSON.stringify({
+      package: packageDir,
+      ...verification
+    }, null, 2)}\n`;
+  }
+  return formatEvidenceVerifyOutput(verification, packageDir);
 }
 
 export function shouldFailEvidenceVerify(
@@ -260,6 +279,12 @@ function toEvidenceExportFormat(value: string | undefined): EvidenceExportFormat
   if (value === "jsonl") return "jsonl";
   if (value === "jsonld") return "jsonld";
   throw new Error("Unsupported evidence export format. Use json, jsonl, or jsonld.");
+}
+
+function toEvidenceVerifyFormat(value: string | undefined): EvidenceVerifyFormat {
+  if (value === "text" || value === undefined) return "text";
+  if (value === "json") return "json";
+  throw new Error("Unsupported evidence verify format. Use text or json.");
 }
 
 function topEntry(counts: Record<string, number>): [string, number] | undefined {

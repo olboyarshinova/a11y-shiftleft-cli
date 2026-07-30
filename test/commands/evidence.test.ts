@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { createProgram } from "../../dist/cli.js";
-import { formatEvidenceExportOutput, formatEvidencePackOutput, formatEvidenceVerifyOutput, shouldFailEvidenceVerify } from "../../dist/commands/evidence.js";
+import { formatEvidenceExportOutput, formatEvidencePackOutput, formatEvidenceVerifyOutput, formatEvidenceVerifyResult, shouldFailEvidenceVerify } from "../../dist/commands/evidence.js";
 import { createEvidenceExport } from "../../dist/core/evidenceExport.js";
 import type { EvidencePackageManifest } from "../../dist/core/evidencePackage.js";
 
@@ -28,6 +28,7 @@ test("evidence verify exposes evidence package verification options", () => {
   const flags = verifyCommand.options.map((option) => option.long);
   assert.equal(flags.includes("--package"), true);
   assert.equal(flags.includes("--require-review-ready"), true);
+  assert.equal(flags.includes("--format"), true);
   assert.match(verifyCommand.description(), /Verify checksums/);
 });
 
@@ -217,6 +218,80 @@ test("shouldFailEvidenceVerify can require review-ready handoff evidence", () =>
       blockingHints: []
     }
   }, { requireReviewReady: true }), true);
+});
+
+test("formatEvidenceVerifyResult can output machine-readable JSON", () => {
+  const output = formatEvidenceVerifyResult({
+    valid: true,
+    filesChecked: 1,
+    missingFiles: [],
+    changedFiles: [],
+    reviewHints: [],
+    reviewReadiness: {
+      readyForReview: true,
+      blockingHints: []
+    },
+    privacy: {
+      screenshotsIncluded: false,
+      reviewRequiredBeforeSharing: true,
+      warnings: []
+    }
+  }, "/tmp/a11y-evidence", "json");
+
+  const parsed = JSON.parse(output);
+  assert.equal(parsed.package, "/tmp/a11y-evidence");
+  assert.equal(parsed.valid, true);
+  assert.equal(parsed.filesChecked, 1);
+  assert.equal(parsed.reviewReadiness.readyForReview, true);
+});
+
+test("evidence verify rejects unsupported output formats", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-evidence-verify-format-"));
+  const packageDir = path.join(root, "evidence");
+  await fs.mkdir(packageDir);
+  await fs.writeFile(path.join(packageDir, "evidence-manifest.json"), JSON.stringify({
+    version: 1,
+    generatedAt: "2026-07-30T00:00:00.000Z",
+    source: "reports",
+    localOnly: true,
+    includeVisual: false,
+    reviewHints: [],
+    contentSummary: {
+      automatedReports: 0,
+      evidenceExportFiles: 0,
+      manualReviewFiles: 0,
+      evaluationScope: false,
+      keyboardEvidenceFiles: 0,
+      dashboardFiles: 0,
+      visualReports: 0,
+      screenshots: 0,
+      rawExplorationGraph: false
+    },
+    files: [],
+    reviewReadiness: {
+      readyForReview: true,
+      blockingHints: []
+    },
+    privacy: {
+      screenshotsIncluded: false,
+      reviewRequiredBeforeSharing: true,
+      warnings: []
+    }
+  }));
+
+  await assert.rejects(
+    createProgram().parseAsync([
+      "node",
+      "a11y-shiftleft",
+      "evidence",
+      "verify",
+      "--package",
+      packageDir,
+      "--format",
+      "yaml"
+    ]),
+    /Unsupported evidence verify format/
+  );
 });
 
 test("formatEvidenceExportOutput summarizes the exported evidence dataset", () => {

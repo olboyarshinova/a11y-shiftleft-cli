@@ -83,6 +83,8 @@ a package can be checksum-valid while still not ready for handoff if it lacks
 manual-review, evaluation-scope, or keyboard evidence.
 Use `--require-review-ready` when an archive, CI job, or release checklist
 should fail on those handoff blockers instead of only verifying checksums.
+Use `--format json` when CI or another local script needs the verification,
+privacy, and review-readiness result without parsing terminal text.
 
 When writing to `--out`, the command prints a compact run summary with severity
 counts, finding types, the most affected URL, and the most common WCAG criterion.
