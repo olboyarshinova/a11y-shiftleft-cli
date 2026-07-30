@@ -47,9 +47,16 @@ test("formatEvidencePackOutput includes review hints for evidence packages", () 
   assert.match(output, /Review summary: none included/);
   assert.match(output, /Review before sharing: \/tmp\/a11y-evidence\/evidence-summary\.md/);
   assert.match(output, /Machine-readable manifest: \/tmp\/a11y-evidence\/evidence-manifest\.json/);
+  assert.match(output, /Next: npx a11y-shiftleft-cli evidence verify --package \/tmp\/a11y-evidence/);
   assert.match(output, /Review hints: 4/);
   assert.match(output, /No keyboard evidence file was included/);
   assert.match(output, /1 more hint in evidence-summary\.md/);
+});
+
+test("formatEvidencePackOutput quotes verify command paths when needed", () => {
+  const output = formatEvidencePackOutput(evidenceManifest(), "/tmp/a11y evidence");
+
+  assert.match(output, /Next: npx a11y-shiftleft-cli evidence verify --package '\/tmp\/a11y evidence'/);
 });
 
 test("formatEvidencePackOutput shows when no review hints remain", () => {

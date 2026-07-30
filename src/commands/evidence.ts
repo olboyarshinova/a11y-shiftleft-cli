@@ -101,6 +101,7 @@ export function formatEvidencePackOutput(manifest: EvidencePackageManifest, outp
     `Review summary: ${formatEvidencePackReviewSummary(manifest)}`,
     `Review before sharing: ${path.join(outputDir, "evidence-summary.md")}`,
     `Machine-readable manifest: ${path.join(outputDir, "evidence-manifest.json")}`,
+    `Next: npx a11y-shiftleft-cli evidence verify --package ${shellQuote(outputDir)}`,
     ...hints
   ].join("\n");
 }
@@ -226,4 +227,9 @@ function toEvidenceExportFormat(value: string | undefined): EvidenceExportFormat
 
 function topEntry(counts: Record<string, number>): [string, number] | undefined {
   return Object.entries(counts).sort((first, second) => second[1] - first[1] || first[0].localeCompare(second[0]))[0];
+}
+
+function shellQuote(value: string): string {
+  if (/^[A-Za-z0-9_./:=+-]+$/.test(value)) return value;
+  return `'${value.replace(/'/g, "'\\''")}'`;
 }

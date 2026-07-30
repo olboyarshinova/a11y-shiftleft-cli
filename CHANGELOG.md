@@ -13,6 +13,7 @@
   journey evidence are visible before opening the package files.
 - Added privacy and review-hint summaries to `evidence verify` output so
   reviewers can see sharing risks after checksum verification.
+- Added a copy-paste `evidence verify` next step to `evidence pack` output.
 - Clarified WCAG review coverage wording in visual, Markdown, and JSON reports
   by separating automated evidence coverage from assisted review coverage and
   documenting that assisted coverage is review planning, not conformance proof.
