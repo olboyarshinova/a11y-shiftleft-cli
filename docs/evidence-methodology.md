@@ -66,6 +66,8 @@ sync.
 If no JSON evidence export exists yet, `evidence pack` generates
 `a11y-evidence.json` inside the package from the source `a11y-report.json` when
 that report is valid.
+Use `evidence pack --format json` when a local script needs the generated
+manifest and handoff-readiness status from stdout.
 
 Before sharing or archiving a package, use `evidence verify` to recalculate file
 sizes and SHA-256 hashes from `evidence-manifest.json`:

@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { createProgram } from "../../dist/cli.js";
-import { formatEvidenceExportOutput, formatEvidencePackOutput, formatEvidenceVerifyOutput, formatEvidenceVerifyResult, shouldFailEvidenceVerify } from "../../dist/commands/evidence.js";
+import { formatEvidenceExportOutput, formatEvidencePackOutput, formatEvidencePackResult, formatEvidenceVerifyOutput, formatEvidenceVerifyResult, shouldFailEvidenceVerify } from "../../dist/commands/evidence.js";
 import { createEvidenceExport } from "../../dist/core/evidenceExport.js";
 import type { EvidencePackageManifest } from "../../dist/core/evidencePackage.js";
 
@@ -30,6 +30,15 @@ test("evidence verify exposes evidence package verification options", () => {
   assert.equal(flags.includes("--require-review-ready"), true);
   assert.equal(flags.includes("--format"), true);
   assert.match(verifyCommand.description(), /Verify checksums/);
+});
+
+test("evidence pack exposes JSON output options", () => {
+  const evidence = createProgram().commands.find((item) => item.name() === "evidence");
+  const packCommand = evidence?.commands.find((item) => item.name() === "pack");
+
+  assert.ok(packCommand);
+  const flags = packCommand.options.map((option) => option.long);
+  assert.equal(flags.includes("--format"), true);
 });
 
 test("formatEvidencePackOutput includes review hints for evidence packages", () => {
@@ -111,6 +120,37 @@ test("formatEvidencePackOutput summarizes manual review and journey evidence", (
   }), "/tmp/a11y-evidence");
 
   assert.match(output, /Review summary: manual 3\/5 completed; steps 2\/4 reviewed; journeys 1 tracked; 3 journey findings; 1 critical, 2 warning, 0 info/);
+});
+
+test("formatEvidencePackResult can output machine-readable JSON", () => {
+  const output = formatEvidencePackResult(evidenceManifest({
+    reviewReadiness: {
+      readyForReview: false,
+      blockingHints: ["Add keyboard evidence before treating this package as review-ready."]
+    }
+  }), "/tmp/a11y-evidence", "json");
+
+  const parsed = JSON.parse(output);
+  assert.equal(parsed.package, "/tmp/a11y-evidence");
+  assert.equal(parsed.localOnly, true);
+  assert.equal(parsed.reviewReadiness.readyForReview, false);
+  assert.deepEqual(parsed.reviewReadiness.blockingHints, [
+    "Add keyboard evidence before treating this package as review-ready."
+  ]);
+});
+
+test("evidence pack rejects unsupported output formats before creating a package", async () => {
+  await assert.rejects(
+    createProgram().parseAsync([
+      "node",
+      "a11y-shiftleft",
+      "evidence",
+      "pack",
+      "--format",
+      "yaml"
+    ]),
+    /Unsupported evidence pack format/
+  );
 });
 
 test("formatEvidenceVerifyOutput summarizes valid and invalid packages", () => {

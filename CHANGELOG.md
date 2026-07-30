@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added `evidence pack --format json` so automation can read the package
+  manifest and handoff-readiness status from command output.
 - Added `evidence verify --format json` for CI scripts and release checks that
   need machine-readable evidence package verification results.
 - Added visible `evidence verify` readiness blocker lines so incomplete evidence

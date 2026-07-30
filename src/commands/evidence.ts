@@ -14,6 +14,7 @@ interface EvidencePackOptions {
   reports?: string;
   out?: string;
   includeVisual?: boolean;
+  format?: string;
 }
 
 interface EvidenceExportOptions {
@@ -39,7 +40,9 @@ export function registerEvidenceCommand(program: Command): void {
     .option("--reports <dir>", "Source report directory", "reports")
     .option("--out <dir>", "Empty output directory", "a11y-evidence")
     .option("--include-visual", "Include exploration HTML, PDF, and screenshots")
+    .option("--format <format>", "Output format: text or json", "text")
     .action(async (options: EvidencePackOptions) => {
+      const format = toEvidenceTextJsonFormat(options.format, "evidence pack");
       const reportsDir = path.resolve(options.reports || "reports");
       const outputDir = path.resolve(options.out || "a11y-evidence");
       const manifest = await createEvidencePackage({
@@ -48,7 +51,7 @@ export function registerEvidenceCommand(program: Command): void {
         includeVisual: Boolean(options.includeVisual)
       });
 
-      console.log(formatEvidencePackOutput(manifest, outputDir));
+      console.log(formatEvidencePackResult(manifest, outputDir, format));
     });
 
   evidence
@@ -58,7 +61,7 @@ export function registerEvidenceCommand(program: Command): void {
     .option("--require-review-ready", "Fail when the package is checksum-valid but missing review handoff evidence")
     .option("--format <format>", "Output format: text or json", "text")
     .action(async (options: EvidenceVerifyOptions) => {
-      const format = toEvidenceVerifyFormat(options.format);
+      const format = toEvidenceTextJsonFormat(options.format, "evidence verify");
       const packageDir = path.resolve(options.package || "a11y-evidence");
       const verification = await verifyEvidencePackage(packageDir);
       console.log(formatEvidenceVerifyResult(verification, packageDir, format));
@@ -112,6 +115,22 @@ export function formatEvidencePackOutput(manifest: EvidencePackageManifest, outp
   ].join("\n");
 }
 
+export type EvidenceTextJsonFormat = "text" | "json";
+
+export function formatEvidencePackResult(
+  manifest: EvidencePackageManifest,
+  outputDir: string,
+  format: EvidenceTextJsonFormat
+): string {
+  if (format === "json") {
+    return `${JSON.stringify({
+      package: outputDir,
+      ...manifest
+    }, null, 2)}\n`;
+  }
+  return formatEvidencePackOutput(manifest, outputDir);
+}
+
 export function formatEvidenceVerifyOutput(verification: EvidencePackageVerification, packageDir: string): string {
   return [
     verification.valid
@@ -131,12 +150,10 @@ export function formatEvidenceVerifyOutput(verification: EvidencePackageVerifica
   ].join("\n");
 }
 
-export type EvidenceVerifyFormat = "text" | "json";
-
 export function formatEvidenceVerifyResult(
   verification: EvidencePackageVerification,
   packageDir: string,
-  format: EvidenceVerifyFormat
+  format: EvidenceTextJsonFormat
 ): string {
   if (format === "json") {
     return `${JSON.stringify({
@@ -281,10 +298,10 @@ function toEvidenceExportFormat(value: string | undefined): EvidenceExportFormat
   throw new Error("Unsupported evidence export format. Use json, jsonl, or jsonld.");
 }
 
-function toEvidenceVerifyFormat(value: string | undefined): EvidenceVerifyFormat {
+function toEvidenceTextJsonFormat(value: string | undefined, command: string): EvidenceTextJsonFormat {
   if (value === "text" || value === undefined) return "text";
   if (value === "json") return "json";
-  throw new Error("Unsupported evidence verify format. Use text or json.");
+  throw new Error(`Unsupported ${command} format. Use text or json.`);
 }
 
 function topEntry(counts: Record<string, number>): [string, number] | undefined {
