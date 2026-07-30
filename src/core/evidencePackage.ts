@@ -67,6 +67,11 @@ export interface EvidencePackageReviewSummary {
   manualRedactedTaskEvidence: number;
   manualTemporaryAcceptances: number;
   manualTemporaryAcceptancesExpiringSoon: number;
+  criticalJourneys: number;
+  journeyFindings: number;
+  journeyCritical: number;
+  journeyWarning: number;
+  journeyInfo: number;
 }
 
 export interface EvidencePackageManifest {
@@ -341,6 +346,37 @@ function toNumber(value: unknown): number | undefined {
 }
 
 async function readReviewSummary(reportsDir: string): Promise<EvidencePackageReviewSummary | undefined> {
+  const status = await readEvaluationReviewStatus(reportsDir);
+  const journeys = await readJourneyReviewSummary(reportsDir);
+  if (!status && !journeys) return undefined;
+
+  return {
+    manualReviewItems: toNumber(status?.manualReviewItems) || 0,
+    manualReviewCompleted: toNumber(status?.manualReviewCompleted) || 0,
+    manualStepRecords: toNumber(status?.manualStepRecords) || 0,
+    manualStepsCompleted: toNumber(status?.manualStepsCompleted) || 0,
+    manualTaskEvidenceAttachments: toNumber(status?.manualTaskEvidenceAttachments) || 0,
+    manualRedactedTaskEvidence: toNumber(status?.manualRedactedTaskEvidence) || 0,
+    manualTemporaryAcceptances: toNumber(status?.manualTemporaryAcceptances) || 0,
+    manualTemporaryAcceptancesExpiringSoon: toNumber(status?.manualTemporaryAcceptancesExpiringSoon) || 0,
+    criticalJourneys: journeys?.criticalJourneys || 0,
+    journeyFindings: journeys?.journeyFindings || 0,
+    journeyCritical: journeys?.journeyCritical || 0,
+    journeyWarning: journeys?.journeyWarning || 0,
+    journeyInfo: journeys?.journeyInfo || 0
+  };
+}
+
+async function readEvaluationReviewStatus(reportsDir: string): Promise<{
+  manualReviewItems?: unknown;
+  manualReviewCompleted?: unknown;
+  manualStepRecords?: unknown;
+  manualStepsCompleted?: unknown;
+  manualTaskEvidenceAttachments?: unknown;
+  manualRedactedTaskEvidence?: unknown;
+  manualTemporaryAcceptances?: unknown;
+  manualTemporaryAcceptancesExpiringSoon?: unknown;
+} | undefined> {
   const scopePath = path.join(reportsDir, "evaluation-scope.json");
   try {
     const parsed = JSON.parse(await fs.readFile(scopePath, "utf8")) as {
@@ -356,17 +392,41 @@ async function readReviewSummary(reportsDir: string): Promise<EvidencePackageRev
       };
     };
     const status = parsed.reviewStatus;
-    if (!status) return undefined;
-    return {
-      manualReviewItems: toNumber(status.manualReviewItems) || 0,
-      manualReviewCompleted: toNumber(status.manualReviewCompleted) || 0,
-      manualStepRecords: toNumber(status.manualStepRecords) || 0,
-      manualStepsCompleted: toNumber(status.manualStepsCompleted) || 0,
-      manualTaskEvidenceAttachments: toNumber(status.manualTaskEvidenceAttachments) || 0,
-      manualRedactedTaskEvidence: toNumber(status.manualRedactedTaskEvidence) || 0,
-      manualTemporaryAcceptances: toNumber(status.manualTemporaryAcceptances) || 0,
-      manualTemporaryAcceptancesExpiringSoon: toNumber(status.manualTemporaryAcceptancesExpiringSoon) || 0
+    return status;
+  } catch (error) {
+    if (isNodeError(error) && error.code === "ENOENT") return undefined;
+    throw error;
+  }
+}
+
+async function readJourneyReviewSummary(reportsDir: string): Promise<Pick<EvidencePackageReviewSummary, "criticalJourneys" | "journeyFindings" | "journeyCritical" | "journeyWarning" | "journeyInfo"> | undefined> {
+  const reportPath = path.join(reportsDir, "a11y-report.json");
+  try {
+    const parsed = JSON.parse(await fs.readFile(reportPath, "utf8")) as {
+      summary?: {
+        journeyImpact?: Array<{
+          findingCount?: unknown;
+          critical?: unknown;
+          warning?: unknown;
+          info?: unknown;
+        }>;
+      };
     };
+    const journeys = parsed.summary?.journeyImpact;
+    if (!Array.isArray(journeys) || journeys.length === 0) return undefined;
+    return journeys.reduce((summary, journey) => ({
+      criticalJourneys: summary.criticalJourneys + 1,
+      journeyFindings: summary.journeyFindings + (toNumber(journey.findingCount) || 0),
+      journeyCritical: summary.journeyCritical + (toNumber(journey.critical) || 0),
+      journeyWarning: summary.journeyWarning + (toNumber(journey.warning) || 0),
+      journeyInfo: summary.journeyInfo + (toNumber(journey.info) || 0)
+    }), {
+      criticalJourneys: 0,
+      journeyFindings: 0,
+      journeyCritical: 0,
+      journeyWarning: 0,
+      journeyInfo: 0
+    });
   } catch (error) {
     if (isNodeError(error) && error.code === "ENOENT") return undefined;
     throw error;
@@ -572,6 +632,11 @@ function formatReviewSummaryMarkdown(summary: EvidencePackageReviewSummary | und
 | Redacted manual task evidence | ${summary.manualRedactedTaskEvidence} |
 | Temporary acceptances | ${summary.manualTemporaryAcceptances} |
 | Temporary acceptances expiring soon | ${summary.manualTemporaryAcceptancesExpiringSoon} |
+| Critical journeys | ${summary.criticalJourneys} |
+| Journey findings | ${summary.journeyFindings} |
+| Journey critical findings | ${summary.journeyCritical} |
+| Journey warning findings | ${summary.journeyWarning} |
+| Journey info findings | ${summary.journeyInfo} |
 `;
 }
 

@@ -7,6 +7,8 @@
   review next steps.
 - Added per-finding critical journey labels and `byJourney` totals to
   machine-readable evidence exports.
+- Added critical journey counts and journey finding totals to local evidence
+  package manifests and Markdown summaries.
 - Clarified WCAG review coverage wording in visual, Markdown, and JSON reports
   by separating automated evidence coverage from assisted review coverage and
   documenting that assisted coverage is review planning, not conformance proof.

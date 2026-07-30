@@ -27,7 +27,15 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
         newIssues: 1,
         fixedIssues: 2,
         remainingIssues: 2
-      }
+      },
+      journeyImpact: [{
+        name: "Checkout",
+        urls: ["https://example.test/cart", "https://example.test/checkout"],
+        findingCount: 3,
+        critical: 1,
+        warning: 2,
+        info: 0
+      }]
     },
     issues: []
   }, null, 2));
@@ -92,7 +100,12 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
     manualTaskEvidenceAttachments: 2,
     manualRedactedTaskEvidence: 1,
     manualTemporaryAcceptances: 1,
-    manualTemporaryAcceptancesExpiringSoon: 0
+    manualTemporaryAcceptancesExpiringSoon: 0,
+    criticalJourneys: 1,
+    journeyFindings: 3,
+    journeyCritical: 1,
+    journeyWarning: 2,
+    journeyInfo: 0
   });
   assert.deepEqual(manifest.files.map((file) => file.path), [
     "a11y-comment.md",
@@ -138,6 +151,9 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   assert.match(summary, /Manual review completed \| 3/);
   assert.match(summary, /Manual task evidence attachments \| 2/);
   assert.match(summary, /Temporary acceptances \| 1/);
+  assert.match(summary, /Critical journeys \| 1/);
+  assert.match(summary, /Journey findings \| 3/);
+  assert.match(summary, /Journey critical findings \| 1/);
   assert.match(summary, /Review Hints/);
   assert.match(summary, /Manual review is incomplete/);
   assert.match(summary, /Visual reports and screenshots were excluded/);

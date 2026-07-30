@@ -51,6 +51,10 @@ includes planned-scope mapping. Use `summary.byJourney` or each record's
 `journeys` array to build task-focused validation datasets without parsing the
 visual report.
 
+Evidence package manifests and `evidence-summary.md` also summarize critical
+journeys and journey-linked finding totals when the source report includes
+planned-scope journey impact.
+
 Evidence packages include `dashboard.json` when it exists so trend and
 manual-review deltas can travel with the audit evidence. Dashboard HTML and PDF
 are included only when visual evidence is explicitly requested, because those
