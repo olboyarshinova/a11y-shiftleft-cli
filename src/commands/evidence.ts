@@ -119,6 +119,7 @@ export function formatEvidenceVerifyOutput(verification: EvidencePackageVerifica
     `Changed files: ${verification.changedFiles.length}`,
     `Review summary: ${formatEvidenceReviewSummary(verification.reviewSummary)}`,
     `Review readiness: ${formatEvidenceReviewReadiness(verification.reviewReadiness)}`,
+    ...formatEvidenceReadinessBlockers(verification.reviewReadiness),
     `Privacy: ${formatEvidenceVerifyPrivacy(verification)}`,
     `Review before sharing: ${path.join(packageDir, "evidence-summary.md")}`,
     ...formatEvidenceVerifyHints(verification),
@@ -174,6 +175,15 @@ function formatEvidenceReviewReadiness(readiness: EvidencePackageManifest["revie
   if (readiness.readyForReview) return "ready for review handoff";
   const count = readiness.blockingHints.length;
   return `not ready for review handoff (${count} blocker${count === 1 ? "" : "s"})`;
+}
+
+function formatEvidenceReadinessBlockers(readiness: EvidencePackageManifest["reviewReadiness"] | EvidencePackageVerification["reviewReadiness"]): string[] {
+  if (readiness.readyForReview || readiness.blockingHints.length === 0) return [];
+  return [
+    "Review readiness blockers:",
+    ...readiness.blockingHints.slice(0, 5).map((hint) => `  - ${hint}`),
+    ...(readiness.blockingHints.length > 5 ? [`  - ${readiness.blockingHints.length - 5} more blocker${readiness.blockingHints.length - 5 === 1 ? "" : "s"} in evidence-summary.md`] : [])
+  ];
 }
 
 function formatEvidenceReviewSummary(summary: EvidencePackageManifest["reviewSummary"] | EvidencePackageVerification["reviewSummary"]): string {

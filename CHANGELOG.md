@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added visible `evidence verify` readiness blocker lines so incomplete evidence
+  packages explain what must be fixed before review handoff.
 - Added `evidence verify --require-review-ready` so scripts can fail when a
   checksummed evidence package is still missing handoff-ready review evidence.
 - Added evidence package review-readiness checks so `evidence pack` and
