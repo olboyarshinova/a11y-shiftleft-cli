@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added evidence package review-readiness checks so `evidence pack` and
+  `evidence verify` distinguish checksum-valid packages from packages that are
+  still missing manual-review, scope, or keyboard evidence before handoff.
 - Added draft v1.0.0 release notes to define the stable command surface,
   release validation checklist, privacy expectations, and non-certification
   boundaries before the 1.0 release.

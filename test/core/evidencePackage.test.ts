@@ -132,6 +132,12 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
     "Manual review is incomplete; review the remaining checklist items before treating this package as final evidence.",
     "Visual reports and screenshots were excluded. Re-run with --include-visual only when visual evidence is approved for sharing."
   ]);
+  assert.deepEqual(manifest.reviewReadiness, {
+    readyForReview: false,
+    blockingHints: [
+      "Complete or explicitly mark remaining manual-review checklist items."
+    ]
+  });
   assert.match(manifest.files[0].sha256, /^[a-f0-9]{64}$/);
   assert.equal(await exists(path.join(outputDir, "exploration.html")), false);
   assert.equal(await exists(path.join(outputDir, "screenshots", "state-1.jpg")), false);
@@ -142,6 +148,7 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   assert.match(summary, /Accessibility Evidence Package/);
   assert.match(summary, /It does not upload reports anywhere/);
   assert.match(summary, /Screenshots included \| no/);
+  assert.match(summary, /Ready for review handoff \| no/);
   assert.match(summary, /Audit Summary/);
   assert.match(summary, /Total findings \| 4/);
   assert.match(summary, /Critical \| 1/);
@@ -154,6 +161,8 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   assert.match(summary, /Critical journeys \| 1/);
   assert.match(summary, /Journey findings \| 3/);
   assert.match(summary, /Journey critical findings \| 1/);
+  assert.match(summary, /Review Readiness/);
+  assert.match(summary, /Complete or explicitly mark remaining manual-review checklist items/);
   assert.match(summary, /Review Hints/);
   assert.match(summary, /Manual review is incomplete/);
   assert.match(summary, /Visual reports and screenshots were excluded/);
@@ -182,6 +191,7 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
     changedFiles: [],
     reviewSummary: manifest.reviewSummary,
     reviewHints: manifest.reviewHints,
+    reviewReadiness: manifest.reviewReadiness,
     privacy: manifest.privacy
   });
 
@@ -225,17 +235,72 @@ test("createEvidencePackage includes visual evidence only when requested", async
     "No manual-review completion summary was found.",
     "No keyboard evidence file was included."
   ]);
+  assert.deepEqual(manifest.reviewReadiness, {
+    readyForReview: false,
+    blockingHints: [
+      "Add a valid a11y-report.json with audit summary counts.",
+      "Add evaluation-scope.json so review scope and manual-review status are documented.",
+      "Add manual-review completion evidence before treating this package as review-ready.",
+      "Add keyboard evidence before treating this package as review-ready."
+    ]
+  });
 
   const summary = await fs.readFile(path.join(outputDir, "evidence-summary.md"), "utf8");
   assert.match(summary, /Include visual evidence \| yes/);
   assert.match(summary, /Screenshots included \| yes/);
+  assert.match(summary, /Ready for review handoff \| no/);
   assert.match(summary, /Visual reports \| 3/);
   assert.match(summary, /Dashboard files \| 1/);
   assert.match(summary, /Screenshots \| 1/);
   assert.match(summary, /No audit count summary was found/);
   assert.match(summary, /No keyboard evidence file was included/);
+  assert.match(summary, /Add keyboard evidence before treating this package as review-ready/);
   assert.match(summary, /Visual reports may contain rendered page content/);
   assert.match(summary, /Screenshots may contain personal/);
+});
+
+test("createEvidencePackage marks complete review evidence as ready for handoff", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-evidence-ready-"));
+  const reportsDir = path.join(root, "reports");
+  const outputDir = path.join(root, "evidence");
+  await fs.mkdir(reportsDir, { recursive: true });
+  await fs.writeFile(path.join(reportsDir, "a11y-report.json"), JSON.stringify({
+    summary: {
+      total: 0,
+      critical: 0,
+      warning: 0,
+      info: 0
+    },
+    issues: []
+  }, null, 2));
+  await fs.writeFile(path.join(reportsDir, "evaluation-scope.json"), JSON.stringify({
+    reviewStatus: {
+      manualReviewItems: 3,
+      manualReviewCompleted: 3,
+      manualStepRecords: 2,
+      manualStepsCompleted: 2,
+      manualTaskEvidenceAttachments: 0,
+      manualRedactedTaskEvidence: 0,
+      manualTemporaryAcceptances: 0,
+      manualTemporaryAcceptancesExpiringSoon: 0
+    }
+  }, null, 2));
+  await fs.writeFile(path.join(reportsDir, "keyboard-report.json"), "{}\n");
+
+  const manifest = await createEvidencePackage({ reportsDir, outputDir });
+
+  assert.deepEqual(manifest.reviewReadiness, {
+    readyForReview: true,
+    blockingHints: []
+  });
+
+  const summary = await fs.readFile(path.join(outputDir, "evidence-summary.md"), "utf8");
+  assert.match(summary, /Ready for review handoff \| yes/);
+  assert.match(summary, /No blocking evidence gaps were found/);
+
+  const verification = await verifyEvidencePackage(outputDir);
+  assert.equal(verification.reviewReadiness.readyForReview, true);
+  assert.deepEqual(verification.reviewReadiness.blockingHints, []);
 });
 
 test("createEvidencePackage refuses to mix with an existing output directory", async () => {

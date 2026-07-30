@@ -95,6 +95,10 @@ export interface EvidencePackageManifest {
     rawExplorationGraph: boolean;
   };
   files: EvidencePackageFile[];
+  reviewReadiness: {
+    readyForReview: boolean;
+    blockingHints: string[];
+  };
   privacy: {
     screenshotsIncluded: boolean;
     reviewRequiredBeforeSharing: true;
@@ -109,6 +113,10 @@ export interface EvidencePackageVerification {
   changedFiles: string[];
   reviewSummary?: EvidencePackageReviewSummary;
   reviewHints: string[];
+  reviewReadiness: {
+    readyForReview: boolean;
+    blockingHints: string[];
+  };
   privacy: EvidencePackageManifest["privacy"];
 }
 
@@ -150,6 +158,7 @@ export async function createEvidencePackage(options: {
   const reportSummary = await readReportSummary(reportsDir);
   const reviewSummary = await readReviewSummary(reportsDir);
   const contentSummary = summarizeEvidenceContents(files);
+  const readiness = reviewReadiness(contentSummary, reportSummary, reviewSummary);
   const manifest: EvidencePackageManifest = {
     version: 1,
     generatedAt,
@@ -161,6 +170,7 @@ export async function createEvidencePackage(options: {
     contentSummary,
     reviewHints: reviewHints(contentSummary, reportSummary, reviewSummary, Boolean(options.includeVisual)),
     files,
+    reviewReadiness: readiness,
     privacy: {
       screenshotsIncluded,
       reviewRequiredBeforeSharing: true,
@@ -200,6 +210,16 @@ export async function verifyEvidencePackage(packageDir: string): Promise<Evidenc
     }
   }
 
+  const manifestReadiness = manifest.reviewReadiness || reviewReadiness(
+    manifest.contentSummary,
+    manifest.reportSummary,
+    manifest.reviewSummary
+  );
+  const integrityHints = missingFiles.length > 0 || changedFiles.length > 0
+    ? ["Fix missing or changed package files before sharing this evidence package."]
+    : [];
+  const blockingHints = [...integrityHints, ...manifestReadiness.blockingHints];
+
   return {
     valid: missingFiles.length === 0 && changedFiles.length === 0,
     filesChecked: manifest.files.length,
@@ -207,6 +227,10 @@ export async function verifyEvidencePackage(packageDir: string): Promise<Evidenc
     changedFiles,
     ...(manifest.reviewSummary ? { reviewSummary: manifest.reviewSummary } : {}),
     reviewHints: manifest.reviewHints,
+    reviewReadiness: {
+      readyForReview: blockingHints.length === 0,
+      blockingHints
+    },
     privacy: manifest.privacy
   };
 }
@@ -556,6 +580,32 @@ function reviewHints(
   return hints;
 }
 
+function reviewReadiness(
+  content: EvidencePackageManifest["contentSummary"],
+  reportSummary: EvidencePackageReportSummary | undefined,
+  reviewSummary: EvidencePackageReviewSummary | undefined
+): EvidencePackageManifest["reviewReadiness"] {
+  const blockingHints: string[] = [];
+  if (!reportSummary) {
+    blockingHints.push("Add a valid a11y-report.json with audit summary counts.");
+  }
+  if (!content.evaluationScope) {
+    blockingHints.push("Add evaluation-scope.json so review scope and manual-review status are documented.");
+  }
+  if (!reviewSummary) {
+    blockingHints.push("Add manual-review completion evidence before treating this package as review-ready.");
+  } else if (reviewSummary.manualReviewCompleted < reviewSummary.manualReviewItems) {
+    blockingHints.push("Complete or explicitly mark remaining manual-review checklist items.");
+  }
+  if (content.keyboardEvidenceFiles === 0) {
+    blockingHints.push("Add keyboard evidence before treating this package as review-ready.");
+  }
+  return {
+    readyForReview: blockingHints.length === 0,
+    blockingHints
+  };
+}
+
 function toEvidenceSummaryMarkdown(manifest: EvidencePackageManifest): string {
   const rows = manifest.files.map((file) =>
     `| \`${file.path}\` | ${file.bytes} | \`${file.sha256}\` |`
@@ -574,10 +624,12 @@ the project team.
 | Generated | ${manifest.generatedAt} |
 | Include visual evidence | ${manifest.includeVisual ? "yes" : "no"} |
 | Screenshots included | ${manifest.privacy.screenshotsIncluded ? "yes" : "no"} |
+| Ready for review handoff | ${manifest.reviewReadiness.readyForReview ? "yes" : "no"} |
 | Files copied | ${manifest.files.length} |
 
 ${formatReportSummaryMarkdown(manifest.reportSummary)}
 ${formatReviewSummaryMarkdown(manifest.reviewSummary)}
+${formatReviewReadinessMarkdown(manifest.reviewReadiness)}
 ${formatReviewHintsMarkdown(manifest.reviewHints)}
 
 ## Evidence Contents
@@ -651,6 +703,24 @@ function formatReviewHintsMarkdown(hints: string[]): string {
   return `## Review Hints
 
 ${hints.map((hint) => `- ${hint}`).join("\n")}
+`;
+}
+
+function formatReviewReadinessMarkdown(readiness: EvidencePackageManifest["reviewReadiness"]): string {
+  if (readiness.readyForReview) {
+    return `## Review Readiness
+
+No blocking evidence gaps were found. Review privacy warnings and package files
+before sharing.
+`;
+  }
+
+  return `## Review Readiness
+
+This package is not ready for external review handoff until these evidence gaps
+are resolved:
+
+${readiness.blockingHints.map((hint) => `- ${hint}`).join("\n")}
 `;
 }
 

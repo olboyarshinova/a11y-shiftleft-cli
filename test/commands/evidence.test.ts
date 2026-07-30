@@ -37,7 +37,15 @@ test("formatEvidencePackOutput includes review hints for evidence packages", () 
       "Manual review is incomplete.",
       "Visual reports and screenshots were excluded.",
       "No evaluation-scope.json was included."
-    ]
+    ],
+    reviewReadiness: {
+      readyForReview: false,
+      blockingHints: [
+        "Add a valid a11y-report.json with audit summary counts.",
+        "Add evaluation-scope.json so review scope and manual-review status are documented.",
+        "Add manual-review completion evidence before treating this package as review-ready."
+      ]
+    }
   });
 
   const output = formatEvidencePackOutput(manifest, "/tmp/a11y-evidence");
@@ -45,6 +53,7 @@ test("formatEvidencePackOutput includes review hints for evidence packages", () 
   assert.match(output, /Created local evidence package with 1 file/);
   assert.match(output, /Contents: reports=1 exports=0 manual=0 keyboard=0 dashboard=0 visual=0 screenshots=0/);
   assert.match(output, /Review summary: none included/);
+  assert.match(output, /Review readiness: not ready for review handoff \(3 blockers\)/);
   assert.match(output, /Review before sharing: \/tmp\/a11y-evidence\/evidence-summary\.md/);
   assert.match(output, /Machine-readable manifest: \/tmp\/a11y-evidence\/evidence-manifest\.json/);
   assert.match(output, /Next: npx a11y-shiftleft-cli evidence verify --package \/tmp\/a11y-evidence/);
@@ -77,6 +86,7 @@ test("formatEvidencePackOutput shows when no review hints remain", () => {
 
   assert.match(output, /Review hints: none/);
   assert.match(output, /Contents: reports=2 exports=1 manual=1 keyboard=1 dashboard=1 visual=2 screenshots=3/);
+  assert.match(output, /Review readiness: ready for review handoff/);
 });
 
 test("formatEvidencePackOutput summarizes manual review and journey evidence", () => {
@@ -109,6 +119,10 @@ test("formatEvidenceVerifyOutput summarizes valid and invalid packages", () => {
     changedFiles: [],
     reviewSummary: undefined,
     reviewHints: [],
+    reviewReadiness: {
+      readyForReview: true,
+      blockingHints: []
+    },
     privacy: {
       screenshotsIncluded: false,
       reviewRequiredBeforeSharing: true,
@@ -142,6 +156,13 @@ test("formatEvidenceVerifyOutput summarizes valid and invalid packages", () => {
       "No evaluation-scope.json was included.",
       "Visual reports and screenshots were excluded."
     ],
+    reviewReadiness: {
+      readyForReview: false,
+      blockingHints: [
+        "Fix missing or changed package files before sharing this evidence package.",
+        "Complete manual review."
+      ]
+    },
     privacy: {
       screenshotsIncluded: true,
       reviewRequiredBeforeSharing: true,
@@ -154,6 +175,7 @@ test("formatEvidenceVerifyOutput summarizes valid and invalid packages", () => {
 
   assert.match(invalid, /verification failed/);
   assert.match(invalid, /Review summary: manual 3\/5 completed; steps 2\/4 reviewed; journeys 1 tracked; 3 journey findings; 1 critical, 2 warning, 0 info/);
+  assert.match(invalid, /Review readiness: not ready for review handoff \(2 blockers\)/);
   assert.match(invalid, /Privacy: screenshots included; review before sharing required; 2 privacy warnings/);
   assert.match(invalid, /Review before sharing: \/tmp\/a11y-evidence\/evidence-summary\.md/);
   assert.match(invalid, /Review hints: 4/);
@@ -341,6 +363,10 @@ function evidenceManifest(overrides: Partial<EvidencePackageManifest> = {}): Evi
       rawExplorationGraph: false
     },
     reviewHints: [],
+    reviewReadiness: {
+      readyForReview: true,
+      blockingHints: []
+    },
     files: [{
       path: "a11y-report.json",
       bytes: 2,

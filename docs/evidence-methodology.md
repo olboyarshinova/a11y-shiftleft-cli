@@ -78,6 +78,9 @@ The command exits with a non-zero status when a packaged file is missing or has
 changed after the manifest was generated. It also repeats the package
 manual-review summary, journey summary, privacy summary, and review hints so
 checksum verification and sharing review stay in the same terminal workflow.
+The package manifest and terminal output also include review-readiness status:
+a package can be checksum-valid while still not ready for handoff if it lacks
+manual-review, evaluation-scope, or keyboard evidence.
 
 When writing to `--out`, the command prints a compact run summary with severity
 counts, finding types, the most affected URL, and the most common WCAG criterion.

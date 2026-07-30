@@ -99,6 +99,7 @@ export function formatEvidencePackOutput(manifest: EvidencePackageManifest, outp
     `Created local evidence package with ${manifest.files.length} file${manifest.files.length === 1 ? "" : "s"}: ${outputDir}`,
     `Contents: ${formatEvidencePackContents(manifest)}`,
     `Review summary: ${formatEvidencePackReviewSummary(manifest)}`,
+    `Review readiness: ${formatEvidenceReviewReadiness(manifest.reviewReadiness)}`,
     `Review before sharing: ${path.join(outputDir, "evidence-summary.md")}`,
     `Machine-readable manifest: ${path.join(outputDir, "evidence-manifest.json")}`,
     `Next: npx a11y-shiftleft-cli evidence verify --package ${shellQuote(outputDir)}`,
@@ -115,6 +116,7 @@ export function formatEvidenceVerifyOutput(verification: EvidencePackageVerifica
     `Missing files: ${verification.missingFiles.length}`,
     `Changed files: ${verification.changedFiles.length}`,
     `Review summary: ${formatEvidenceReviewSummary(verification.reviewSummary)}`,
+    `Review readiness: ${formatEvidenceReviewReadiness(verification.reviewReadiness)}`,
     `Privacy: ${formatEvidenceVerifyPrivacy(verification)}`,
     `Review before sharing: ${path.join(packageDir, "evidence-summary.md")}`,
     ...formatEvidenceVerifyHints(verification),
@@ -157,6 +159,12 @@ function formatEvidencePackContents(manifest: EvidencePackageManifest): string {
 
 function formatEvidencePackReviewSummary(manifest: EvidencePackageManifest): string {
   return formatEvidenceReviewSummary(manifest.reviewSummary);
+}
+
+function formatEvidenceReviewReadiness(readiness: EvidencePackageManifest["reviewReadiness"] | EvidencePackageVerification["reviewReadiness"]): string {
+  if (readiness.readyForReview) return "ready for review handoff";
+  const count = readiness.blockingHints.length;
+  return `not ready for review handoff (${count} blocker${count === 1 ? "" : "s"})`;
 }
 
 function formatEvidenceReviewSummary(summary: EvidencePackageManifest["reviewSummary"] | EvidencePackageVerification["reviewSummary"]): string {
