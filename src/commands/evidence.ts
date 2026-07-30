@@ -113,9 +113,30 @@ export function formatEvidenceVerifyOutput(verification: EvidencePackageVerifica
     `Files checked: ${verification.filesChecked}`,
     `Missing files: ${verification.missingFiles.length}`,
     `Changed files: ${verification.changedFiles.length}`,
+    `Privacy: ${formatEvidenceVerifyPrivacy(verification)}`,
+    ...formatEvidenceVerifyHints(verification),
     ...verification.missingFiles.slice(0, 5).map((file) => `  missing: ${file}`),
     ...verification.changedFiles.slice(0, 5).map((file) => `  changed: ${file}`)
   ].join("\n");
+}
+
+function formatEvidenceVerifyPrivacy(verification: EvidencePackageVerification): string {
+  return [
+    verification.privacy.screenshotsIncluded ? "screenshots included" : "no screenshots",
+    verification.privacy.reviewRequiredBeforeSharing ? "review before sharing required" : "sharing review not marked",
+    verification.privacy.warnings.length > 0
+      ? `${verification.privacy.warnings.length} privacy warning${verification.privacy.warnings.length === 1 ? "" : "s"}`
+      : "no privacy warnings"
+  ].join("; ");
+}
+
+function formatEvidenceVerifyHints(verification: EvidencePackageVerification): string[] {
+  if (verification.reviewHints.length === 0) return ["Review hints: none"];
+  return [
+    `Review hints: ${verification.reviewHints.length}`,
+    ...verification.reviewHints.slice(0, 3).map((hint) => `  - ${hint}`),
+    ...(verification.reviewHints.length > 3 ? [`  - ${verification.reviewHints.length - 3} more hint${verification.reviewHints.length - 3 === 1 ? "" : "s"} in evidence-summary.md`] : [])
+  ];
 }
 
 function formatEvidencePackContents(manifest: EvidencePackageManifest): string {

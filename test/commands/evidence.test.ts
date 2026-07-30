@@ -99,17 +99,41 @@ test("formatEvidenceVerifyOutput summarizes valid and invalid packages", () => {
     valid: true,
     filesChecked: 2,
     missingFiles: [],
-    changedFiles: []
+    changedFiles: [],
+    reviewHints: [],
+    privacy: {
+      screenshotsIncluded: false,
+      reviewRequiredBeforeSharing: true,
+      warnings: []
+    }
   }, "/tmp/a11y-evidence"), /Evidence package verified: \/tmp\/a11y-evidence[\s\S]*Files checked: 2/);
 
   const invalid = formatEvidenceVerifyOutput({
     valid: false,
     filesChecked: 3,
     missingFiles: ["a11y-report.json"],
-    changedFiles: ["a11y-comment.md"]
+    changedFiles: ["a11y-comment.md"],
+    reviewHints: [
+      "Manual review is incomplete.",
+      "No keyboard evidence file was included.",
+      "No evaluation-scope.json was included.",
+      "Visual reports and screenshots were excluded."
+    ],
+    privacy: {
+      screenshotsIncluded: true,
+      reviewRequiredBeforeSharing: true,
+      warnings: [
+        "Review URLs, selectors, file paths, issue messages, and manual-review notes before sharing.",
+        "Screenshots may contain personal, account, payment, or other sensitive information."
+      ]
+    }
   }, "/tmp/a11y-evidence");
 
   assert.match(invalid, /verification failed/);
+  assert.match(invalid, /Privacy: screenshots included; review before sharing required; 2 privacy warnings/);
+  assert.match(invalid, /Review hints: 4/);
+  assert.match(invalid, /Manual review is incomplete/);
+  assert.match(invalid, /1 more hint in evidence-summary\.md/);
   assert.match(invalid, /missing: a11y-report\.json/);
   assert.match(invalid, /changed: a11y-comment\.md/);
 });

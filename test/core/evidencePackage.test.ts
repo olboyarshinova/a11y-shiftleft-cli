@@ -179,7 +179,9 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
     valid: true,
     filesChecked: manifest.files.length,
     missingFiles: [],
-    changedFiles: []
+    changedFiles: [],
+    reviewHints: manifest.reviewHints,
+    privacy: manifest.privacy
   });
 
   await fs.appendFile(path.join(outputDir, "a11y-comment.md"), "Changed\n");

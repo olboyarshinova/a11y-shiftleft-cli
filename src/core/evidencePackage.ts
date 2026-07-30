@@ -107,6 +107,8 @@ export interface EvidencePackageVerification {
   filesChecked: number;
   missingFiles: string[];
   changedFiles: string[];
+  reviewHints: string[];
+  privacy: EvidencePackageManifest["privacy"];
 }
 
 export async function createEvidencePackage(options: {
@@ -201,7 +203,9 @@ export async function verifyEvidencePackage(packageDir: string): Promise<Evidenc
     valid: missingFiles.length === 0 && changedFiles.length === 0,
     filesChecked: manifest.files.length,
     missingFiles,
-    changedFiles
+    changedFiles,
+    reviewHints: manifest.reviewHints,
+    privacy: manifest.privacy
   };
 }
 
