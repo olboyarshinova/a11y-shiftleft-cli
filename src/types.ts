@@ -829,6 +829,9 @@ export interface WcagCoverageCriterionSummary {
 
 export interface WcagCoverageSummary {
   label: string;
+  automatedCoverageLabel?: string;
+  assistedCoverageLabel?: string;
+  coverageNote?: string;
   targetVersion: WcagVersion;
   targetLevel: WcagLevel;
   totalCriteria: number;

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Clarified WCAG review coverage wording in visual, Markdown, and JSON reports
+  by separating automated evidence coverage from assisted review coverage and
+  documenting that assisted coverage is review planning, not conformance proof.
 - Added bounded hover/focus content inventory to exploration evidence, visual
   Audit Coverage, Markdown reports, and the manual checklist so tooltips,
   popovers, menus, disclosures, and described-by triggers are surfaced for WCAG

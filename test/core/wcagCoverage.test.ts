@@ -63,7 +63,10 @@ test("summarizeWcagCoverage separates automated, heuristic, and manual evidence"
     manualChecklist: manualChecklist(["3.3.3"])
   });
 
-  assert.equal(coverage.label, "Tracked WCAG evidence coverage");
+  assert.equal(coverage.label, "WCAG review coverage");
+  assert.equal(coverage.automatedCoverageLabel, "Automated evidence coverage");
+  assert.equal(coverage.assistedCoverageLabel, "Assisted review coverage");
+  assert.match(coverage.coverageNote || "", /does not prove conformance/);
   assert.equal(coverage.targetVersion, "2.2");
   assert.equal(coverage.targetLevel, "AA");
   assert.equal(coverage.totalCriteria > 0, true);

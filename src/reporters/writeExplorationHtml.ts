@@ -3039,9 +3039,10 @@ function renderWcagEvidenceGaps(coverage?: WcagCoverageSummary): string {
   if (visibleRows.length === 0) return "";
 
   const hiddenCount = rows.length - visibleRows.length;
+  const coverageNote = coverage.coverageNote || "This section shows automated evidence and manual-review prompts for WCAG review. Manual-review rows are checklist work, not proof of conformance.";
   return `<section class="panel panel-full-width wcag-gaps" aria-label="WCAG review coverage">
     <h2>WCAG Review Coverage</h2>
-    <p class="muted">This section shows automated evidence and manual-review prompts for WCAG review. Manual-review rows are checklist work, not proof of conformance.</p>
+    <p class="muted">${escapeHtml(coverageNote)}</p>
     <div class="wcag-gap-list">
       ${visibleRows.map(renderWcagEvidenceGapCard).join("\n")}
     </div>

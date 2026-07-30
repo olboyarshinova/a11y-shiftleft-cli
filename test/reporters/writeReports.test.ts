@@ -330,7 +330,10 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.equal(scope.evidence.lighthouseComparison, true);
   assert.equal(scope.reviewStatus.needsHumanEvaluation, true);
   assert.equal(json.summary.standard.id, "ada-title-ii");
-  assert.equal(json.summary.wcagCoverage.label, "Tracked WCAG evidence coverage");
+  assert.equal(json.summary.wcagCoverage.label, "WCAG review coverage");
+  assert.equal(json.summary.wcagCoverage.automatedCoverageLabel, "Automated evidence coverage");
+  assert.equal(json.summary.wcagCoverage.assistedCoverageLabel, "Assisted review coverage");
+  assert.match(json.summary.wcagCoverage.coverageNote, /does not prove conformance/);
   assert.equal(json.summary.wcagCoverage.targetVersion, "2.1");
   assert.equal(json.summary.wcagCoverage.targetLevel, "AA");
   assert.equal(json.summary.wcagCoverage.automatedCoverage > 0, true);
@@ -352,7 +355,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.doesNotMatch(markdown, /Tracked WCAG Coverage/);
   assert.doesNotMatch(markdown, /Tracked WCAG automated coverage/);
   assert.match(markdown, /## WCAG Review Coverage/);
-  assert.match(markdown, /Manual-review rows are checklist work, not proof of conformance/);
+  assert.match(markdown, /Assisted review coverage also counts heuristic evidence/);
   assert.match(markdown, /WCAG 4\.1\.2 Name, Role, Value.*automated.*1.*browser automation/s);
   assert.match(markdown, /not covered/);
   assert.match(markdown, /Average score \| 91/);

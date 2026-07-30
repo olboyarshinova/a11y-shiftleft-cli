@@ -1153,9 +1153,11 @@ function formatWcagEvidenceGaps(report: A11yReport): string {
   )).join("\n");
   const hiddenCount = rows.length - visibleRows.length;
 
+  const coverageNote = coverage.coverageNote || "This section shows automated evidence and manual-review prompts for WCAG review. Manual-review rows are checklist work, not proof of conformance.";
+
   return `## WCAG Review Coverage
 
-This section shows automated evidence and manual-review prompts for WCAG review. Manual-review rows are checklist work, not proof of conformance.
+${coverageNote}
 
 | Criterion | Level | Status | Findings | Evidence | Next step |
 |---|---|---|---:|---|---|

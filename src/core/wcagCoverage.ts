@@ -65,6 +65,8 @@ const KEYBOARD_CRITERIA = [
   "2.4.11"
 ];
 
+const WCAG_COVERAGE_NOTE = "Automated coverage counts criteria with installed browser, source, or keyboard evidence. Assisted review coverage also counts heuristic evidence and generated manual-review prompts; it supports review planning but does not prove conformance.";
+
 export function summarizeWcagCoverage(options: WcagCoverageOptions): WcagCoverageSummary {
   const targetVersion = options.targetVersion || "2.2";
   const targetLevel = options.targetLevel || "AA";
@@ -101,7 +103,10 @@ export function summarizeWcagCoverage(options: WcagCoverageOptions): WcagCoverag
   const totalCriteria = criteria.length;
 
   return {
-    label: "Tracked WCAG evidence coverage",
+    label: "WCAG review coverage",
+    automatedCoverageLabel: "Automated evidence coverage",
+    assistedCoverageLabel: "Assisted review coverage",
+    coverageNote: WCAG_COVERAGE_NOTE,
     targetVersion,
     targetLevel,
     totalCriteria,

@@ -2200,7 +2200,10 @@ test("writeExplorationHtml can create a unified audit report", async () => {
       durationMs: 1500
     }],
     wcagCoverage: {
-      label: "Tracked WCAG evidence coverage",
+      label: "WCAG review coverage",
+      automatedCoverageLabel: "Automated evidence coverage",
+      assistedCoverageLabel: "Assisted review coverage",
+      coverageNote: "Automated coverage counts criteria with installed evidence. Assisted review coverage also counts generated manual-review prompts; it supports review planning but does not prove conformance.",
       targetVersion: "2.2",
       targetLevel: "AA",
       totalCriteria: 2,
@@ -2321,7 +2324,7 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.doesNotMatch(html, /not a WCAG conformance score/);
   assert.match(html, /WCAG Review Coverage/);
   assert.match(html, /aria-label="WCAG review coverage"/);
-  assert.match(html, /Manual-review rows are checklist work, not proof of conformance/);
+  assert.match(html, /Assisted review coverage also counts generated manual-review prompts/);
   assert.match(html, /WCAG 4\.1\.2 Name, Role, Value/);
   assert.match(html, /data-status="automated"/);
   assert.match(html, /browser automation; axe/);
