@@ -9,6 +9,8 @@
   machine-readable evidence exports.
 - Added critical journey counts and journey finding totals to local evidence
   package manifests and Markdown summaries.
+- Added a terminal review summary to `evidence pack` output so manual-review and
+  journey evidence are visible before opening the package files.
 - Clarified WCAG review coverage wording in visual, Markdown, and JSON reports
   by separating automated evidence coverage from assisted review coverage and
   documenting that assisted coverage is review planning, not conformance proof.

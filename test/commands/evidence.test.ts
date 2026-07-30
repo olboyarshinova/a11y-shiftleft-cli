@@ -44,6 +44,7 @@ test("formatEvidencePackOutput includes review hints for evidence packages", () 
 
   assert.match(output, /Created local evidence package with 1 file/);
   assert.match(output, /Contents: reports=1 exports=0 manual=0 keyboard=0 dashboard=0 visual=0 screenshots=0/);
+  assert.match(output, /Review summary: none included/);
   assert.match(output, /Review before sharing: \/tmp\/a11y-evidence\/evidence-summary\.md/);
   assert.match(output, /Machine-readable manifest: \/tmp\/a11y-evidence\/evidence-manifest\.json/);
   assert.match(output, /Review hints: 4/);
@@ -69,6 +70,28 @@ test("formatEvidencePackOutput shows when no review hints remain", () => {
 
   assert.match(output, /Review hints: none/);
   assert.match(output, /Contents: reports=2 exports=1 manual=1 keyboard=1 dashboard=1 visual=2 screenshots=3/);
+});
+
+test("formatEvidencePackOutput summarizes manual review and journey evidence", () => {
+  const output = formatEvidencePackOutput(evidenceManifest({
+    reviewSummary: {
+      manualReviewItems: 5,
+      manualReviewCompleted: 3,
+      manualStepRecords: 4,
+      manualStepsCompleted: 2,
+      manualTaskEvidenceAttachments: 1,
+      manualRedactedTaskEvidence: 1,
+      manualTemporaryAcceptances: 0,
+      manualTemporaryAcceptancesExpiringSoon: 0,
+      criticalJourneys: 1,
+      journeyFindings: 3,
+      journeyCritical: 1,
+      journeyWarning: 2,
+      journeyInfo: 0
+    }
+  }), "/tmp/a11y-evidence");
+
+  assert.match(output, /Review summary: manual 3\/5 completed; steps 2\/4 reviewed; journeys 1 tracked; 3 journey findings; 1 critical, 2 warning, 0 info/);
 });
 
 test("formatEvidenceVerifyOutput summarizes valid and invalid packages", () => {

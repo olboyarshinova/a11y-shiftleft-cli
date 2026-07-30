@@ -98,6 +98,7 @@ export function formatEvidencePackOutput(manifest: EvidencePackageManifest, outp
   return [
     `Created local evidence package with ${manifest.files.length} file${manifest.files.length === 1 ? "" : "s"}: ${outputDir}`,
     `Contents: ${formatEvidencePackContents(manifest)}`,
+    `Review summary: ${formatEvidencePackReviewSummary(manifest)}`,
     `Review before sharing: ${path.join(outputDir, "evidence-summary.md")}`,
     `Machine-readable manifest: ${path.join(outputDir, "evidence-manifest.json")}`,
     ...hints
@@ -128,6 +129,24 @@ function formatEvidencePackContents(manifest: EvidencePackageManifest): string {
     `visual=${content.visualReports}`,
     `screenshots=${content.screenshots}`
   ].join(" ");
+}
+
+function formatEvidencePackReviewSummary(manifest: EvidencePackageManifest): string {
+  const summary = manifest.reviewSummary;
+  if (!summary) return "none included";
+
+  const parts = [
+    `manual ${summary.manualReviewCompleted}/${summary.manualReviewItems} completed`,
+    `steps ${summary.manualStepsCompleted}/${summary.manualStepRecords} reviewed`,
+    `journeys ${summary.criticalJourneys} tracked`,
+    `${summary.journeyFindings} journey finding${summary.journeyFindings === 1 ? "" : "s"}`
+  ];
+
+  if (summary.journeyFindings > 0) {
+    parts.push(`${summary.journeyCritical} critical, ${summary.journeyWarning} warning, ${summary.journeyInfo} info`);
+  }
+
+  return parts.join("; ");
 }
 
 export function formatEvidenceExportOutput(evidence: EvidenceExport, outputPath: string): string {
