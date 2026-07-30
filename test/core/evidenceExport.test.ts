@@ -34,6 +34,7 @@ test("createEvidenceExport normalizes findings into portable evidence records", 
   assert.deepEqual(evidence.summary.byCategory, { semantics: 1, contrast: 1 });
   assert.deepEqual(evidence.summary.byConfidence, { high: 1, medium: 1 });
   assert.deepEqual(evidence.summary.byFindingType, { wcag: 1, "needs-review": 1 });
+  assert.deepEqual(evidence.summary.byJourney, { Checkout: 1 });
   assert.deepEqual(evidence.summary.byUrl, { "https://example.test": 1 });
   assert.deepEqual(evidence.summary.byWcagCriterion, { "4.1.2": 1 });
   assert.deepEqual(evidence.summary.byWcagLevel, { A: 1 });
@@ -45,6 +46,7 @@ test("createEvidenceExport normalizes findings into portable evidence records", 
   assert.equal(evidence.records[0]?.duplicateCount, 2);
   assert.equal(evidence.records[0]?.baselineStatus, "new");
   assert.equal(evidence.records[0]?.retestStatus, "remaining");
+  assert.deepEqual(evidence.records[0]?.journeys, ["Checkout"]);
   assert.deepEqual(evidence.records[0]?.remediation?.howToFix, ["Add accessible text."]);
 });
 
@@ -65,6 +67,7 @@ test("serializeEvidenceExport supports JSON, JSONL, and JSON-LD", () => {
   assert.equal(JSON.parse(lines[0]).duplicateCount, 2);
   assert.equal(JSON.parse(lines[0]).baselineStatus, "new");
   assert.equal(JSON.parse(lines[0]).retestStatus, "remaining");
+  assert.deepEqual(JSON.parse(lines[0]).journeys, ["Checkout"]);
   const linkedData = JSON.parse(jsonld);
   assert.equal(linkedData["@type"], "schema:Dataset");
   assert.equal(linkedData["schema:identifier"], "a11y-shiftleft-evidence-v1");
@@ -74,6 +77,7 @@ test("serializeEvidenceExport supports JSON, JSONL, and JSON-LD", () => {
   assert.equal(linkedData["a11y:review"].journeys[0].name, "Checkout");
   assert.equal(linkedData["a11y:summary"].baselineNew, 1);
   assert.equal(linkedData["a11y:summary"].retestRemaining, 1);
+  assert.deepEqual(linkedData["a11y:summary"].byJourney, { Checkout: 1 });
   assert.deepEqual(linkedData["a11y:summary"].byCategory, { semantics: 1, contrast: 1 });
   assert.deepEqual(linkedData["a11y:summary"].byWcagCriterion, { "4.1.2": 1 });
   assert.equal(linkedData["earl:assertions"].length, 2);
@@ -82,6 +86,7 @@ test("serializeEvidenceExport supports JSON, JSONL, and JSON-LD", () => {
   assert.equal(linkedData["earl:assertions"][0]["earl:result"]["a11y:duplicateCount"], 2);
   assert.equal(linkedData["earl:assertions"][0]["earl:result"]["a11y:baselineStatus"], "new");
   assert.equal(linkedData["earl:assertions"][0]["earl:result"]["a11y:retestStatus"], "remaining");
+  assert.deepEqual(linkedData["earl:assertions"][0]["earl:result"]["a11y:journeys"], ["Checkout"]);
   assert.equal(linkedData["earl:assertions"][1]["earl:result"]["earl:outcome"], "earl:cantTell");
 });
 
@@ -228,7 +233,8 @@ function report(): A11yReport {
         fingerprint: "button-name::.icon-button",
         duplicateCount: 2,
         baselineStatus: "new",
-        retestStatus: "remaining"
+        retestStatus: "remaining",
+        journeys: ["Checkout"]
       },
       {
         source: "axe",

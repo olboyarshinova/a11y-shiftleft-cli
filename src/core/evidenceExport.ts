@@ -23,6 +23,7 @@ export interface EvidenceExportRecord {
   duplicateCount: number;
   baselineStatus?: "new" | "existing";
   retestStatus?: "new" | "remaining";
+  journeys?: string[];
   wcag: Array<{
     id: string;
     title?: string;
@@ -138,6 +139,7 @@ export interface EvidenceExport {
     byCategory: Record<string, number>;
     byConfidence: Record<string, number>;
     byFindingType: Record<string, number>;
+    byJourney: Record<string, number>;
     byUrl: Record<string, number>;
     byWcagCriterion: Record<string, number>;
     byWcagLevel: Record<string, number>;
@@ -181,6 +183,7 @@ export function createEvidenceExport(report: A11yReport, generatedAt = new Date(
       byCategory: countBy(records, (record) => record.category),
       byConfidence: countBy(records, (record) => record.confidence?.level),
       byFindingType: countBy(records, (record) => record.findingType),
+      byJourney: countMany(records, (record) => record.journeys || []),
       byUrl: countBy(records, (record) => record.url),
       byWcagCriterion: countWcag(records, (criterion) => criterion.id),
       byWcagLevel: countWcag(records, (criterion) => criterion.level)
@@ -262,6 +265,7 @@ function toJsonLdEvidenceExport(evidence: EvidenceExport) {
         "a11y:duplicateCount": record.duplicateCount,
         "a11y:baselineStatus": record.baselineStatus,
         "a11y:retestStatus": record.retestStatus,
+        "a11y:journeys": record.journeys,
         "a11y:confidence": record.confidence,
         "schema:description": record.message
       },
@@ -351,6 +355,7 @@ function toEvidenceRecord(issue: DedupedIssue): EvidenceExportRecord {
     duplicateCount: issue.duplicateCount,
     baselineStatus: issue.baselineStatus,
     retestStatus: issue.retestStatus,
+    journeys: issue.journeys,
     wcag: issue.wcagCriteria.length > 0
       ? issue.wcagCriteria.map(toWcagEvidence)
       : issue.wcag.map((id) => ({ id })),
@@ -384,6 +389,15 @@ function countBy(records: EvidenceExportRecord[], getKey: (record: EvidenceExpor
     if (!key) return counts;
     counts[key] = (counts[key] || 0) + 1;
     return counts;
+  }, {});
+}
+
+function countMany(records: EvidenceExportRecord[], getKeys: (record: EvidenceExportRecord) => string[]): Record<string, number> {
+  return records.reduce<Record<string, number>>((acc, record) => {
+    for (const key of getKeys(record)) {
+      acc[key] = (acc[key] || 0) + 1;
+    }
+    return acc;
   }, {});
 }
 

@@ -46,6 +46,11 @@ evidence counts, temporary acceptances, and journey impact totals. This keeps
 manual validation work visible next to automated findings without exporting
 screenshots or raw HTML.
 
+Finding records also keep their linked critical journeys when the source report
+includes planned-scope mapping. Use `summary.byJourney` or each record's
+`journeys` array to build task-focused validation datasets without parsing the
+visual report.
+
 Evidence packages include `dashboard.json` when it exists so trend and
 manual-review deltas can travel with the audit evidence. Dashboard HTML and PDF
 are included only when visual evidence is explicitly requested, because those
