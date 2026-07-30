@@ -208,7 +208,7 @@ test("formatEvidenceExportOutput includes manual review and journey summaries wh
   const output = formatEvidenceExportOutput(evidence, "/tmp/evidence.json");
 
   assert.match(output, /Manual review: 1 pass, 1 fail, 1 not reviewed, 2 targets/);
-  assert.match(output, /Journeys: 1 tracked, 2 findings/);
+  assert.match(output, /Journeys: 1 tracked, 2 findings \(1 critical, 1 warning, 0 info\)/);
   assert.match(output, /Top journey: Checkout \(2\)/);
 });
 

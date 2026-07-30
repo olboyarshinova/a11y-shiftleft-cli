@@ -196,6 +196,9 @@ function formatEvidenceReviewLines(evidence: EvidenceExport): string[] {
   const manual = evidence.review?.manualChecklist;
   const journeys = evidence.review?.journeys || [];
   const journeyFindings = journeys.reduce((sum, journey) => sum + journey.findingCount, 0);
+  const journeyCritical = journeys.reduce((sum, journey) => sum + journey.critical, 0);
+  const journeyWarning = journeys.reduce((sum, journey) => sum + journey.warning, 0);
+  const journeyInfo = journeys.reduce((sum, journey) => sum + journey.info, 0);
   if (!manual && journeys.length === 0) return [];
 
   return [
@@ -203,7 +206,7 @@ function formatEvidenceReviewLines(evidence: EvidenceExport): string[] {
       ? `Manual review: ${manual.pass} pass, ${manual.fail} fail, ${manual.notReviewed} not reviewed, ${manual.targetCount} target${manual.targetCount === 1 ? "" : "s"}`
       : "Manual review: not included",
     journeys.length > 0
-      ? `Journeys: ${journeys.length} tracked, ${journeyFindings} finding${journeyFindings === 1 ? "" : "s"}`
+      ? `Journeys: ${journeys.length} tracked, ${journeyFindings} finding${journeyFindings === 1 ? "" : "s"} (${journeyCritical} critical, ${journeyWarning} warning, ${journeyInfo} info)`
       : "Journeys: none"
   ];
 }
