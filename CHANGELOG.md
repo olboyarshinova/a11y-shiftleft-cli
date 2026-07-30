@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added draft v1.0.0 release notes to define the stable command surface,
+  release validation checklist, privacy expectations, and non-certification
+  boundaries before the 1.0 release.
 - Added a compact Journey Review Queue to visual and Markdown reports so
   planned critical journeys are connected to finding counts and manual task
   review next steps.
