@@ -246,7 +246,9 @@ async function refreshVisualHtmlReport(options: {
     lighthouse: options.report.lighthouse,
     ignore: options.report.summary.ignore,
     retention: options.report.summary.retention,
-    wcagCoverage: options.report.summary.wcagCoverage
+    wcagCoverage: options.report.summary.wcagCoverage,
+    plannedScope: options.report.summary.plannedScope,
+    journeyImpact: options.report.summary.journeyImpact
   });
 
   return {

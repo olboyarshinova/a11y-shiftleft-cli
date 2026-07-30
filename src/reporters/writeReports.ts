@@ -12,7 +12,7 @@ import { summarizeRootCauses } from "../core/rootCauses.js";
 import { summarizeSampleComparison } from "../core/sampleComparison.js";
 import { applyUserImpact, countUserImpact } from "../core/userImpact.js";
 import { summarizeWcagCoverage } from "../core/wcagCoverage.js";
-import type { A11yReport, ComplianceEvidenceSummary, ComplianceStandardMetadata, DedupedIssue, Framework, LighthouseAuditResult, LighthouseReportSummary, PageSummary, RemediationHint, ReportFormat, ReportMetrics, ReportSummary, RootCauseGroup, Severity, WcagCoverageCriterionSummary, WcagCoverageStatus } from "../types.js";
+import type { A11yReport, ComplianceEvidenceSummary, ComplianceStandardMetadata, DedupedIssue, Framework, JourneyImpactSummary, LighthouseAuditResult, LighthouseReportSummary, PageSummary, RemediationHint, ReportFormat, ReportMetrics, ReportSummary, RootCauseGroup, Severity, WcagCoverageCriterionSummary, WcagCoverageStatus } from "../types.js";
 
 interface WriteReportOptions {
   formats?: ReportFormat[];
@@ -939,7 +939,7 @@ function formatPlannedScope(summary: ReportSummary): string {
   if (!scope) return "";
   const product = `${scope.product.name ? `${scope.product.name} - ` : ""}${scope.product.type}`;
   const journeyRows = (summary.journeyImpact || [])
-    .map((journey) => `| ${markdownCell(journey.name)} | ${journey.findingCount} | ${journey.critical} | ${journey.warning} | ${journey.info} | ${markdownCell(journey.urls.join(", "))} |`)
+    .map((journey) => `| ${markdownCell(journey.name)} | ${journey.findingCount} | ${journey.critical} | ${journey.warning} | ${journey.info} | ${markdownCell(journey.urls.join(", "))} | ${markdownCell(markdownJourneyNextStep(journey))} |`)
     .join("\n");
   return `## Planned Scope
 
@@ -959,11 +959,20 @@ function formatPlannedScope(summary: ReportSummary): string {
 
 ${formatRepresentativeSample(scope)}
 ${formatSampleComparison(summary.sampleComparison)}
-${journeyRows ? `### Journey Impact
+${journeyRows ? `### Journey Review Queue
 
-| Journey | Findings | Critical | Warning | Info | URLs |
-|---|---:|---:|---:|---:|---|
+Critical journeys connect findings to real user tasks. Review each row manually and record pass, fail, blockers, missing states, and evidence links in the manual checklist.
+
+| Journey | Findings | Critical | Warning | Info | URLs | Next step |
+|---|---:|---:|---:|---:|---|---|
 ${journeyRows}` : ""}`;
+}
+
+function markdownJourneyNextStep(journey: JourneyImpactSummary): string {
+  if (journey.critical > 0) return "Review this task first and create remediation tickets for blocking issues.";
+  if (journey.warning > 0) return "Review the task flow with keyboard and assistive technology.";
+  if (journey.info > 0) return "Check advisory findings during the next manual task review.";
+  return "Run the task manually and record outcome evidence.";
 }
 
 function formatSampleComparison(comparison: ReportSummary["sampleComparison"]): string {

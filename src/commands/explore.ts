@@ -392,7 +392,9 @@ export function registerExploreCommand(program: Command): void {
       if (options.html !== false) {
         await writeExplorationHtml(effectiveConfig.outputDir, exploration.graph, report.issues, {
           retention: retentionSummary.enabled ? retentionSummary : undefined,
-          wcagCoverage: report.summary.wcagCoverage
+          wcagCoverage: report.summary.wcagCoverage,
+          plannedScope: report.summary.plannedScope,
+          journeyImpact: report.summary.journeyImpact
         });
       }
       if (options.pdf) {

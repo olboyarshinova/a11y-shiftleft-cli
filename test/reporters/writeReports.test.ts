@@ -423,8 +423,9 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /### Structured vs Random Sample/);
   assert.match(markdown, /Random sample pages \| 1/);
   assert.match(markdown, /Critical journeys \| 1/);
-  assert.match(markdown, /### Journey Impact/);
+  assert.match(markdown, /### Journey Review Queue/);
   assert.match(markdown, /Account settings \| 2 \| 1 \| 1 \| 0/);
+  assert.match(markdown, /Review this task first and create remediation tickets for blocking issues/);
   assert.match(markdown, /Compliance Note/);
   assert.match(markdown, /Compliance Evidence Summary/);
   assert.match(markdown, /WCAG-mapped findings \| 2/);

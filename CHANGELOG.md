@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added a compact Journey Review Queue to visual and Markdown reports so
+  planned critical journeys are connected to finding counts and manual task
+  review next steps.
 - Clarified WCAG review coverage wording in visual, Markdown, and JSON reports
   by separating automated evidence coverage from assisted review coverage and
   documenting that assisted coverage is review planning, not conformance proof.

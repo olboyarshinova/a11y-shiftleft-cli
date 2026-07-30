@@ -2199,6 +2199,39 @@ test("writeExplorationHtml can create a unified audit report", async () => {
       notApplicableAudits: 3,
       durationMs: 1500
     }],
+    plannedScope: {
+      version: 1,
+      generatedAt: "2026-06-21T00:00:00.000Z",
+      product: {
+        name: "Demo Shop",
+        type: "ecommerce",
+        languages: ["en"]
+      },
+      target: {
+        standard: "wcag22-aa",
+        urls: ["http://localhost:3000"]
+      },
+      supportedPlatforms: ["Desktop Chrome"],
+      assistiveTechnologies: ["Keyboard only"],
+      representativeSample: [],
+      randomSample: [],
+      criticalJourneys: [{
+        name: "Checkout",
+        urls: ["http://localhost:3000"],
+        description: "Complete checkout without mouse input."
+      }],
+      thirdPartyContent: [],
+      exclusions: [],
+      notes: []
+    },
+    journeyImpact: [{
+      name: "Checkout",
+      urls: ["http://localhost:3000"],
+      findingCount: 1,
+      critical: 1,
+      warning: 0,
+      info: 0
+    }],
     wcagCoverage: {
       label: "WCAG review coverage",
       automatedCoverageLabel: "Automated evidence coverage",
@@ -2253,6 +2286,10 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /npx a11y-shiftleft-cli share prepare --report reports --out a11y-share --include-html/);
   assert.match(html, /share-report\.html/);
   assert.match(html, /share-summary\.md/);
+  assert.match(html, /Journey Review Queue/);
+  assert.match(html, /Complete checkout without mouse input/);
+  assert.match(html, /1 critical/);
+  assert.match(html, /Review this task first/);
   assert.match(html, /Add <code>--include-html<\/code> only when screenshots are approved for sharing/);
   assert.match(html, /Lighthouse comparison/);
   assert.doesNotMatch(html, /Quick Review/);

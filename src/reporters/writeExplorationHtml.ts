@@ -5,7 +5,7 @@ import { compareLighthouseWithFindings } from "../core/lighthouseComparison.js";
 import { summarizeManualReviewRecords } from "../core/manualChecklist.js";
 import { formatReportDateUtc } from "../core/reportDate.js";
 import { getRemediationHint } from "../core/remediation.js";
-import type { DedupedIssue, ElementBounds, ExplorationGraph, ExplorationState, ExploreSkippedAction, IgnoreSummary, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, RemediationHint, ReportRetentionEvidence, Severity, WcagCoverageCriterionSummary, WcagCoverageStatus, WcagCoverageSummary } from "../types.js";
+import type { DedupedIssue, ElementBounds, ExplorationGraph, ExplorationState, ExploreSkippedAction, IgnoreSummary, JourneyImpactSummary, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, PlannedEvaluationScope, RemediationHint, ReportRetentionEvidence, Severity, WcagCoverageCriterionSummary, WcagCoverageStatus, WcagCoverageSummary } from "../types.js";
 
 interface StateViewModel extends ExplorationState {
   issues: DedupedIssue[];
@@ -22,6 +22,8 @@ interface ExplorationHtmlOptions {
   ignore?: IgnoreSummary;
   retention?: ReportRetentionEvidence;
   wcagCoverage?: WcagCoverageSummary;
+  plannedScope?: PlannedEvaluationScope;
+  journeyImpact?: JourneyImpactSummary[];
 }
 
 interface CoverageMatrixRow {
@@ -704,6 +706,54 @@ export function renderExplorationHtml(
     .manual-review-metric strong {
       color: var(--text);
       font-size: 13px;
+    }
+
+    .journey-review-table {
+      border: 1px solid var(--line);
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    .journey-review-table th,
+    .journey-review-table td {
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .journey-review-table th {
+      background: #f8fafc;
+      font-size: 12px;
+    }
+
+    .journey-review-table .journey-counts {
+      white-space: nowrap;
+    }
+
+    .journey-review-table .journey-urls {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .severity-critical {
+      color: #d0001b;
+      font-weight: 700;
+    }
+
+    .severity-warning {
+      color: #c2410c;
+      font-weight: 700;
+    }
+
+    .severity-info {
+      color: var(--info);
+      font-weight: 700;
+    }
+
+    .severity-ok {
+      color: var(--ok);
+      font-weight: 700;
     }
 
     .manual-checklist-item {
@@ -2271,6 +2321,8 @@ export function renderExplorationHtml(
 
     ${renderCoverageMatrix(graph, options, reportIssues)}
 
+    ${renderJourneyReviewQueue(options.plannedScope, options.journeyImpact, reportIssues)}
+
     ${renderWcagEvidenceGaps(options.wcagCoverage)}
 
     ${renderIgnoreCleanup(options.ignore)}
@@ -3063,6 +3115,103 @@ function renderWcagEvidenceGapCard(criterion: WcagCoverageCriterionSummary): str
     </div>
     <p>${escapeHtml(criterion.nextStep)}</p>
   </article>`;
+}
+
+function renderJourneyReviewQueue(
+  plannedScope: PlannedEvaluationScope | undefined,
+  journeyImpact: JourneyImpactSummary[] | undefined,
+  issues: DedupedIssue[]
+): string {
+  const rows = buildJourneyReviewRows(plannedScope, journeyImpact, issues);
+  if (rows.length === 0) return "";
+
+  return `<section class="panel panel-full-width journey-review" aria-label="Journey review queue">
+    <h2>Journey Review Queue</h2>
+    <p class="muted">Critical journeys connect findings to real user tasks. Review each row manually, especially when keyboard, screen reader, authentication, checkout, or account-change behavior is part of the task.</p>
+    <table class="journey-review-table" aria-label="Critical journey review queue">
+      <thead><tr><th scope="col">Journey</th><th scope="col">Findings</th><th scope="col">URLs</th><th scope="col">Next step</th></tr></thead>
+      <tbody>${rows.map((row) => `<tr>
+        <th scope="row">${escapeHtml(row.name)}${row.description ? `<br><span class="muted">${escapeHtml(row.description)}</span>` : ""}</th>
+        <td class="journey-counts">${formatJourneyCounts(row)}</td>
+        <td class="journey-urls">${row.urls.length > 0 ? row.urls.map((url) => `<div>${escapeHtml(url)}</div>`).join("") : "URLs inferred from findings"}</td>
+        <td>${escapeHtml(journeyNextStep(row))}</td>
+      </tr>`).join("")}</tbody>
+    </table>
+  </section>`;
+}
+
+interface JourneyReviewRow extends JourneyImpactSummary {
+  description?: string;
+  notes?: string;
+}
+
+function buildJourneyReviewRows(
+  plannedScope: PlannedEvaluationScope | undefined,
+  journeyImpact: JourneyImpactSummary[] | undefined,
+  issues: DedupedIssue[]
+): JourneyReviewRow[] {
+  const byName = new Map<string, JourneyReviewRow>();
+
+  for (const journey of plannedScope?.criticalJourneys || []) {
+    byName.set(journey.name, {
+      name: journey.name,
+      urls: journey.urls,
+      findingCount: 0,
+      critical: 0,
+      warning: 0,
+      info: 0,
+      description: journey.description,
+      notes: journey.notes
+    });
+  }
+
+  for (const summary of journeyImpact || []) {
+    const existing = byName.get(summary.name);
+    byName.set(summary.name, {
+      ...existing,
+      ...summary,
+      description: existing?.description,
+      notes: existing?.notes
+    });
+  }
+
+  for (const issue of issues) {
+    for (const journeyName of issue.journeys || []) {
+      if (byName.has(journeyName)) continue;
+      const journeyIssues = issues.filter((candidate) => candidate.journeys?.includes(journeyName));
+      byName.set(journeyName, {
+        name: journeyName,
+        urls: [...new Set(journeyIssues.map((candidate) => candidate.url).filter((url): url is string => Boolean(url)))],
+        findingCount: journeyIssues.length,
+        critical: journeyIssues.filter((candidate) => candidate.severity === "critical").length,
+        warning: journeyIssues.filter((candidate) => candidate.severity === "warning").length,
+        info: journeyIssues.filter((candidate) => candidate.severity === "info").length
+      });
+    }
+  }
+
+  return [...byName.values()].sort((left, right) => (
+    right.critical - left.critical
+    || right.warning - left.warning
+    || right.info - left.info
+    || left.name.localeCompare(right.name)
+  ));
+}
+
+function formatJourneyCounts(row: JourneyReviewRow): string {
+  if (row.findingCount === 0) return `<span class="severity-ok">0 findings</span>`;
+  return [
+    row.critical > 0 ? `<span class="severity-critical">${row.critical} critical</span>` : "",
+    row.warning > 0 ? `<span class="severity-warning">${row.warning} warning</span>` : "",
+    row.info > 0 ? `<span class="severity-info">${row.info} info</span>` : ""
+  ].filter(Boolean).join("<br>");
+}
+
+function journeyNextStep(row: JourneyReviewRow): string {
+  if (row.critical > 0) return "Review this task first, confirm whether users can complete it, and create remediation tickets for blocking issues.";
+  if (row.warning > 0) return "Review the task flow with keyboard and assistive technology, then prioritize repeated or cross-page patterns.";
+  if (row.info > 0) return "Check advisory findings during the next manual task review.";
+  return "Run the task manually and record pass, fail, blockers, missing states, and evidence links in the checklist.";
 }
 
 function compareWcagCoverageRows(
