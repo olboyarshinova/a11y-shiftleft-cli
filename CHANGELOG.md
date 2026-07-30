@@ -19,6 +19,7 @@
   when journey-linked findings are available.
 - Added critical, warning, and info counts to the `evidence export` journey
   terminal summary.
+- Added the `evidence-summary.md` review path to `evidence verify` output.
 - Clarified WCAG review coverage wording in visual, Markdown, and JSON reports
   by separating automated evidence coverage from assisted review coverage and
   documenting that assisted coverage is review planning, not conformance proof.

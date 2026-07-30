@@ -155,6 +155,7 @@ test("formatEvidenceVerifyOutput summarizes valid and invalid packages", () => {
   assert.match(invalid, /verification failed/);
   assert.match(invalid, /Review summary: manual 3\/5 completed; steps 2\/4 reviewed; journeys 1 tracked; 3 journey findings; 1 critical, 2 warning, 0 info/);
   assert.match(invalid, /Privacy: screenshots included; review before sharing required; 2 privacy warnings/);
+  assert.match(invalid, /Review before sharing: \/tmp\/a11y-evidence\/evidence-summary\.md/);
   assert.match(invalid, /Review hints: 4/);
   assert.match(invalid, /Manual review is incomplete/);
   assert.match(invalid, /1 more hint in evidence-summary\.md/);

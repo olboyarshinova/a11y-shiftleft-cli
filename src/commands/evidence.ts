@@ -116,6 +116,7 @@ export function formatEvidenceVerifyOutput(verification: EvidencePackageVerifica
     `Changed files: ${verification.changedFiles.length}`,
     `Review summary: ${formatEvidenceReviewSummary(verification.reviewSummary)}`,
     `Privacy: ${formatEvidenceVerifyPrivacy(verification)}`,
+    `Review before sharing: ${path.join(packageDir, "evidence-summary.md")}`,
     ...formatEvidenceVerifyHints(verification),
     ...verification.missingFiles.slice(0, 5).map((file) => `  missing: ${file}`),
     ...verification.changedFiles.slice(0, 5).map((file) => `  changed: ${file}`)
