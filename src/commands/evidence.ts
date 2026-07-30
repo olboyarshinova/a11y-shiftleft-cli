@@ -114,6 +114,7 @@ export function formatEvidenceVerifyOutput(verification: EvidencePackageVerifica
     `Files checked: ${verification.filesChecked}`,
     `Missing files: ${verification.missingFiles.length}`,
     `Changed files: ${verification.changedFiles.length}`,
+    `Review summary: ${formatEvidenceReviewSummary(verification.reviewSummary)}`,
     `Privacy: ${formatEvidenceVerifyPrivacy(verification)}`,
     ...formatEvidenceVerifyHints(verification),
     ...verification.missingFiles.slice(0, 5).map((file) => `  missing: ${file}`),
@@ -154,7 +155,10 @@ function formatEvidencePackContents(manifest: EvidencePackageManifest): string {
 }
 
 function formatEvidencePackReviewSummary(manifest: EvidencePackageManifest): string {
-  const summary = manifest.reviewSummary;
+  return formatEvidenceReviewSummary(manifest.reviewSummary);
+}
+
+function formatEvidenceReviewSummary(summary: EvidencePackageManifest["reviewSummary"] | EvidencePackageVerification["reviewSummary"]): string {
   if (!summary) return "none included";
 
   const parts = [

@@ -180,6 +180,7 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
     filesChecked: manifest.files.length,
     missingFiles: [],
     changedFiles: [],
+    reviewSummary: manifest.reviewSummary,
     reviewHints: manifest.reviewHints,
     privacy: manifest.privacy
   });

@@ -75,9 +75,9 @@ npx a11y-shiftleft-cli evidence verify --package a11y-evidence
 ```
 
 The command exits with a non-zero status when a packaged file is missing or has
-changed after the manifest was generated. It also repeats the package privacy
-summary and review hints so checksum verification and sharing review stay in
-the same terminal workflow.
+changed after the manifest was generated. It also repeats the package
+manual-review summary, journey summary, privacy summary, and review hints so
+checksum verification and sharing review stay in the same terminal workflow.
 
 When writing to `--out`, the command prints a compact run summary with severity
 counts, finding types, the most affected URL, and the most common WCAG criterion.

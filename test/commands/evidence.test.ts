@@ -107,6 +107,7 @@ test("formatEvidenceVerifyOutput summarizes valid and invalid packages", () => {
     filesChecked: 2,
     missingFiles: [],
     changedFiles: [],
+    reviewSummary: undefined,
     reviewHints: [],
     privacy: {
       screenshotsIncluded: false,
@@ -120,6 +121,21 @@ test("formatEvidenceVerifyOutput summarizes valid and invalid packages", () => {
     filesChecked: 3,
     missingFiles: ["a11y-report.json"],
     changedFiles: ["a11y-comment.md"],
+    reviewSummary: {
+      manualReviewItems: 5,
+      manualReviewCompleted: 3,
+      manualStepRecords: 4,
+      manualStepsCompleted: 2,
+      manualTaskEvidenceAttachments: 1,
+      manualRedactedTaskEvidence: 1,
+      manualTemporaryAcceptances: 0,
+      manualTemporaryAcceptancesExpiringSoon: 0,
+      criticalJourneys: 1,
+      journeyFindings: 3,
+      journeyCritical: 1,
+      journeyWarning: 2,
+      journeyInfo: 0
+    },
     reviewHints: [
       "Manual review is incomplete.",
       "No keyboard evidence file was included.",
@@ -137,6 +153,7 @@ test("formatEvidenceVerifyOutput summarizes valid and invalid packages", () => {
   }, "/tmp/a11y-evidence");
 
   assert.match(invalid, /verification failed/);
+  assert.match(invalid, /Review summary: manual 3\/5 completed; steps 2\/4 reviewed; journeys 1 tracked; 3 journey findings; 1 critical, 2 warning, 0 info/);
   assert.match(invalid, /Privacy: screenshots included; review before sharing required; 2 privacy warnings/);
   assert.match(invalid, /Review hints: 4/);
   assert.match(invalid, /Manual review is incomplete/);
