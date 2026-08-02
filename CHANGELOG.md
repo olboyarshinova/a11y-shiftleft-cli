@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.9.1 - 2026-08-02
+
 - Added `evidence pack --format json` so automation can read the package
   manifest and handoff-readiness status from command output.
 - Added `evidence verify --format json` for CI scripts and release checks that
