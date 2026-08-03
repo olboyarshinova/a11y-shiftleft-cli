@@ -1033,6 +1033,10 @@ export function getRemediationHint(
     helpUrl?: string;
   } = {}
 ): RemediationHint {
+  if (ruleId.startsWith("adapter/")) {
+    return createGenericHint(ruleId, options);
+  }
+
   const directHint = findRuleHint(ruleId);
   if (directHint) {
     return withAdditionalDocs(
@@ -1068,6 +1072,31 @@ function createGenericHint(
         "Use a staging, preview, or allowlisted URL where bot protection does not replace the page with a human-verification challenge.",
         "If production must be tested, coordinate with the site owner or security team to allow the audit runner temporarily.",
         "Do not bypass CAPTCHA automatically; document the blocked page and complete a manual accessibility review for the affected flow."
+      ],
+      docs: options.helpUrl ? [options.helpUrl] : []
+    };
+  }
+
+  if (ruleId === "adapter/explore-scan-error") {
+    return {
+      summary: "Retry the browser exploration after confirming the page can load reliably from this machine.",
+      howToFix: [
+        "Open the URL in a normal browser and confirm it is reachable without login, bot protection, or a blocking cookie dialog.",
+        "For slow external pages, rerun with `--navigation-timeout-ms 60000` so the first navigation can finish before screenshots and checks start.",
+        "For SPAs that render after the first page load, add `--wait-ms` or `--wait-for-selector` for the content that must be present before scanning.",
+        "If the page shows a human-verification challenge, rerun with `--pause-on-human-verification` and complete the challenge manually."
+      ],
+      docs: options.helpUrl ? [options.helpUrl] : []
+    };
+  }
+
+  if (ruleId === "adapter/keyboard-scan-error") {
+    return {
+      summary: "Retry the keyboard audit after confirming the page can load and receive focus in the browser runner.",
+      howToFix: [
+        "Open the URL manually and confirm the page is reachable from the same network and does not stop at a verification screen.",
+        "For slow pages, rerun with `--navigation-timeout-ms 60000` before deciding that keyboard evidence is unavailable.",
+        "If key UI appears after client-side data loading, add `--wait-ms` or `--wait-for-selector` so focus traversal starts after the interface is ready."
       ],
       docs: options.helpUrl ? [options.helpUrl] : []
     };

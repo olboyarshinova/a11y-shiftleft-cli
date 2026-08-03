@@ -47,6 +47,22 @@ test("getRemediationHint explains how to recover adapter failures", () => {
   assert.match(hint.howToFix[0], /target URL/);
 });
 
+test("getRemediationHint explains how to retry browser exploration failures", () => {
+  const hint = getRemediationHint("adapter/explore-scan-error");
+
+  assert.match(hint.summary, /browser exploration/);
+  assert.equal(hint.howToFix.some((step) => step.includes("--navigation-timeout-ms 60000")), true);
+  assert.equal(hint.howToFix.some((step) => step.includes("--pause-on-human-verification")), true);
+});
+
+test("getRemediationHint explains how to retry keyboard scan failures", () => {
+  const hint = getRemediationHint("adapter/keyboard-scan-error");
+
+  assert.match(hint.summary, /keyboard audit/);
+  assert.equal(hint.howToFix.some((step) => step.includes("--navigation-timeout-ms 60000")), true);
+  assert.equal(hint.howToFix.some((step) => step.includes("--wait-for-selector")), true);
+});
+
 test("getRemediationHint explains human verification blockers", () => {
   const hint = getRemediationHint("adapter/human-verification");
 
