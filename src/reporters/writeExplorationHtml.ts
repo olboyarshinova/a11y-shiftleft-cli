@@ -1022,6 +1022,39 @@ export function renderExplorationHtml(
       gap: 10px;
     }
 
+    .wcag-gaps details {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0;
+    }
+
+    .wcag-gaps summary {
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px;
+    }
+
+    .wcag-gaps summary::before {
+      margin-top: 1px;
+    }
+
+    .wcag-gaps-body {
+      border-top: 1px solid var(--line);
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+    }
+
+    .wcag-gaps-title {
+      display: grid;
+      gap: 3px;
+    }
+
+    .wcag-coverage-summary {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
     .wcag-gap-list {
       display: grid;
       gap: 8px;
@@ -2323,8 +2356,6 @@ export function renderExplorationHtml(
 
     ${renderJourneyReviewQueue(options.plannedScope, options.journeyImpact, reportIssues)}
 
-    ${renderWcagEvidenceGaps(options.wcagCoverage)}
-
     ${renderIgnoreCleanup(options.ignore)}
 
     ${renderReportRetention(options.retention)}
@@ -2342,6 +2373,8 @@ export function renderExplorationHtml(
     ${options.keyboard ? renderKeyboardAudit(options.keyboard) : ""}
 
     ${options.manualChecklist ? renderManualChecklist(options.manualChecklist) : ""}
+
+    ${renderWcagEvidenceGaps(options.wcagCoverage)}
 
     ${renderShareReview()}
 
@@ -3092,13 +3125,23 @@ function renderWcagEvidenceGaps(coverage?: WcagCoverageSummary): string {
 
   const hiddenCount = rows.length - visibleRows.length;
   const coverageNote = coverage.coverageNote || "This section shows automated evidence and manual-review prompts for WCAG review. Manual-review rows are checklist work, not proof of conformance.";
+  const coverageSummary = `Automated evidence: ${coverage.automatedCriteria}/${coverage.totalCriteria} criteria; assisted review prompts: ${coverage.automatedCriteria + coverage.heuristicCriteria + coverage.manualCriteria}/${coverage.totalCriteria} criteria; manual review still required.`;
   return `<section class="panel panel-full-width wcag-gaps" aria-label="WCAG review coverage">
-    <h2>WCAG Review Coverage</h2>
-    <p class="muted">${escapeHtml(coverageNote)}</p>
-    <div class="wcag-gap-list">
-      ${visibleRows.map(renderWcagEvidenceGapCard).join("\n")}
-    </div>
-    ${hiddenCount > 0 ? `<p class="muted">Showing ${visibleRows.length} of ${rows.length} criteria with findings or manual-review prompts. The complete review matrix is available in <code>a11y-report.json</code>.</p>` : ""}
+    <details>
+      <summary>
+        <span class="wcag-gaps-title">
+          <span>WCAG Review Coverage</span>
+          <span class="muted wcag-coverage-summary">${escapeHtml(coverageSummary)}</span>
+        </span>
+      </summary>
+      <div class="wcag-gaps-body">
+        <p class="muted">${escapeHtml(coverageNote)}</p>
+        <div class="wcag-gap-list">
+          ${visibleRows.map(renderWcagEvidenceGapCard).join("\n")}
+        </div>
+        ${hiddenCount > 0 ? `<p class="muted">Showing ${visibleRows.length} of ${rows.length} criteria with findings or manual-review prompts. The complete review matrix is available in <code>a11y-report.json</code>.</p>` : ""}
+      </div>
+    </details>
   </section>`;
 }
 
