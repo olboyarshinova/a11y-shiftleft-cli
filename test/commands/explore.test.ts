@@ -19,6 +19,7 @@ test("explore supports opening the visual report", () => {
   assert.equal(flags.includes("--mobile"), true);
   assert.equal(flags.includes("--tablet"), true);
   assert.equal(flags.includes("--auth-state"), true);
+  assert.equal(flags.includes("--navigation-timeout-ms"), true);
   assert.equal(flags.includes("--wait-until-url"), true);
   assert.equal(flags.includes("--wait-until-path"), true);
   assert.equal(flags.includes("--safe-block-request"), true);
@@ -42,6 +43,7 @@ test("formatVerboseExploreSummary renders exploration context", () => {
     screenshotQuality: 70,
     screenshotFullPage: false,
     screenshotRedaction: true,
+    navigationTimeoutMs: 45000,
     waitMs: 1000,
     waitForSelector: "[data-loaded]",
     waitUntilUrl: "dashboard",
@@ -71,7 +73,7 @@ test("formatVerboseExploreSummary renders exploration context", () => {
   assert.match(output, /screenshots: jpeg quality=70/);
   assert.match(output, /screenshotCapture: automatic error regions/);
   assert.match(output, /screenshotRedaction: on/);
-  assert.match(output, /wait: 1000ms selector=\[data-loaded\] url=dashboard path=\/dashboard/);
+  assert.match(output, /wait: navigation=45000ms 1000ms selector=\[data-loaded\] url=dashboard path=\/dashboard/);
   assert.match(output, /hideElements: \.cookie-banner, \.chat-widget/);
   assert.match(output, /scroll: on step=800px maxSteps=25 wait=100ms/);
   assert.match(output, /safeMode: on/);

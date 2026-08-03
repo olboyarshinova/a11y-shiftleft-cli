@@ -244,6 +244,7 @@ export interface ExploreConfig {
   authState?: string;
   scopeSelector?: string;
   hideElements: string[];
+  navigationTimeoutMs: number;
   waitMs: number;
   waitForSelector?: string;
   waitUntilUrl?: string;

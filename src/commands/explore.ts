@@ -74,6 +74,7 @@ interface ExploreOptions {
   safeAllowSelector?: string[];
   dismissDialogs?: boolean;
   isolateCookies?: boolean;
+  navigationTimeoutMs?: string;
   waitMs?: string;
   waitForSelector?: string;
   waitUntilUrl?: string;
@@ -144,6 +145,7 @@ export function registerExploreCommand(program: Command): void {
     .option("--safe-allow-selector <selectors...>", "Selectors allowed to override form-button safety blocks")
     .option("--no-dismiss-dialogs", "Do not auto-dismiss browser dialogs during exploration")
     .option("--no-isolate-cookies", "Allow cookies to persist between explored states")
+    .option("--navigation-timeout-ms <ms>", "Maximum time to wait for initial page navigation", "15000")
     .option("--wait-ms <ms>", "Extra settle time before screenshots and scans")
     .option("--wait-for-selector <selector>", "Wait for a selector before screenshots and scans")
     .option("--wait-until-url <pattern>", "Wait until the current URL contains a pattern before screenshots and scans")
@@ -193,6 +195,7 @@ export function registerExploreCommand(program: Command): void {
           browser: toBrowserEngine(options.browser),
           device,
           authState,
+          navigationTimeoutMs: toNonNegativeInteger(options.navigationTimeoutMs),
           waitMs: toNonNegativeInteger(options.waitMs),
           waitForSelector: options.waitForSelector,
           waitUntilUrl: options.waitUntilUrl,
@@ -267,6 +270,7 @@ export function registerExploreCommand(program: Command): void {
           screenshotQuality: screenshotQuality || 70,
           screenshotFullPage,
           screenshotRedaction: options.screenshotRedaction !== false,
+          navigationTimeoutMs: effectiveConfig.explore.navigationTimeoutMs,
           waitMs,
           waitForSelector: effectiveConfig.explore.waitForSelector,
           waitUntilUrl: effectiveConfig.explore.waitUntilUrl,
@@ -303,6 +307,7 @@ export function registerExploreCommand(program: Command): void {
         screenshotQuality,
         screenshotFullPage,
         screenshotRedaction: options.screenshotRedaction,
+        navigationTimeoutMs: effectiveConfig.explore.navigationTimeoutMs,
         waitMs,
         waitForSelector: effectiveConfig.explore.waitForSelector,
         waitUntilUrl: effectiveConfig.explore.waitUntilUrl,
@@ -531,6 +536,7 @@ export function formatVerboseExploreSummary(options: {
   screenshotQuality: number;
   screenshotFullPage: boolean;
   screenshotRedaction: boolean;
+  navigationTimeoutMs: number;
   waitMs: number;
   waitForSelector?: string;
   waitUntilUrl?: string;
@@ -588,12 +594,14 @@ export function formatVerboseExploreSummary(options: {
 }
 
 function formatReadinessSummary(options: {
+  navigationTimeoutMs: number;
   waitMs: number;
   waitForSelector?: string;
   waitUntilUrl?: string;
   waitUntilPath?: string;
 }): string {
   return [
+    `navigation=${options.navigationTimeoutMs}ms`,
     `${options.waitMs}ms`,
     options.waitForSelector ? `selector=${options.waitForSelector}` : "",
     options.waitUntilUrl ? `url=${options.waitUntilUrl}` : "",

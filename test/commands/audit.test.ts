@@ -30,6 +30,7 @@ test("audit is the unified visual report command with optional extra formats", (
   assert.equal(flags.includes("--no-keyboard"), true);
   assert.equal(flags.includes("--no-manual-review"), true);
   assert.equal(flags.includes("--wait-ms"), true);
+  assert.equal(flags.includes("--navigation-timeout-ms"), true);
   assert.equal(flags.includes("--wait-for-selector"), true);
   assert.equal(flags.includes("--wait-until-url"), true);
   assert.equal(flags.includes("--wait-until-path"), true);

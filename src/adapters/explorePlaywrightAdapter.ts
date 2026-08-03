@@ -61,6 +61,7 @@ const DEFAULT_MAX_DEPTH = 2;
 const DEFAULT_MAX_STATES = 20;
 const DEFAULT_MAX_ACTIONS_PER_STATE = 8;
 const DEFAULT_WAIT_MS = 250;
+const DEFAULT_NAVIGATION_TIMEOUT_MS = 15000;
 const DEFAULT_SCREENSHOT_FORMAT = "jpeg";
 const DEFAULT_SCREENSHOT_QUALITY = 70;
 const SCREENSHOT_REDACTION_COLOR = "#111827";
@@ -237,6 +238,7 @@ interface ExplorePlaywrightOptions {
   browser?: string;
   device?: string;
   authState?: string;
+  navigationTimeoutMs?: number;
   waitMs?: number;
   waitForSelector?: string;
   waitUntilUrl?: string;
@@ -404,6 +406,7 @@ export async function runExplorePlaywrightAdapter(
   const screenshotQuality = normalizeScreenshotQuality(options.screenshotQuality);
   const screenshotRedaction = options.screenshotRedaction ?? true;
   const safeMode = normalizeSafeMode(options.safeMode || config.explore.safeMode);
+  const navigationTimeoutMs = nonNegativeOrDefault(options.navigationTimeoutMs, config.explore.navigationTimeoutMs || DEFAULT_NAVIGATION_TIMEOUT_MS);
   const waitMs = nonNegativeOrDefault(options.waitMs, DEFAULT_WAIT_MS);
   const waitForSelector = options.waitForSelector;
   const waitUntilUrl = normalizeWaitCondition(options.waitUntilUrl);
@@ -442,6 +445,7 @@ export async function runExplorePlaywrightAdapter(
           await clearContextCookies(context);
         }
         dynamicAnnouncements = await replayPath(page, options.url, current.path, {
+          navigationTimeoutMs,
           waitMs,
           waitForSelector,
           waitUntilUrl,
@@ -462,6 +466,7 @@ export async function runExplorePlaywrightAdapter(
       const openModal = await inspectOpenModal(page);
       const modalFocus = openModal
         ? await auditModalFocusInIsolation(browser, options.url, current.path, {
+          navigationTimeoutMs,
           waitMs,
           waitForSelector,
           waitUntilUrl,
@@ -1504,6 +1509,7 @@ async function finishDynamicAnnouncementMonitor(
 }
 
 interface ExploreWaitOptions {
+  navigationTimeoutMs: number;
   waitMs: number;
   waitForSelector?: string;
   waitUntilUrl?: string;
@@ -1513,7 +1519,7 @@ interface ExploreWaitOptions {
 async function gotoAndSettle(page: Page, url: string, wait: ExploreWaitOptions): Promise<void> {
   await page.goto(url, {
     waitUntil: "domcontentloaded",
-    timeout: 15000
+    timeout: wait.navigationTimeoutMs
   });
   await settle(page, wait);
 }

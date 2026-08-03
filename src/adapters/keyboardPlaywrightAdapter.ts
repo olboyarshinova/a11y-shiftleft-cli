@@ -8,6 +8,7 @@ export interface KeyboardAuditOptions {
   url: string;
   framework: Framework;
   maxTabs?: number;
+  navigationTimeoutMs?: number;
   activation?: boolean;
   maxActivations?: number;
   safeMode?: ExploreSafeModeConfig;
@@ -27,6 +28,7 @@ type RawKeyboardSnapshot = Omit<PageKeyboardSnapshot, "pageState"> & {
 export async function runKeyboardPlaywrightAdapter(options: KeyboardAuditOptions): Promise<KeyboardAuditResult> {
   const startedAt = Date.now();
   const maxTabs = normalizeMaxTabs(options.maxTabs);
+  const navigationTimeoutMs = normalizeNavigationTimeoutMs(options.navigationTimeoutMs);
   const runtime = await launchBrowserRuntime({
     browser: options.browser,
     device: options.device,
@@ -47,7 +49,7 @@ export async function runKeyboardPlaywrightAdapter(options: KeyboardAuditOptions
   try {
     const context = await browser.newContext(runtime.contextOptions);
     const page = await context.newPage();
-    await page.goto(options.url, { waitUntil: "domcontentloaded" });
+    await page.goto(options.url, { waitUntil: "domcontentloaded", timeout: navigationTimeoutMs });
     await page.waitForLoadState("networkidle", { timeout: 5_000 }).catch(() => undefined);
     if (options.waitMs) await page.waitForTimeout(options.waitMs);
 
@@ -208,6 +210,7 @@ export async function runKeyboardPlaywrightAdapter(options: KeyboardAuditOptions
         maxActivations: normalizeMaxActivations(options.maxActivations),
         safeMode: options.safeMode,
         contextOptions: runtime.contextOptions,
+        navigationTimeoutMs,
         waitMs: options.waitMs || 0
       });
       activationAttempts = activationResult.attempts;
@@ -499,6 +502,7 @@ interface KeyboardActivationAuditOptions {
   framework: Framework;
   steps: KeyboardFocusStep[];
   maxActivations: number;
+  navigationTimeoutMs: number;
   waitMs: number;
   safeMode?: ExploreSafeModeConfig;
   contextOptions?: BrowserContextOptions;
@@ -547,7 +551,7 @@ async function runKeyboardActivationAudit(
         }
         return route.continue();
       });
-      await page.goto(options.url, { waitUntil: "domcontentloaded", timeout: 15_000 });
+      await page.goto(options.url, { waitUntil: "domcontentloaded", timeout: options.navigationTimeoutMs });
       await page.waitForLoadState("networkidle", { timeout: 3_000 }).catch(() => undefined);
       if (options.waitMs > 0) await page.waitForTimeout(options.waitMs);
       initialLoadComplete = true;
@@ -715,6 +719,10 @@ function toActivationAttempt(
 
 function normalizeMaxTabs(value = 40): number {
   return Math.max(1, Math.min(200, Math.trunc(value)));
+}
+
+function normalizeNavigationTimeoutMs(value = 15_000): number {
+  return Math.max(1_000, Math.min(120_000, Math.trunc(value)));
 }
 
 function normalizeMaxActivations(value = 6): number {

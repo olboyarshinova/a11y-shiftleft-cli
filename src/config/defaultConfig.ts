@@ -40,6 +40,7 @@ export const defaultConfig = {
     authState: undefined,
     scopeSelector: undefined,
     hideElements: [],
+    navigationTimeoutMs: 15000,
     waitMs: 250,
     waitUntilUrl: undefined,
     waitUntilPath: undefined,
