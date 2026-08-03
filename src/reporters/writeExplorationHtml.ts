@@ -2319,6 +2319,7 @@ export function renderExplorationHtml(
   </header>
   <main>
     ${renderHumanVerificationBanner(reportIssues, graph)}
+    ${renderScanErrorBanner(reportIssues, graph)}
 
     <section class="summary" aria-label="Exploration summary">
       ${metric("Exploration depth", formatDepthMetric(graph.summary.maxDepth))}
@@ -4759,6 +4760,37 @@ function renderHumanVerificationBanner(issues: DedupedIssue[], graph: Exploratio
     <h2>Scan blocked by human verification</h2>
     <p>The site appears to show CAPTCHA, bot protection, or a verify-you-are-human challenge. Automated exploration may be incomplete: only ${count} blocker finding${count === 1 ? "" : "s"} ${count === 1 ? "was" : "were"} recorded.</p>
     <p>Recommended rerun command:</p>
+    <code>${escapeHtml(command)}</code>
+  </section>`;
+}
+
+function renderScanErrorBanner(issues: DedupedIssue[], graph: ExplorationGraph): string {
+  const scanErrors = issues.filter((issue) => (
+    issue.ruleId === "adapter/explore-scan-error" ||
+    issue.ruleId === "adapter/keyboard-scan-error"
+  ));
+  if (scanErrors.length === 0) return "";
+
+  const ruleLabels = new Set(scanErrors.map((issue) => issue.ruleId === "adapter/keyboard-scan-error"
+    ? "keyboard audit"
+    : "browser exploration"));
+  const command = [
+    "npx a11y-shiftleft-cli audit",
+    "--url",
+    shellQuote(graph.startUrl),
+    "--out",
+    "reports",
+    "--navigation-timeout-ms",
+    "60000",
+    "--wait-ms",
+    "3000",
+    "--open"
+  ].join(" ");
+
+  return `<section class="panel scan-blocker" aria-label="Scan error recovery guidance">
+    <h2>Some checks could not complete</h2>
+    <p>${scanErrors.length} scanner issue${scanErrors.length === 1 ? "" : "s"} affected ${escapeHtml([...ruleLabels].join(" and "))}. The report may be incomplete until the page loads reliably for the browser runner.</p>
+    <p>Recommended retry command for slow or client-rendered pages:</p>
     <code>${escapeHtml(command)}</code>
   </section>`;
 }

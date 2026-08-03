@@ -1574,6 +1574,33 @@ test("renderExplorationHtml explains human verification blockers", () => {
   assert.match(html, /Use a staging, preview, or allowlisted URL/);
 });
 
+test("renderExplorationHtml explains scan error recovery near the top", () => {
+  const html = renderExplorationHtml(graph, [{
+    ...issues[0],
+    ruleId: "adapter/explore-scan-error",
+    wcag: [],
+    wcagCriteria: [],
+    severity: "info",
+    selector: "http://localhost:3000/",
+    message: "page.goto: Timeout 15000ms exceeded",
+    fingerprint: "adapter/explore-scan-error::state-1"
+  }, {
+    ...issues[0],
+    ruleId: "adapter/keyboard-scan-error",
+    wcag: [],
+    wcagCriteria: [],
+    severity: "info",
+    selector: "http://localhost:3000/",
+    message: "page.goto: Timeout 15000ms exceeded",
+    fingerprint: "adapter/keyboard-scan-error::state-1"
+  }]);
+
+  assert.match(html, /Some checks could not complete/);
+  assert.match(html, /browser exploration and keyboard audit/);
+  assert.match(html, /--navigation-timeout-ms 60000 --wait-ms 3000 --open/);
+  assert.ok(html.indexOf("Some checks could not complete") < html.indexOf('aria-label="Exploration summary"'));
+});
+
 test("renderExplorationHtml keeps user impact out of visual finding cards", () => {
   const html = renderExplorationHtml(graph, [{
     ...issues[0],
