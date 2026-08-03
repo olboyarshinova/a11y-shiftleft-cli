@@ -483,6 +483,49 @@ test("writeReports puts human verification guidance at the top of Markdown repor
   assert.ok(markdown.indexOf("Scan blocked by human verification") < markdown.indexOf("| Metric | Value |"));
 });
 
+test("writeReports puts scan error retry guidance at the top of Markdown reports", async () => {
+  const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-scan-error-"));
+
+  await writeReports(
+    outputDir,
+    [{
+      source: "axe",
+      severity: "info",
+      ruleId: "adapter/explore-scan-error",
+      wcag: [],
+      wcagCriteria: [],
+      selector: "https://example.com/",
+      url: "https://example.com/",
+      message: "page.goto: Timeout 15000ms exceeded"
+    }, {
+      source: "keyboard",
+      severity: "info",
+      ruleId: "adapter/keyboard-scan-error",
+      wcag: [],
+      wcagCriteria: [],
+      selector: "https://example.com/",
+      url: "https://example.com/",
+      message: "page.goto: Timeout 15000ms exceeded"
+    }],
+    {
+      framework: "unknown",
+      urls: ["https://example.com/"],
+      rawCount: 2,
+      uniqueCount: 2,
+      duplicateCount: 0,
+      scanDurationMs: 100
+    }
+  );
+
+  const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
+
+  assert.match(markdown, /> \[!WARNING\]/);
+  assert.match(markdown, /Some checks could not complete/);
+  assert.match(markdown, /browser exploration and keyboard audit/);
+  assert.match(markdown, /--navigation-timeout-ms 60000 --wait-ms 3000 --open/);
+  assert.ok(markdown.indexOf("Some checks could not complete") < markdown.indexOf("| Metric | Value |"));
+});
+
 test("writeReports hides auto-detected framework examples from dynamic findings", async () => {
   const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-generic-example-"));
 

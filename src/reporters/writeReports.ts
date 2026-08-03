@@ -515,6 +515,7 @@ export function toMarkdown(report: A11yReport): string {
   return `## Accessibility Shift-Left Report
 
 ${formatHumanVerificationWarning(report)}
+${formatScanErrorWarning(report)}
 | Metric | Value |
 |---|---:|
 | Total | ${report.summary.total} |
@@ -592,6 +593,29 @@ function formatHumanVerificationWarning(report: A11yReport): string {
 > Scan blocked by human verification. The site may show CAPTCHA, bot protection, or a verify-you-are-human challenge, so automated exploration can be incomplete.
 >
 > Recommended rerun command:
+>
+> \`${command}\`
+
+`;
+}
+
+function formatScanErrorWarning(report: A11yReport): string {
+  const scanErrors = report.issues.filter((issue) => (
+    issue.ruleId === "adapter/explore-scan-error" ||
+    issue.ruleId === "adapter/keyboard-scan-error"
+  ));
+  if (scanErrors.length === 0) return "";
+
+  const labels = new Set(scanErrors.map((issue) => issue.ruleId === "adapter/keyboard-scan-error"
+    ? "keyboard audit"
+    : "browser exploration"));
+  const url = report.summary.urls[0] || "<app-url>";
+  const command = `npx a11y-shiftleft-cli audit --url ${shellQuoteMarkdown(url)} --out reports --navigation-timeout-ms 60000 --wait-ms 3000 --open`;
+
+  return `> [!WARNING]
+> Some checks could not complete. ${scanErrors.length} scanner issue${scanErrors.length === 1 ? "" : "s"} affected ${[...labels].join(" and ")}, so this report may be incomplete until the page loads reliably for the browser runner.
+>
+> Recommended retry command for slow or client-rendered pages:
 >
 > \`${command}\`
 

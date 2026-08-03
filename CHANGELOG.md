@@ -8,6 +8,8 @@
 - Added visual report recovery guidance for browser exploration and keyboard
   scan errors, including a copy-paste retry command with a longer navigation
   timeout and settle wait.
+- Added the same scan-error recovery guidance to Markdown reports and PR-ready
+  comments so CI output explains how to rerun slow or client-rendered pages.
 - Improved large grouped locations in visual reports by showing the first
   locations immediately, simplifying the "Show more locations" label, and
   continuing ordered-list numbering inside the expanded overflow.
