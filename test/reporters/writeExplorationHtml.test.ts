@@ -1139,7 +1139,9 @@ test("renderExplorationHtml shows the first ten affected findings for very large
   assert.match(issueHtml, /<details class="affected-findings" open><summary>Affected findings \(31\)/);
   assert.match(issueHtml, /\.repeated-button-1/);
   assert.match(issueHtml, /\.repeated-button-10/);
-  assert.match(issueHtml, /Show 21 more locations \(21 hidden: 21 warning, 31 total\)/);
+  assert.match(issueHtml, /Show 21 more locations/);
+  assert.doesNotMatch(issueHtml, /21 hidden: 21 warning, 31 total/);
+  assert.match(issueHtml, /<ol class="finding-targets finding-targets-nested" start="11">/);
 });
 
 test("renderExplorationHtml groups identical issue messages into numbered locations", () => {
@@ -1333,7 +1335,9 @@ test("renderExplorationHtml explains when not every target has a screenshot mark
   const issueHtml = issueBlockForRule(html, "color-contrast");
 
   assert.match(issueHtml, /12 of 13 shown on screenshots/);
-  assert.match(issueHtml, /Show 3 more locations \(3 hidden: 3 warning, 13 total\)/);
+  assert.match(issueHtml, /Show 3 more locations/);
+  assert.doesNotMatch(issueHtml, /3 hidden: 3 warning, 13 total/);
+  assert.match(issueHtml, /<ol class="finding-targets finding-targets-nested" start="11">/);
   assert.match(issueHtml, /class="finding-target-more finding-target-more-warning"/);
   assert.match(issueHtml, /\.contrast-12/);
   assert.match(html, /\.finding-target-more summary \{[\s\S]*?display: inline-flex/);

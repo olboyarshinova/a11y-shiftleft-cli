@@ -4593,8 +4593,8 @@ function renderFindingTargets(
     ${visibleIssues.map((issue) => `<li>${renderFindingTarget(issue, annotationNumberByIssueKey)}</li>`).join("\n")}
     ${hiddenIssues.length > 0 ? `<li class="finding-target-more finding-target-more-${dominantSeverity(hiddenIssues)}">
       <details>
-        <summary>Show ${hiddenIssues.length} more location${hiddenIssues.length === 1 ? "" : "s"} (${hiddenIssues.length} hidden: ${escapeHtml(formatSeverityMix(hiddenIssues))}, ${issues.length} total)</summary>
-        <ol class="finding-targets finding-targets-nested">
+        <summary>Show ${hiddenIssues.length} more location${hiddenIssues.length === 1 ? "" : "s"}</summary>
+        <ol class="finding-targets finding-targets-nested" start="${visibleIssues.length + 1}">
           ${hiddenIssues.map((issue) => `<li>${renderFindingTarget(issue, annotationNumberByIssueKey)}</li>`).join("\n")}
         </ol>
       </details>
