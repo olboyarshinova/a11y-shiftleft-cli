@@ -4515,7 +4515,7 @@ function renderStateIssueGroup(
 }
 
 function renderAffectedFindingsDetails(issues: DedupedIssue[], occurrences: string): string {
-  const openAttribute = issues.length <= 5 ? " open" : "";
+  const openAttribute = issues.length <= 5 || issues.length > 10 ? " open" : "";
   return `<details class="affected-findings"${openAttribute}><summary>Affected findings (${issues.length}) ${renderSeverityMixInline(issues)}</summary>${occurrences}</details>`;
 }
 
