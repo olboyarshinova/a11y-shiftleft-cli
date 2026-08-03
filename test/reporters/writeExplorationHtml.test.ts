@@ -1334,7 +1334,7 @@ test("renderExplorationHtml explains when not every target has a screenshot mark
   const html = renderExplorationHtml(graph, manyIssues);
   const issueHtml = issueBlockForRule(html, "color-contrast");
 
-  assert.match(issueHtml, /12 of 13 shown on screenshots/);
+  assert.doesNotMatch(issueHtml, /shown on screenshots/);
   assert.match(issueHtml, /Show 3 more locations/);
   assert.doesNotMatch(issueHtml, /3 hidden: 3 warning, 13 total/);
   assert.match(issueHtml, /<ol class="finding-targets finding-targets-nested" start="11">/);

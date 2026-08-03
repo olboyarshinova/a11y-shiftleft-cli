@@ -1806,14 +1806,6 @@ export function renderExplorationHtml(
       font-weight: 700;
     }
 
-    .finding-target-note {
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 700;
-      list-style: none;
-      margin-left: -24px;
-    }
-
     .issue-overflow,
     .finding-overflow,
     .finding-target-more details {
@@ -4585,10 +4577,6 @@ function renderFindingTargets(
 ): string {
   const visibleIssues = issues.slice(0, 10);
   const hiddenIssues = issues.slice(10);
-  const markedCount = issues.filter((issue) => annotationNumberByIssueKey[annotationIssueKey(issue)]).length;
-  const markerNote = markedCount > 0 && markedCount < issues.length
-    ? `<li class="finding-target-note">${markedCount} of ${issues.length} shown on screenshots</li>`
-    : "";
   return `<ol class="finding-targets">
     ${visibleIssues.map((issue) => `<li>${renderFindingTarget(issue, annotationNumberByIssueKey)}</li>`).join("\n")}
     ${hiddenIssues.length > 0 ? `<li class="finding-target-more finding-target-more-${dominantSeverity(hiddenIssues)}">
@@ -4599,7 +4587,6 @@ function renderFindingTargets(
         </ol>
       </details>
     </li>` : ""}
-    ${markerNote}
   </ol>`;
 }
 
