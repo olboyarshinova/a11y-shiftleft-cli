@@ -123,6 +123,26 @@ formal conformance certificate. `needs-review` findings are represented as
 `earl:cantTell`; automated findings are represented as `earl:failed` evidence
 for triage and remediation.
 
+## Scan Completeness
+
+Reports keep scanner failures visible instead of treating them as clean pages.
+If browser exploration or keyboard traversal cannot complete, the report adds an
+adapter finding such as `adapter/explore-scan-error` or
+`adapter/keyboard-scan-error` and increments `summary.scanErrorCount`.
+
+Use this run-level count when deciding whether evidence is ready for CI,
+handoff, or validation studies:
+
+| Field | Meaning |
+|---|---|
+| `scanErrorCount: 0` | The configured automated runners completed without scanner-level errors. |
+| `scanErrorCount > 0` | Some configured checks did not complete. Rerun with the suggested retry command or record manual review evidence. |
+
+Scan errors are report-completeness evidence, not accessibility defects in the
+website by themselves. They usually indicate slow client rendering, blocked
+automation, a navigation timeout, a closed browser page, or a page state that
+requires manual verification.
+
 ## Finding Types
 
 Reports separate three kinds of evidence:

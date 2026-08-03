@@ -13,6 +13,8 @@
 - Added `scanErrorCount` to report summaries, summary CSV, share packages,
   evidence package summaries, terminal output, and suggested PR labels so
   incomplete scans are visible in automation.
+- Documented scan-completeness semantics so teams can distinguish scanner
+  failures from accessibility defects during CI and evidence handoff.
 - Improved large grouped locations in visual reports by showing the first
   locations immediately, simplifying the "Show more locations" label, and
   continuing ordered-list numbering inside the expanded overflow.
