@@ -248,12 +248,22 @@ export function formatEvidenceExportOutput(evidence: EvidenceExport, outputPath:
     `Wrote ${evidence.records.length} evidence record${evidence.records.length === 1 ? "" : "s"} to ${outputPath}`,
     `Scope: ${formatEvidenceScope(evidence)}`,
     `Summary: ${evidence.summary.critical} critical, ${evidence.summary.warning} warning, ${evidence.summary.info} info`,
+    ...formatScanCompletenessLines(evidence),
     ...formatEvidenceReviewLines(evidence),
     `Evidence types: ${evidence.summary.wcagMapped} WCAG-mapped, ${evidence.summary.needsReview} needs review, ${evidence.summary.bestPractice} best practice`,
     ...(topJourney ? [`Top journey: ${topJourney[0]} (${topJourney[1]})`] : []),
     topUrl ? `Top URL: ${topUrl[0]} (${topUrl[1]})` : "Top URL: none",
     topCriterion ? `Top WCAG criterion: ${topCriterion[0]} (${topCriterion[1]})` : "Top WCAG criterion: none"
   ].join("\n");
+}
+
+function formatScanCompletenessLines(evidence: EvidenceExport): string[] {
+  const count = evidence.summary.scanErrorCount;
+  if (count <= 0) return [];
+
+  return [
+    `Scan completeness: ${count} scanner issue${count === 1 ? "" : "s"} ${count === 1 ? "needs" : "need"} rerun or manual review`
+  ];
 }
 
 function formatEvidenceReviewLines(evidence: EvidenceExport): string[] {

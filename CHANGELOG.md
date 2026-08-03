@@ -15,6 +15,9 @@
   incomplete scans are visible in automation.
 - Documented scan-completeness semantics so teams can distinguish scanner
   failures from accessibility defects during CI and evidence handoff.
+- Added scan-completeness counts to `evidence export` summaries and terminal
+  output so downstream datasets can avoid treating incomplete scans as clean
+  runs.
 - Improved large grouped locations in visual reports by showing the first
   locations immediately, simplifying the "Show more locations" label, and
   continuing ordered-list numbering inside the expanded overflow.

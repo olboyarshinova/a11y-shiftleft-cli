@@ -340,6 +340,7 @@ test("formatEvidenceExportOutput summarizes the exported evidence dataset", () =
   assert.match(output, /Wrote 1 evidence record to \/tmp\/evidence\.json/);
   assert.match(output, /Scope: audit\/validation \| wcag22-aa \| 1 URL \| Chromium/);
   assert.match(output, /Summary: 1 critical, 0 warning, 0 info/);
+  assert.match(output, /Scan completeness: 1 scanner issue needs rerun or manual review/);
   assert.match(output, /Evidence types: 1 WCAG-mapped, 0 needs review, 0 best practice/);
   assert.match(output, /Top URL: https:\/\/example\.test \(1\)/);
   assert.match(output, /Top WCAG criterion: 4\.1\.2 \(1\)/);
@@ -462,7 +463,8 @@ function reportFixture() {
         wcagLevel: "AA",
         automatedCoverage: "partial",
         requiresManualReview: true
-      }
+      },
+      scanErrorCount: 1
     },
     issues: [{
       source: "axe",

@@ -30,6 +30,7 @@ test("createEvidenceExport normalizes findings into portable evidence records", 
   assert.equal(evidence.summary.baselineExisting, 1);
   assert.equal(evidence.summary.retestNew, 1);
   assert.equal(evidence.summary.retestRemaining, 1);
+  assert.equal(evidence.summary.scanErrorCount, 1);
   assert.deepEqual(evidence.summary.bySource, { axe: 2 });
   assert.deepEqual(evidence.summary.byCategory, { semantics: 1, contrast: 1 });
   assert.deepEqual(evidence.summary.byConfidence, { high: 1, medium: 1 });
@@ -77,6 +78,7 @@ test("serializeEvidenceExport supports JSON, JSONL, and JSON-LD", () => {
   assert.equal(linkedData["a11y:review"].journeys[0].name, "Checkout");
   assert.equal(linkedData["a11y:summary"].baselineNew, 1);
   assert.equal(linkedData["a11y:summary"].retestRemaining, 1);
+  assert.equal(linkedData["a11y:summary"].scanErrorCount, 1);
   assert.deepEqual(linkedData["a11y:summary"].byJourney, { Checkout: 1 });
   assert.deepEqual(linkedData["a11y:summary"].byCategory, { semantics: 1, contrast: 1 });
   assert.deepEqual(linkedData["a11y:summary"].byWcagCriterion, { "4.1.2": 1 });
@@ -138,6 +140,7 @@ function report(): A11yReport {
         requiresManualReview: true,
         disclaimer: "Automated evidence is not a conformance claim."
       },
+      scanErrorCount: 1,
       journeyImpact: [{
         name: "Checkout",
         urls: ["https://example.test"],

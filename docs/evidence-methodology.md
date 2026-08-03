@@ -143,6 +143,10 @@ website by themselves. They usually indicate slow client rendering, blocked
 automation, a navigation timeout, a closed browser page, or a page state that
 requires manual verification.
 
+`evidence export` carries the same count in `summary.scanErrorCount` so
+dashboards, spreadsheets, CI jobs, and validation datasets can filter or flag
+incomplete runs without parsing visual reports.
+
 ## Finding Types
 
 Reports separate three kinds of evidence:

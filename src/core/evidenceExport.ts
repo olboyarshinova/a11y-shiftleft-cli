@@ -135,6 +135,7 @@ export interface EvidenceExport {
     baselineExisting: number;
     retestNew: number;
     retestRemaining: number;
+    scanErrorCount: number;
     bySource: Record<string, number>;
     byCategory: Record<string, number>;
     byConfidence: Record<string, number>;
@@ -179,6 +180,7 @@ export function createEvidenceExport(report: A11yReport, generatedAt = new Date(
       baselineExisting: records.filter((record) => record.baselineStatus === "existing").length,
       retestNew: records.filter((record) => record.retestStatus === "new").length,
       retestRemaining: records.filter((record) => record.retestStatus === "remaining").length,
+      scanErrorCount: report.summary.scanErrorCount ?? records.filter(isScanErrorRecord).length,
       bySource: countBy(records, (record) => record.source),
       byCategory: countBy(records, (record) => record.category),
       byConfidence: countBy(records, (record) => record.confidence?.level),
@@ -190,6 +192,11 @@ export function createEvidenceExport(report: A11yReport, generatedAt = new Date(
     },
     records
   };
+}
+
+function isScanErrorRecord(record: Pick<EvidenceExportRecord, "ruleId">): boolean {
+  return record.ruleId === "adapter/explore-scan-error" ||
+    record.ruleId === "adapter/keyboard-scan-error";
 }
 
 export function serializeEvidenceExport(evidence: EvidenceExport, format: EvidenceExportFormat): string {
