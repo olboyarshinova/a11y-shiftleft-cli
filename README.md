@@ -329,6 +329,14 @@ npx a11y-shiftleft-cli audit --url $APP_URL --wait-for-selector "[data-page-read
 npx a11y-shiftleft-cli audit --url $APP_URL --wait-until-path /dashboard --out reports
 ```
 
+Use `--navigation-timeout-ms <ms>` when an external or slow staging site times
+out before the first screenshot is captured. This changes the initial
+`page.goto` timeout; `--wait-ms` only adds settle time after the page opens:
+
+```bash
+npx a11y-shiftleft-cli audit --url $APP_URL --navigation-timeout-ms 60000 --out reports
+```
+
 Use `--hide-elements <selectors>` when cookie banners, sticky ads, chat widgets,
 or other non-product overlays make screenshots noisy. Hidden selectors are
 recorded in the visual and Markdown reports.

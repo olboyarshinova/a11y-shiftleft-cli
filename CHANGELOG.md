@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Added `--navigation-timeout-ms` to `audit` and `explore` so slow external,
+  staging, or authenticated pages can wait longer for the initial browser
+  navigation before screenshots and scans begin.
+- Improved large grouped locations in visual reports by showing the first
+  locations immediately, simplifying the "Show more locations" label, and
+  continuing ordered-list numbering inside the expanded overflow.
+- Removed the noisy "shown on screenshots" note from grouped finding locations.
+
 ## 0.9.1 - 2026-08-02
 
 - Added `evidence pack --format json` so automation can read the package
