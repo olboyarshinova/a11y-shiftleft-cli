@@ -244,6 +244,7 @@ function summarize(
     byOwnership: countByOwnership(issues),
     byUserImpact: countUserImpact(issues),
     blockedByHumanVerification: issues.filter((issue) => issue.ruleId === "adapter/human-verification").length,
+    scanErrorCount: issues.filter(isScanErrorIssue).length,
     byPour: countByPour(issues),
     byWcagLevel: countByWcagLevel(issues),
     byWcagVersion: countByWcagVersion(issues),
@@ -291,6 +292,7 @@ export function toSummaryCsv(report: A11yReport): string {
     userImpactWorkaround: summary.byUserImpact?.workaround || 0,
     userImpactMinor: summary.byUserImpact?.minor || 0,
     humanVerificationBlocked: summary.blockedByHumanVerification || 0,
+    scanErrorCount: summary.scanErrorCount || 0,
     baselineNew: summary.baseline?.newIssues ?? "",
     baselineResolved: summary.baseline?.resolvedIssues ?? "",
     retestNew: summary.retest?.newIssues ?? "",
@@ -305,7 +307,7 @@ export function toSummaryCsv(report: A11yReport): string {
     "likelyRootCauses", "userImpactBlocker", "userImpactSignificant",
     "userImpactWorkaround", "userImpactMinor", "baselineNew", "baselineResolved", "retestNew",
     "retestFixed", "ignoredFindings", "trackedRemediation",
-    "thirdPartyEmbeddedFindings", "humanVerificationBlocked"
+    "thirdPartyEmbeddedFindings", "humanVerificationBlocked", "scanErrorCount"
   ]);
 }
 
@@ -546,6 +548,7 @@ ${formatRetentionRows(report.summary.retention)}| Retention evidence | ${formatR
 | Categories | ${formatCountMap(report.summary.byCategory)} |
 | Ownership | ${formatCountMap(report.summary.byOwnership)} |
 | Human verification blockers | ${report.summary.blockedByHumanVerification || 0} |
+| Scan errors | ${report.summary.scanErrorCount || 0} |
 | Rules without WCAG mapping | ${formatCountMap(report.summary.byUnmappedRule)} |
 
 ${formatReviewFocus(topIssueGroups)}
@@ -600,10 +603,7 @@ function formatHumanVerificationWarning(report: A11yReport): string {
 }
 
 function formatScanErrorWarning(report: A11yReport): string {
-  const scanErrors = report.issues.filter((issue) => (
-    issue.ruleId === "adapter/explore-scan-error" ||
-    issue.ruleId === "adapter/keyboard-scan-error"
-  ));
+  const scanErrors = report.issues.filter(isScanErrorIssue);
   if (scanErrors.length === 0) return "";
 
   const labels = new Set(scanErrors.map((issue) => issue.ruleId === "adapter/keyboard-scan-error"
@@ -620,6 +620,11 @@ function formatScanErrorWarning(report: A11yReport): string {
 > \`${command}\`
 
 `;
+}
+
+function isScanErrorIssue(issue: Pick<DedupedIssue, "ruleId">): boolean {
+  return issue.ruleId === "adapter/explore-scan-error" ||
+    issue.ruleId === "adapter/keyboard-scan-error";
 }
 
 interface TopFindingGroup {

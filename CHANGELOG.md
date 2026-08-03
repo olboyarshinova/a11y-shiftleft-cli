@@ -10,6 +10,9 @@
   timeout and settle wait.
 - Added the same scan-error recovery guidance to Markdown reports and PR-ready
   comments so CI output explains how to rerun slow or client-rendered pages.
+- Added `scanErrorCount` to report summaries, summary CSV, share packages,
+  evidence package summaries, terminal output, and suggested PR labels so
+  incomplete scans are visible in automation.
 - Improved large grouped locations in visual reports by showing the first
   locations immediately, simplifying the "Show more locations" label, and
   continuing ordered-list numbering inside the expanded overflow.

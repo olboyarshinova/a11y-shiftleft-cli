@@ -201,7 +201,9 @@ export function suggestPrLabels(report: A11yReport | null): PrLabelSuggestion[] 
     });
   }
 
-  if ((summary.byFindingType?.["needs-review"] || 0) > 0 || (summary.blockedByHumanVerification || 0) > 0) {
+  if ((summary.byFindingType?.["needs-review"] || 0) > 0 ||
+    (summary.blockedByHumanVerification || 0) > 0 ||
+    (summary.scanErrorCount || 0) > 0) {
     labels.push({
       label: "a11y-needs-review",
       reason: "manual verification recommended"
@@ -220,6 +222,13 @@ export function suggestPrLabels(report: A11yReport | null): PrLabelSuggestion[] 
     labels.push({
       label: "a11y-human-verification",
       reason: `${summary.blockedByHumanVerification} state${summary.blockedByHumanVerification === 1 ? "" : "s"} blocked by human verification`
+    });
+  }
+
+  if ((summary.scanErrorCount || 0) > 0) {
+    labels.push({
+      label: "a11y-scan-incomplete",
+      reason: `${summary.scanErrorCount} scanner issue${summary.scanErrorCount === 1 ? "" : "s"} need rerun or manual review`
     });
   }
 

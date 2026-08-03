@@ -45,6 +45,7 @@ export interface EvidencePackageReportSummary {
   critical: number;
   warning: number;
   info: number;
+  scanErrorCount?: number;
   baseline?: {
     enabled: boolean;
     newIssues: number;
@@ -322,6 +323,7 @@ async function readReportSummary(reportsDir: string): Promise<EvidencePackageRep
         critical?: unknown;
         warning?: unknown;
         info?: unknown;
+        scanErrorCount?: unknown;
         baseline?: {
           enabled?: unknown;
           newIssues?: unknown;
@@ -349,6 +351,7 @@ async function readReportSummary(reportsDir: string): Promise<EvidencePackageRep
       critical,
       warning,
       info,
+      scanErrorCount: toNumber(summary.scanErrorCount) || 0,
       ...(summary.baseline ? {
         baseline: {
           enabled: summary.baseline.enabled === true,
@@ -668,6 +671,7 @@ function formatReportSummaryMarkdown(summary: EvidencePackageReportSummary | und
 | Critical | ${summary.critical} |
 | Warning | ${summary.warning} |
 | Info | ${summary.info} |
+| Scan errors | ${summary.scanErrorCount || 0} |
 ${summary.baseline ? `| Baseline new findings | ${summary.baseline.newIssues} |
 | Baseline resolved findings | ${summary.baseline.resolvedIssues} |
 ` : ""}${summary.retest ? `| Retest new findings | ${summary.retest.newIssues} |

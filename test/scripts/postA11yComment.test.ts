@@ -61,7 +61,8 @@ test("buildCommentBody can append suggested PR labels from JSON summary", async 
         byOwnership: {
           "third-party-embed": 1
         },
-        blockedByHumanVerification: 1
+        blockedByHumanVerification: 1,
+        scanErrorCount: 1
       },
       issues: []
     })
@@ -75,6 +76,7 @@ test("buildCommentBody can append suggested PR labels from JSON summary", async 
   assert.match(body, /`a11y-needs-review` - manual verification recommended/);
   assert.match(body, /`a11y-third-party` - 1 third-party embedded content finding/);
   assert.match(body, /`a11y-human-verification` - 1 state blocked by human verification/);
+  assert.match(body, /`a11y-scan-incomplete` - 1 scanner issue need rerun or manual review/);
 });
 
 test("buildCommentBody falls back to JSON report", async () => {

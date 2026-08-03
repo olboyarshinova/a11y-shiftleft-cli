@@ -696,6 +696,9 @@ export function formatCheckConsoleSummary(
   const humanVerification = summary.blockedByHumanVerification
     ? `Human verification blockers: ${summary.blockedByHumanVerification}`
     : undefined;
+  const scanErrors = summary.scanErrorCount
+    ? `Scan errors: ${summary.scanErrorCount}`
+    : undefined;
 
   return [
     "a11y-shiftleft check",
@@ -708,6 +711,7 @@ export function formatCheckConsoleSummary(
     `Color-scheme findings: ${formatCountMap(summary.byColorScheme)}`,
     ...(ownership ? [ownership] : []),
     ...(humanVerification ? [humanVerification] : []),
+    ...(scanErrors ? [scanErrors] : []),
     `WCAG levels: ${formatCountMap(summary.byWcagLevel)}`,
     `Duplicates removed: ${summary.duplicateCount} of ${summary.rawCount} raw findings`,
     ...(retest ? [retest] : []),

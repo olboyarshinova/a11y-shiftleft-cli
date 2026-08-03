@@ -80,6 +80,7 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
     critical: 1,
     warning: 2,
     info: 1,
+    scanErrorCount: 0,
     baseline: {
       enabled: true,
       newIssues: 1,
@@ -152,6 +153,7 @@ test("createEvidencePackage defaults to text evidence with checksums", async () 
   assert.match(summary, /Audit Summary/);
   assert.match(summary, /Total findings \| 4/);
   assert.match(summary, /Critical \| 1/);
+  assert.match(summary, /Scan errors \| 0/);
   assert.match(summary, /Baseline new findings \| 1/);
   assert.match(summary, /Retest fixed findings \| 2/);
   assert.match(summary, /Manual Review Summary/);

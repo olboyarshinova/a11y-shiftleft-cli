@@ -183,6 +183,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
     workaround: 1
   });
   assert.equal(report.summary.blockedByHumanVerification, 0);
+  assert.equal(report.summary.scanErrorCount, 0);
   assert.deepEqual(report.summary.byPour, {
     robust: 1,
     perceivable: 1
@@ -381,6 +382,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(csv, /byOwnership\.third-party-embed,1/);
   assert.match(csv, /byUserImpact\.blocker,1/);
   assert.match(csv, /blockedByHumanVerification,0/);
+  assert.match(csv, /scanErrorCount,0/);
   assert.match(csv, /byPour\.robust,1/);
   assert.match(csv, /byWcagVersion\.2\.0,2/);
   assert.match(csv, /byPage\.0\.url,http:\/\/localhost:3000\/settings/);
@@ -440,6 +442,7 @@ test("writeReports writes JSON, CSV, and Markdown metrics", async () => {
   assert.match(markdown, /Categories \| aria: 1, images: 1/);
   assert.match(markdown, /Ownership \| third-party-embed: 1/);
   assert.match(markdown, /Human verification blockers \| 0/);
+  assert.match(markdown, /Scan errors \| 0/);
   assert.match(markdown, /category: aria confidence: high 95%/);
   assert.match(markdown, /user impact: blocker users: Screen reader users, Voice-control users/);
   assert.match(markdown, /ownership: Third-party embedded content source: youtube\.com note: Third-party embedded content\. Manual verification recommended\./);
@@ -486,7 +489,7 @@ test("writeReports puts human verification guidance at the top of Markdown repor
 test("writeReports puts scan error retry guidance at the top of Markdown reports", async () => {
   const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-reports-scan-error-"));
 
-  await writeReports(
+  const report = await writeReports(
     outputDir,
     [{
       source: "axe",
@@ -519,8 +522,10 @@ test("writeReports puts scan error retry guidance at the top of Markdown reports
 
   const markdown = await fs.readFile(path.join(outputDir, "a11y-comment.md"), "utf8");
 
+  assert.equal(report.summary.scanErrorCount, 2);
   assert.match(markdown, /> \[!WARNING\]/);
   assert.match(markdown, /Some checks could not complete/);
+  assert.match(markdown, /Scan errors \| 2/);
   assert.match(markdown, /browser exploration and keyboard audit/);
   assert.match(markdown, /--navigation-timeout-ms 60000 --wait-ms 3000 --open/);
   assert.ok(markdown.indexOf("Some checks could not complete") < markdown.indexOf("| Metric | Value |"));

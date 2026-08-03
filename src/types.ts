@@ -801,6 +801,7 @@ export interface ReportSummary {
   byOwnership?: Record<string, number>;
   byUserImpact?: Record<string, number>;
   blockedByHumanVerification?: number;
+  scanErrorCount?: number;
   byPour: Record<string, number>;
   byWcagLevel: Record<string, number>;
   byWcagVersion: Record<string, number>;
