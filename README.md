@@ -345,20 +345,9 @@ Use `--browser chromium|firefox|webkit` when you need evidence from another
 browser engine. Use `--mobile` for one default phone audit, `--tablet` for one
 default tablet audit, or `--device "<Playwright device>"` when you need an exact
 Playwright preset. Use `--devices desktop mobile tablet` when you want separate
-reports for several responsive profiles in one command; each profile is written
-to its own subfolder under `--out`, with a local summary at
-`<out>/a11y-device-audit.html`, plus Markdown and JSON summaries. These compare
-finding counts, explored states, rule differences, and the highest-priority
-page/state to review in each profile. The summary also calls out
-profile-specific rule signals and includes coverage-overlap counts,
-profile-specific page/state signals, copy-paste commands, direct links to
-matching visual evidence, screenshot hints, screenshot review notes, and a short
-side-by-side comparison queue with an overlay slider and screenshot-size diff
-metadata for captured screenshots. When matching screenshots are PNG files with
-the same dimensions, the matrix summary also records a lightweight pixel-change
-percentage and shows it as a compact visual meter.
-Each visual comparison item is also labeled with a review priority so the
-highest-risk browser or responsive differences are easier to inspect first.
+reports for several responsive profiles in one command. Each profile is written
+to its own subfolder under `--out`, with a local comparison summary that points
+to the highest-priority differences to review first.
 
 Install the browser engine before using it, for example:
 
@@ -368,17 +357,8 @@ npx playwright install webkit
 
 Use `--browsers chromium firefox webkit` when you want separate reports for
 several browser engines in one command. This writes one report per browser plus
-local HTML, Markdown, and JSON summaries under `--out`, including a difference
-review for browser-specific rule signals and the first page/state to inspect in
-each browser report. The summary also calls out browser-only rule signals and
-coverage-overlap counts, browser-only page/state signals, copy-paste commands,
-direct links to matching visual evidence, screenshot hints, screenshot review
-notes, and a short side-by-side comparison queue with an overlay slider for
-captured screenshots plus screenshot-size diff metadata. When matching
-screenshots are PNG files with the same dimensions, the matrix summary also
-records a lightweight pixel-change percentage and shows it as a compact visual
-meter. Each visual comparison item is also labeled with a review priority so
-the highest-risk browser differences are easier to inspect first.
+local comparison summaries under `--out`, including browser-specific rule
+signals and links to matching visual evidence.
 
 Audit profiles are shortcuts:
 

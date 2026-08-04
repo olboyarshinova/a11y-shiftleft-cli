@@ -1,6 +1,7 @@
 node_modules/
 reports*/
 a11y-share*/
+a11y-evidence*/
 analysis/
 outputs/
 rep/

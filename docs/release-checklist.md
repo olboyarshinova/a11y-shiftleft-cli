@@ -2,6 +2,71 @@
 
 Use this checklist before publishing a public release.
 
+## v1.0 Release Gate
+
+Run this first for the stable 1.0 release:
+
+```bash
+nvm use
+npm install
+npm test
+npm run test:fixtures
+npm run build:demo
+npm_config_cache=.npm-cache npm pack --dry-run
+```
+
+Confirm the 1.0 public workflow:
+
+```bash
+node bin/cli.js --help
+node bin/cli.js audit --help
+node bin/cli.js check --help
+node bin/cli.js setup --help
+node bin/cli.js generate-ci --help
+node bin/cli.js evidence --help
+node bin/cli.js ticket --help
+node bin/cli.js doctor --help
+```
+
+With the demo running, run one visual smoke audit:
+
+```bash
+npm run demo -- --port 5173
+```
+
+In another terminal:
+
+```bash
+node bin/cli.js audit \
+  --url http://localhost:5173 \
+  --max-depth 1 \
+  --limit 3 \
+  --actions-per-state 3 \
+  --fail-on none \
+  --out reports-1-0-smoke
+```
+
+Expected checks:
+
+```txt
+reports-1-0-smoke/a11y-report.html exists
+reports-1-0-smoke/a11y-report.json exists
+Visual report shows annotated screenshots, grouped findings, Audit Coverage,
+keyboard evidence or an explicit keyboard skip, and manual-review tasks.
+```
+
+Before publishing 1.0, confirm:
+
+- README quick start uses `audit` as the default visual workflow.
+- README distinguishes `audit`, `check`, and `explore`.
+- README and release notes say the tool supports accessibility evidence and
+  review, not legal or WCAG conformance certification.
+- `.gitignore` guidance excludes generated reports, screenshots, auth state,
+  share packages, and local evidence packages.
+- `docs/release-notes-v1.0.0.md` is no longer marked draft.
+- Adapter packages are published only if their package files changed; they do
+  not need to share the CLI version number.
+
 ## Local Verification
 
 ```bash
@@ -376,6 +441,8 @@ docs/release-notes-v0.4.0.md
 docs/release-notes-v0.5.0.md
 docs/release-notes-v0.6.0.md
 docs/release-notes-v0.8.1.md
+docs/release-notes-v0.9.1.md
+docs/release-notes-v1.0.0.md
 docs/release-checklist.md
 docs/ide-integration.md
 docs/ticket-export.md

@@ -9,6 +9,9 @@
   Filter, and Sort during exploration, including icon-only edit controls with
   SVG/title/test-id hints, so modal and panel states are less likely to be
   skipped by per-state action limits.
+- Finalized the v1.0.0 release notes, added a focused 1.0 release gate to the
+  release checklist, and tightened generated artifact gitignore guidance for
+  local evidence packages.
 - Added `--navigation-timeout-ms` to `audit` and `explore` so slow external,
   staging, or authenticated pages can wait longer for the initial browser
   navigation before screenshots and scans begin.

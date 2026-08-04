@@ -1,9 +1,9 @@
-# v1.0.0 Release Notes (Draft)
+# v1.0.0 Release Notes
 
-`a11y-shiftleft-cli` v1.0.0 is planned as the first stable release for the
-local, developer-friendly accessibility review workflow. The release should keep
-the command surface stable, focus on reproducible evidence, and avoid adding new
-large features before publication.
+`a11y-shiftleft-cli` v1.0.0 is the first stable release for the local,
+developer-friendly accessibility review workflow. It keeps the public command
+surface stable, focuses on reproducible evidence, and avoids adding new large
+features at the release line.
 
 ## Release Positioning
 
@@ -42,8 +42,8 @@ These commands should be treated as the public 1.0 workflow:
 
 - Visual HTML reports with annotated screenshots, grouped findings, WCAG labels,
   keyboard evidence, and practical fix guidance.
-- Safe dynamic browser exploration for rendered pages, SPAs, modals, and
-  discovered UI states.
+- Safe dynamic browser exploration for rendered pages, SPAs, modals, edit
+  controls, and discovered UI states.
 - Fast CI checks for pull requests, including baseline and retest workflows.
 - Optional source-code adapters for React, Vue, and Angular.
 - Keyboard traversal evidence, focus-order summaries, and manual-review
@@ -72,6 +72,8 @@ These commands should be treated as the public 1.0 workflow:
 Before publishing 1.0, complete this checklist:
 
 - Run `npm test`.
+- Run `npm run test:fixtures`.
+- Run `npm run build:demo`.
 - Run `npm pack --dry-run`.
 - Run a demo audit and confirm `reports/a11y-report.html` opens and shows
   screenshots, grouped findings, Audit Coverage, and keyboard evidence.
@@ -81,6 +83,11 @@ Before publishing 1.0, complete this checklist:
   authenticated pages, standards presets, and evidence commands.
 - Confirm `.gitignore` guidance still excludes report artifacts by default.
 - Confirm release notes and package metadata do not overclaim compliance.
+
+Adapter packages use independent versions. Publish adapter updates only when an
+adapter package changed; the CLI can be released as `1.0.0` even if
+`@a11y-shiftleft/react`, `@a11y-shiftleft/vue`, and
+`@a11y-shiftleft/angular` keep their current adapter versions.
 
 ## Suggested Upgrade Command
 
