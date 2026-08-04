@@ -18,6 +18,8 @@
 - Added scan-completeness counts to `evidence export` summaries and terminal
   output so downstream datasets can avoid treating incomplete scans as clean
   runs.
+- Treat evidence packages with incomplete scanner checks as not ready for
+  review handoff until the scan is rerun or manual review is documented.
 - Improved large grouped locations in visual reports by showing the first
   locations immediately, simplifying the "Show more locations" label, and
   continuing ordered-list numbering inside the expanded overflow.

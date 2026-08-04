@@ -563,6 +563,8 @@ function reviewHints(
   const hints: string[] = [];
   if (!reportSummary) {
     hints.push("No audit count summary was found in a11y-report.json.");
+  } else if ((reportSummary.scanErrorCount || 0) > 0) {
+    hints.push(`${reportSummary.scanErrorCount} scanner issue${reportSummary.scanErrorCount === 1 ? "" : "s"} were recorded; rerun the scan or document manual review before treating this package as final evidence.`);
   }
   if (!content.evaluationScope) {
     hints.push("No evaluation-scope.json was included, so review scope and manual-review status are not documented in this package.");
@@ -591,6 +593,8 @@ function reviewReadiness(
   const blockingHints: string[] = [];
   if (!reportSummary) {
     blockingHints.push("Add a valid a11y-report.json with audit summary counts.");
+  } else if ((reportSummary.scanErrorCount || 0) > 0) {
+    blockingHints.push("Rerun or manually review incomplete scanner checks before treating this package as review-ready.");
   }
   if (!content.evaluationScope) {
     blockingHints.push("Add evaluation-scope.json so review scope and manual-review status are documented.");

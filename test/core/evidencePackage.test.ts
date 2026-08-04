@@ -305,6 +305,58 @@ test("createEvidencePackage marks complete review evidence as ready for handoff"
   assert.deepEqual(verification.reviewReadiness.blockingHints, []);
 });
 
+test("createEvidencePackage blocks review handoff when scanner checks were incomplete", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-evidence-scan-errors-"));
+  const reportsDir = path.join(root, "reports");
+  const outputDir = path.join(root, "evidence");
+  await fs.mkdir(reportsDir, { recursive: true });
+  await fs.writeFile(path.join(reportsDir, "a11y-report.json"), JSON.stringify({
+    summary: {
+      total: 1,
+      critical: 0,
+      warning: 1,
+      info: 0,
+      scanErrorCount: 2
+    },
+    issues: []
+  }, null, 2));
+  await fs.writeFile(path.join(reportsDir, "evaluation-scope.json"), JSON.stringify({
+    reviewStatus: {
+      manualReviewItems: 2,
+      manualReviewCompleted: 2,
+      manualStepRecords: 1,
+      manualStepsCompleted: 1,
+      manualTaskEvidenceAttachments: 0,
+      manualRedactedTaskEvidence: 0,
+      manualTemporaryAcceptances: 0,
+      manualTemporaryAcceptancesExpiringSoon: 0
+    }
+  }, null, 2));
+  await fs.writeFile(path.join(reportsDir, "keyboard-report.json"), "{}\n");
+
+  const manifest = await createEvidencePackage({ reportsDir, outputDir });
+
+  assert.deepEqual(manifest.reviewReadiness, {
+    readyForReview: false,
+    blockingHints: [
+      "Rerun or manually review incomplete scanner checks before treating this package as review-ready."
+    ]
+  });
+  assert.deepEqual(manifest.reviewHints, [
+    "2 scanner issues were recorded; rerun the scan or document manual review before treating this package as final evidence.",
+    "Visual reports and screenshots were excluded. Re-run with --include-visual only when visual evidence is approved for sharing."
+  ]);
+
+  const summary = await fs.readFile(path.join(outputDir, "evidence-summary.md"), "utf8");
+  assert.match(summary, /Scan errors \| 2/);
+  assert.match(summary, /Rerun or manually review incomplete scanner checks/);
+
+  const verification = await verifyEvidencePackage(outputDir);
+  assert.equal(verification.valid, true);
+  assert.equal(verification.reviewReadiness.readyForReview, false);
+  assert.deepEqual(verification.reviewReadiness.blockingHints, manifest.reviewReadiness.blockingHints);
+});
+
 test("createEvidencePackage refuses to mix with an existing output directory", async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "a11y-evidence-existing-"));
   const reportsDir = path.join(root, "reports");
