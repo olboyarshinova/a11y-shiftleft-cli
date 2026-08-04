@@ -182,6 +182,8 @@ const DANGEROUS_ACTION_PATTERN = /\b(delete|remove|destroy|submit|save|create|up
 
 const THEME_ACTION_PATTERN = /\b(theme|dark\s*mode|light\s*mode|night\s*mode|appearance|colou?r\s*scheme)\b|(?:тема|тёмн|темн|светл|оформлен)|(?:tema|modo\s*oscuro|modo\s*claro|apparence|thème|dunkel|hell|aspetto)|(?:主题|深色|浅色|ダーク|ライト|테마|다크|라이트|الوضع\s*المظلم|الوضع\s*الفاتح)/i;
 
+const STATE_OPENING_ACTION_PATTERN = /\b(edit|pencil|settings?|preferences?|details?|more|filter|sort|refine|customi[sz]e|expand|open\s*(panel|dialog|modal|drawer|menu))\b|(?:редактировать|изменить|настройки|подробнее|ещ[её]|фильтр|сортировка|развернуть)|(?:editar|ajustes|preferencias|detalles|m[aá]s|filtro|ordenar|expandir)|(?:modifier|param[eè]tres|pr[eé]f[eé]rences|d[eé]tails|plus|filtre|trier|d[eé]velopper)|(?:bearbeiten|einstellungen|details|mehr|filter|sortieren|erweitern)|(?:编辑|設定|设置|詳細|详情|更多|筛选|篩選|排序|展開|展开|編集|詳細|もっと|フィルター|並べ替え|펼치기|편집|설정|자세히|더보기|필터|정렬)/i;
+
 export const SENSITIVE_SCREENSHOT_SELECTOR = [
   "[data-a11y-sensitive]",
   "[data-a11y-redact]",
@@ -4379,12 +4381,49 @@ async function discoverSafeActions(
       advertisingPatternSources
     } = input;
 
+    const stateOpeningHintPattern = /\b(edit|pencil|settings?|preferences?|details?|more|filter|sort|refine|customi[sz]e|expand|open\s*(panel|dialog|modal|drawer|menu))\b/i;
+
+    function cleanText(value: string | null | undefined): string {
+      return (value || "").replace(/\s+/g, " ").trim();
+    }
+
+    function labelledByText(element: Element): string {
+      return cleanText(element.getAttribute("aria-labelledby"))
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((id) => cleanText(document.getElementById(id)?.textContent))
+        .filter(Boolean)
+        .join(" ");
+    }
+
+    function svgTitleText(element: Element): string {
+      return cleanText(element.querySelector("svg title")?.textContent);
+    }
+
+    function stateOpeningHintOf(element: Element): string {
+      const metadata = [
+        element.getAttribute("data-testid"),
+        element.getAttribute("data-test"),
+        element.getAttribute("id"),
+        element.getAttribute("class"),
+        element.getAttribute("aria-controls"),
+        svgTitleText(element)
+      ].filter(Boolean).join(" ");
+      return stateOpeningHintPattern.test(metadata)
+        ? metadata.replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim()
+        : "";
+    }
+
     function textOf(element: Element): string {
-      return [
+      const explicitText = [
         element.getAttribute("aria-label"),
+        labelledByText(element),
         element.getAttribute("title"),
+        svgTitleText(element),
         element.textContent
       ].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+
+      return explicitText || stateOpeningHintOf(element);
     }
 
     function isVisible(element: Element): boolean {
@@ -4415,7 +4454,7 @@ async function discoverSafeActions(
       const parts: string[] = [];
       let current: Element | null = element;
 
-      while (current && current !== document.body && parts.length < 5) {
+      while (current && current !== document.body && parts.length < 8) {
         const tag = current.tagName.toLowerCase();
         const parent: Element | null = current.parentElement;
         if (!parent) {
@@ -4764,8 +4803,9 @@ function exploreActionRank(action: {
   selector?: string;
 }): number {
   if (isThemeAction(action)) return 0;
-  if (action.type === "navigate") return 1;
-  return 2;
+  if (action.type === "click" && isStateOpeningAction(action)) return 1;
+  if (action.type === "navigate") return 2;
+  return 3;
 }
 
 export function isThemeAction(action: {
@@ -4774,6 +4814,18 @@ export function isThemeAction(action: {
   selector?: string;
 }): boolean {
   return THEME_ACTION_PATTERN.test([
+    action.label,
+    action.text,
+    action.selector
+  ].filter(Boolean).join(" "));
+}
+
+export function isStateOpeningAction(action: {
+  label?: string;
+  text?: string;
+  selector?: string;
+}): boolean {
+  return STATE_OPENING_ACTION_PATTERN.test([
     action.label,
     action.text,
     action.selector

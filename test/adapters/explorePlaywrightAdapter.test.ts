@@ -21,6 +21,7 @@ import {
   matchesWaitUntilUrl,
   isSafeExploreAction,
   isSafeExploreActionWithConfig,
+  isStateOpeningAction,
   normalizeScreenshotClip,
   normalizeReflowOverflow,
   normalizeExploreUrl,
@@ -181,6 +182,15 @@ test("isSafeExploreAction allows low-risk UI expansion actions", () => {
     label: "Click: More details",
     text: "More details",
     role: "summary"
+  }, "http://localhost:3000/"), true);
+
+  assert.equal(isSafeExploreAction({
+    id: "edit",
+    type: "click",
+    selector: "[aria-label=\"Edit recipe\"]",
+    label: "Click: Edit recipe",
+    text: "Edit recipe",
+    role: "button"
   }, "http://localhost:3000/"), true);
 });
 
@@ -617,16 +627,37 @@ test("prioritizeExploreActions keeps unique page navigation ahead of ordinary cl
   const actions = prioritizeExploreActions([
     { type: "click" as const, label: "Open navigation", selector: "#menu" },
     { type: "navigate" as const, label: "Products", selector: "#products", url: "http://localhost:3000/products" },
+    { type: "click" as const, label: "Edit recipe", selector: "#edit" },
     { type: "click" as const, label: "Switch to dark mode", selector: "#theme" },
     { type: "navigate" as const, label: "About", selector: "#about", url: "http://localhost:3000/about" }
   ]);
 
   assert.deepEqual(actions.map((action) => action.selector), [
     "#theme",
+    "#edit",
     "#products",
     "#about",
     "#menu"
   ]);
+});
+
+test("isStateOpeningAction recognizes edit and option controls", () => {
+  assert.equal(isStateOpeningAction({
+    label: "Edit recipe",
+    selector: "[aria-label=\"Edit recipe\"]"
+  }), true);
+  assert.equal(isStateOpeningAction({
+    label: "Filter results",
+    selector: "#filter"
+  }), true);
+  assert.equal(isStateOpeningAction({
+    label: "",
+    selector: ".pencil-icon-button"
+  }), true);
+  assert.equal(isStateOpeningAction({
+    label: "Save changes",
+    selector: "#save"
+  }), false);
 });
 
 test("exploreActionKey deduplicates repeated links by destination URL", () => {

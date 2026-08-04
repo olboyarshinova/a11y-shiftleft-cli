@@ -5,6 +5,10 @@
 - Tightened modal-state visual reports so opened dialogs no longer show
   background-page findings just because their screenshot bounds overlap the
   dialog area.
+- Prioritized safe state-opening controls such as Edit, Settings, Details,
+  Filter, and Sort during exploration, including icon-only edit controls with
+  SVG/title/test-id hints, so modal and panel states are less likely to be
+  skipped by per-state action limits.
 - Added `--navigation-timeout-ms` to `audit` and `explore` so slow external,
   staging, or authenticated pages can wait longer for the initial browser
   navigation before screenshots and scans begin.
