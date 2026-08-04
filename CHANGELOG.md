@@ -20,6 +20,8 @@
   runs.
 - Treat evidence packages with incomplete scanner checks as not ready for
   review handoff until the scan is rerun or manual review is documented.
+- Show evidence package review-readiness blockers directly in `evidence pack`
+  terminal output, not only during later verification.
 - Improved large grouped locations in visual reports by showing the first
   locations immediately, simplifying the "Show more locations" label, and
   continuing ordered-list numbering inside the expanded overflow.

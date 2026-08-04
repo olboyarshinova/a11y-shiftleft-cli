@@ -65,6 +65,10 @@ test("formatEvidencePackOutput includes review hints for evidence packages", () 
   assert.match(output, /Contents: reports=1 exports=0 manual=0 keyboard=0 dashboard=0 visual=0 screenshots=0/);
   assert.match(output, /Review summary: none included/);
   assert.match(output, /Review readiness: not ready for review handoff \(3 blockers\)/);
+  assert.match(output, /Review readiness blockers:/);
+  assert.match(output, /Add a valid a11y-report\.json with audit summary counts/);
+  assert.match(output, /Add evaluation-scope\.json so review scope and manual-review status are documented/);
+  assert.match(output, /Add manual-review completion evidence before treating this package as review-ready/);
   assert.match(output, /Review before sharing: \/tmp\/a11y-evidence\/evidence-summary\.md/);
   assert.match(output, /Machine-readable manifest: \/tmp\/a11y-evidence\/evidence-manifest\.json/);
   assert.match(output, /Next: npx a11y-shiftleft-cli evidence verify --package \/tmp\/a11y-evidence/);

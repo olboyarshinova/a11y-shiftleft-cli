@@ -108,6 +108,7 @@ export function formatEvidencePackOutput(manifest: EvidencePackageManifest, outp
     `Contents: ${formatEvidencePackContents(manifest)}`,
     `Review summary: ${formatEvidencePackReviewSummary(manifest)}`,
     `Review readiness: ${formatEvidenceReviewReadiness(manifest.reviewReadiness)}`,
+    ...formatEvidenceReadinessBlockers(manifest.reviewReadiness),
     `Review before sharing: ${path.join(outputDir, "evidence-summary.md")}`,
     `Machine-readable manifest: ${path.join(outputDir, "evidence-manifest.json")}`,
     `Next: npx a11y-shiftleft-cli evidence verify --package ${shellQuote(outputDir)}`,
