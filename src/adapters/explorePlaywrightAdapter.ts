@@ -4443,6 +4443,56 @@ async function discoverSafeActions(
       return cleanText(element.querySelector("svg title")?.textContent);
     }
 
+    function titleCaseToken(value: string): string {
+      return value
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/\b[a-z]/g, (character) => character.toUpperCase());
+    }
+
+    function stateContextText(element: Element, actionLabel: string): string {
+      let current = element.parentElement;
+      let depth = 0;
+
+      while (current && current !== document.body && depth < 6) {
+        const heading = current.querySelector([
+          "h1",
+          "h2",
+          "h3",
+          "h4",
+          "[role='heading']",
+          "[class*='title' i]",
+          "[class*='name' i]"
+        ].join(", "));
+        const headingText = cleanText(heading?.textContent);
+        if (headingText && headingText.toLowerCase() !== actionLabel.toLowerCase()) {
+          return headingText;
+        }
+
+        const text = cleanText(current.textContent);
+        const leadingText = cleanText(
+          text.match(/^(.*?)(?:Prep\s*time|Cook\s*time|Difficulty|\[|$)/i)?.[1]
+        );
+        if (leadingText &&
+          leadingText.length <= 80 &&
+          leadingText.toLowerCase() !== actionLabel.toLowerCase()
+        ) {
+          return leadingText;
+        }
+
+        const testId = current.getAttribute("data-testid") || current.getAttribute("data-test");
+        if (testId && !/^(view|edit|button|link|control)/i.test(testId)) {
+          return titleCaseToken(testId);
+        }
+
+        current = current.parentElement;
+        depth += 1;
+      }
+
+      return "";
+    }
+
     function stateOpeningHintOf(element: Element): string {
       const hintedDescendants = Array.from(element.querySelectorAll([
         "[data-testid]",
@@ -4490,7 +4540,11 @@ async function discoverSafeActions(
         element.textContent
       ].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
 
-      return explicitText || stateOpeningHintOf(element);
+      if (explicitText) return explicitText;
+      const stateOpeningHint = stateOpeningHintOf(element);
+      if (!stateOpeningHint) return "";
+      const context = stateContextText(element, stateOpeningHint);
+      return context ? `${stateOpeningHint} ${context}` : stateOpeningHint;
     }
 
     function isVisible(element: Element): boolean {
@@ -4894,6 +4948,14 @@ function repeatedStateOpeningLabelKey(action: ExploreAction): string | undefined
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
+  if (/\b(edit|pencil)\b/.test(label)) return "edit";
+  if (/\bsettings?\b/.test(label)) return "settings";
+  if (/\bpreferences?\b/.test(label)) return "preferences";
+  if (/\bfilters?\b/.test(label)) return "filter";
+  if (/\bsort\b/.test(label)) return "sort";
+  if (/\bmore\b/.test(label)) return "more";
+  if (/\bdetails?\b/.test(label)) return "details";
+  if (/\bexpand\b/.test(label)) return "expand";
   return label || undefined;
 }
 
