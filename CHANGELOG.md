@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Tightened modal-state visual reports so opened dialogs no longer show
+  background-page findings just because their screenshot bounds overlap the
+  dialog area.
 - Added `--navigation-timeout-ms` to `audit` and `explore` so slow external,
   staging, or authenticated pages can wait longer for the initial browser
   navigation before screenshots and scans begin.

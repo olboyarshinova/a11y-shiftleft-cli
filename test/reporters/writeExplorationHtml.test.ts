@@ -799,9 +799,26 @@ test("renderExplorationHtml hides findings already shown in earlier states", () 
       coordinateSpace: "document" as const
     }
   };
+  const backgroundBehindModalIssue = {
+    ...issues[0],
+    selector: "article:nth-child(2) > .background-card",
+    stateId: "state-2",
+    stateLabel: "Click: Open audit modal",
+    screenshot: "screenshots/state-2.png",
+    fingerprint: "color-contrast::state-2::behind-modal",
+    ruleId: "color-contrast",
+    severity: "warning" as const,
+    elementBounds: {
+      x: 70,
+      y: 25,
+      width: 8,
+      height: 8,
+      coordinateSpace: "viewport" as const
+    }
+  };
   const modalIssue = {
     ...issues[0],
-    selector: "main > div > div > div > button",
+    selector: ".modal-close",
     stateId: "state-2",
     stateLabel: "Click: Open audit modal",
     screenshot: "screenshots/state-2.png",
@@ -814,7 +831,12 @@ test("renderExplorationHtml hides findings already shown in earlier states", () 
       coordinateSpace: "viewport" as const
     }
   };
-  const html = renderExplorationHtml(modalGraph, [issues[0], repeatedBackgroundIssue, modalIssue]);
+  const html = renderExplorationHtml(modalGraph, [
+    issues[0],
+    repeatedBackgroundIssue,
+    backgroundBehindModalIssue,
+    modalIssue
+  ]);
   const state1Start = html.indexOf('id="state-1"');
   const state1End = html.indexOf("</article>", state1Start);
   const state1Html = html.slice(state1Start, state1End);
@@ -825,7 +847,8 @@ test("renderExplorationHtml hides findings already shown in earlier states", () 
   assert.match(state1Html, /\.icon-button/);
   assert.doesNotMatch(state2Html, /\.icon-button/);
   assert.doesNotMatch(state2Html, /article:nth-child\(7\)/);
-  assert.match(state2Html, /main &gt; div &gt; div &gt; div &gt; button/);
+  assert.doesNotMatch(state2Html, /\.background-card/);
+  assert.match(state2Html, /\.modal-close/);
   assert.match(state2Html, /1 critical/);
 });
 

@@ -5,7 +5,7 @@ import { compareLighthouseWithFindings } from "../core/lighthouseComparison.js";
 import { summarizeManualReviewRecords } from "../core/manualChecklist.js";
 import { formatReportDateUtc } from "../core/reportDate.js";
 import { getRemediationHint } from "../core/remediation.js";
-import type { DedupedIssue, ElementBounds, ExplorationGraph, ExplorationState, ExploreSkippedAction, IgnoreSummary, JourneyImpactSummary, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, PlannedEvaluationScope, RemediationHint, ReportRetentionEvidence, Severity, WcagCoverageCriterionSummary, WcagCoverageStatus, WcagCoverageSummary } from "../types.js";
+import type { DedupedIssue, ExplorationGraph, ExplorationState, ExploreSkippedAction, IgnoreSummary, JourneyImpactSummary, KeyboardAuditResult, LighthouseAuditResult, ManualChecklist, PlannedEvaluationScope, RemediationHint, ReportRetentionEvidence, Severity, WcagCoverageCriterionSummary, WcagCoverageStatus, WcagCoverageSummary } from "../types.js";
 
 interface StateViewModel extends ExplorationState {
   issues: DedupedIssue[];
@@ -5306,8 +5306,7 @@ function filterRepeatedStateIssues(
 
 function shouldDisplayIssueInState(state: ExplorationState, issue: DedupedIssue): boolean {
   if (!state.modalFocus || state.depth === 0) return true;
-  return isModalSpecificIssue(issue)
-    || isIssueInsideDialogBounds(issue, state.modalFocus.dialogBounds);
+  return isModalSpecificIssue(issue);
 }
 
 function isModalSpecificIssue(issue: DedupedIssue): boolean {
@@ -5318,30 +5317,6 @@ function isModalSpecificIssue(issue: DedupedIssue): boolean {
   ].filter(Boolean).join(" ").toLowerCase();
 
   return /\bmodal\b|\bdialog\b|aria-modal|alertdialog|role=["']?dialog|role=["']?alertdialog/.test(haystack);
-}
-
-function isIssueInsideDialogBounds(issue: DedupedIssue, dialogBounds?: ElementBounds): boolean {
-  if (!dialogBounds || !issue.elementBounds) return false;
-  const issueBounds = normalizeBoundsToDocumentSpace(issue.elementBounds);
-  const modalBounds = normalizeBoundsToDocumentSpace(dialogBounds);
-  if (!issueBounds || !modalBounds) return false;
-  const issueCenterX = issueBounds.x + issueBounds.width / 2;
-  const issueCenterY = issueBounds.y + issueBounds.height / 2;
-
-  return issueCenterX >= modalBounds.x
-    && issueCenterX <= modalBounds.x + modalBounds.width
-    && issueCenterY >= modalBounds.y
-    && issueCenterY <= modalBounds.y + modalBounds.height;
-}
-
-function normalizeBoundsToDocumentSpace(bounds: ElementBounds): ElementBounds | undefined {
-  if (!Number.isFinite(bounds.x)
-    || !Number.isFinite(bounds.y)
-    || !Number.isFinite(bounds.width)
-    || !Number.isFinite(bounds.height)) {
-    return undefined;
-  }
-  return bounds;
 }
 
 function repeatedStateIssueKey(issue: DedupedIssue): string | undefined {
