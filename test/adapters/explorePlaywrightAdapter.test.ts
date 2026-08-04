@@ -655,6 +655,10 @@ test("isStateOpeningAction recognizes edit and option controls", () => {
     selector: ".pencil-icon-button"
   }), true);
   assert.equal(isStateOpeningAction({
+    label: "edit button edit",
+    selector: "div > div:nth-of-type(1)"
+  }), true);
+  assert.equal(isStateOpeningAction({
     label: "Save changes",
     selector: "#save"
   }), false);

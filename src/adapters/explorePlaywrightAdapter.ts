@@ -54,12 +54,14 @@ const INTERACTIVE_SELECTOR = [
   "[role='switch']",
   "[aria-haspopup]",
   "details > summary",
+  "[tabindex]:not([tabindex='-1'])",
   "[data-a11y-explore]"
 ].join(", ");
 
 const DEFAULT_MAX_DEPTH = 2;
 const DEFAULT_MAX_STATES = 20;
 const DEFAULT_MAX_ACTIONS_PER_STATE = 8;
+const MAX_REPEATED_STATE_OPENING_ACTIONS_PER_LABEL = 3;
 const DEFAULT_WAIT_MS = 250;
 const DEFAULT_NAVIGATION_TIMEOUT_MS = 15000;
 const DEFAULT_SCREENSHOT_FORMAT = "jpeg";
@@ -4442,17 +4444,41 @@ async function discoverSafeActions(
     }
 
     function stateOpeningHintOf(element: Element): string {
+      const hintedDescendants = Array.from(element.querySelectorAll([
+        "[data-testid]",
+        "[data-test]",
+        "[aria-label]",
+        "[title]",
+        "[alt]",
+        "[class]"
+      ].join(", "))).slice(0, 4);
       const metadata = [
         element.getAttribute("data-testid"),
         element.getAttribute("data-test"),
         element.getAttribute("id"),
         element.getAttribute("class"),
         element.getAttribute("aria-controls"),
-        svgTitleText(element)
+        svgTitleText(element),
+        ...hintedDescendants.flatMap((descendant) => [
+          descendant.getAttribute("data-testid"),
+          descendant.getAttribute("data-test"),
+          descendant.getAttribute("aria-label"),
+          descendant.getAttribute("title"),
+          descendant.getAttribute("alt"),
+          descendant.getAttribute("class")
+        ])
       ].filter(Boolean).join(" ");
-      return stateOpeningHintPattern.test(metadata)
-        ? metadata.replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim()
-        : "";
+      const normalized = metadata.replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+      if (!stateOpeningHintPattern.test(normalized)) return "";
+      if (/\b(edit|pencil)\b/i.test(normalized)) return "Edit";
+      if (/\bsettings?\b/i.test(normalized)) return "Settings";
+      if (/\bpreferences?\b/i.test(normalized)) return "Preferences";
+      if (/\bfilters?\b/i.test(normalized)) return "Filter";
+      if (/\bsort\b/i.test(normalized)) return "Sort";
+      if (/\bmore\b/i.test(normalized)) return "More";
+      if (/\bdetails?\b/i.test(normalized)) return "Details";
+      if (/\bexpand\b/i.test(normalized)) return "Expand";
+      return normalized;
     }
 
     function textOf(element: Element): string {
@@ -4760,6 +4786,7 @@ async function discoverSafeActions(
   ].filter(Boolean).join("|")));
 
   const seen = new Set<string>();
+  const repeatedStateOpeningLabels = new Map<string, number>();
   const actions: ExploreAction[] = [];
 
   for (const rawAction of rawActions) {
@@ -4793,6 +4820,29 @@ async function discoverSafeActions(
         skippedActions.push(skipped);
       }
       continue;
+    }
+
+    const repeatedLabelKey = repeatedStateOpeningLabelKey(action);
+    if (repeatedLabelKey) {
+      const count = repeatedStateOpeningLabels.get(repeatedLabelKey) || 0;
+      if (count >= MAX_REPEATED_STATE_OPENING_ACTIONS_PER_LABEL) {
+        const skipped = toSkippedAction(
+          action,
+          "Similar state-opening controls were sampled already; later matching controls are skipped to keep room for other interaction types."
+        );
+        const skippedKey = [
+          skipped.type,
+          skipped.selector,
+          skipped.url,
+          skipped.reason
+        ].filter(Boolean).join("|");
+        if (!seenSkipped.has(skippedKey)) {
+          seenSkipped.add(skippedKey);
+          skippedActions.push(skipped);
+        }
+        continue;
+      }
+      repeatedStateOpeningLabels.set(repeatedLabelKey, count + 1);
     }
 
     seen.add(key);
@@ -4835,6 +4885,16 @@ export function exploreActionKey(action: Pick<ExploreAction, "type" | "selector"
   return action.type === "navigate"
     ? `navigate:${action.url}`
     : `${action.type}:${action.selector}`;
+}
+
+function repeatedStateOpeningLabelKey(action: ExploreAction): string | undefined {
+  if (action.type !== "click" || !isStateOpeningAction(action)) return undefined;
+  const label = (action.text || action.label || "")
+    .replace(/^click:\s*/i, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+  return label || undefined;
 }
 
 function exploreActionRank(action: {
