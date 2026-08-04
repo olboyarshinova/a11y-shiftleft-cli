@@ -1361,13 +1361,14 @@ test("renderExplorationHtml explains when not every target has a screenshot mark
   const issueHtml = issueBlockForRule(html, "color-contrast");
 
   assert.doesNotMatch(issueHtml, /shown on screenshots/);
-  assert.match(issueHtml, /Show 3 more locations/);
+  assert.doesNotMatch(issueHtml, /Show 3 more locations/);
   assert.doesNotMatch(issueHtml, /3 hidden: 3 warning, 13 total/);
-  assert.match(issueHtml, /<ol class="finding-targets finding-targets-nested" start="11">/);
-  assert.match(issueHtml, /class="finding-target-more finding-target-more-warning"/);
+  assert.doesNotMatch(issueHtml, /<ol class="finding-targets finding-targets-nested" start="11">/);
+  assert.doesNotMatch(issueHtml, /class="finding-target-more finding-target-more-warning"/);
   assert.match(issueHtml, /\.contrast-12/);
-  assert.match(html, /\.finding-target-more summary \{[\s\S]*?display: inline-flex/);
-  assert.match(html, /\.finding-target-more-warning summary \{[\s\S]*?color: var\(--warning\)/);
+  assert.doesNotMatch(html, /\.finding-occurrence \+ \.finding-occurrence/);
+  assert.match(html, /\.finding-target-more-warning summary \{[^}]*color: var\(--warning\)/);
+  assert.doesNotMatch(html, /\.finding-target-more-warning summary \{[^}]*background:/);
 });
 
 test("renderExplorationHtml collapses finding groups after ten visible groups", () => {

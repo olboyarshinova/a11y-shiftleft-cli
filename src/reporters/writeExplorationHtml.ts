@@ -1755,11 +1755,6 @@ export function renderExplorationHtml(
       padding: 0;
     }
 
-    .finding-occurrence + .finding-occurrence {
-      border-top: 1px solid var(--line);
-      padding-top: 8px;
-    }
-
     .finding-targets {
       display: grid;
       gap: 6px;
@@ -1830,7 +1825,6 @@ export function renderExplorationHtml(
     .issue-overflow-critical summary,
     .finding-overflow-critical summary,
     .finding-target-more-critical summary {
-      background: #fff1f2;
       border-color: #f3a2aa;
       color: var(--critical);
     }
@@ -1838,7 +1832,6 @@ export function renderExplorationHtml(
     .issue-overflow-warning summary,
     .finding-overflow-warning summary,
     .finding-target-more-warning summary {
-      background: #fff7ed;
       border-color: #fed7aa;
       color: var(--warning);
     }
@@ -1846,7 +1839,6 @@ export function renderExplorationHtml(
     .issue-overflow-info summary,
     .finding-overflow-info summary,
     .finding-target-more-info summary {
-      background: #eff6ff;
       border-color: #bfdbfe;
       color: var(--info);
     }
@@ -4581,8 +4573,10 @@ function renderFindingTargets(
   issues: DedupedIssue[],
   annotationNumberByIssueKey: Record<string, number> = {}
 ): string {
-  const visibleIssues = issues.slice(0, 10);
-  const hiddenIssues = issues.slice(10);
+  const collapsedIssues = issues.slice(10);
+  const shouldCollapseOverflow = collapsedIssues.length >= 5;
+  const visibleIssues = shouldCollapseOverflow ? issues.slice(0, 10) : issues;
+  const hiddenIssues = shouldCollapseOverflow ? collapsedIssues : [];
   return `<ol class="finding-targets">
     ${visibleIssues.map((issue) => `<li>${renderFindingTarget(issue, annotationNumberByIssueKey)}</li>`).join("\n")}
     ${hiddenIssues.length > 0 ? `<li class="finding-target-more finding-target-more-${dominantSeverity(hiddenIssues)}">
