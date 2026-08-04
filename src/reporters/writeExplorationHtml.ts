@@ -1806,12 +1806,10 @@ export function renderExplorationHtml(
       font-weight: 700;
     }
 
-    .issue-overflow,
     .finding-overflow {
       margin-top: 6px;
     }
 
-    .issue-overflow summary,
     .finding-overflow summary,
     .finding-target-more summary {
       background: #f8fafc;
@@ -1826,19 +1824,16 @@ export function renderExplorationHtml(
       padding: 5px 8px;
     }
 
-    .issue-overflow-critical summary,
     .finding-overflow-critical summary {
       border-color: #f3a2aa;
       color: var(--critical);
     }
 
-    .issue-overflow-warning summary,
     .finding-overflow-warning summary {
       border-color: #fed7aa;
       color: var(--warning);
     }
 
-    .issue-overflow-info summary,
     .finding-overflow-info summary {
       border-color: #bfdbfe;
       color: var(--info);
@@ -4459,19 +4454,10 @@ function renderIssues(
   }
 
   const rankedGroups = [...groups.entries()].sort(compareIssueGroupEntries);
-  const visibleGroups = rankedGroups.slice(0, 10);
-  const remainingGroups = rankedGroups.slice(10);
-  const remainingIssues = remainingGroups.flatMap(([, groupIssues]) => groupIssues);
-  const remainingIssueCount = remainingIssues.length;
-  const remainingSeverity = dominantSeverity(remainingIssues);
 
   return `<ul class="issue-list">
-    ${visibleGroups.map(([ruleId, groupIssues]) => renderStateIssueGroup(ruleId, groupIssues, annotationNumberByIssueKey)).join("\n")}
-  </ul>
-  ${remainingGroups.length > 0 ? `<details class="issue-overflow issue-overflow-${remainingSeverity}">
-    <summary>Show ${remainingGroups.length} more rule group${remainingGroups.length === 1 ? "" : "s"} (${remainingIssueCount} hidden finding${remainingIssueCount === 1 ? "" : "s"}: ${escapeHtml(formatSeverityMix(remainingIssues))}, ${issues.length} total)</summary>
-    <ul class="issue-list">${remainingGroups.map(([ruleId, groupIssues]) => renderStateIssueGroup(ruleId, groupIssues, annotationNumberByIssueKey)).join("\n")}</ul>
-  </details>` : ""}`;
+    ${rankedGroups.map(([ruleId, groupIssues]) => renderStateIssueGroup(ruleId, groupIssues, annotationNumberByIssueKey)).join("\n")}
+  </ul>`;
 }
 
 function renderNonVisualIssues(issues: DedupedIssue[]): string {

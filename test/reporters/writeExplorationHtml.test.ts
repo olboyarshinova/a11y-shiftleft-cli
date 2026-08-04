@@ -2160,8 +2160,8 @@ test("renderExplorationHtml keeps diagnostic exploration data out of the visual 
     skippedActions: overflowActions
   }, overflowIssues);
 
-  assert.match(html, /Show 1 more rule group \(1 hidden finding: 1 critical, 11 total\)/);
-  assert.match(html, /class="issue-overflow issue-overflow-critical"/);
+  assert.doesNotMatch(html, /Show 1 more rule group/);
+  assert.doesNotMatch(html, /class="issue-overflow/);
   assert.match(html, /Finding 11/);
   assert.doesNotMatch(html, /State transitions and skipped actions can be saved to <code>exploration-graph\.json<\/code> with <code>--raw<\/code>/);
   assert.doesNotMatch(html, /Show 1 more transition/);
