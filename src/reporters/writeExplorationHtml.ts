@@ -894,7 +894,28 @@ export function renderExplorationHtml(
     .coverage-table {
       border-collapse: collapse;
       min-width: 820px;
+      table-layout: fixed;
       width: 100%;
+    }
+
+    .coverage-col-review {
+      width: 56px;
+    }
+
+    .coverage-col-area {
+      width: 18%;
+    }
+
+    .coverage-col-state {
+      width: 124px;
+    }
+
+    .coverage-col-status {
+      width: 152px;
+    }
+
+    .coverage-col-findings {
+      width: 72px;
     }
 
     .coverage-table th,
@@ -914,25 +935,22 @@ export function renderExplorationHtml(
     }
 
     .coverage-table tbody th {
-      width: 22%;
+      width: auto;
     }
 
     .coverage-table .coverage-check-cell {
       text-align: center;
-      width: 64px;
     }
 
     .coverage-table .coverage-findings {
       font-variant-numeric: tabular-nums;
       font-weight: 700;
       text-align: center;
-      width: 84px;
     }
 
     .coverage-table .coverage-state-cell,
     .coverage-table .coverage-status-cell {
-      min-width: 180px;
-      width: 180px;
+      width: auto;
     }
 
     .coverage-table input[type="checkbox"] {
@@ -3106,6 +3124,14 @@ function renderCoverageMatrix(
     <p class="coverage-progress" data-coverage-progress aria-live="polite"></p>
     <div class="coverage-table-wrap">
       <table class="coverage-table" aria-label="Audit coverage matrix">
+        <colgroup>
+          <col class="coverage-col-review">
+          <col class="coverage-col-area">
+          <col class="coverage-col-state">
+          <col class="coverage-col-status">
+          <col class="coverage-col-findings">
+          <col class="coverage-col-evidence">
+        </colgroup>
         <thead><tr><th scope="col">Review</th><th scope="col">Area</th><th scope="col">Evidence state</th><th scope="col">Status</th><th scope="col">Findings</th><th scope="col">Evidence or next step</th></tr></thead>
         <tbody>${orderedRows.join("\n")}</tbody>
       </table>

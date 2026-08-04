@@ -2501,6 +2501,11 @@ test("writeExplorationHtml can create a unified audit report", async () => {
   assert.match(html, /Manual review/);
   assert.match(html, /Confirm focus order manually/);
   assert.match(html, /class="coverage-table"/);
+  assert.match(html, /\.coverage-table \{[\s\S]*?table-layout: fixed/);
+  assert.match(html, /<col class="coverage-col-area">/);
+  assert.match(html, /<col class="coverage-col-state">/);
+  assert.match(html, /\.coverage-col-area \{[\s\S]*?width: 18%/);
+  assert.match(html, /\.coverage-col-state \{[\s\S]*?width: 124px/);
   assert.match(html, /\.coverage-table th,[\s\S]*?\.coverage-table td \{[\s\S]*?padding: 6px 9px/);
   assert.match(html, /\.coverage-table input\[type="checkbox"\] \{[\s\S]*?height: 16px[\s\S]*?width: 16px/);
   assert.match(html, /\.coverage-legend-item \{[\s\S]*?min-height: 32px/);
