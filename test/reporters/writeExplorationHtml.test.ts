@@ -403,9 +403,10 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /screenshots\/state-1\.png/);
   assert.match(html, /Unique screenshots/);
   assert.match(html, /Duplicate screenshots skipped/);
-  assert.match(html, /Duplicate visual not stored again/);
+  assert.match(html, /Same screenshot as <a href="#state-1">state-1<\/a>/);
+  assert.match(html, /Duplicate visual evidence is shown once/);
   assert.match(html, /visual reused from state-1/);
-  assert.match(html, /Open this state's annotated evidence/);
+  assert.doesNotMatch(html, /Open this state's annotated evidence/);
   assert.match(html, /button-name/);
   assert.match(html, /WCAG Level A/);
   assert.match(html, /WCAG 4\.1\.2 Name, Role, Value/);

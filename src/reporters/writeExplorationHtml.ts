@@ -3829,16 +3829,11 @@ function renderStateScreenshot(state: StateViewModel): string {
       kind: state.screenshotFullPage ? "full-page" as const : "viewport" as const,
       issueCount: state.issues.length
     }];
-  const firstTargetId = `screenshot-${state.id}`;
-
   if (state.visualDuplicateOf && evidence.length === 1) {
-    const annotations = annotationsForEvidence(state, evidence[0].path);
     return `<div class="screenshot-reference">
-      <strong>Duplicate visual not stored again</strong>
-      <span>Same pixels as <a href="#${escapeAttribute(state.visualDuplicateOf)}">${escapeHtml(state.visualDuplicateOf)}</a>.</span>
-      <a href="#${escapeAttribute(firstTargetId)}">Open this state's annotated evidence</a>
-    </div>
-    ${renderAnnotatedScreenshotView(state, evidence[0].path, annotations, firstTargetId)}`;
+      <strong>Same screenshot as <a href="#${escapeAttribute(state.visualDuplicateOf)}">${escapeHtml(state.visualDuplicateOf)}</a></strong>
+      <span>Duplicate visual evidence is shown once; repeated findings are deduplicated in this HTML report.</span>
+    </div>`;
   }
 
   return `<div class="screenshot-evidence-grid">
