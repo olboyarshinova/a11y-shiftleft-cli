@@ -68,10 +68,15 @@ export function renderExplorationHtml(
       annotationNumberByIssueKey: buildAnnotationNumberByIssueKey(state, stateIssues)
     };
   });
+  const stateById = new Map(states.map((state) => [state.id, state]));
+  const visibleStates = states.filter((state) => shouldRenderStateInMainReview(state, stateById));
+  const hiddenDuplicateStates = states.filter((state) => !shouldRenderStateInMainReview(state, stateById));
+  const hiddenDuplicateStateIds = new Set(hiddenDuplicateStates.map((state) => state.id));
+  const visualReportIssues = reportIssues.filter((issue) => !issue.stateId || !hiddenDuplicateStateIds.has(issue.stateId));
   const visualStateIds = new Set(graph.states.map((state) => state.id));
-  const nonVisualIssues = reportIssues.filter((issue) => !issue.stateId || !visualStateIds.has(issue.stateId));
-  const totals = summarizeIssues(reportIssues);
-  const findingTypes = countFindingTypes(reportIssues);
+  const nonVisualIssues = visualReportIssues.filter((issue) => !issue.stateId || !visualStateIds.has(issue.stateId));
+  const totals = summarizeIssues(visualReportIssues);
+  const findingTypes = countFindingTypes(visualReportIssues);
 
   return `<!doctype html>
 <html lang="en">
@@ -2270,6 +2275,19 @@ export function renderExplorationHtml(
       font-weight: 700;
     }
 
+    .duplicate-state-summary {
+      background: #f8fafc;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      grid-column: 1 / -1;
+      padding: 10px 12px;
+    }
+
+    .duplicate-state-summary summary {
+      cursor: pointer;
+      font-weight: 800;
+    }
+
     @media (min-width: 1100px) {
       .report-header-grid {
         grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
@@ -2306,12 +2324,12 @@ export function renderExplorationHtml(
         <h1>${escapeHtml(options.title || "a11y-shiftleft exploration report")}</h1>
         <p class="muted">Generated: <time datetime="${escapeAttribute(graph.generatedAt)}">${escapeHtml(formatReportDateUtc(graph.generatedAt))}</time><br>Start URL: ${escapeHtml(graph.startUrl)}<br>Scan depth: ${escapeHtml(formatDepthScope(graph.summary.maxDepth))}<br>Scan scope: ${escapeHtml(graph.summary.scopeSelector ? `selector ${graph.summary.scopeSelector}; up to ${graph.summary.maxStates} states, ${graph.summary.statesVisited} rendered` : `up to ${graph.summary.maxStates} states, ${graph.summary.statesVisited} rendered`)}<br>Hidden elements: ${escapeHtml(formatHiddenElements(graph.summary.hideElements))}</p>
       </div>
-      ${renderTicketDraftsPanel(reportIssues)}
+      ${renderTicketDraftsPanel(visualReportIssues)}
     </div>
   </header>
   <main>
-    ${renderHumanVerificationBanner(reportIssues, graph)}
-    ${renderScanErrorBanner(reportIssues, graph)}
+    ${renderHumanVerificationBanner(visualReportIssues, graph)}
+    ${renderScanErrorBanner(visualReportIssues, graph)}
 
     <section class="summary" aria-label="Exploration summary">
       ${metric("Exploration depth", formatDepthMetric(graph.summary.maxDepth))}
@@ -2335,23 +2353,24 @@ export function renderExplorationHtml(
       ${metric("Best practices", findingTypes["best-practice"], "best-practice")}
     </section>
 
-    ${renderLighthouseComparison(options.lighthouse, reportIssues)}
+    ${renderLighthouseComparison(options.lighthouse, visualReportIssues)}
 
-    ${renderCoverageMatrix(graph, options, reportIssues)}
+    ${renderCoverageMatrix(graph, options, visualReportIssues)}
 
-    ${renderJourneyReviewQueue(options.plannedScope, options.journeyImpact, reportIssues)}
+    ${renderJourneyReviewQueue(options.plannedScope, options.journeyImpact, visualReportIssues)}
 
     ${renderIgnoreCleanup(options.ignore)}
 
     ${renderReportRetention(options.retention)}
 
     <section class="panel triage" aria-label="Triage overview">
-      ${renderTriageOverview(states, reportIssues)}
-      ${renderFindingGroupControls(states, reportIssues)}
+      ${renderTriageOverview(visibleStates, visualReportIssues)}
+      ${renderFindingGroupControls(visibleStates, visualReportIssues)}
     </section>
 
     <section class="panel states" aria-label="Checked states">
-      ${states.map(renderState).join("\n")}
+      ${visibleStates.map(renderState).join("\n")}
+      ${renderHiddenDuplicateStates(hiddenDuplicateStates)}
       ${renderNonVisualIssues(nonVisualIssues)}
     </section>
 
@@ -3497,6 +3516,42 @@ function renderState(state: StateViewModel): string {
     ${evidenceSections}
   </div>
 </article>`;
+}
+
+function shouldRenderStateInMainReview(state: StateViewModel, stateById: Map<string, StateViewModel>): boolean {
+  if (!state.visualDuplicateOf) return true;
+  if (state.issues.length === 0) return false;
+
+  const originalState = stateById.get(state.visualDuplicateOf);
+  if (!originalState) return true;
+
+  const originalIssueKeys = new Set(originalState.issues.map(visualDuplicateIssueKey));
+  return state.issues.some((issue) => !originalIssueKeys.has(visualDuplicateIssueKey(issue)));
+}
+
+function renderHiddenDuplicateStates(states: StateViewModel[]): string {
+  if (states.length === 0) return "";
+  const visibleItems = states.slice(0, 8);
+  const hiddenCount = Math.max(0, states.length - visibleItems.length);
+  return `<details class="duplicate-state-summary">
+    <summary>${states.length} visually duplicate state${states.length === 1 ? "" : "s"} hidden from the main review</summary>
+    <p class="muted">These states reused an earlier screenshot and did not add new unique visual finding groups in this HTML report.</p>
+    <ul>
+      ${visibleItems.map((state) => `<li id="${escapeAttribute(state.id)}"><strong>${escapeHtml(state.id)}</strong>: ${escapeHtml(state.actionLabel)} · same screenshot as <a href="#${escapeAttribute(state.visualDuplicateOf || "")}">${escapeHtml(state.visualDuplicateOf || "earlier state")}</a></li>`).join("\n")}
+    </ul>
+    ${hiddenCount > 0 ? `<p class="muted">+ ${hiddenCount} more duplicate state${hiddenCount === 1 ? "" : "s"} hidden.</p>` : ""}
+  </details>`;
+}
+
+function visualDuplicateIssueKey(issue: DedupedIssue): string {
+  return [
+    issue.source,
+    issue.ruleId,
+    issue.selector || issue.file || "",
+    issue.message,
+    issue.severity,
+    issue.colorScheme || ""
+  ].join("::");
 }
 
 function renderCompactState(state: StateViewModel, stateSeverity: string, issueBadges: string): string {

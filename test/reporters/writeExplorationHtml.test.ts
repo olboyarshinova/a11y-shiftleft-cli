@@ -403,9 +403,9 @@ test("renderExplorationHtml renders state screenshots, issues, and edges", () =>
   assert.match(html, /screenshots\/state-1\.png/);
   assert.match(html, /Unique screenshots/);
   assert.match(html, /Duplicate screenshots skipped/);
-  assert.match(html, /Same screenshot as <a href="#state-1">state-1<\/a>/);
-  assert.match(html, /Duplicate visual evidence is shown once/);
-  assert.match(html, /visual reused from state-1/);
+  assert.match(html, /1 visually duplicate state hidden from the main review/);
+  assert.match(html, /state-3<\/strong>: Click: Close menu · same screenshot as <a href="#state-1">state-1<\/a>/);
+  assert.doesNotMatch(html, /<article class="state state-ok state-compact" id="state-3">/);
   assert.doesNotMatch(html, /Open this state's annotated evidence/);
   assert.match(html, /button-name/);
   assert.match(html, /WCAG Level A/);
@@ -855,6 +855,24 @@ test("renderExplorationHtml hides findings already shown in earlier states", () 
   assert.match(state2Html, /1 critical/);
 });
 
+test("renderExplorationHtml hides visual duplicate states when URL variants repeat the same findings", () => {
+  const html = renderExplorationHtml(graph, [
+    issues[0],
+    {
+      ...issues[0],
+      url: "http://localhost:3000/index.html",
+      stateId: "state-3",
+      stateLabel: "Click: Close menu",
+      fingerprint: "button-name::state-3::url-variant"
+    }
+  ]);
+
+  assert.match(html, /1 visually duplicate state hidden from the main review/);
+  assert.match(html, /state-3<\/strong>: Click: Close menu · same screenshot as <a href="#state-1">state-1<\/a>/);
+  assert.doesNotMatch(html, /<article class="state state-critical" id="state-3">/);
+  assert.match(html, /Copy all ticket drafts \(1\)/);
+});
+
 test("renderExplorationHtml sorts rule triage by severity and WCAG level", () => {
   const criterion = (
     id: string,
@@ -1013,6 +1031,18 @@ test("renderExplorationHtml shows up to five affected states in triage", () => {
 });
 
 test("renderExplorationHtml shows every affected state for a top rule", () => {
+  const repeatedStateGraph = {
+    ...graph,
+    states: Array.from({ length: 5 }, (_, index) => ({
+      ...graph.states[0],
+      id: `state-${index + 1}`,
+      title: `State ${index + 1}`,
+      fingerprint: `state-${index + 1}`,
+      actionLabel: `State ${index + 1}`,
+      visualDuplicateOf: undefined,
+      issueCount: 1
+    }))
+  };
   const repeatedStateIssues = Array.from({ length: 5 }, (_, index) => ({
     ...issues[0],
     ruleId: "button-name",
@@ -1020,7 +1050,7 @@ test("renderExplorationHtml shows every affected state for a top rule", () => {
     stateId: `state-${index + 1}`,
     stateLabel: `State ${index + 1}`
   }));
-  const html = renderExplorationHtml(graph, repeatedStateIssues);
+  const html = renderExplorationHtml(repeatedStateGraph, repeatedStateIssues);
   const topRules = html.match(/<h3>Top Rules<\/h3>\s*<ol class="triage-list">([\s\S]*?)<\/ol>/)?.[1] || "";
 
   assert.match(topRules, /States: /);
