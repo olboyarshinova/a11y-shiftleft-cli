@@ -1198,6 +1198,9 @@ test("renderExplorationHtml shows the first ten affected findings for very large
   assert.match(issueHtml, /Show 21 more locations/);
   assert.doesNotMatch(issueHtml, /21 hidden: 21 warning, 31 total/);
   assert.match(issueHtml, /<ol class="finding-targets finding-targets-nested" start="11">/);
+  assert.doesNotMatch(html, /\.finding-target-more-warning summary/);
+  assert.doesNotMatch(html, /\.finding-target-more-critical summary/);
+  assert.doesNotMatch(html, /\.finding-target-more-info summary/);
 });
 
 test("renderExplorationHtml groups identical issue messages into numbered locations", () => {
@@ -1397,7 +1400,7 @@ test("renderExplorationHtml explains when not every target has a screenshot mark
   assert.doesNotMatch(issueHtml, /class="finding-target-more finding-target-more-warning"/);
   assert.match(issueHtml, /\.contrast-12/);
   assert.doesNotMatch(html, /\.finding-occurrence \+ \.finding-occurrence/);
-  assert.match(html, /\.finding-target-more-warning summary \{[^}]*color: var\(--warning\)/);
+  assert.doesNotMatch(html, /\.finding-target-more-warning summary/);
   assert.doesNotMatch(html, /\.finding-target-more-warning summary \{[^}]*background:/);
 });
 

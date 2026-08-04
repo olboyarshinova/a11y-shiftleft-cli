@@ -1807,8 +1807,7 @@ export function renderExplorationHtml(
     }
 
     .issue-overflow,
-    .finding-overflow,
-    .finding-target-more details {
+    .finding-overflow {
       margin-top: 6px;
     }
 
@@ -1828,22 +1827,19 @@ export function renderExplorationHtml(
     }
 
     .issue-overflow-critical summary,
-    .finding-overflow-critical summary,
-    .finding-target-more-critical summary {
+    .finding-overflow-critical summary {
       border-color: #f3a2aa;
       color: var(--critical);
     }
 
     .issue-overflow-warning summary,
-    .finding-overflow-warning summary,
-    .finding-target-more-warning summary {
+    .finding-overflow-warning summary {
       border-color: #fed7aa;
       color: var(--warning);
     }
 
     .issue-overflow-info summary,
-    .finding-overflow-info summary,
-    .finding-target-more-info summary {
+    .finding-overflow-info summary {
       border-color: #bfdbfe;
       color: var(--info);
     }
@@ -1851,6 +1847,10 @@ export function renderExplorationHtml(
     .finding-target-more {
       list-style: none;
       margin-left: -24px;
+    }
+
+    .finding-target-more details {
+      margin-top: 0;
     }
 
     .finding-targets-nested {
