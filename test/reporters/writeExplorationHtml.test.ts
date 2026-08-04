@@ -848,6 +848,8 @@ test("renderExplorationHtml hides findings already shown in earlier states", () 
   assert.doesNotMatch(state2Html, /\.icon-button/);
   assert.doesNotMatch(state2Html, /article:nth-child\(7\)/);
   assert.doesNotMatch(state2Html, /\.background-card/);
+  assert.doesNotMatch(state2Html, /Reflow and zoom evidence/);
+  assert.doesNotMatch(state2Html, /Forced colors \/ high contrast evidence/);
   assert.match(state2Html, /\.modal-close/);
   assert.match(state2Html, /1 critical/);
 });

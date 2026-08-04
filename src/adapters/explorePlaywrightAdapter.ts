@@ -3048,10 +3048,18 @@ export function createForcedColorsIssues(
 
 async function inspectOpenModal(page: Page): Promise<ModalFocusEvidence | undefined> {
   return page.evaluate(() => {
+    const DIALOG_LIKE_PATTERN = /\b(modal|dialog|drawer|popover|lightbox|sheet)\b/i;
+
     function isVisible(element: Element): boolean {
       const rect = element.getBoundingClientRect();
       const style = window.getComputedStyle(element);
       return rect.width > 0 && rect.height > 0 && style.display !== "none" && style.visibility !== "hidden";
+    }
+
+    function escapeCssIdentifier(value: string): string {
+      return window.CSS?.escape
+        ? window.CSS.escape(value)
+        : value.replace(/[^a-zA-Z0-9_-]/g, "\\$&");
     }
 
     function selectorFor(element: Element): string {
@@ -3060,6 +3068,12 @@ async function inspectOpenModal(page: Page): Promise<ModalFocusEvidence | undefi
       const role = element.getAttribute("role");
       if (role === "dialog" || role === "alertdialog") return `[role="${role}"]`;
       if (element.tagName.toLowerCase() === "dialog") return "dialog[open]";
+      const testId = element.getAttribute("data-testid");
+      if (testId) return `[data-testid="${testId.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"]`;
+      const test = element.getAttribute("data-test");
+      if (test) return `[data-test="${test.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"]`;
+      const classes = Array.from(element.classList).filter(Boolean).slice(0, 2);
+      if (classes.length > 0) return `.${classes.map(escapeCssIdentifier).join(".")}`;
       return element.tagName.toLowerCase();
     }
 
@@ -3073,8 +3087,35 @@ async function inspectOpenModal(page: Page): Promise<ModalFocusEvidence | undefi
       return element.getAttribute("title")?.trim() || "";
     }
 
-    const dialogs = Array.from(document.querySelectorAll("dialog[open], [role='dialog'], [role='alertdialog']"))
-      .filter(isVisible);
+    function isDialogLikeElement(element: Element): boolean {
+      const identity = [
+        element.getAttribute("class"),
+        element.getAttribute("id"),
+        element.getAttribute("data-testid"),
+        element.getAttribute("data-test"),
+        element.getAttribute("aria-label")
+      ].filter(Boolean).join(" ");
+      if (!DIALOG_LIKE_PATTERN.test(identity)) return false;
+
+      const rect = element.getBoundingClientRect();
+      const style = window.getComputedStyle(element);
+      const viewportArea = Math.max(window.innerWidth * window.innerHeight, 1);
+      const elementArea = rect.width * rect.height;
+      const zIndex = Number.parseInt(style.zIndex || "0", 10);
+      return (
+        elementArea >= viewportArea * 0.01 ||
+        ["fixed", "absolute", "sticky"].includes(style.position) ||
+        Number.isFinite(zIndex) && zIndex > 0
+      );
+    }
+
+    const semanticDialogs = Array.from(document.querySelectorAll("dialog[open], [role='dialog'], [role='alertdialog']"));
+    const dialogLikeCandidates = Array.from(document.querySelectorAll("[class], [id], [data-testid], [data-test], [aria-label]"))
+      .filter((element) => !semanticDialogs.includes(element) && isVisible(element) && isDialogLikeElement(element));
+    const dialogLike = dialogLikeCandidates.filter((element) => (
+      !dialogLikeCandidates.some((other) => other !== element && other.contains(element))
+    ));
+    const dialogs = [...semanticDialogs.filter(isVisible), ...dialogLike];
     const dialog = dialogs.at(-1);
     if (!dialog) return undefined;
     const active = document.activeElement;
@@ -3103,7 +3144,7 @@ async function inspectOpenModal(page: Page): Promise<ModalFocusEvidence | undefi
       } : undefined,
       isModal: dialog.getAttribute("aria-modal") === "true" || (
         dialog.tagName.toLowerCase() === "dialog" && dialog.matches(":modal")
-      ),
+      ) || isDialogLikeElement(dialog),
       accessibleName: name || undefined,
       hasAccessibleName: Boolean(name),
       initialFocusSelector: active && active !== document.body && active !== document.documentElement

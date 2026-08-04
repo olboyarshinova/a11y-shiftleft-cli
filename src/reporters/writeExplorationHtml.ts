@@ -3455,6 +3455,29 @@ function renderState(state: StateViewModel): string {
       issueSummary.info ? badge("info", `${issueSummary.info} info`) : ""
     ].filter(Boolean).join("")
     : badge("ok", "no findings");
+  const evidenceSections = state.modalFocus && state.depth > 0
+    ? [
+      renderAccessibilityTreeEvidence(state),
+      renderModalFocusEvidence(state),
+      renderDynamicAnnouncementEvidence(state),
+      renderFormErrorEvidence(state)
+    ].join("")
+    : [
+      renderAccessibilityTreeEvidence(state),
+      renderReflowEvidence(state),
+      renderTextSpacingEvidence(state),
+      renderSensoryInstructionEvidence(state),
+      renderContextChangeEvidence(state),
+      renderForcedColorsEvidence(state),
+      renderModalFocusEvidence(state),
+      renderDynamicAnnouncementEvidence(state),
+      renderHoverFocusEvidence(state),
+      renderPointerInteractionEvidence(state),
+      renderFormErrorEvidence(state),
+      renderImageAlternativeEvidence(state),
+      renderMediaEvidence(state),
+      renderEmbeddedContentEvidence(state)
+    ].join("");
 
   if (state.issues.length === 0) {
     return renderCompactState(state, stateSeverity, issueBadges);
@@ -3479,20 +3502,7 @@ function renderState(state: StateViewModel): string {
       ${state.visualDuplicateOf ? `<span class="badge">visual reused from ${escapeHtml(state.visualDuplicateOf)}</span>` : ""}
     </div>
     ${renderIssues(state.issues, state.annotationNumberByIssueKey)}
-    ${renderAccessibilityTreeEvidence(state)}
-    ${renderReflowEvidence(state)}
-    ${renderTextSpacingEvidence(state)}
-    ${renderSensoryInstructionEvidence(state)}
-    ${renderContextChangeEvidence(state)}
-    ${renderForcedColorsEvidence(state)}
-    ${renderModalFocusEvidence(state)}
-    ${renderDynamicAnnouncementEvidence(state)}
-    ${renderHoverFocusEvidence(state)}
-    ${renderPointerInteractionEvidence(state)}
-    ${renderFormErrorEvidence(state)}
-    ${renderImageAlternativeEvidence(state)}
-    ${renderMediaEvidence(state)}
-    ${renderEmbeddedContentEvidence(state)}
+    ${evidenceSections}
   </div>
 </article>`;
 }
