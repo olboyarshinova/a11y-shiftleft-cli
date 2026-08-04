@@ -1771,9 +1771,8 @@ export function renderExplorationHtml(
       margin-top: 8px;
     }
 
-    .affected-findings > summary {
+    .affected-findings-title {
       color: var(--ink);
-      cursor: pointer;
       font-size: 12px;
       font-weight: 800;
     }
@@ -4546,8 +4545,10 @@ function renderStateIssueGroup(
 }
 
 function renderAffectedFindingsDetails(issues: DedupedIssue[], occurrences: string): string {
-  const openAttribute = issues.length <= 5 || issues.length > 10 ? " open" : "";
-  return `<details class="affected-findings"${openAttribute}><summary>Affected findings (${issues.length}) ${renderSeverityMixInline(issues)}</summary>${occurrences}</details>`;
+  return `<div class="affected-findings">
+    <div class="affected-findings-title">Affected findings (${issues.length}) ${renderSeverityMixInline(issues)}</div>
+    ${occurrences}
+  </div>`;
 }
 
 function renderSeverityMixInline(issues: DedupedIssue[]): string {

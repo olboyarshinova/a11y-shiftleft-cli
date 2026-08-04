@@ -1174,9 +1174,9 @@ test("renderExplorationHtml collapses large affected finding lists", () => {
   const html = renderExplorationHtml(graph, repeatedIssues);
   const issueHtml = issueBlockForRule(html, "button-name");
 
-  assert.match(issueHtml, /<details class="affected-findings"><summary>Affected findings \(6\) <span class="severity-mix" aria-label="Severity mix"><span class="severity-mix-count severity-mix-critical">6 critical<\/span><\/span><\/summary>/);
-  assert.doesNotMatch(issueHtml, /<details class="affected-findings" open><summary>Affected findings \(6\)/);
-  assert.match(html, /\.affected-findings > summary \{[\s\S]*?font-weight: 800/);
+  assert.match(issueHtml, /<div class="affected-findings-title">Affected findings \(6\) <span class="severity-mix" aria-label="Severity mix"><span class="severity-mix-count severity-mix-critical">6 critical<\/span><\/span><\/div>/);
+  assert.doesNotMatch(issueHtml, /<details class="affected-findings"/);
+  assert.match(html, /\.affected-findings-title \{[\s\S]*?font-weight: 800/);
   assert.match(html, /\.severity-mix-critical \{[\s\S]*?color: var\(--critical\)/);
   assert.match(html, /\.severity-mix-warning \{[\s\S]*?color: var\(--warning\)/);
   assert.match(html, /\.severity-mix-info \{[\s\S]*?color: var\(--info\)/);
@@ -1192,7 +1192,8 @@ test("renderExplorationHtml shows the first ten affected findings for very large
   const html = renderExplorationHtml(graph, repeatedIssues);
   const issueHtml = issueBlockForRule(html, "button-name");
 
-  assert.match(issueHtml, /<details class="affected-findings" open><summary>Affected findings \(31\)/);
+  assert.match(issueHtml, /<div class="affected-findings-title">Affected findings \(31\)/);
+  assert.doesNotMatch(issueHtml, /<details class="affected-findings"/);
   assert.match(issueHtml, /\.repeated-button-1/);
   assert.match(issueHtml, /\.repeated-button-10/);
   assert.match(issueHtml, /Show 21 more locations/);
